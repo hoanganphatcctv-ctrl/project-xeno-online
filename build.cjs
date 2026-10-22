@@ -48,6 +48,12 @@ copyDirSync(assetsSrc, path.join(DIST_DIR, 'assets'));
 copyDirSync(audioSrc, path.join(DIST_DIR, 'audio'));
 copyDirSync(mapSrc, path.join(DIST_DIR, 'map'));
 
+// Copy api serverless proxy
+const apiSrc = fs.existsSync(path.join(ROOT_DIR, 'api'))
+  ? path.join(ROOT_DIR, 'api')
+  : path.join(ROOT_DIR, 'frontend', 'api');
+copyDirSync(apiSrc, path.join(DIST_DIR, 'api'));
+
 // 3. Copy metadata
 for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
   let p = path.join(ROOT_DIR, 'frontend', file);

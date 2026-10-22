@@ -22042,13 +22042,43 @@
 
             async callApi(action, payload = {}) {
                 const bodyData = JSON.stringify({ action, ...payload });
-                const res = await fetch(window.XENO_CLOUD_API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: bodyData,
-                    redirect: "follow"
-                });
-                return await res.json();
+                const directUrl = "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec";
+                const primaryUrl = window.XENO_CLOUD_API_URL || directUrl;
+                try {
+                    const res = await fetch(primaryUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: bodyData,
+                        redirect: "follow"
+                    });
+                    if (res.ok) {
+                        return await res.json();
+                    }
+                    if (primaryUrl !== directUrl) {
+                        const fallbackRes = await fetch(directUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "text/plain;charset=utf-8" },
+                            body: bodyData,
+                            redirect: "follow"
+                        });
+                        return await fallbackRes.json();
+                    }
+                    return await res.json();
+                } catch (err) {
+                    if (primaryUrl !== directUrl) {
+                        try {
+                            const fallbackRes = await fetch(directUrl, {
+                                method: "POST",
+                                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                                body: bodyData,
+                                redirect: "follow"
+                            });
+                            return await fallbackRes.json();
+                        } catch (e2) {}
+                    }
+                    console.error("[CLOUD SYNC ERROR]:", err);
+                    return { success: false, message: "Không thể kết nối đến máy chủ Cloud: " + (err.message || err) };
+                }
             },
 
             async register(gmail, username, displayName, password) {

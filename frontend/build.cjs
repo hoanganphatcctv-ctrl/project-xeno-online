@@ -34,6 +34,7 @@ fs.copyFileSync(path.join(ROOT_DIR, 'index.html'), path.join(DIST_DIR, 'index.ht
 copyDirSync(path.join(ROOT_DIR, 'assets'), path.join(DIST_DIR, 'assets'));
 copyDirSync(path.join(ROOT_DIR, 'audio'), path.join(DIST_DIR, 'audio'));
 copyDirSync(path.join(ROOT_DIR, 'map'), path.join(DIST_DIR, 'map'));
+copyDirSync(path.join(ROOT_DIR, 'api'), path.join(DIST_DIR, 'api'));
 
 // 3. Copy metadata
 for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
