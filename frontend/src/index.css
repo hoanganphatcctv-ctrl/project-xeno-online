@@ -8,3 +8,235 @@
   }
 }
 
+/* ==========================================================================
+   PROJECT XENO: AUTHENTIC SCI-FI DELTA FORCE LOBBY & HUD THEME
+   ========================================================================== */
+
+/* Font Definition */
+.font-mono-tech {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* 1. TOP-RIGHT LOBBY NAVIGATION BAR (.tactical-top-nav-item) */
+.tactical-top-nav-item {
+  --nc: 6px;
+  position: relative;
+  transition: all 0.18s ease;
+  color: #cbd5e1;
+  background: rgba(11, 18, 32, 0.85);
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  clip-path: polygon(
+    var(--nc) 0,
+    calc(100% - var(--nc)) 0,
+    100% var(--nc),
+    100% calc(100% - var(--nc)),
+    calc(100% - var(--nc)) 100%,
+    var(--nc) 100%,
+    0 calc(100% - var(--nc)),
+    0 var(--nc)
+  );
+}
+
+.tactical-top-nav-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.65) 0%, rgba(16, 185, 129, 0.35) 50%, rgba(52, 211, 153, 0.65) 100%);
+  clip-path: polygon(
+    var(--nc) 0,
+    calc(100% - var(--nc)) 0,
+    100% var(--nc),
+    100% calc(100% - var(--nc)),
+    calc(100% - var(--nc)) 100%,
+    var(--nc) 100%,
+    0 calc(100% - var(--nc)),
+    0 var(--nc),
+    var(--nc) 0,
+    calc(var(--nc) + 1px) 1.5px,
+    1.5px calc(var(--nc) + 1px),
+    1.5px calc(100% - var(--nc) - 1px),
+    calc(var(--nc) + 1px) calc(100% - 1.5px),
+    calc(100% - var(--nc) - 1px) calc(100% - 1.5px),
+    calc(100% - 1.5px) calc(100% - var(--nc) - 1px),
+    calc(100% - 1.5px) calc(var(--nc) + 1px),
+    calc(100% - var(--nc) - 1px) 1.5px,
+    calc(var(--nc) + 1px) 1.5px
+  );
+}
+
+.tactical-top-nav-item:hover {
+  color: #ffffff;
+  background: rgba(6, 78, 59, 0.65);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.65);
+  transform: translateY(-1px);
+}
+
+/* 2. OPERATOR AVATAR FRAME (.mecha-avatar-frame) */
+.mecha-avatar-frame {
+  --ac: 8px;
+  position: relative;
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  clip-path: polygon(
+    var(--ac) 0,
+    calc(100% - var(--ac)) 0,
+    100% var(--ac),
+    100% calc(100% - var(--ac)),
+    calc(100% - var(--ac)) 100%,
+    var(--ac) 100%,
+    0 calc(100% - var(--ac)),
+    0 var(--ac)
+  );
+}
+
+.mecha-avatar-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  background: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #34d399 100%);
+  clip-path: polygon(
+    var(--ac) 0,
+    calc(100% - var(--ac)) 0,
+    100% var(--ac),
+    100% calc(100% - var(--ac)),
+    calc(100% - var(--ac)) 100%,
+    var(--ac) 100%,
+    0 calc(100% - var(--ac)),
+    0 var(--ac),
+    var(--ac) 0,
+    calc(var(--ac) + 1px) 2px,
+    2px calc(var(--ac) + 1px),
+    2px calc(100% - var(--ac) - 1px),
+    calc(var(--ac) + 1px) calc(100% - 2px),
+    calc(100% - var(--ac) - 1px) calc(100% - 2px),
+    calc(100% - 2px) calc(100% - var(--ac) - 1px),
+    calc(100% - 2px) calc(var(--ac) + 1px),
+    calc(100% - var(--ac) - 1px) 2px,
+    calc(var(--ac) + 1px) 2px
+  );
+}
+
+.mecha-avatar-frame:hover::before {
+  background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #6ee7b7 100%);
+}
+
+.mecha-avatar-badge {
+  clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
+}
+
+/* 3. BOTTOM TACTICAL TABS (.tactical-bottom-tab) */
+.tactical-bottom-tab {
+  position: relative;
+  transition: all 0.18s ease;
+  color: #94a3b8;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tactical-bottom-tab:hover {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.45);
+}
+
+.tactical-bottom-tab.active-tab {
+  color: #ffffff;
+  background: rgba(16, 185, 129, 0.18);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.75);
+}
+
+.tactical-bottom-tab.active-tab::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  height: 2.5px;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 100%, 0 100%);
+}
+
+/* 4. GIANT GREEN DEPLOY BUTTON (.tactical-start-btn) */
+.tactical-start-btn {
+  --sc-btn: 10px;
+  position: relative;
+  background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
+  box-shadow: 0 0 26px rgba(16, 185, 129, 0.45);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  clip-path: polygon(
+    var(--sc-btn) 0,
+    calc(100% - var(--sc-btn)) 0,
+    100% var(--sc-btn),
+    100% calc(100% - var(--sc-btn)),
+    calc(100% - var(--sc-btn)) 100%,
+    var(--sc-btn) 100%,
+    0 calc(100% - var(--sc-btn)),
+    0 var(--sc-btn)
+  );
+}
+
+.tactical-start-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.75) 0%, rgba(167, 243, 208, 0.35) 25%, rgba(167, 243, 208, 0.35) 75%, rgba(255, 255, 255, 0.75) 100%);
+  clip-path: polygon(
+    var(--sc-btn) 0,
+    calc(100% - var(--sc-btn)) 0,
+    100% var(--sc-btn),
+    100% calc(100% - var(--sc-btn)),
+    calc(100% - var(--sc-btn)) 100%,
+    var(--sc-btn) 100%,
+    0 calc(100% - var(--sc-btn)),
+    0 var(--sc-btn),
+    var(--sc-btn) 0,
+    calc(var(--sc-btn) + 1px) 2px,
+    2.5px calc(var(--sc-btn) + 1px),
+    2.5px calc(100% - var(--sc-btn) - 1px),
+    calc(var(--sc-btn) + 1px) calc(100% - 2px),
+    calc(100% - var(--sc-btn) - 1px) calc(100% - 2px),
+    calc(100% - 2.5px) calc(100% - var(--sc-btn) - 1px),
+    calc(100% - 2.5px) calc(var(--sc-btn) + 1px),
+    calc(100% - var(--sc-btn) - 1px) 2px,
+    calc(var(--sc-btn) + 1px) 2px
+  );
+}
+
+.tactical-start-btn:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 60%, #059669 100%);
+  box-shadow: 0 0 36px rgba(52, 211, 153, 0.75);
+  transform: translateY(-1px);
+}
+
+.tactical-start-btn:active {
+  transform: translateY(1px);
+}
+
+/* 5. HUD PANELS & MODAL WINDOWS (.hud-panel & .hud-modal) */
+.hud-panel {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hud-modal {
+  --mc: 14px;
+  position: relative;
+  background: rgba(7, 11, 19, 0.98);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+

@@ -598,6 +598,13 @@ export class WorldManager {
       engine.bakeScorchCrater(b.x, b.y, 85, b.type === "acid");
     }
 
+    if (engine && typeof engine.spawnShockwave === "function") {
+      engine.spawnShockwave(b.x, b.y, b.type === "acid" ? "#4ade80" : "#f97316", 185);
+    }
+    if (engine && typeof engine.spawnFirePatch === "function" && b.type !== "acid") {
+      engine.spawnFirePatch(b.x, b.y, 65, 240, true);
+    }
+
     if (engine.sfx) engine.sfx.playExplosion(true);
     engine.screenShake = 22;
 
@@ -802,73 +809,235 @@ export class WorldManager {
     }
   }
 
-  render(ctx, now = performance.now()) {
-    // 1. Draw Sector Floor Tiles with Diamond Tread Plates & Safety Stripes
-    this.rooms.forEach(room => {
-      ctx.fillStyle = room.floorColor || "#0f172a";
-      ctx.fillRect(room.x, room.y, room.w, room.h);
+  drawMapSpecificFloorPattern(c, room, mapId) {
+    const rx = room.x, ry = room.y, rw = room.w, rh = room.h;
+    c.save();
 
-      // Diamond Tread Plates & Rivets
+    if (mapId === 1) {
+      // MAP 1 (Alpha): Tấm thép đinh tán, rãnh chống trượt kim cương và vạch cảnh báo an toàn
       const step = 110;
-      ctx.strokeStyle = "rgba(71, 85, 105, 0.35)";
-      ctx.lineWidth = 1.2;
-      for (let x = room.x; x < room.x + room.w; x += step) {
-        for (let y = room.y; y < room.y + room.h; y += step) {
-          const curW = Math.min(step, room.x + room.w - x);
-          const curH = Math.min(step, room.y + room.h - y);
-          ctx.strokeRect(x, y, curW, curH);
+      c.strokeStyle = "rgba(71, 85, 105, 0.44)";
+      c.lineWidth = 1.5;
+      for (let x = rx; x < rx + rw; x += step) {
+        for (let y = ry; y < ry + rh; y += step) {
+          const curW = Math.min(step, rx + rw - x);
+          const curH = Math.min(step, ry + rh - y);
+          c.strokeRect(x, y, curW, curH);
+
+          // Rãnh chống trượt kim cương (Diamond tread plate) ở tâm tấm thép
+          if (curW > 45 && curH > 45) {
+            const mx = x + curW * 0.5;
+            const my = y + curH * 0.5;
+            c.strokeStyle = "rgba(100, 116, 139, 0.25)";
+            c.lineWidth = 1.1;
+            c.beginPath();
+            c.moveTo(mx, my - 11); c.lineTo(mx + 11, my);
+            c.lineTo(mx, my + 11); c.lineTo(mx - 11, my);
+            c.closePath();
+            c.moveTo(mx - 18, my - 6); c.lineTo(mx - 12, my); c.lineTo(mx - 18, my + 6);
+            c.moveTo(mx + 18, my - 6); c.lineTo(mx + 12, my); c.lineTo(mx + 18, my + 6);
+            c.stroke();
+            c.strokeStyle = "rgba(71, 85, 105, 0.44)";
+            c.lineWidth = 1.5;
+          }
+
+          // 4 Metallic Corner Rivets
+          c.fillStyle = "rgba(148, 163, 184, 0.52)";
+          c.fillRect(x + 5, y + 5, 2.8, 2.8);
+          c.fillRect(x + curW - 8, y + 5, 2.8, 2.8);
+          c.fillRect(x + 5, y + curH - 8, 2.8, 2.8);
+          c.fillRect(x + curW - 8, y + curH - 8, 2.8, 2.8);
+        }
+      }
+      // Vạch cảnh báo an toàn vàng-đen dọc mép trên/dưới sàn phòng
+      c.fillStyle = "rgba(234, 179, 8, 0.16)";
+      for (let hx = rx + 32; hx < rx + rw - 48; hx += 36) {
+        c.fillRect(hx, ry + 10, 18, 6);
+        c.fillRect(hx, ry + rh - 16, 18, 6);
+      }
+    } else if (mapId === 2) {
+      // MAP 2 (Orion-IX): Boong titan lục giác bóng bẩy, vi mạch cyan phản quang
+      const hexR = 34;
+      const hexW = Math.sqrt(3) * hexR;
+      c.strokeStyle = "rgba(56, 189, 248, 0.24)";
+      c.lineWidth = 1.2;
+      for (let x = rx; x < rx + rw + hexW; x += hexW) {
+        for (let y = ry, row = 0; y < ry + rh + hexR * 1.5; y += hexR * 1.5, row++) {
+          const cx = (row % 2 === 0) ? x : x + hexW * 0.5;
+          c.beginPath();
+          for (let a = 0; a < 6; a++) {
+            const ang = (Math.PI / 3) * a + Math.PI * 0.16667;
+            const px = cx + hexR * 0.88 * Math.cos(ang);
+            const py = y + hexR * 0.88 * Math.sin(ang);
+            if (a === 0) c.moveTo(px, py); else c.lineTo(px, py);
+          }
+          c.closePath();
+          c.stroke();
+
+          // Đường vi mạch cyan phản quang bên trong tâm lục giác
+          if ((row + Math.floor((x - rx) / hexW)) % 3 === 0 && cx > rx + 20 && cx < rx + rw - 20 && y > ry + 20 && y < ry + rh - 20) {
+            c.strokeStyle = "rgba(34, 211, 238, 0.35)";
+            c.beginPath();
+            c.moveTo(cx - 12, y); c.lineTo(cx + 12, y);
+            c.moveTo(cx, y - 12); c.lineTo(cx, y + 12);
+            c.stroke();
+            c.fillStyle = "rgba(103, 232, 249, 0.48)";
+            c.beginPath();
+            c.arc(cx, y, 2.4, 0, Math.PI * 2);
+            c.fill();
+            c.strokeStyle = "rgba(56, 189, 248, 0.24)";
+          }
+        }
+      }
+    } else if (mapId === 3) {
+      // MAP 3 (Europa): Băng vĩnh cửu nứt nẻ, tinh thể tuyết và khe nứt địa nhiệt
+      const step = 135;
+      for (let x = rx; x < rx + rw; x += step) {
+        for (let y = ry; y < ry + rh; y += step) {
+          // Khe nứt địa nhiệt băng hà phát quang
+          c.strokeStyle = "rgba(56, 189, 248, 0.22)";
+          c.lineWidth = 3.2;
+          c.beginPath();
+          c.moveTo(x + 12, y + 25);
+          c.lineTo(x + step * 0.38, y + step * 0.30);
+          c.lineTo(x + step * 0.62, y + step * 0.75);
+          c.lineTo(x + step - 14, y + step - 20);
+          c.stroke();
+
+          c.strokeStyle = "rgba(186, 230, 253, 0.38)";
+          c.lineWidth = 1.2;
+          c.stroke();
+
+          // Tinh thể bông tuyết 6 cánh (Ice Crystal Star)
+          const ix = x + step * 0.72;
+          const iy = y + step * 0.28;
+          if (ix < rx + rw - 16 && iy < ry + rh - 16) {
+            c.strokeStyle = "rgba(224, 242, 254, 0.36)";
+            c.lineWidth = 1.1;
+            c.beginPath();
+            for (let a = 0; a < 3; a++) {
+              const ang = a * (Math.PI / 3);
+              c.moveTo(ix - Math.cos(ang) * 9, iy - Math.sin(ang) * 9);
+              c.lineTo(ix + Math.cos(ang) * 9, iy + Math.sin(ang) * 9);
+            }
+            c.stroke();
+          }
+        }
+      }
+    } else if (mapId === 4) {
+      // MAP 4 (Magma): Đá hắc diện thạch nứt dung nham nóng đỏ phát sáng
+      const step = 125;
+      for (let x = rx; x < rx + rw; x += step) {
+        for (let y = ry; y < ry + rh; y += step) {
+          c.strokeStyle = "rgba(68, 24, 15, 0.55)";
+          c.lineWidth = 1.6;
+          c.strokeRect(x + 4, y + 4, Math.min(step - 8, rx + rw - x - 8), Math.min(step - 8, ry + rh - y - 8));
+
+          // Khe nứt dung nham nóng đỏ phát sáng
+          c.strokeStyle = "rgba(239, 68, 68, 0.34)";
+          c.lineWidth = 4.2;
+          c.beginPath();
+          c.moveTo(x, y + step * 0.5);
+          c.lineTo(x + step * 0.35, y + step * 0.28);
+          c.lineTo(x + step * 0.68, y + step * 0.72);
+          c.lineTo(x + step, y + step * 0.5);
+          c.stroke();
+
+          c.strokeStyle = "rgba(253, 224, 71, 0.42)";
+          c.lineWidth = 1.3;
+          c.stroke();
+
+          // Điểm sủi bọt nham thạch
+          c.fillStyle = "rgba(249, 115, 22, 0.42)";
+          c.beginPath();
+          c.arc(x + step * 0.68, y + step * 0.72, 3.2, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    } else if (mapId === 5) {
+      // MAP 5 (Citadel): Màng sinh khối tổ quỷ, sợi tơ nhện ký sinh và bọc bào tử hữu cơ
+      const step = 90;
+      for (let x = rx; x < rx + rw; x += step) {
+        for (let y = ry; y < ry + rh; y += step) {
+          const cx = x + step * 0.5;
+          const cy = y + step * 0.5;
+          c.strokeStyle = "rgba(192, 132, 252, 0.28)";
+          c.lineWidth = 1.8;
+          c.beginPath();
+          c.arc(cx, cy, step * 0.36, 0, Math.PI * 2);
+          c.stroke();
+
+          // Sợi tơ nhện ký sinh đan chéo
+          c.strokeStyle = "rgba(168, 85, 247, 0.22)";
+          c.lineWidth = 1.1;
+          c.beginPath();
+          c.moveTo(cx, cy); c.lineTo(x + step, cy);
+          c.moveTo(cx, cy); c.lineTo(cx, y + step);
+          c.stroke();
+
+          // Bọc bào tử hữu cơ phát sáng
+          c.fillStyle = "rgba(217, 70, 239, 0.38)";
+          c.beginPath();
+          c.arc(cx, cy, 5.2, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    } else {
+      // Maps 6 - 10: Tấm hợp kim Sci-Fi với rãnh dẫn năng lượng
+      const step = 110;
+      c.strokeStyle = "rgba(56, 189, 248, 0.30)";
+      c.lineWidth = 1.4;
+      for (let x = rx; x < rx + rw; x += step) {
+        for (let y = ry; y < ry + rh; y += step) {
+          const curW = Math.min(step, rx + rw - x);
+          const curH = Math.min(step, ry + rh - y);
+          c.strokeRect(x, y, curW, curH);
 
           if (curW > 45 && curH > 45) {
             const mx = x + curW * 0.5;
             const my = y + curH * 0.5;
-            ctx.strokeStyle = "rgba(100, 116, 139, 0.20)";
-            ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.moveTo(mx, my - 10); ctx.lineTo(mx + 10, my);
-            ctx.lineTo(mx, my + 10); ctx.lineTo(mx - 10, my);
-            ctx.closePath();
-            ctx.stroke();
-            ctx.strokeStyle = "rgba(71, 85, 105, 0.35)";
-            ctx.lineWidth = 1.2;
+            c.strokeStyle = "rgba(34, 211, 238, 0.20)";
+            c.beginPath();
+            c.arc(mx, my, 12, 0, Math.PI * 2);
+            c.stroke();
+            c.strokeStyle = "rgba(56, 189, 248, 0.30)";
           }
-
-          // 4 Corner Rivets
-          ctx.fillStyle = "rgba(148, 163, 184, 0.35)";
-          ctx.fillRect(x + 4, y + 4, 2.5, 2.5);
-          ctx.fillRect(x + curW - 6, y + 4, 2.5, 2.5);
-          ctx.fillRect(x + 4, y + curH - 6, 2.5, 2.5);
-          ctx.fillRect(x + curW - 6, y + curH - 6, 2.5, 2.5);
         }
       }
+    }
+    c.restore();
+  }
 
-      // Yellow-Black Hazard Safety Stripes along Room Edges
-      ctx.fillStyle = "rgba(234, 179, 8, 0.16)";
-      for (let hx = room.x + 32; hx < room.x + room.w - 48; hx += 36) {
-        ctx.fillRect(hx, room.y + 8, 18, 5);
-        ctx.fillRect(hx, room.y + room.h - 13, 18, 5);
-      }
+  render(ctx, now = performance.now()) {
+    // 1. Draw Sector Floor Tiles with Map-Specific Sci-Fi Patterns & Safety Borders
+    this.rooms.forEach(room => {
+      ctx.fillStyle = room.floorColor || "#0f172a";
+      ctx.fillRect(room.x, room.y, room.w, room.h);
+
+      // Authentic Map-Specific Procedural Floor Pattern
+      this.drawMapSpecificFloorPattern(ctx, room, this.mapId);
 
       // Room Accent Boundary
-      ctx.strokeStyle = room.isCenter ? "rgba(56, 189, 248, 0.4)" : "rgba(71, 85, 105, 0.3)";
-      ctx.lineWidth = 2.4;
-      ctx.strokeRect(room.x + 18, room.y + 18, room.w - 36, room.h - 36);
+      ctx.strokeStyle = room.accent || (room.isCenter ? "rgba(56, 189, 248, 0.5)" : "rgba(71, 85, 105, 0.35)");
+      ctx.lineWidth = 2.8;
+      ctx.strokeRect(room.x + 20, room.y + 20, room.w - 40, room.h - 40);
 
       // Center Command Room Hologram Ring
       if (room.isCenter) {
         const cx = room.x + room.w * 0.5;
         const cy = room.y + room.h * 0.5;
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.25)";
-        ctx.lineWidth = 3.0;
-        ctx.setLineDash([12, 8]);
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+        ctx.lineWidth = 3.2;
+        ctx.setLineDash([14, 10]);
         ctx.beginPath();
-        ctx.arc(cx, cy, 140, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 150, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
       }
 
       // Room Name Label
-      ctx.font = "800 12px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.font = "800 13px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
       ctx.textAlign = "center";
       ctx.fillText(room.name, room.x + room.w * 0.5, room.y + room.h * 0.5);
     });

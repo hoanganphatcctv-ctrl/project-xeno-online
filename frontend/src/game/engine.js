@@ -31,6 +31,10 @@ export class GameEngine {
     this.isHost = !!options.isHost;
     this.roomCode = options.roomCode || null;
     this.mapId = options.mapId || 1;
+    this.difficulty = options.difficulty || "medium";
+    this.bloodColor = options.bloodColor || "red";
+    this.soundEnabled = options.soundEnabled !== false;
+    this.fpsCap = options.fpsCap || 120;
     this.onGameOver = options.onGameOver || (() => {});
     this.onVictory = options.onVictory || (() => {});
     this.onToggleArmory = options.onToggleArmory || (() => {});
@@ -209,6 +213,10 @@ export class GameEngine {
     };
     this.turretAsset = new Image();
     this.turretAsset.src = "/assets/phao_tu_dong.png";
+
+    // Dynamic Sci-Fi Combat VFX (Fire Patches & Shockwaves)
+    this.firePatches = [];
+    this.shockwaveRings = [];
 
     // Player 2 (Teammate in Co-op)
     this.teammate = {
@@ -1039,6 +1047,30 @@ export class GameEngine {
     this.floatingTexts.push({ x, y, text, color, life: 54 });
   }
 
+  spawnShockwave(x, y, color = "#f97316", maxR = 180) {
+    this.shockwaveRings.push({
+      x: Math.round(x),
+      y: Math.round(y),
+      r: 12,
+      maxR: maxR,
+      color: color,
+      alpha: 0.95
+    });
+  }
+
+  spawnFirePatch(x, y, radius = 55, duration = 240, isOilFire = false) {
+    if (this.firePatches.length >= 24) this.firePatches.shift();
+    this.firePatches.push({
+      x: Math.round(x),
+      y: Math.round(y),
+      radius: radius,
+      life: duration,
+      maxLife: duration,
+      isOilFire: isOilFire,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
   damagePlayer(amount) {
     if (this.player.isDown || this.player.invulnTimer > 0 || (this.player.dashActiveTimer || 0) > 0) return;
 
@@ -1278,11 +1310,16 @@ export class GameEngine {
     ctx.save();
     ctx.translate(x, y);
     const drops = Math.floor((5 + Math.random() * 6) * intensity);
+    const isGreenBlood = this.bloodColor === "green";
     for (let i = 0; i < drops; i++) {
       const ang = Math.random() * Math.PI * 2;
       const dist = Math.random() * safeR * 1.45;
       const r = 1.8 + Math.random() * (safeR * 0.35);
-      ctx.fillStyle = Math.random() > 0.4 ? "#dc2626" : (Math.random() > 0.5 ? "#991b1b" : "#7f1d1d");
+      if (isGreenBlood) {
+        ctx.fillStyle = Math.random() > 0.4 ? "#22c55e" : (Math.random() > 0.5 ? "#16a34a" : "#15803d");
+      } else {
+        ctx.fillStyle = Math.random() > 0.4 ? "#dc2626" : (Math.random() > 0.5 ? "#991b1b" : "#7f1d1d");
+      }
       ctx.beginPath();
       ctx.arc(Math.cos(ang) * dist, Math.sin(ang) * dist, r, 0, Math.PI * 2);
       ctx.fill();
@@ -2041,6 +2078,69 @@ export class GameEngine {
     // 1.5. Render Persistent Decals (Blood splatters, Scorch marks & Alien Corpses)
     ctx.drawImage(this.surfaceCanvas, 0, 0);
 
+    // 1.6. Render Sci-Fi Ground Fire Patches (Flickering Flame Cores & Jumping Tongues)
+    for (let i = this.firePatches.length - 1; i >= 0; i--) {
+      const fp = this.firePatches[i];
+      fp.life--;
+      if (fp.life <= 0) {
+        this.firePatches.splice(i, 1);
+        continue;
+      }
+      const alpha = Math.min(0.92, fp.life / 60);
+      const flick = 0.88 + 0.18 * Math.sin(now * 0.024 + fp.phase);
+      ctx.save();
+      ctx.translate(fp.x, fp.y);
+
+      if (fp.isOilFire) {
+        ctx.fillStyle = `rgba(10, 14, 22, ${0.72 * alpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, fp.radius * 1.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const fg = ctx.createRadialGradient(0, 0, 4, 0, 0, fp.radius * flick);
+      fg.addColorStop(0, `rgba(255, 255, 255, ${0.85 * alpha})`);
+      fg.addColorStop(0.32, `rgba(253, 224, 71, ${0.78 * alpha})`);
+      fg.addColorStop(0.68, `rgba(249, 115, 22, ${0.58 * alpha})`);
+      fg.addColorStop(1, "rgba(220, 38, 38, 0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.arc(0, 0, fp.radius * flick, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Jumping Flame Tongues
+      for (let t = 0; t < 3; t++) {
+        const tang = fp.phase + t * 2.09 + now * 0.006;
+        const tr = fp.radius * 0.42;
+        const tx = Math.cos(tang) * tr;
+        const ty = Math.sin(tang) * tr;
+        ctx.fillStyle = (t % 2 === 0) ? `rgba(253, 224, 71, ${0.75 * alpha})` : `rgba(239, 68, 68, ${0.65 * alpha})`;
+        ctx.beginPath();
+        ctx.arc(tx, ty, (7 + t * 2.5) * flick, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 1.7. Render Expanding Shockwave Blast Rings
+    for (let i = this.shockwaveRings.length - 1; i >= 0; i--) {
+      const sr = this.shockwaveRings[i];
+      sr.r += (sr.maxR - sr.r) * 0.18 + 2.5;
+      sr.alpha -= 0.04;
+      if (sr.alpha <= 0 || sr.r >= sr.maxR) {
+        this.shockwaveRings.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.strokeStyle = sr.color;
+      ctx.globalAlpha = Math.max(0, sr.alpha);
+      ctx.lineWidth = 3.8;
+      ctx.beginPath();
+      ctx.arc(sr.x, sr.y, sr.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // 2. Render Shell Casings
     for (let i = 0; i < this.shells.length; i++) {
       const s = this.shells[i];
@@ -2153,16 +2253,19 @@ export class GameEngine {
 
       if (this.turretAsset && this.turretAsset.complete && this.turretAsset.naturalWidth > 0) {
         ctx.rotate(tr.angle);
-        const tScale = 38 / 120;
-        const dw = this.turretAsset.naturalWidth * tScale;
-        const dh = this.turretAsset.naturalHeight * tScale;
-        ctx.drawImage(this.turretAsset, -dw / 2, -dh / 2, dw, dh);
+        const targetBaseDiameter = 38;
+        const scale = targetBaseDiameter / 750;
+        const dw = this.turretAsset.naturalWidth * scale;
+        const dh = this.turretAsset.naturalHeight * scale;
+        const dx = -457 * scale;
+        const dy = -458 * scale;
+        ctx.drawImage(this.turretAsset, dx, dy, dw, dh);
 
         // Tech core pulse
         const pulse = (Math.sin(now * 0.008) + 1) * 0.5;
         ctx.fillStyle = `rgba(56, 189, 248, ${0.45 + pulse * 0.45})`;
         ctx.beginPath();
-        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.arc(0, 0, 3.8, 0, Math.PI * 2);
         ctx.fill();
       } else {
         // Fallback procedural turret
@@ -2218,6 +2321,18 @@ export class GameEngine {
       ctx.beginPath();
       ctx.arc(0, 0, 26, 0, Math.PI * 2);
       ctx.stroke();
+
+      // Holographic Turret Base Preview
+      if (this.turretAsset && this.turretAsset.complete && this.turretAsset.naturalWidth > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.35 + 0.55 * pct;
+        ctx.rotate(p.angle);
+        const scale = 38 / 750;
+        const dw = this.turretAsset.naturalWidth * scale;
+        const dh = this.turretAsset.naturalHeight * scale;
+        ctx.drawImage(this.turretAsset, -457 * scale, -458 * scale, dw, dh);
+        ctx.restore();
+      }
 
       ctx.font = "800 10px 'JetBrains Mono', monospace";
       ctx.fillStyle = "#4ade80";
@@ -2318,6 +2433,15 @@ export class GameEngine {
     if (this.mode === "coop" && this.teammate && this.teammate.active) {
       this.renderTeammatePointer(this.ctx, cw, ch, Math.round(this.camera.x + shakeX), Math.round(this.camera.y + shakeY), now);
     }
+
+    // 16. Subtle Sci-Fi Screen Vignette Overlay
+    ctx.save();
+    const gVig = ctx.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.38, cw / 2, ch / 2, Math.hypot(cw, ch) * 0.54);
+    gVig.addColorStop(0, "rgba(0, 0, 0, 0)");
+    gVig.addColorStop(1, "rgba(3, 7, 18, 0.45)");
+    ctx.fillStyle = gVig;
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.restore();
   }
 
   renderLighting(cw, ch, camX, camY) {
