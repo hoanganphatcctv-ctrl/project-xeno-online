@@ -6,6 +6,7 @@
     <title>PROJECT XENO: RELOADED // CHIẾN DỊCH TÁC CHIẾN 10 KHU VỰC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -3390,6 +3391,42 @@
                 </button>
             </div>
 
+            <!-- Commercial Multi-Engine & Tick Rate Control Bar -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2 bg-slate-950/90 border border-slate-800 text-[10px]">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-slate-400 font-bold uppercase tracking-wider">HẠ TẦNG:</span>
+                    <button id="coopEngineP2PBtn" onclick="window.setCoopEngine('p2p')" class="px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                        ⚡ P2P DIRECT (Vercel)
+                    </button>
+                    <button id="coopEngineSocketBtn" onclick="window.setCoopEngine('socket')" class="px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white">
+                        🚀 DEDICATED SERVER
+                    </button>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-slate-400 font-bold uppercase tracking-wider">TICK:</span>
+                    <button id="coopTick30Btn" onclick="window.setCoopTickRate(30)" class="px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white">
+                        30Hz
+                    </button>
+                    <button id="coopTick60Btn" onclick="window.setCoopTickRate(60)" class="px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                        60Hz LERP
+                    </button>
+                </div>
+            </div>
+
+            <!-- Server URL Box (Hiển thị khi chọn Dedicated Server) -->
+            <div id="coopSocketServerBox" class="hidden flex flex-col gap-1.5 p-2.5 bg-slate-950 border border-amber-500/40">
+                <div class="flex items-center justify-between text-[9px] text-amber-300 font-bold uppercase">
+                    <span>MÁY CHỦ SOCKET.IO CHUYÊN DỤNG (XUYÊN TƯỜNG LỬA 100%):</span>
+                    <span class="text-slate-400">Node.js Dedicated Relay</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input id="coopSocketUrlInput" type="text" placeholder="https://project-xeno-server.onrender.com hoặc http://localhost:4000" class="flex-1 bg-slate-900 border border-slate-700 focus:border-cyan-400 px-2.5 py-1 text-xs text-cyan-200 outline-none font-mono-tech" />
+                    <button onclick="window.saveCoopSocketUrl()" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition">
+                        LƯU & KẾT NỐI
+                    </button>
+                </div>
+            </div>
+
             <!-- PANEL 1: HOST VIEW -->
             <div id="coopHostPanel" class="flex flex-col gap-3.5">
                 <div class="bg-slate-900/80 p-3.5 border border-cyan-500/30 rounded-none flex flex-col gap-2">
@@ -5475,6 +5512,7 @@
             y: WORLD_H / 2,
             targetX: WORLD_W / 2 + 50,
             targetY: WORLD_H / 2,
+            targetAngle: 0,
             radius: 16,
             angle: 0,
             hp: 100,
@@ -5487,9 +5525,59 @@
             isDown: false,
             reviveProgress: 0,
             walkCycle: 0,
-            trailHistory: []
+            trailHistory: [],
+            // ========================================================================
+            // COMMERCIAL-GRADE CLIENT-SIDE SNAPSHOT BUFFER (30/60Hz LERP + EXTRAPOLATION)
+            // ========================================================================
+            snapshotBuffer: [],
+            vx: 0,
+            vy: 0,
+            lastPacketTime: 0
         };
         window.teammate = teammate;
+
+        function lerpAngle(a, b, t) {
+            let diff = (b - a) % (Math.PI * 2);
+            if (diff < -Math.PI) diff += Math.PI * 2;
+            if (diff > Math.PI) diff -= Math.PI * 2;
+            return a + diff * t;
+        }
+
+        function pushTeammateSnapshot(data) {
+            const now = performance.now();
+            const snap = {
+                t: now,
+                x: data.x,
+                y: data.y,
+                a: data.a !== undefined ? data.a : (teammate.targetAngle || teammate.angle),
+                hp: data.hp !== undefined ? data.hp : teammate.hp,
+                mhp: data.mhp || teammate.maxHp,
+                ar: data.ar !== undefined ? data.ar : teammate.armor,
+                mar: data.mar || teammate.maxArmor,
+                w: data.w !== undefined ? data.w : teammate.currentWeapon,
+                shoot: !!data.shoot,
+                cred: data.cred !== undefined ? data.cred : teammate.credits,
+                down: !!data.down,
+                rev: data.rev || 0
+            };
+
+            if (teammate.snapshotBuffer.length > 0) {
+                const prev = teammate.snapshotBuffer[teammate.snapshotBuffer.length - 1];
+                const dt = Math.max(0.005, (now - prev.t) / 1000);
+                teammate.vx = (snap.x - prev.x) / dt;
+                teammate.vy = (snap.y - prev.y) / dt;
+            }
+
+            teammate.snapshotBuffer.push(snap);
+            teammate.lastPacketTime = now;
+            if (teammate.snapshotBuffer.length > 25) {
+                teammate.snapshotBuffer.shift();
+            }
+
+            teammate.targetX = snap.x;
+            teammate.targetY = snap.y;
+            teammate.targetAngle = snap.a;
+        }
 
         /**
          * ============================================================================
@@ -5506,9 +5594,12 @@
             roomCode: "",
             peer: null,
             conn: null,
+            socket: null,
+            engineMode: "p2p", // "p2p" | "socket"
+            socketUrl: localStorage.getItem("xeno_socket_url") || "https://project-xeno-server.onrender.com",
             connected: false,
             lastTickTime: 0,
-            tickRate: 30, // 30 Ticks/sec (33.33ms)
+            tickRate: 60, // 60 Ticks/sec (16.66ms) - Chuẩn e-Sport LERP
             ping: 0,
             lastPingSent: 0,
             seq: 0,
@@ -5573,11 +5664,11 @@
                 if (statusText && statusMsg) statusText.textContent = statusMsg;
                 if (statusSub) {
                     if (isReady) {
-                        statusSub.textContent = "Đồng đội đã sẵn sàng! Nhấn nút bên dưới để cùng xuất trận.";
+                        statusSub.textContent = `Đồng đội đã sẵn sàng! Tick: ${this.tickRate}Hz • Bấm nút bên dưới để cùng xuất trận.`;
                     } else if (isError) {
-                        statusSub.textContent = "Vui lòng bấm 'ĐỔI MÃ' hoặc kiểm tra đường truyền Internet.";
+                        statusSub.textContent = "Vui lòng bấm 'ĐỔI MÃ', chuyển chế độ mạng hoặc kiểm tra đường truyền Internet.";
                     } else {
-                        statusSub.textContent = `Mã: ${this.roomCode || "..."} • Gửi link hoặc mã PIN cho bạn bè.`;
+                        statusSub.textContent = `Mã: ${this.roomCode || "..."} • Hạ tầng: ${this.engineMode === 'socket' ? 'Dedicated Server' : 'P2P Direct'} • Tick: ${this.tickRate}Hz`;
                     }
                 }
                 if (spinner) {
@@ -5603,6 +5694,83 @@
             },
 
             initHost(forceNew = false) {
+                if (this.engineMode === "socket") {
+                    this.initHostSocket(forceNew);
+                } else {
+                    this.initHostP2P(forceNew);
+                }
+            },
+
+            initHostSocket(forceNew = false) {
+                if (!forceNew && this.isHost && this.socket && this.socket.connected && this.roomCode) {
+                    this.updateHostUI(this.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG! (Dedicated Server)" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", this.connected);
+                    return;
+                }
+
+                this.cleanup();
+                this.isHost = true;
+                this.updateHostUI(`Đang kết nối tới máy chủ (${this.socketUrl})...`, false);
+
+                if (typeof io === "undefined") {
+                    this.updateHostUI("Lỗi: Chưa tải được thư viện Socket.io (Kiểm tra Internet)!", false, true);
+                    return;
+                }
+
+                try {
+                    this.socket = io(this.socketUrl, {
+                        transports: ["websocket", "polling"],
+                        timeout: 10000,
+                        reconnection: true
+                    });
+
+                    this.socket.on("connect", () => {
+                        console.log("[CO-OP SOCKET] Host connected:", this.socket.id);
+                        this.socket.emit("create_room", { mapId: window.currentMapId || 1 }, (res) => {
+                            if (res && res.success) {
+                                this.roomCode = res.roomCode;
+                                console.log("[CO-OP SOCKET] Room created:", this.roomCode);
+                                this.updateHostUI("Phòng đã sẵn sàng! Chờ đồng đội vào...", false);
+                            } else {
+                                this.updateHostUI("Không thể tạo phòng trên server: " + (res?.message || ""), false, true);
+                            }
+                        });
+                    });
+
+                    this.socket.on("peer_connected", (data) => {
+                        console.log("[CO-OP SOCKET] Peer connected to room:", data);
+                        this.setupSocketConnection();
+                    });
+
+                    this.socket.on("remote_tick", (packet) => {
+                        this.handleData(packet);
+                    });
+
+                    this.socket.on("teammate_down", () => {
+                        this.handleData({ t: "player_down" });
+                    });
+
+                    this.socket.on("teammate_revived", (data) => {
+                        this.handleData({ t: "revive_success", data });
+                    });
+
+                    this.socket.on("peer_disconnected", () => {
+                        this.connected = false;
+                        teammate.active = false;
+                        showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng!");
+                        this.updateHostUI("Đồng đội đã rời phòng. Đang chờ kết nối lại...", false);
+                        this.updateHUD();
+                    });
+
+                    this.socket.on("connect_error", (err) => {
+                        console.warn("[CO-OP SOCKET] Connect error:", err);
+                        this.updateHostUI(`Không thể kết nối Server (${this.socketUrl}). Hãy bật server hoặc dùng P2P Direct!`, false, true);
+                    });
+                } catch (e) {
+                    this.updateHostUI("Lỗi kết nối Socket: " + e.message, false, true);
+                }
+            },
+
+            initHostP2P(forceNew = false) {
                 if (!forceNew && this.isHost && this.peer && !this.peer.destroyed && this.roomCode) {
                     this.updateHostUI(this.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", this.connected);
                     return;
@@ -5672,19 +5840,96 @@
                 this.cleanup();
                 this.isHost = false;
                 this.roomCode = cleanCode;
-                const targetPeerId = this.getPeerIdForRoom(this.roomCode);
 
                 const statusText = byId("coopJoinStatusText");
                 const statusDot = byId("coopJoinStatusDot");
                 const joinBtn = byId("coopJoinConnectBtn");
 
-                if (statusText) statusText.textContent = `Đang kết nối tới Host [${this.roomCode}]... (Tìm đường NAT/TURN)`;
+                if (statusText) statusText.textContent = `Đang kết nối tới Host [${this.roomCode}] (${this.engineMode === 'socket' ? 'Dedicated Server' : 'Tìm đường NAT/TURN'})...`;
                 if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0";
                 if (joinBtn) {
                     joinBtn.disabled = true;
                     joinBtn.textContent = "ĐANG KẾT NỐI HOST...";
                     joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-amber-400 font-black text-sm uppercase tracking-wider transition cursor-wait border border-amber-500/40";
                 }
+
+                if (this.engineMode === "socket") {
+                    this.joinRoomSocket(cleanCode, statusText, statusDot);
+                } else {
+                    this.joinRoomP2P(cleanCode, statusText, statusDot);
+                }
+            },
+
+            joinRoomSocket(cleanCode, statusText, statusDot) {
+                if (typeof io === "undefined") {
+                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện Socket.io!";
+                    this.resetJoinBtn();
+                    return;
+                }
+
+                try {
+                    this.socket = io(this.socketUrl, {
+                        transports: ["websocket", "polling"],
+                        timeout: 10000,
+                        reconnection: true
+                    });
+
+                    this.socket.on("connect", () => {
+                        console.log("[CO-OP SOCKET] Client connected, joining room:", cleanCode);
+                        this.socket.emit("join_room", { roomCode: cleanCode }, (res) => {
+                            if (res && res.success) {
+                                console.log("[CO-OP SOCKET] Joined room successfully!");
+                                this.setupSocketConnection();
+                            } else {
+                                if (statusText) statusText.textContent = "Lỗi: " + (res?.message || "Phòng không tồn tại!");
+                                if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
+                                this.resetJoinBtn("THỬ KẾT NỐI LẠI");
+                            }
+                        });
+                    });
+
+                    this.socket.on("mission_started", (data) => {
+                        this.handleData({ t: "start", mapId: data?.mapId || 1 });
+                    });
+
+                    this.socket.on("remote_tick", (packet) => {
+                        this.handleData(packet);
+                    });
+
+                    this.socket.on("teammate_down", () => {
+                        this.handleData({ t: "player_down" });
+                    });
+
+                    this.socket.on("teammate_revived", (data) => {
+                        this.handleData({ t: "revive_success", data });
+                    });
+
+                    this.socket.on("mission_failed", () => {
+                        this.handleData({ t: "game_over" });
+                    });
+
+                    this.socket.on("peer_disconnected", () => {
+                        this.connected = false;
+                        teammate.active = false;
+                        showToast("CO-OP NGẮT KẾT NỐI", "Host đã rời phòng!");
+                        if (statusText) statusText.textContent = "Host đã đóng phòng.";
+                        this.resetJoinBtn("KẾT NỐI LẠI");
+                        this.updateHUD();
+                    });
+
+                    this.socket.on("connect_error", (err) => {
+                        if (statusText) statusText.textContent = `Không thể kết nối máy chủ (${this.socketUrl}): ` + err.message;
+                        if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
+                        this.resetJoinBtn("THỬ LẠI");
+                    });
+                } catch (e) {
+                    if (statusText) statusText.textContent = "Ngoại lệ Socket: " + e.message;
+                    this.resetJoinBtn("THỬ LẠI");
+                }
+            },
+
+            joinRoomP2P(cleanCode, statusText, statusDot) {
+                const targetPeerId = this.getPeerIdForRoom(cleanCode);
 
                 if (typeof Peer === "undefined") {
                     if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet)!";
@@ -5697,7 +5942,7 @@
                 this._joinTimeout = setTimeout(() => {
                     if (!this.connected) {
                         console.warn("[CO-OP] Join timeout to host:", targetPeerId);
-                        if (statusText) statusText.textContent = `Hết thời gian chờ! Không thể kết nối tới Host [${this.roomCode}]. Hãy kiểm tra xem Host đã mở phòng chưa.`;
+                        if (statusText) statusText.textContent = `Hết thời gian chờ! Không thể kết nối tới Host [${cleanCode}]. Hãy kiểm tra xem Host đã mở phòng chưa.`;
                         if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
                         this.resetJoinBtn("THỬ KẾT NỐI LẠI");
                         if (this.conn) {
@@ -5712,7 +5957,7 @@
 
                     this.peer.on("open", (myId) => {
                         console.log("[CO-OP] Client peer opened:", myId, "connecting to Host:", targetPeerId);
-                        if (statusText) statusText.textContent = `Đã tìm thấy máy chủ P2P. Đang bắt tay với Host [${this.roomCode}]...`;
+                        if (statusText) statusText.textContent = `Đã tìm thấy máy chủ P2P. Đang bắt tay với Host [${cleanCode}]...`;
                         
                         // Connecting directly without deprecated { reliable: true }
                         const conn = this.peer.connect(targetPeerId);
@@ -5727,7 +5972,7 @@
                         }
                         if (statusText) {
                             if (err.type === "peer-unavailable") {
-                                statusText.textContent = `Không tìm thấy phòng [${this.roomCode}]! Host có thể chưa mở hoặc sai mã.`;
+                                statusText.textContent = `Không tìm thấy phòng [${cleanCode}]! Host có thể chưa mở hoặc sai mã.`;
                             } else {
                                 statusText.textContent = "Lỗi kết nối P2P: " + (err.message || err.type);
                             }
@@ -5745,6 +5990,32 @@
                     if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
                     this.resetJoinBtn("THỬ LẠI");
                 }
+            },
+
+            setupSocketConnection() {
+                this.connected = true;
+                this.active = true;
+                teammate.active = true;
+                teammate.snapshotBuffer = [];
+
+                showToast("CO-OP KẾT NỐI!", this.isHost ? "Đồng đội đã vào phòng qua Dedicated Server!" : "Đã kết nối với máy chủ Host!");
+
+                if (this.isHost) {
+                    this.updateHostUI("✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG! (Dedicated Server)", true);
+                } else {
+                    const statusText = byId("coopJoinStatusText");
+                    const statusDot = byId("coopJoinStatusDot");
+                    const joinBtn = byId("coopJoinConnectBtn");
+                    if (statusText) statusText.textContent = "✅ ĐÃ KẾT NỐI! Đang chờ Host bắt đầu nhiệm vụ...";
+                    if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0";
+                    if (joinBtn) {
+                        joinBtn.textContent = "ĐANG CHỜ HOST XUẤT TRẬN...";
+                        joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-emerald-400 font-black text-sm uppercase tracking-wider transition cursor-default border border-emerald-500/40";
+                    }
+                }
+
+                this.startPingInterval();
+                this.updateHUD();
             },
 
             setupConnection(conn) {
@@ -5766,6 +6037,7 @@
                     this.connected = true;
                     this.active = true;
                     teammate.active = true;
+                    teammate.snapshotBuffer = [];
 
                     showToast("CO-OP KẾT NỐI!", this.isHost ? "Đồng đội đã vào phòng thành công!" : "Đã kết nối với máy chủ Host!");
 
@@ -5814,19 +6086,47 @@
             },
 
             sendPacket(data) {
-                if (this.conn && this.conn.open) {
-                    try {
-                        this.conn.send(data);
-                    } catch (e) {}
+                if (this.engineMode === "socket") {
+                    if (this.socket && this.socket.connected) {
+                        try {
+                            if (data.t === "start") {
+                                this.socket.emit("start_mission", { mapId: data.mapId });
+                            } else if (data.t === "player_down") {
+                                this.socket.emit("player_down");
+                            } else if (data.t === "revive_success") {
+                                this.socket.emit("revive_success", data);
+                            } else if (data.t === "game_over") {
+                                this.socket.emit("game_over");
+                            } else {
+                                this.socket.emit("sync_tick", data);
+                            }
+                        } catch (e) {}
+                    }
+                } else {
+                    if (this.conn && this.conn.open) {
+                        try {
+                            this.conn.send(data);
+                        } catch (e) {}
+                    }
                 }
             },
 
             startPingInterval() {
                 if (this._pingTimer) clearInterval(this._pingTimer);
                 this._pingTimer = setInterval(() => {
-                    if (this.conn && this.conn.open) {
-                        this.lastPingSent = performance.now();
-                        this.sendPacket({ t: "ping", time: this.lastPingSent });
+                    if (this.engineMode === "socket") {
+                        if (this.socket && this.socket.connected) {
+                            const start = performance.now();
+                            this.socket.emit("ping_check", () => {
+                                this.ping = Math.max(1, Math.round(performance.now() - start));
+                                this.updateHUD();
+                            });
+                        }
+                    } else {
+                        if (this.conn && this.conn.open) {
+                            this.lastPingSent = performance.now();
+                            this.sendPacket({ t: "ping", time: this.lastPingSent });
+                        }
                     }
                 }, 1200);
             },
@@ -5849,7 +6149,7 @@
                     window.currentMapId = data.mapId || 1;
                     window.closeCoopModal();
                     window.closeMainMenuSettings();
-                    showToast("CO-OP XUẤT TRẬN", `Tiến vào Map ${window.currentMapId} cùng đồng đội!`);
+                    showToast("CO-OP XUẤT TRẬN", `Tiến vào Map ${window.currentMapId} cùng đồng đội! (Tick ${this.tickRate}Hz)`);
                     if (typeof simulateMissionLoading === "function") {
                         simulateMissionLoading(window.currentMapId, () => {
                             initCampaign(false, false);
@@ -5861,9 +6161,7 @@
                 }
 
                 if (data.t === "input" && this.isHost) {
-                    teammate.targetX = data.x;
-                    teammate.targetY = data.y;
-                    teammate.angle = data.a;
+                    pushTeammateSnapshot(data);
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
@@ -5875,15 +6173,7 @@
                 if (data.t === "snap" && !this.isHost) {
                     const p = data.p;
                     if (p) {
-                        teammate.targetX = p.x;
-                        teammate.targetY = p.y;
-                        teammate.angle = p.a;
-                        teammate.hp = p.hp;
-                        teammate.maxHp = p.mhp;
-                        teammate.armor = p.ar;
-                        teammate.maxArmor = p.mar;
-                        teammate.currentWeapon = p.w;
-                        teammate.isShooting = !!p.shoot;
+                        pushTeammateSnapshot(p);
                         teammate.credits = p.cred || teammate.credits;
                         teammate.isDown = !!p.down;
                         teammate.reviveProgress = p.rev || 0;
@@ -5947,7 +6237,10 @@
             },
 
             sendTick(now) {
-                if (!this.conn || !this.conn.open) return;
+                const canSend = this.engineMode === "socket" 
+                    ? (this.socket && this.socket.connected)
+                    : (this.conn && this.conn.open);
+                if (!canSend) return;
                 this.seq++;
 
                 if (this.isHost) {
@@ -6030,7 +6323,7 @@
                 }
 
                 if (hud) hud.classList.remove("hidden");
-                if (roleEl) roleEl.textContent = this.isHost ? "HOST (P1)" : "CLIENT (P2)";
+                if (roleEl) roleEl.textContent = (this.isHost ? "HOST (P1)" : "CLIENT (P2)") + ` • ${this.tickRate}Hz LERP`;
                 if (pingEl) pingEl.textContent = `PING: ${this.ping || 15}ms`;
                 if (reviveEl) {
                     if (teammate.isDown) {
@@ -6051,6 +6344,10 @@
                     this._joinTimeout = null;
                 }
                 if (this._pingTimer) clearInterval(this._pingTimer);
+                if (this.socket) {
+                    try { this.socket.disconnect(); } catch (e) {}
+                    this.socket = null;
+                }
                 if (this.conn) {
                     try { this.conn.close(); } catch (e) {}
                     this.conn = null;
@@ -6062,6 +6359,7 @@
                 this.connected = false;
                 this.active = false;
                 teammate.active = false;
+                teammate.snapshotBuffer = [];
                 this.updateHUD();
             }
         };
@@ -6073,9 +6371,56 @@
             if (!teammate.active) return;
             const now = performance.now();
 
-            // Làm mịn vị trí (Linear Interpolation LERP)
-            teammate.x += (teammate.targetX - teammate.x) * 0.35;
-            teammate.y += (teammate.targetY - teammate.y) * 0.35;
+            // ========================================================================
+            // COMMERCIAL-GRADE CLIENT-SIDE SNAPSHOT BUFFER (60Hz / 30Hz LERP + EXTRAPOLATION)
+            // ========================================================================
+            const buffer = teammate.snapshotBuffer;
+            if (buffer && buffer.length >= 2) {
+                const tickInterval = 1000 / (XENO_COOP.tickRate || 60);
+                const renderDelay = Math.max(35, tickInterval * 1.35); // 35ms - 50ms buffer window
+                const renderTime = now - renderDelay;
+
+                let s0 = null;
+                let s1 = null;
+                for (let i = buffer.length - 1; i >= 0; i--) {
+                    if (buffer[i].t <= renderTime) {
+                        s0 = buffer[i];
+                        s1 = buffer[i + 1] || null;
+                        break;
+                    }
+                }
+
+                if (s0 && s1) {
+                    const duration = Math.max(1, s1.t - s0.t);
+                    const alpha = Math.min(1, Math.max(0, (renderTime - s0.t) / duration));
+
+                    teammate.x = s0.x + (s1.x - s0.x) * alpha;
+                    teammate.y = s0.y + (s1.y - s0.y) * alpha;
+                    teammate.angle = lerpAngle(s0.a, s1.a, alpha);
+
+                    teammate.hp = s1.hp;
+                    teammate.armor = s1.ar;
+                    teammate.currentWeapon = s1.w;
+                    teammate.isShooting = s1.shoot;
+                    teammate.isDown = s1.down;
+                    teammate.reviveProgress = s1.rev;
+                } else if (s0 && !s1) {
+                    // Dead Reckoning extrapolation (dự đoán vị trí khi mạng bị trễ)
+                    const dt = Math.min(0.2, (renderTime - s0.t) / 1000);
+                    teammate.x = s0.x + teammate.vx * dt;
+                    teammate.y = s0.y + teammate.vy * dt;
+                    teammate.angle = s0.a;
+                } else {
+                    const newest = buffer[buffer.length - 1];
+                    teammate.x += (newest.x - teammate.x) * 0.4;
+                    teammate.y += (newest.y - teammate.y) * 0.4;
+                    teammate.angle = lerpAngle(teammate.angle, newest.a, 0.4);
+                }
+            } else {
+                teammate.x += (teammate.targetX - teammate.x) * 0.35;
+                teammate.y += (teammate.targetY - teammate.y) * 0.35;
+                teammate.angle = lerpAngle(teammate.angle, teammate.targetAngle || teammate.angle, 0.35);
+            }
 
             ctx.save();
             ctx.translate(teammate.x, teammate.y);
@@ -6267,6 +6612,57 @@
         window.regenerateCoopRoomCode = function() {
             XENO_COOP.initHost(true);
             showToast("ĐỔI MÃ PHÒNG", `Mã phòng mới: ${XENO_COOP.roomCode}`);
+        };
+
+        window.setCoopEngine = function(mode) {
+            XENO_COOP.engineMode = mode;
+            const p2pBtn = byId("coopEngineP2PBtn");
+            const socketBtn = byId("coopEngineSocketBtn");
+            const serverBox = byId("coopSocketServerBox");
+            const serverInp = byId("coopSocketUrlInput");
+
+            if (mode === "socket") {
+                if (socketBtn) socketBtn.className = "px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
+                if (p2pBtn) p2pBtn.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (serverBox) serverBox.classList.remove("hidden");
+                if (serverInp) serverInp.value = XENO_COOP.socketUrl;
+                showToast("CHẾ ĐỘ SOCKET SERVER", "Chuyển sang hạ tầng Dedicated Server (Xuyên tường lửa 100%)");
+            } else {
+                if (p2pBtn) p2pBtn.className = "px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
+                if (socketBtn) socketBtn.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (serverBox) serverBox.classList.add("hidden");
+                showToast("CHẾ ĐỘ P2P DIRECT", "Chuyển sang hạ tầng P2P WebRTC Direct");
+            }
+
+            if (XENO_COOP.isHost) {
+                XENO_COOP.initHost(true);
+            }
+        };
+
+        window.setCoopTickRate = function(rate) {
+            XENO_COOP.tickRate = rate === 60 ? 60 : 30;
+            const btn30 = byId("coopTick30Btn");
+            const btn60 = byId("coopTick60Btn");
+            if (rate === 60) {
+                if (btn60) btn60.className = "px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
+                if (btn30) btn30.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+            } else {
+                if (btn30) btn30.className = "px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
+                if (btn60) btn60.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+            }
+            showToast("TICK RATE", `Đã thiết lập tần số đồng bộ mạng: ${XENO_COOP.tickRate}Hz (Nội suy LERP)`);
+        };
+
+        window.saveCoopSocketUrl = function() {
+            const inp = byId("coopSocketUrlInput");
+            if (inp && inp.value.trim()) {
+                XENO_COOP.socketUrl = inp.value.trim().replace(/\/$/, "");
+                localStorage.setItem("xeno_socket_url", XENO_COOP.socketUrl);
+                showToast("LƯU SERVER THÀNH CÔNG", `Đã lưu URL: ${XENO_COOP.socketUrl}`);
+                if (XENO_COOP.isHost) {
+                    XENO_COOP.initHost(true);
+                }
+            }
         };
 
         window.copyCoopRoomCode = function() {
