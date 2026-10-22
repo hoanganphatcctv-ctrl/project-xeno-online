@@ -3398,9 +3398,14 @@
                         <span id="coopHostRoomCode" class="text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all">
                             XN-....
                         </span>
-                        <button onclick="window.copyCoopRoomCode()" class="px-3 py-1.5 rounded-none bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-xs font-extrabold transition">
-                            📋 SAO CHÉP MÃ
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="window.regenerateCoopRoomCode()" title="Tạo mã phòng mới" class="px-2.5 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold transition">
+                                🔄 ĐỔI MÃ
+                            </button>
+                            <button onclick="window.copyCoopRoomCode()" class="px-3 py-1.5 rounded-none bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-xs font-extrabold transition">
+                                📋 SAO CHÉP MÃ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -5521,118 +5526,243 @@
                 return "px-xeno-" + roomCode.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
             },
 
-            initHost() {
+            getIceServers() {
+                return [
+                    { urls: "stun:stun.l.google.com:19302" },
+                    { urls: "stun:stun1.l.google.com:19302" },
+                    { urls: "stun:stun2.l.google.com:19302" },
+                    { urls: "stun:stun.cloudflare.com:3478" },
+                    { urls: "stun:stun.relay.metered.ca:80" },
+                    {
+                        urls: [
+                            "turn:openrelay.metered.ca:80",
+                            "turn:openrelay.metered.ca:443",
+                            "turn:openrelay.metered.ca:443?transport=tcp",
+                            "turn:standard.relay.metered.ca:80",
+                            "turn:standard.relay.metered.ca:443",
+                            "turn:standard.relay.metered.ca:443?transport=tcp"
+                        ],
+                        username: "openrelayproject",
+                        credential: "openrelayproject"
+                    }
+                ];
+            },
+
+            getPeerOptions() {
+                return {
+                    debug: 1,
+                    config: {
+                        iceServers: this.getIceServers(),
+                        iceCandidatePoolSize: 10
+                    }
+                };
+            },
+
+            updateHostUI(statusMsg, isReady = false, isError = false) {
+                const codeEl = byId("coopHostRoomCode");
+                const linkEl = byId("coopHostDirectLink");
+                const statusText = byId("coopHostStatusText");
+                const statusSub = byId("coopHostStatusSub");
+                const spinner = byId("coopHostSpinner");
+                const startBtn = byId("coopHostStartBtn");
+
+                if (codeEl && this.roomCode) codeEl.textContent = this.roomCode;
+                if (linkEl && this.roomCode) {
+                    linkEl.textContent = window.location.origin + window.location.pathname + "?room=" + this.roomCode;
+                }
+                if (statusText && statusMsg) statusText.textContent = statusMsg;
+                if (statusSub) {
+                    if (isReady) {
+                        statusSub.textContent = "Đồng đội đã sẵn sàng! Nhấn nút bên dưới để cùng xuất trận.";
+                    } else if (isError) {
+                        statusSub.textContent = "Vui lòng bấm 'ĐỔI MÃ' hoặc kiểm tra đường truyền Internet.";
+                    } else {
+                        statusSub.textContent = `Mã: ${this.roomCode || "..."} • Gửi link hoặc mã PIN cho bạn bè.`;
+                    }
+                }
+                if (spinner) {
+                    if (isReady) {
+                        spinner.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.8)]";
+                    } else if (isError) {
+                        spinner.className = "w-3.5 h-3.5 rounded-full bg-rose-500 shrink-0";
+                    } else {
+                        spinner.className = "w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0";
+                    }
+                }
+                if (startBtn) {
+                    if (isReady) {
+                        startBtn.disabled = false;
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-[0_0_25px_rgba(16,185,129,0.5)] cursor-pointer";
+                        startBtn.textContent = "⚔️ XUẤT TRẬN CO-OP NGAY!";
+                    } else {
+                        startBtn.disabled = true;
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700";
+                        startBtn.textContent = "BẮT ĐẦU CHIẾN DỊCH CO-OP (CHỜ ĐỒNG ĐỘI)";
+                    }
+                }
+            },
+
+            initHost(forceNew = false) {
+                if (!forceNew && this.isHost && this.peer && !this.peer.destroyed && this.roomCode) {
+                    this.updateHostUI(this.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", this.connected);
+                    return;
+                }
+
                 this.cleanup();
                 this.isHost = true;
                 this.roomCode = this.generateRoomCode();
                 const peerId = this.getPeerIdForRoom(this.roomCode);
 
-                const codeEl = byId("coopHostRoomCode");
-                const linkEl = byId("coopHostDirectLink");
-                const statusText = byId("coopHostStatusText");
-                const statusSub = byId("coopHostStatusSub");
-                const startBtn = byId("coopHostStartBtn");
-
-                if (codeEl) codeEl.textContent = this.roomCode;
-                const directUrl = window.location.origin + window.location.pathname + "?room=" + this.roomCode;
-                if (linkEl) linkEl.textContent = directUrl;
-                if (statusText) statusText.textContent = "Đang kết nối tới trạm tín hiệu P2P...";
-                if (startBtn) {
-                    startBtn.disabled = true;
-                    startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700";
-                    startBtn.textContent = "BẮT ĐẦU CHIẾN DỊCH CO-OP (CHỜ ĐỒNG ĐỘI)";
-                }
+                this.updateHostUI("Đang kết nối tới trạm tín hiệu P2P...", false);
 
                 if (typeof Peer === "undefined") {
-                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện PeerJS (Vui lòng kiểm tra Internet)!";
+                    this.updateHostUI("Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet)!", false, true);
                     return;
                 }
 
                 try {
-                    this.peer = new Peer(peerId, {
-                        debug: 1,
-                        config: {
-                            iceServers: [
-                                { urls: "stun:stun.l.google.com:19302" },
-                                { urls: "stun:global.stun.twilio.com:3478" }
-                            ]
-                        }
-                    });
+                    this.peer = new Peer(peerId, this.getPeerOptions());
 
-                    this.peer.on("open", () => {
-                        if (statusText) statusText.textContent = "Phòng đã sẵn sàng! Chờ đồng đội vào...";
-                        if (statusSub) statusSub.textContent = `Mã: ${this.roomCode} • Gửi link hoặc mã PIN cho bạn bè.`;
+                    this.peer.on("open", (id) => {
+                        console.log("[CO-OP] Host peer registered:", id);
+                        this.updateHostUI("Phòng đã sẵn sàng! Chờ đồng đội vào...", false);
                     });
 
                     this.peer.on("connection", (conn) => {
+                        console.log("[CO-OP] Host accepted peer connection:", conn.peer);
                         this.setupConnection(conn);
                     });
 
                     this.peer.on("error", (err) => {
                         console.warn("[CO-OP] Peer Host Error:", err);
                         if (err.type === "unavailable-id") {
-                            this.initHost();
-                        } else if (statusText) {
-                            statusText.textContent = "Lỗi kết nối mạng: " + (err.message || err.type);
+                            this.initHost(true);
+                        } else {
+                            this.updateHostUI("Lỗi kết nối P2P: " + (err.message || err.type), false, true);
                         }
                     });
                 } catch (e) {
                     console.error("[CO-OP] Init Host Exception:", e);
+                    this.updateHostUI("Ngoại lệ khởi tạo Host: " + e.message, false, true);
+                }
+            },
+
+            resetJoinBtn(label = "KẾT NỐI VÀO PHÒNG (JOIN)") {
+                const joinBtn = byId("coopJoinConnectBtn");
+                if (joinBtn) {
+                    joinBtn.disabled = false;
+                    joinBtn.textContent = label;
+                    joinBtn.className = "w-full py-3 px-4 rounded-none bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-lg cursor-pointer";
                 }
             },
 
             joinRoom(targetCode) {
                 if (!targetCode) return;
+                const cleanCode = targetCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+                if (cleanCode.length < 4) {
+                    showToast("MÃ KHÔNG HỢP LỆ", "Mã phòng phải có ít nhất 4 ký tự!");
+                    return;
+                }
+
+                if (this._joinTimeout) {
+                    clearTimeout(this._joinTimeout);
+                    this._joinTimeout = null;
+                }
+
                 this.cleanup();
                 this.isHost = false;
-                this.roomCode = targetCode.trim().toUpperCase();
+                this.roomCode = cleanCode;
                 const targetPeerId = this.getPeerIdForRoom(this.roomCode);
 
                 const statusText = byId("coopJoinStatusText");
                 const statusDot = byId("coopJoinStatusDot");
                 const joinBtn = byId("coopJoinConnectBtn");
 
-                if (statusText) statusText.textContent = `Đang kết nối tới Host [${this.roomCode}]...`;
+                if (statusText) statusText.textContent = `Đang kết nối tới Host [${this.roomCode}]... (Tìm đường NAT/TURN)`;
                 if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0";
-                if (joinBtn) joinBtn.disabled = true;
+                if (joinBtn) {
+                    joinBtn.disabled = true;
+                    joinBtn.textContent = "ĐANG KẾT NỐI HOST...";
+                    joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-amber-400 font-black text-sm uppercase tracking-wider transition cursor-wait border border-amber-500/40";
+                }
 
                 if (typeof Peer === "undefined") {
                     if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet)!";
-                    if (joinBtn) joinBtn.disabled = false;
+                    if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
+                    this.resetJoinBtn();
                     return;
                 }
 
-                try {
-                    this.peer = new Peer({
-                        debug: 1,
-                        config: {
-                            iceServers: [
-                                { urls: "stun:stun.l.google.com:19302" },
-                                { urls: "stun:global.stun.twilio.com:3478" }
-                            ]
+                // 20-second connection timeout guard
+                this._joinTimeout = setTimeout(() => {
+                    if (!this.connected) {
+                        console.warn("[CO-OP] Join timeout to host:", targetPeerId);
+                        if (statusText) statusText.textContent = `Hết thời gian chờ! Không thể kết nối tới Host [${this.roomCode}]. Hãy kiểm tra xem Host đã mở phòng chưa.`;
+                        if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
+                        this.resetJoinBtn("THỬ KẾT NỐI LẠI");
+                        if (this.conn) {
+                            try { this.conn.close(); } catch (e) {}
+                            this.conn = null;
                         }
-                    });
+                    }
+                }, 20000);
 
-                    this.peer.on("open", () => {
-                        const conn = this.peer.connect(targetPeerId, { reliable: true });
+                try {
+                    this.peer = new Peer(this.getPeerOptions());
+
+                    this.peer.on("open", (myId) => {
+                        console.log("[CO-OP] Client peer opened:", myId, "connecting to Host:", targetPeerId);
+                        if (statusText) statusText.textContent = `Đã tìm thấy máy chủ P2P. Đang bắt tay với Host [${this.roomCode}]...`;
+                        
+                        // Connecting directly without deprecated { reliable: true }
+                        const conn = this.peer.connect(targetPeerId);
                         this.setupConnection(conn);
                     });
 
                     this.peer.on("error", (err) => {
                         console.warn("[CO-OP] Join Peer Error:", err);
-                        if (statusText) statusText.textContent = "Không tìm thấy phòng " + this.roomCode + " hoặc Host chưa mở!";
+                        if (this._joinTimeout) {
+                            clearTimeout(this._joinTimeout);
+                            this._joinTimeout = null;
+                        }
+                        if (statusText) {
+                            if (err.type === "peer-unavailable") {
+                                statusText.textContent = `Không tìm thấy phòng [${this.roomCode}]! Host có thể chưa mở hoặc sai mã.`;
+                            } else {
+                                statusText.textContent = "Lỗi kết nối P2P: " + (err.message || err.type);
+                            }
+                        }
                         if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
-                        if (joinBtn) joinBtn.disabled = false;
+                        this.resetJoinBtn("THỬ KẾT NỐI LẠI");
                     });
                 } catch (e) {
                     console.error("[CO-OP] Join Exception:", e);
+                    if (this._joinTimeout) {
+                        clearTimeout(this._joinTimeout);
+                        this._joinTimeout = null;
+                    }
+                    if (statusText) statusText.textContent = "Ngoại lệ khi tham gia: " + e.message;
+                    if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
+                    this.resetJoinBtn("THỬ LẠI");
                 }
             },
 
             setupConnection(conn) {
                 this.conn = conn;
 
+                if (conn.peerConnection) {
+                    conn.peerConnection.oniceconnectionstatechange = () => {
+                        const state = conn.peerConnection ? conn.peerConnection.iceConnectionState : "";
+                        console.log("[CO-OP] ICE Connection State:", state);
+                    };
+                }
+
                 conn.on("open", () => {
+                    console.log("[CO-OP] DataConnection is OPEN! Co-Op handshake complete!");
+                    if (this._joinTimeout) {
+                        clearTimeout(this._joinTimeout);
+                        this._joinTimeout = null;
+                    }
                     this.connected = true;
                     this.active = true;
                     teammate.active = true;
@@ -5640,18 +5770,7 @@
                     showToast("CO-OP KẾT NỐI!", this.isHost ? "Đồng đội đã vào phòng thành công!" : "Đã kết nối với máy chủ Host!");
 
                     if (this.isHost) {
-                        const statusText = byId("coopHostStatusText");
-                        const statusSub = byId("coopHostStatusSub");
-                        const spinner = byId("coopHostSpinner");
-                        const startBtn = byId("coopHostStartBtn");
-                        if (statusText) statusText.textContent = "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!";
-                        if (statusSub) statusSub.textContent = "Kết nối P2P 30Hz thành công. Nhấn nút bên dưới để xuất trận!";
-                        if (spinner) spinner.className = "w-3 h-3 rounded-full bg-emerald-400 shrink-0";
-                        if (startBtn) {
-                            startBtn.disabled = false;
-                            startBtn.className = "w-full py-3 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-[0_0_25px_rgba(16,185,129,0.5)] cursor-pointer";
-                            startBtn.textContent = "⚔️ XUẤT TRẬN CO-OP NGAY!";
-                        }
+                        this.updateHostUI("✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!", true);
                     } else {
                         const statusText = byId("coopJoinStatusText");
                         const statusDot = byId("coopJoinStatusDot");
@@ -5673,9 +5792,19 @@
                 });
 
                 conn.on("close", () => {
+                    console.warn("[CO-OP] Connection closed by peer");
                     this.connected = false;
                     teammate.active = false;
                     showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng!");
+                    if (this.isHost) {
+                        this.updateHostUI("Đồng đội đã rời phòng. Đang chờ kết nối lại...", false);
+                    } else {
+                        const statusText = byId("coopJoinStatusText");
+                        const statusDot = byId("coopJoinStatusDot");
+                        if (statusText) statusText.textContent = "Đã ngắt kết nối với Host.";
+                        if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0";
+                        this.resetJoinBtn("KẾT NỐI LẠI");
+                    }
                     this.updateHUD();
                 });
 
@@ -5917,6 +6046,10 @@
             },
 
             cleanup() {
+                if (this._joinTimeout) {
+                    clearTimeout(this._joinTimeout);
+                    this._joinTimeout = null;
+                }
                 if (this._pingTimer) clearInterval(this._pingTimer);
                 if (this.conn) {
                     try { this.conn.close(); } catch (e) {}
@@ -6099,7 +6232,6 @@
                 if (inp) inp.value = roomParam.trim().toUpperCase();
             } else {
                 window.switchCoopTab("host");
-                XENO_COOP.initHost();
             }
         };
 
@@ -6119,8 +6251,10 @@
                 if (joinBtn) joinBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200";
                 if (hostPanel) hostPanel.classList.remove("hidden");
                 if (joinPanel) joinPanel.classList.add("hidden");
-                if (!XENO_COOP.isHost || !XENO_COOP.peer) {
-                    XENO_COOP.initHost();
+                if (!XENO_COOP.isHost || !XENO_COOP.peer || XENO_COOP.peer.destroyed) {
+                    XENO_COOP.initHost(false);
+                } else {
+                    XENO_COOP.updateHostUI(XENO_COOP.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", XENO_COOP.connected);
                 }
             } else {
                 if (joinBtn) joinBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
@@ -6128,6 +6262,11 @@
                 if (joinPanel) joinPanel.classList.remove("hidden");
                 if (hostPanel) hostPanel.classList.add("hidden");
             }
+        };
+
+        window.regenerateCoopRoomCode = function() {
+            XENO_COOP.initHost(true);
+            showToast("ĐỔI MÃ PHÒNG", `Mã phòng mới: ${XENO_COOP.roomCode}`);
         };
 
         window.copyCoopRoomCode = function() {
