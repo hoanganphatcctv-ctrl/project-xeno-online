@@ -41,5 +41,17 @@ for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
   if (fs.existsSync(p)) fs.copyFileSync(p, path.join(DIST_DIR, file));
 }
 
+// 4. Create identifier banner
+fs.writeFileSync(path.join(DIST_DIR, 'THU_MUC_DIST_BAN_ONLINE_COOP.txt'), 
+`================================================================================
+👉 ĐÂY LÀ THƯ MỤC DIST CỦA BẢN ONLINE CO-OP (VERCEL LIVE)
+================================================================================
+Đường dẫn: alien-shooter-fullstack/dist/
+Domain chính thức: https://project-xeno-online.vercel.app
+Đặc điểm nhận diện:
+- File index.html đầy đủ (~1.37 MB) chứa 100% đồ họa chơi đơn + P2P PeerJS Co-Op.
+- KHÔNG CÓ file game.min.js lẻ.
+================================================================================\n`);
+
 console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
 
