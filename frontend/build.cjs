@@ -53,5 +53,13 @@ Domain chính thức: https://project-xeno-online.vercel.app
 - KHÔNG CÓ file game.min.js lẻ.
 ================================================================================\n`);
 
+// 5. Đồng bộ hóa sang cả alien-shooter-fullstack/dist để 2 thư mục luôn giống hệt nhau 100%
+const PARENT_DIST = path.join(ROOT_DIR, '..', 'dist');
+if (fs.existsSync(PARENT_DIST)) {
+  fs.rmSync(PARENT_DIST, { recursive: true, force: true });
+}
+copyDirSync(DIST_DIR, PARENT_DIST);
+
 console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
+console.log('🔄 Đã đồng bộ song song cả 2 thư mục: dist/ và frontend/dist/ (Không bao giờ lỗi thời)!');
 

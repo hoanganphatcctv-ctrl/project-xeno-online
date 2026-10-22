@@ -67,5 +67,13 @@ Domain chính thức: https://project-xeno-online.vercel.app
 - KHÔNG CÓ file game.min.js lẻ.
 ================================================================================\n`);
 
+// 5. Đồng bộ hóa sang cả frontend/dist để 2 thư mục luôn giống hệt nhau 100%
+const FRONTEND_DIST = path.join(ROOT_DIR, 'frontend', 'dist');
+if (fs.existsSync(FRONTEND_DIST)) {
+  fs.rmSync(FRONTEND_DIST, { recursive: true, force: true });
+}
+copyDirSync(DIST_DIR, FRONTEND_DIST);
+
 console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
+console.log('🔄 Đã đồng bộ song song cả 2 thư mục: dist/ và frontend/dist/ (Không bao giờ lỗi thời)!');
 
