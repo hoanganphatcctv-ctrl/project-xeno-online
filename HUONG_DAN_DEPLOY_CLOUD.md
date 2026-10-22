@@ -16,7 +16,9 @@ flowchart LR
     P2 <-->|"Gói tin 30Hz & WebSockets"| Render
 ```
 
-- **Frontend (Vercel)**:
+- **Frontend (Vercel Live)**:
+  - Tên miền chính thức: **https://project-xeno-online.vercel.app**
+  - Kho GitHub: **https://github.com/hoanganphatcctv-ctrl/project-xeno-online**
   - Phục vụ ứng dụng React 18, HTML5 Canvas và kho Asset âm thanh, đồ họa qua mạng CDN toàn cầu với độ trễ siêu thấp.
   - Tự động Build từ Git repository mỗi khi bạn push code mới.
 - **Backend (Render.com)**:

@@ -1,7 +1,9 @@
 # 🚀 KẾ HOẠCH NÂNG CẤP TOÀN DIỆN SANG REACT 18 + NODE.JS + SOCKET.IO (30Hz)
 > **Dự án**: Project Xeno: Reloaded — Fullstack Edition  
 > **Thư mục**: `alien-shooter-fullstack/`  
-> **Trạng thái**: 🎉 ĐÃ HOÀN THÀNH 100% CẢ 5 GIAI ĐOẠN — SẴN SÀNG TRIỂN KHAI VÀ VẬN HÀNH
+> **Kho GitHub**: https://github.com/hoanganphatcctv-ctrl/project-xeno-online  
+> **URL Vercel Live**: https://project-xeno-online.vercel.app  
+> **Trạng thái**: 🎉 ĐÃ HOÀN THÀNH 100% CẢ 6 GIAI ĐOẠN — ĐÃ DEPLOY PRODUCTION THÀNH CÔNG LÊN CLOUD
 
 ---
 
@@ -170,6 +172,17 @@ flowchart TD
   - `render.yaml` & `backend/render.yaml`: Cấu hình Web Service miễn phí cho Render.com.
   - `HUONG_DAN_DEPLOY_CLOUD.md`: Hướng dẫn chi tiết từng bước deploy Frontend lên Vercel và Backend lên Render kèm giải pháp chống ngủ đông bằng UptimeRobot.
 
+### ✅ GIAI ĐOẠN 6: HOÀN THIỆN TÍNH NĂNG CHIẾN THUẬT & PRODUCTION CLOUD LIVE *(100%)*
+- [x] **Lướt Phản Lực Jetpack Dash [SPACE]**: Lướt theo vector WASD/chuột, bất tử trong 11 frame, hồi chiêu 2.75s, vệt bóng ma, ngọn lửa phụt dài và đồng bộ Teammate.
+- [x] **Tháp Pháo Tự Động [KeyT] (Auto-Turrets)**: Giới hạn tối đa 4 pháo, vòng Hologram triển khai 3 giây, AI tự ngắm bắn mục tiêu 520px, xả đạn kép 5 phát/giây và đồng bộ Co-op.
+- [x] **Radar Minimap Ma Trận 5x5 Sci-Fi**: Component `<RadarMinimap />` thời gian thực hiển thị phòng, cửa trượt, máy phát điện, bể hạt nhân, quái đỏ, trùm kim cương, nón tầm nhìn.
+- [x] **Bảng Chọn 10 Bản Đồ Chiến Trường (Lobby Map Drawer)**: Xem trước ảnh chụp thực tế Map 1-10, thông tin trùm và số đợt quái, hỗ trợ chọn map cho cả Solo và Co-op Host.
+- [x] **Đo Ping Thực Tế & Cảnh Báo Gục Ngã (TopHUD)**: Cơ chế heartbeat ping tự động đo độ trễ mạng và nhấp nháy báo động khi đồng đội bị gục.
+- [x] **Deploy Production Thành Công Lên Vercel**:
+  - Tên miền chính thức: **https://project-xeno-online.vercel.app**
+  - Trạng thái Vercel: **Ready** (Production)
+  - Kho GitHub: **https://github.com/hoanganphatcctv-ctrl/project-xeno-online**
+
 ---
 
 ## 🎮 4. HƯỚNG DẪN KHỞI CHẠY NHANH
@@ -189,14 +202,6 @@ Truy cập: `http://localhost:5173`
 
 ### Cách 2: Triển khai lên Internet (Xem chi tiết tại `HUONG_DAN_DEPLOY_CLOUD.md`)
 - Backend Node.js: Deploy lên **Render.com** (miễn phí, hỗ trợ WebSockets).
-- Frontend React: Deploy lên **Vercel** (miễn phí, CDN toàn cầu).
+- Frontend React: Deploy lên **Vercel** (miễn phí, CDN toàn cầu: `https://project-xeno-online.vercel.app`).
 
-# 3. Khởi chạy React Frontend (Port 5173)
-start_frontend.bat
-```
-Truy cập: `http://localhost:5173`
-
-### Cách 2: Triển khai lên Internet (Xem chi tiết tại `HUONG_DAN_DEPLOY_CLOUD.md`)
-- Backend Node.js: Deploy lên **Render.com** (miễn phí, hỗ trợ WebSockets).
-- Frontend React: Deploy lên **Vercel** (miễn phí, CDN toàn cầu).
 
