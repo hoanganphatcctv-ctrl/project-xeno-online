@@ -56,3 +56,4 @@ for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
 }
 
 console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
+
