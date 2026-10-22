@@ -124,6 +124,23 @@
 - **Bảng Chọn 10 Bản Đồ Chiến Trường (Lobby Map Drawer)**: Xem trước hình ảnh thực tế từng map (`map_01.png` - `map_10.png`), tên phân khu, thông số trùm và số lượng đợt quái; cho phép chọn màn trực tiếp trước khi xuất trận Solo hoặc Co-op.
 - **Đo Ping & Cảnh Báo Đồng Đội (TopHUD)**: Tự động đo thời gian khứ hồi (Round-trip time) với máy chủ và hiển thị cảnh báo đỏ khi đồng đội ngã.
 
+### 🎨 Hạng mục 6: Khôi phục Sảnh Chờ Chuẩn Delta Force & Nâng Cấp Đồ Họa HD In-Game (100% DONE)
+- **Sảnh Chờ Chỉ Huy Mecha (Lobby.jsx + index.css)**:
+  + Nền Hero Wallpaper không gian (`Project Xeno_ Reloaded Spaceport-3.png` / `spaceport.png` / `lobby_bg.png`).
+  + Màn hình Hologram 3D Perspective (Chỉ số mối đe dọa Threat Index, Quét sinh học Xenomorph Bio-Scan, Telemetry quỹ đạo).
+  + Khung Avatar Mecha vát góc 45° (`.mecha-avatar-frame`), huy hiệu cấp bậc LV.8, tên chỉ huy và ngân quỹ $120.
+  + Thanh điều hướng chuẩn Sci-Fi trên cùng (BẢN ĐỒ, KHO SÚNG, CẨM NANG, CÀI ĐẶT).
+  + Banner Season Pass bên phải kèm 10 chấm tròn chuyển map tức thì (`lobbyDot1` -> `lobbyDot10`).
+  + Các công tắc tùy biến chiến thuật: Trạng thái máy phát điện, Màu máu (Đỏ/Xanh lá), Âm thanh (Bật/Tắt).
+  + 10 Tab bản đồ nằm ngang phía dưới (`MAP 1: ALPHA` -> `MAP 10: GENESIS`) với thanh đèn Neon kích hoạt.
+  + Nút tác chiến Online Co-Op (Team 2) 30Hz và nút khổng lồ Neon Xanh `VÀO TRẬN` (`.tactical-start-btn`).
+  + Tích hợp đầy đủ các Modal xem trước: Kho súng (7 loại súng HD), Cẩm nang vật thể và Cài đặt hệ thống.
+- **Nâng Cấp Đồ Họa In-Game (world.js + engine.js)**:
+  + **Sàn kim loại đặc thù từng Map (`drawMapSpecificFloorPattern`)**: Map 1 có sàn thép đinh tán rãnh kim cương + vạch cảnh báo an toàn vàng-đen; Map 2 có boong titan lục giác vi mạch cyan; Map 3 có tinh thể tuyết và vết nứt địa nhiệt; Map 4 có đá hắc diện thạch nứt dung nham nóng đỏ; Map 5 có màng sinh khối tổ quỷ.
+  + **Vật thể tương tác HD**: Kén ngủ đông (`ken_ngudong.png`, `ken_ngudong2.png`), Bể hạt nhân xanh lá bubbling, Siêu máy tính với đèn LED nhấp nháy, Bàn console radar sweep.
+  + **Sửa tỷ lệ & Căn chỉnh tâm Tháp Pháo (`phao_tu_dong.png`)**: Sử dụng chuẩn `baseDiameter = 750`, tâm xoay `pivotX = 457, pivotY = 458` để tháp pháo hiển thị kích thước chuẩn xác, không bị méo hay lệch tâm.
+  + **Hiệu ứng Chiến đấu (Combat VFX)**: Ngọn lửa sàn bập bùng nhiều lớp (`firePatches`), sóng xung kích nổ (`shockwaveRings`), và lớp phủ Vignette Sci-Fi điện ảnh.
+
 ---
 
 ## 📋 6. CHECKLIST KIỂM TRA NHANH KHI BÀN GIAO
