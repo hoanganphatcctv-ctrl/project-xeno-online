@@ -3798,7 +3798,6 @@
         const _opacityCache = new Map();
         const _radialGradCache = new Map();
         const _linearGradCache = new Map();
-        const MAX_GRAD_CACHE_SIZE = 250;
 
         function byId(id) {
             let el = _domCache.get(id);
@@ -3847,9 +3846,6 @@
         function getCachedRadialGradient(c, key, x0, y0, r0, x1, y1, r1, stops) {
             let g = _radialGradCache.get(key);
             if (!g) {
-                if (_radialGradCache.size >= MAX_GRAD_CACHE_SIZE) {
-                    _radialGradCache.clear();
-                }
                 g = safeRadialGradient(c, x0, y0, r0, x1, y1, r1);
                 for (let i = 0; i < stops.length; i++) {
                     g.addColorStop(stops[i][0], stops[i][1]);
@@ -3861,9 +3857,6 @@
         function getCachedLinearGradient(c, key, x0, y0, x1, y1, stops) {
             let g = _linearGradCache.get(key);
             if (!g) {
-                if (_linearGradCache.size >= MAX_GRAD_CACHE_SIZE) {
-                    _linearGradCache.clear();
-                }
                 g = c.createLinearGradient(x0, y0, x1, y1);
                 for (let i = 0; i < stops.length; i++) {
                     g.addColorStop(stops[i][0], stops[i][1]);
@@ -5341,21 +5334,12 @@
             const img = new Image();
             let triedAlt = false;
             img.onload = () => {
-                const nw = img.naturalWidth || img.width || 128;
-                const nh = img.naturalHeight || img.height || 128;
                 assetEntry.loaded = true;
                 assetEntry.img = img;
                 if (typeof createImageBitmap === "function") {
                     createImageBitmap(img).then((bmp) => {
                         assetEntry.gpuBitmap = bmp;
                         if (typeof onLoaded === "function") onLoaded(assetEntry);
-                        // Giải phóng bộ đệm HTMLImageElement gốc trên RAM sau khi đã chuyển sang GPU ImageBitmap
-                        assetEntry.img = { naturalWidth: nw, naturalHeight: nh, width: nw, height: nh };
-                        try {
-                            img.onload = null;
-                            img.onerror = null;
-                            img.src = "";
-                        } catch (e) {}
                     }).catch(() => {
                         if (typeof onLoaded === "function") onLoaded(assetEntry);
                     });
@@ -7230,7 +7214,7 @@
 
                             const pw = 22;
                             const ph = pw * (customWp.img.naturalHeight / customWp.img.naturalWidth);
-                            ctx.drawImage(customWp.gpuBitmap || customWp.img, 8, ay - ph * 0.45, pw, ph);
+                            ctx.drawImage(customWp.img, 8, ay - ph * 0.45, pw, ph);
                         }
                     } else {
                         ctx.strokeStyle = "#334155";
@@ -7245,12 +7229,12 @@
                         if (customWp.crop) {
                             const c = customWp.crop;
                             const targetH = targetLen * (c.sh / c.sw);
-                            ctx.drawImage(customWp.gpuBitmap || customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
+                            ctx.drawImage(customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
                         } else {
                             const imgW = customWp.img.naturalWidth;
                             const imgH = customWp.img.naturalHeight;
                             const targetH = targetLen * (imgH / imgW);
-                            ctx.drawImage(customWp.gpuBitmap || customWp.img, 6, -targetH * 0.5, targetLen, targetH);
+                            ctx.drawImage(customWp.img, 6, -targetH * 0.5, targetLen, targetH);
                         }
                     }
                 } else {
@@ -7657,15 +7641,13 @@
         const minimapCanvas = byId("minimapCanvas");
         const minimapCtx = minimapCanvas.getContext("2d", { alpha: false }) || minimapCanvas.getContext("2d");
 
-        const SURFACE_SCALE = 0.5;
         const surfaceCanvas = document.createElement("canvas");
-        surfaceCanvas.width = Math.round(WORLD_W * SURFACE_SCALE);
-        surfaceCanvas.height = Math.round(WORLD_H * SURFACE_SCALE);
+        surfaceCanvas.width = WORLD_W;
+        surfaceCanvas.height = WORLD_H;
         const surfaceCtx = surfaceCanvas.getContext("2d", {
             alpha: false,
             willReadFrequently: false
         }) || surfaceCanvas.getContext("2d");
-        surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
 
         const LIGHT_SCALE = 0.5;
         const lightCanvas = document.createElement("canvas");
@@ -8250,16 +8232,13 @@
 
             playNoise(duration, filterFreq, vol) {
                 if (this.muted || !this.ctx) return;
-                if (!this._sharedNoiseBuffer || this._sharedNoiseSampleRate !== this.ctx.sampleRate) {
-                    this._sharedNoiseSampleRate = this.ctx.sampleRate;
-                    const maxSamples = Math.max(1, Math.floor(this.ctx.sampleRate * 1.0));
-                    this._sharedNoiseBuffer = this.ctx.createBuffer(1, maxSamples, this.ctx.sampleRate);
-                    const data = this._sharedNoiseBuffer.getChannelData(0);
-                    for (let i = 0; i < maxSamples; i++) data[i] = Math.random() * 2 - 1;
-                }
+                const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
                 const noise = this.ctx.createBufferSource();
-                noise.buffer = this._sharedNoiseBuffer;
+                noise.buffer = buffer;
                 const filter = this.ctx.createBiquadFilter();
                 filter.type = "lowpass";
                 filter.frequency.value = filterFreq;
@@ -9267,7 +9246,6 @@
             const isTranslucentMap = mapCfg.isTranslucentFloor;
             ROOMS = mapCfg.rooms || ROOMS;
 
-            surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
             surfaceCtx.clearRect(0, 0, WORLD_W, WORLD_H);
             if (!isTranslucentMap) {
                 surfaceCtx.fillStyle = "#0b0f19";
@@ -13681,8 +13659,10 @@
                 });
             }
 
-            flowGrid.wallsDirty = true;
-            flowGrid.dirty = true;
+            if (typeof initFlowFieldWalls === "function") {
+                initFlowFieldWalls();
+                computeFlowField();
+            }
             sfx.playExplosion();
             screenShake = Math.max(screenShake, 18);
 
@@ -14500,8 +14480,10 @@
             }
 
             barrel.active = false;
-            flowGrid.wallsDirty = true;
             flowGrid.dirty = true;
+            if (typeof initFlowFieldWalls === "function") {
+                initFlowFieldWalls();
+            }
 
             if (isCoopHost() && !fromNetwork && barrelIdx >= 0 && window.XENO_COOP) {
                 window.XENO_COOP.sendPacket({
@@ -14714,8 +14696,10 @@
             if (!crate || !crate.active) return;
             const crateIdx = crates.indexOf(crate);
             crate.active = false;
-            flowGrid.wallsDirty = true;
             flowGrid.dirty = true;
+            if (typeof initFlowFieldWalls === "function") {
+                initFlowFieldWalls();
+            }
             sfx.playSplat();
 
             // Vỡ tung thành hơn 20 mảnh dăm gỗ (woodSplinters) xoay tròn văng ra sàn
@@ -15769,10 +15753,6 @@
             }
 
             if (frameCounter % 14 === 0) {
-                if (flowGrid.wallsDirty) {
-                    flowGrid.wallsDirty = false;
-                    initFlowFieldWalls();
-                }
                 computeFlowField();
             }
 
@@ -16815,7 +16795,7 @@
                 renderOmegaGenesisBackground(camX, camY);
             }
 
-            ctx.drawImage(surfaceCanvas, camX * SURFACE_SCALE, camY * SURFACE_SCALE, VIEW_W * SURFACE_SCALE, VIEW_H * SURFACE_SCALE, 0, 0, VIEW_W, VIEW_H);
+            ctx.drawImage(surfaceCanvas, camX, camY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
 
             ctx.translate(-camX, -camY);
 
@@ -20290,7 +20270,7 @@
         const XENO_RAM_CACHE = {
             initialized: false,
             vgaAccelerated: typeof createImageBitmap === "function",
-            frameCount: 8,
+            frameCount: 16,
             totalCanvases: 0,
             vramTextures: 0,
             monsters: {}, // keyed by typeKey: { cellSize, half, pSize, pHalf, mSize, mHalf, parts, sheetCanvas, vramPromoted }
@@ -20337,34 +20317,21 @@
                 }).catch(() => {});
             }
             if (entry.parts) {
-                // Ở chế độ mặc định "atlas" (1-Blit), toàn bộ bộ phận đã được gộp vào sheetCanvas,
-                // nên giải phóng ngay các canvas bộ phận trung gian (limbsAndTail, carapace...) để tiết kiệm 60% RAM/VRAM!
-                if ((window.monsterRenderMode || "atlas") === "atlas") {
-                    Object.keys(entry.parts).forEach((pKey) => {
-                        const partCan = entry.parts[pKey];
-                        if (partCan && "width" in partCan) {
+                Object.keys(entry.parts).forEach((pKey) => {
+                    const partCan = entry.parts[pKey];
+                    if (partCan && typeof partCan.close !== "function") {
+                        createImageBitmap(partCan).then((bmp) => {
+                            if (entry._evicted) {
+                                bmp.close();
+                                return;
+                            }
+                            entry.parts[pKey] = bmp;
+                            XENO_RAM_CACHE.vramTextures++;
                             partCan.width = 0;
                             partCan.height = 0;
-                        }
-                        entry.parts[pKey] = null;
-                    });
-                } else {
-                    Object.keys(entry.parts).forEach((pKey) => {
-                        const partCan = entry.parts[pKey];
-                        if (partCan && typeof partCan.close !== "function") {
-                            createImageBitmap(partCan).then((bmp) => {
-                                if (entry._evicted) {
-                                    bmp.close();
-                                    return;
-                                }
-                                entry.parts[pKey] = bmp;
-                                XENO_RAM_CACHE.vramTextures++;
-                                partCan.width = 0;
-                                partCan.height = 0;
-                            }).catch(() => {});
-                        }
-                    });
-                }
+                        }).catch(() => {});
+                    }
+                });
             }
         }
 
@@ -21796,7 +21763,7 @@
             const r = ENEMY_TYPES.boss.radius || 46;
             const F = XENO_RAM_CACHE.frameCount;
 
-            const half = Math.ceil(r * 2.55);
+            const half = Math.ceil(r * 3.35);
             const cellSize = half * 2;
 
             const pHalf = Math.ceil(r * 2.05);
@@ -22228,11 +22195,6 @@
             const order = ["atlas", "modular", "vector"];
             const nextIdx = (order.indexOf(window.monsterRenderMode || "atlas") + 1) % order.length;
             window.monsterRenderMode = order[nextIdx];
-            if (window.monsterRenderMode === "modular") {
-                XENO_RAM_CACHE.initialized = false;
-                XENO_RAM_CACHE.bosses = {};
-                initMonsterRamCache();
-            }
             updateMonsterRamCacheUI();
             if (window.monsterRenderMode === "modular") {
                 showToast("BỘ ĐỆM VGA VRAM: TÁCH BỘ PHẬN", "Lấy từng phần (Thân, 2 Càng, Chân/Đuôi, Chùy Gai) từ GPU ImageBitmap VRAM ghép bằng drawImage!");
@@ -22489,7 +22451,7 @@
             const drawSize = cell * scale;
             const drawHalf = half * scale;
 
-            if (mode === "atlas" || !cache.parts || !cache.parts.limbsAndTail) {
+            if (mode === "atlas" && (!e.skillState || e.skillState === "idle")) {
                 ctx.drawImage(
                     cache.sheetCanvas,
                     frameIdx * cell,
@@ -23021,7 +22983,7 @@
                         // Custom MK23 Pistol Sprite
                         const pw = 22;
                         const ph = pw * (customWp.img.naturalHeight / customWp.img.naturalWidth);
-                        ctx.drawImage(customWp.gpuBitmap || customWp.img, 8, ay - ph * 0.45, pw, ph);
+                        ctx.drawImage(customWp.img, 8, ay - ph * 0.45, pw, ph);
                     }
                 } else {
                     // Two-Handed Weapons: Left Support Arm & Right Trigger Arm
@@ -23038,12 +23000,12 @@
                     if (customWp.crop) {
                         const c = customWp.crop;
                         const targetH = targetLen * (c.sh / c.sw);
-                        ctx.drawImage(customWp.gpuBitmap || customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
+                        ctx.drawImage(customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
                     } else {
                         const imgW = customWp.img.naturalWidth;
                         const imgH = customWp.img.naturalHeight;
                         const targetH = targetLen * (imgH / imgW);
-                        ctx.drawImage(customWp.gpuBitmap || customWp.img, 6, -targetH * 0.5, targetLen, targetH);
+                        ctx.drawImage(customWp.img, 6, -targetH * 0.5, targetLen, targetH);
                     }
                 }
             } else {
@@ -27478,12 +27440,12 @@
             }
 
             const remaining = nextFrameDeadline - now;
-            if (targetFps < 120 && remaining > 1.5) {
+            if (remaining > 1.5) {
                 framePacerPending = true;
-                if (typeof requestAnimationFrame === "function") {
+                if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
                     framePacerRafId = requestAnimationFrame(onFramePacerTick);
                 } else {
-                    framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(4, Math.floor(remaining)));
+                    framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
                 }
                 return;
             }
@@ -27510,11 +27472,17 @@
                 return;
             }
 
-            if (typeof requestAnimationFrame === "function") {
+            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
+            if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
                 framePacerRafId = requestAnimationFrame(onFramePacerTick);
-            } else {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 16);
+                return;
             }
+
+            const now = performance.now();
+            const targetInterval = 1000 / targetFps;
+            if (!nextFrameDeadline) nextFrameDeadline = now + targetInterval;
+            const remaining = nextFrameDeadline - now;
+            framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
         }
 
         function gameLoop(now) {
@@ -27771,43 +27739,24 @@
             async function loadItem(item) {
                 try {
                     if (item.type === "image") {
-                        // Bỏ qua tạo bản sao Image thứ 2 nếu asset đã được quản lý bởi CUSTOM_ASSETS
-                        if (item.url && item.url.startsWith("assets/") && !item.url.includes("load_game") && !item.url.includes("spaceport") && !item.url.includes("lobby_bg")) {
-                            await new Promise((r) => setTimeout(r, 8));
-                        } else {
-                            await new Promise((resolve) => {
-                                const safetyTimer = setTimeout(resolve, 2000);
-                                const img = new Image();
-                                const cleanup = () => {
-                                    clearTimeout(safetyTimer);
-                                    img.onload = null;
-                                    img.onerror = null;
+                        await new Promise((resolve) => {
+                            const safetyTimer = setTimeout(resolve, 2000);
+                            const img = new Image();
+                            img.onload = () => { clearTimeout(safetyTimer); resolve(); };
+                            img.onerror = () => {
+                                clearTimeout(safetyTimer);
+                                if (item.altUrl) {
+                                    const fallbackImg = new Image();
+                                    const fbTimer = setTimeout(resolve, 600);
+                                    fallbackImg.onload = () => { clearTimeout(fbTimer); resolve(); };
+                                    fallbackImg.onerror = () => { clearTimeout(fbTimer); resolve(); };
+                                    fallbackImg.src = item.altUrl;
+                                } else {
                                     resolve();
-                                };
-                                img.onload = cleanup;
-                                img.onerror = () => {
-                                    clearTimeout(safetyTimer);
-                                    img.onload = null;
-                                    img.onerror = null;
-                                    if (item.altUrl) {
-                                        const fallbackImg = new Image();
-                                        const fbTimer = setTimeout(resolve, 600);
-                                        const fbCleanup = () => {
-                                            clearTimeout(fbTimer);
-                                            fallbackImg.onload = null;
-                                            fallbackImg.onerror = null;
-                                            resolve();
-                                        };
-                                        fallbackImg.onload = fbCleanup;
-                                        fallbackImg.onerror = fbCleanup;
-                                        fallbackImg.src = item.altUrl;
-                                    } else {
-                                        resolve();
-                                    }
-                                };
-                                img.src = item.url;
-                            });
-                        }
+                                }
+                            };
+                            img.src = item.url;
+                        });
                     } else if (item.type === "bgm") {
                         try {
                             const res = await fetch(item.url);
