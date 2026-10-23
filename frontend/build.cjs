@@ -3,8 +3,10 @@ const path = require('path');
 
 const ROOT_DIR = __dirname;
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
+const PARENT_DIR = path.join(ROOT_DIR, '..');
+const PARENT_DIST = path.join(PARENT_DIR, 'dist');
 
-console.log('🚀 Building Project Xeno for Vercel...');
+console.log('🚀 Building Project Xeno (Frontend Bundle with Minification)...');
 
 // Clean dist
 if (fs.existsSync(DIST_DIR)) {
@@ -27,40 +29,103 @@ function copyDirSync(src, dest) {
   }
 }
 
-// 1. Copy index.html
-fs.copyFileSync(path.join(ROOT_DIR, 'index.html'), path.join(DIST_DIR, 'index.html'));
+async function processHtmlAndMinifyJs() {
+  const htmlSrc = path.join(ROOT_DIR, 'index.html');
+  const content = fs.readFileSync(htmlSrc, 'utf8');
 
-// 2. Copy assets, audio, map
-copyDirSync(path.join(ROOT_DIR, 'assets'), path.join(DIST_DIR, 'assets'));
-copyDirSync(path.join(ROOT_DIR, 'audio'), path.join(DIST_DIR, 'audio'));
-copyDirSync(path.join(ROOT_DIR, 'map'), path.join(DIST_DIR, 'map'));
-copyDirSync(path.join(ROOT_DIR, 'api'), path.join(DIST_DIR, 'api'));
+  const scriptStartTag = '<script>';
+  const scriptEndTag = '</script>';
+  const lastScriptStart = content.lastIndexOf(scriptStartTag);
+  const lastScriptEnd = content.lastIndexOf(scriptEndTag);
 
-// 3. Copy metadata
-for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
-  const p = path.join(ROOT_DIR, file);
-  if (fs.existsSync(p)) fs.copyFileSync(p, path.join(DIST_DIR, file));
+  if (lastScriptStart !== -1 && lastScriptEnd !== -1 && lastScriptEnd > lastScriptStart) {
+    const htmlBefore = content.substring(0, lastScriptStart);
+    const jsCode = content.substring(lastScriptStart + scriptStartTag.length, lastScriptEnd);
+    const htmlAfter = content.substring(lastScriptEnd + scriptEndTag.length);
+
+    console.log(`📦 Đã trích xuất mã nguồn JavaScript (${(jsCode.length / 1024).toFixed(1)} KB)...`);
+    console.log('🔒 Đang tiến hành làm rối mã và nén logic game (Terser Minification & Obfuscation)...');
+
+    let minifiedJs = jsCode;
+    try {
+      let terser;
+      try { terser = require('terser'); } catch (e) {
+        try { terser = require(path.join(PARENT_DIR, 'node_modules', 'terser')); } catch (e2) {}
+      }
+
+      if (terser && typeof terser.minify === 'function') {
+        const result = await terser.minify(jsCode, {
+          compress: {
+            passes: 2,
+            dead_code: true
+          },
+          mangle: {
+            toplevel: false
+          },
+          format: {
+            comments: false,
+            preamble: '/* Project Xeno: Reloaded - Protected Client Core v2.0 - All Rights Reserved */'
+          }
+        });
+        if (result && result.code) {
+          minifiedJs = result.code;
+          console.log(`✅ Nén & làm rối mã thành công! Dung lượng giảm còn ${(minifiedJs.length / 1024).toFixed(1)} KB (Tiết kiệm ${((1 - minifiedJs.length / jsCode.length) * 100).toFixed(1)}%).`);
+        }
+      } else {
+        minifiedJs = jsCode
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/\/\/[^\n\r]*/g, '')
+          .replace(/^\s*[\r\n]/gm, '');
+      }
+    } catch (err) {
+      console.warn('⚠️ Lỗi Terser, dùng mã an toàn:', err.message);
+      minifiedJs = jsCode;
+    }
+
+    fs.writeFileSync(path.join(DIST_DIR, 'game.min.js'), minifiedJs, 'utf8');
+    const newHtml = htmlBefore + '<script src="game.min.js"></script>' + htmlAfter;
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), newHtml, 'utf8');
+    console.log(`✅ Đã tách file index.html (~${(newHtml.length / 1024).toFixed(1)} KB) và game.min.js (~${(minifiedJs.length / 1024).toFixed(1)} KB).`);
+  } else {
+    fs.copyFileSync(htmlSrc, path.join(DIST_DIR, 'index.html'));
+  }
 }
 
-// 4. Create identifier banner
-fs.writeFileSync(path.join(DIST_DIR, 'THU_MUC_DIST_BAN_ONLINE_COOP.txt'), 
+async function runBuild() {
+  await processHtmlAndMinifyJs();
+
+  copyDirSync(path.join(ROOT_DIR, 'assets'), path.join(DIST_DIR, 'assets'));
+  copyDirSync(path.join(ROOT_DIR, 'audio'), path.join(DIST_DIR, 'audio'));
+  copyDirSync(path.join(ROOT_DIR, 'map'), path.join(DIST_DIR, 'map'));
+  copyDirSync(path.join(ROOT_DIR, 'api'), path.join(DIST_DIR, 'api'));
+
+  for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
+    const p = path.join(ROOT_DIR, file);
+    if (fs.existsSync(p)) fs.copyFileSync(p, path.join(DIST_DIR, file));
+  }
+
+  fs.writeFileSync(path.join(DIST_DIR, 'THU_MUC_DIST_BAN_ONLINE_COOP.txt'), 
 `================================================================================
 👉 ĐÂY LÀ THƯ MỤC DIST CỦA BẢN ONLINE CO-OP (VERCEL LIVE)
 ================================================================================
-Đường dẫn: alien-shooter-fullstack/dist/
+Đường dẫn: alien-shooter-fullstack/dist/ và alien-shooter-fullstack/frontend/dist/
 Domain chính thức: https://project-xeno-online.vercel.app
 Đặc điểm nhận diện:
-- File index.html đầy đủ (~1.37 MB) chứa 100% đồ họa chơi đơn + P2P PeerJS Co-Op.
-- KHÔNG CÓ file game.min.js lẻ.
+- ĐÃ TÁCH BIỆT MÃ NGUỒN: File index.html (~280 KB) chỉ chứa khung HTML/CSS giao diện.
+- LOGIC ĐÃ ĐƯỢC BẢO VỆ: File game.min.js (~535 KB) đã được làm rối mã, xóa chú thích tiếng Việt và nén gọn.
+- Thư mục dist này sẵn sàng 100% để kéo thả thẳng vào Vercel hoặc deploy tự động qua Git.
 ================================================================================\n`);
 
-// 5. Đồng bộ hóa sang cả alien-shooter-fullstack/dist để 2 thư mục luôn giống hệt nhau 100%
-const PARENT_DIST = path.join(ROOT_DIR, '..', 'dist');
-if (fs.existsSync(PARENT_DIST)) {
-  fs.rmSync(PARENT_DIST, { recursive: true, force: true });
+  if (fs.existsSync(PARENT_DIST)) {
+    fs.rmSync(PARENT_DIST, { recursive: true, force: true });
+  }
+  copyDirSync(DIST_DIR, PARENT_DIST);
+
+  console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
+  console.log('🔄 Đã đồng bộ song song cả 2 thư mục: dist/ và frontend/dist/ (Không bao giờ lỗi thời)!');
 }
-copyDirSync(DIST_DIR, PARENT_DIST);
 
-console.log('✅ Build completed successfully! 100% of all single-player features & Online Co-op ready.');
-console.log('🔄 Đã đồng bộ song song cả 2 thư mục: dist/ và frontend/dist/ (Không bao giờ lỗi thời)!');
-
+runBuild().catch(err => {
+  console.error('❌ Build failed:', err);
+  process.exit(1);
+});

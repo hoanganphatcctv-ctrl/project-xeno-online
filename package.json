@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "build": "node build.cjs"
+  },
+  "dependencies": {
+    "terser": "^5.51.2"
   }
 }
-
