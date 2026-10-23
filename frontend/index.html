@@ -8094,23 +8094,25 @@
             }
 
             playBossWarning() {
-                if (this.muted) return;
-                this.init();
-                if (this.playSample("monster_ambient", 0.9)) return;
-                if (!this.ctx) return;
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = "sawtooth";
-                osc.frequency.setValueAtTime(220, now);
-                osc.frequency.linearRampToValueAtTime(460, now + 0.28);
-                osc.frequency.linearRampToValueAtTime(180, now + 0.55);
-                gain.gain.setValueAtTime(this.getAlertGain(0.22), now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.58);
+                try {
+                    if (this.muted) return;
+                    this.init();
+                    if (this.playSample("monster_ambient", 0.9)) return;
+                    if (!this.ctx || typeof this.ctx.createOscillator !== "function") return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(460, now + 0.28);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.55);
+                    gain.gain.setValueAtTime(this.getAlertGain(0.22), now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.58);
+                } catch (e) {}
             }
 
             playFreeze() {
@@ -9638,7 +9640,7 @@
                 }
             }
             flowGrid.dirty = true;
-            syncFlowFieldWorkerWalls();
+            // syncFlowFieldWorkerWalls removed
         }
 
         // ============================================================================
@@ -9646,203 +9648,34 @@
         // Tách toàn bộ thuật toán tìm đường BFS 130x90 ô + Gradient Vector sang luồng
         // CPU phụ (Web Worker) để giải phóng Main Thread, chống khựng hình tuyệt đối!
         // ============================================================================
-        let flowFieldWorker = null;
-        let flowFieldWorkerBusy = false;
-        let flowFieldWorkerPendingArgs = null;
-
-        function initFlowFieldWorker() {
-            if (flowFieldWorker || typeof Worker === "undefined" || typeof Blob === "undefined") return;
-            try {
-                const workerCode = `
-                    const FLOW_COLS = ${FLOW_COLS};
-                    const FLOW_ROWS = ${FLOW_ROWS};
-                    const CELL = ${CELL};
-                    const total = FLOW_COLS * FLOW_ROWS;
-                    let blocked = new Uint8Array(total);
-                    let penalty = new Uint8Array(total);
-                    const dist = new Int32Array(total);
-                    const queue = new Int32Array(total * 4);
-                    const inQueue = new Uint8Array(total);
-                    const neighbors = [
-                        [-1, 0, 10], [1, 0, 10], [0, -1, 10], [0, 1, 10],
-                        [-1, -1, 14], [1, -1, 14], [-1, 1, 14], [1, 1, 14]
-                    ];
-
-                    function resolveUnblockedCellIdx(baseR, baseC, worldX, worldY) {
-                        let r = baseR, c = baseC;
-                        let idx = r * FLOW_COLS + c;
-                        if (blocked[idx]) {
-                            let bestRadDist = 999999;
-                            for (let rad = 1; rad <= 3; rad++) {
-                                for (let dr = -rad; dr <= rad; dr++) {
-                                    for (let dc = -rad; dc <= rad; dc++) {
-                                        const nr = r + dr, nc = c + dc;
-                                        if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
-                                            const candIdx = nr * FLOW_COLS + nc;
-                                            if (!blocked[candIdx]) {
-                                                const cx = nc * CELL + CELL * 0.5;
-                                                const cy = nr * CELL + CELL * 0.5;
-                                                const dSq = (cx - worldX) * (cx - worldX) + (cy - worldY) * (cy - worldY);
-                                                if (dSq < bestRadDist) {
-                                                    bestRadDist = dSq;
-                                                    idx = candIdx;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                if (bestRadDist < 999999) break;
-                            }
-                        }
-                        return idx;
-                    }
-
-                    self.onmessage = function(ev) {
-                        const msg = ev.data;
-                        if (!msg) return;
-                        if (msg.type === "walls") {
-                            blocked = new Uint8Array(msg.blocked);
-                            penalty = new Uint8Array(msg.penalty);
-                            return;
-                        }
-                        if (msg.type === "compute") {
-                            dist.fill(-1);
-                            inQueue.fill(0);
-                            const qMax = queue.length;
-                            let head = 0, tail = 0;
-
-                            if (!msg.playerDown || !msg.hasTeammate) {
-                                const startIdx = resolveUnblockedCellIdx(msg.pr, msg.pc, msg.px, msg.py);
-                                queue[tail++] = startIdx;
-                                dist[startIdx] = 0;
-                                inQueue[startIdx] = 1;
-                            }
-                            if (msg.hasTeammate) {
-                                const mateIdx = resolveUnblockedCellIdx(msg.tr, msg.tc, msg.tx, msg.ty);
-                                if (!inQueue[mateIdx] && tail < qMax) {
-                                    queue[tail++] = mateIdx;
-                                    dist[mateIdx] = 0;
-                                    inQueue[mateIdx] = 1;
-                                }
-                            }
-
-                            while (head < tail) {
-                                const curr = queue[head++];
-                                inQueue[curr] = 0;
-                                const cr = (curr / FLOW_COLS) | 0;
-                                const cc = curr - cr * FLOW_COLS;
-                                const cd = dist[curr];
-
-                                for (let d = 0; d < 8; d++) {
-                                    const dc = neighbors[d][0];
-                                    const dr = neighbors[d][1];
-                                    const stepCost = neighbors[d][2];
-                                    const nc = cc + dc;
-                                    const nr = cr + dr;
-                                    if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
-                                    const nIdx = nr * FLOW_COLS + nc;
-                                    if (blocked[nIdx]) continue;
-                                    if (dc !== 0 && dr !== 0) {
-                                        if (blocked[cr * FLOW_COLS + nc] || blocked[nr * FLOW_COLS + cc]) continue;
-                                    }
-                                    const newDist = cd + stepCost + penalty[nIdx];
-                                    const oldDist = dist[nIdx];
-                                    if (oldDist === -1 || newDist < oldDist) {
-                                        dist[nIdx] = newDist;
-                                        if (!inQueue[nIdx] && tail < qMax) {
-                                            inQueue[nIdx] = 1;
-                                            queue[tail++] = nIdx;
-                                        }
+        // Direct synchronous, zero-latency Flow Field BFS (Populates dist, dirX, and dirY with 0 allocation)
+        function resolveUnblockedCellIdx(baseR, baseC, worldX, worldY) {
+            let r = baseR, c = baseC;
+            let idx = r * FLOW_COLS + c;
+            if (flowGrid.blocked[idx]) {
+                let bestRadDist = 999999;
+                for (let rad = 1; rad <= 3; rad++) {
+                    for (let dr = -rad; dr <= rad; dr++) {
+                        for (let dc = -rad; dc <= rad; dc++) {
+                            const nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
+                                const candIdx = nr * FLOW_COLS + nc;
+                                if (!flowGrid.blocked[candIdx]) {
+                                    const cx = nc * CELL + CELL * 0.5;
+                                    const cy = nr * CELL + CELL * 0.5;
+                                    const dSq = (cx - worldX) * (cx - worldX) + (cy - worldY) * (cy - worldY);
+                                    if (dSq < bestRadDist) {
+                                        bestRadDist = dSq;
+                                        idx = candIdx;
                                     }
                                 }
                             }
-
-                            const outDirX = new Float32Array(total);
-                            const outDirY = new Float32Array(total);
-                            for (let r = 0; r < FLOW_ROWS; r++) {
-                                for (let c = 0; c < FLOW_COLS; c++) {
-                                    const idx = r * FLOW_COLS + c;
-                                    const cd = dist[idx];
-                                    if (cd <= 0) continue;
-                                    let bestD = cd;
-                                    let bestVx = 0, bestVy = 0;
-                                    let gradX = 0, gradY = 0;
-                                    for (let d = 0; d < 8; d++) {
-                                        const dc = neighbors[d][0];
-                                        const dr = neighbors[d][1];
-                                        const nc = c + dc;
-                                        const nr = r + dr;
-                                        if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
-                                        const nIdx = nr * FLOW_COLS + nc;
-                                        if (blocked[nIdx]) continue;
-                                        if (dc !== 0 && dr !== 0) {
-                                            if (blocked[r * FLOW_COLS + nc] || blocked[nr * FLOW_COLS + c]) continue;
-                                        }
-                                        const nd = dist[nIdx];
-                                        if (nd >= 0 && nd < cd) {
-                                            const drop = cd - nd;
-                                            const invLen = (dc !== 0 && dr !== 0) ? 0.70710678 : 1.0;
-                                            gradX += dc * invLen * drop;
-                                            gradY += dr * invLen * drop;
-                                            if (nd < bestD) {
-                                                bestD = nd;
-                                                bestVx = dc * invLen;
-                                                bestVy = dr * invLen;
-                                            }
-                                        }
-                                    }
-                                    const vx = bestVx * 0.65 + gradX * 0.35;
-                                    const vy = bestVy * 0.65 + gradY * 0.35;
-                                    const len = Math.hypot(vx, vy);
-                                    if (len > 0.0001) {
-                                        outDirX[idx] = vx / len;
-                                        outDirY[idx] = vy / len;
-                                    }
-                                }
-                            }
-
-                            self.postMessage(
-                                { type: "result", dirX: outDirX.buffer, dirY: outDirY.buffer },
-                                [outDirX.buffer, outDirY.buffer]
-                            );
-                        }
-                    };
-                `;
-                const blob = new Blob([workerCode], { type: "application/javascript" });
-                const url = URL.createObjectURL(blob);
-                flowFieldWorker = new Worker(url);
-                flowFieldWorker.onmessage = function(ev) {
-                    const data = ev.data;
-                    if (data && data.type === "result") {
-                        flowGrid.dirX.set(new Float32Array(data.dirX));
-                        flowGrid.dirY.set(new Float32Array(data.dirY));
-                        flowFieldWorkerBusy = false;
-                        if (flowFieldWorkerPendingArgs) {
-                            const nextArgs = flowFieldWorkerPendingArgs;
-                            flowFieldWorkerPendingArgs = null;
-                            flowFieldWorkerBusy = true;
-                            flowFieldWorker.postMessage(nextArgs);
                         }
                     }
-                };
-                flowFieldWorker.onerror = function() {
-                    flowFieldWorker = null;
-                    flowFieldWorkerBusy = false;
-                };
-            } catch (err) {
-                flowFieldWorker = null;
+                    if (bestRadDist < 999999) break;
+                }
             }
-        }
-
-        function syncFlowFieldWorkerWalls() {
-            initFlowFieldWorker();
-            if (!flowFieldWorker) return;
-            const bCopy = new Uint8Array(flowGrid.blocked);
-            const pCopy = new Uint8Array(flowGrid.penalty);
-            flowFieldWorker.postMessage(
-                { type: "walls", blocked: bCopy.buffer, penalty: pCopy.buffer },
-                [bCopy.buffer, pCopy.buffer]
-            );
+            return idx;
         }
 
         function computeFlowField(forceUpdate = false) {
@@ -9868,70 +9701,19 @@
             flowGrid.lastTr = tr;
             flowGrid.dirty = false;
 
-            // Nếu đã có kết quả khởi tạo lần đầu và Web Worker đang hoạt động, đẩy việc tính toán sang luồng phụ!
-            if (flowFieldWorker && !forceUpdate) {
-                const payload = {
-                    type: "compute",
-                    pc, pr,
-                    px: player.x, py: player.y,
-                    playerDown: !!player.isDown,
-                    hasTeammate: !!hasTeammate,
-                    tc, tr,
-                    tx: hasTeammate ? window.teammate.x : 0,
-                    ty: hasTeammate ? window.teammate.y : 0
-                };
-                if (flowFieldWorkerBusy) {
-                    flowFieldWorkerPendingArgs = payload;
-                } else {
-                    flowFieldWorkerBusy = true;
-                    flowFieldWorker.postMessage(payload);
-                }
-                return;
-            }
-
             flowGrid.dist.fill(-1);
             flowGrid.inQueue.fill(0);
-
-            function resolveUnblockedCellIdx(baseR, baseC, worldX, worldY) {
-                let r = baseR, c = baseC;
-                let idx = r * FLOW_COLS + c;
-                if (flowGrid.blocked[idx]) {
-                    let bestRadDist = 999999;
-                    for (let rad = 1; rad <= 3; rad++) {
-                        for (let dr = -rad; dr <= rad; dr++) {
-                            for (let dc = -rad; dc <= rad; dc++) {
-                                const nr = r + dr, nc = c + dc;
-                                if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
-                                    const candIdx = nr * FLOW_COLS + nc;
-                                    if (!flowGrid.blocked[candIdx]) {
-                                        const cx = nc * CELL + CELL * 0.5;
-                                        const cy = nr * CELL + CELL * 0.5;
-                                        const dSq = (cx - worldX) * (cx - worldX) + (cy - worldY) * (cy - worldY);
-                                        if (dSq < bestRadDist) {
-                                            bestRadDist = dSq;
-                                            idx = candIdx;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (bestRadDist < 999999) break;
-                    }
-                }
-                return idx;
-            }
-
             const qMax = flowGrid.queue.length;
             let head = 0, tail = 0;
 
-            // Seed BFS với cả Chủ phòng (player) và Đồng đội (window.teammate) để quái tìm đường tấn công cả 2 người chơi
             if (!player.isDown || !hasTeammate) {
                 const startIdx = resolveUnblockedCellIdx(pr, pc, player.x, player.y);
                 flowGrid.queue[tail++] = startIdx;
                 flowGrid.dist[startIdx] = 0;
                 flowGrid.inQueue[startIdx] = 1;
             }
-            if (hasTeammate) {
+
+            if (hasTeammate && tr >= 0 && tc >= 0) {
                 const mateIdx = resolveUnblockedCellIdx(tr, tc, window.teammate.x, window.teammate.y);
                 if (!flowGrid.inQueue[mateIdx] && tail < qMax) {
                     flowGrid.queue[tail++] = mateIdx;
@@ -10020,9 +9802,8 @@
                         }
                     }
 
-                    // Blend steepest descent vector with smooth local gradient
-                    let vx = bestVx * 0.65 + gradX * 0.35;
-                    let vy = bestVy * 0.65 + gradY * 0.35;
+                    const vx = bestVx * 0.65 + gradX * 0.35;
+                    const vy = bestVy * 0.65 + gradY * 0.35;
                     const len = Math.hypot(vx, vy);
                     if (len > 0.0001) {
                         flowGrid.dirX[idx] = vx / len;
@@ -10034,7 +9815,7 @@
                 }
             }
         }
-
+        
         function getDoorLeafBoxes(d) {
             const retractRatio = Math.max(0, Math.min(0.88, d.openAmount * 0.88));
             if (d.orient === "vertical") {
@@ -10056,7 +9837,7 @@
 
         function updateAutoDoors() {
             const playerTriggerDist = 180;
-            const enemyTriggerDist = 135;
+            const enemyTriggerDist = 200;
 
             for (let i = 0; i < DOORS.length; i++) {
                 const d = DOORS[i];
@@ -25597,25 +25378,62 @@
         }
         window.refreshLeaderboardData = refreshLeaderboardData;
 
-        function toggleMapDiffDrawer() {
-            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+        function openMapDiffDrawer() {
+            if (typeof sfx !== "undefined" && sfx) {
+                try { sfx.playClick(); } catch (e) {}
+            }
             const dr = byId("lobbyMapDiffDrawer");
             if (!dr) return;
-            dr.classList.toggle("hidden");
+            dr.classList.remove("hidden");
+            dr.style.display = "flex";
+            if (typeof updateMapUIState === "function") updateMapUIState();
+        }
+        window.openMapDiffDrawer = openMapDiffDrawer;
+
+        function closeMapDiffDrawer() {
+            if (typeof sfx !== "undefined" && sfx) {
+                try { sfx.playClick(); } catch (e) {}
+            }
+            const dr = byId("lobbyMapDiffDrawer");
+            if (!dr) return;
+            dr.classList.add("hidden");
+            dr.style.display = "none";
+        }
+        window.closeMapDiffDrawer = closeMapDiffDrawer;
+
+        function toggleMapDiffDrawer() {
+            const dr = byId("lobbyMapDiffDrawer");
+            if (!dr) return;
+            const isClosed = dr.classList.contains("hidden") || dr.style.display === "none";
+            if (isClosed) {
+                openMapDiffDrawer();
+            } else {
+                closeMapDiffDrawer();
+            }
         }
         window.toggleMapDiffDrawer = toggleMapDiffDrawer;
 
         function openIntelDrawer() {
-            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            if (typeof sfx !== "undefined" && sfx) {
+                try { sfx.playClick(); } catch (e) {}
+            }
             const dr = byId("lobbyIntelDrawer");
-            if (dr) dr.classList.remove("hidden");
+            if (dr) {
+                dr.classList.remove("hidden");
+                dr.style.display = "flex";
+            }
         }
         window.openIntelDrawer = openIntelDrawer;
 
         function closeIntelDrawer() {
-            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            if (typeof sfx !== "undefined" && sfx) {
+                try { sfx.playClick(); } catch (e) {}
+            }
             const dr = byId("lobbyIntelDrawer");
-            if (dr) dr.classList.add("hidden");
+            if (dr) {
+                dr.classList.add("hidden");
+                dr.style.display = "none";
+            }
         }
         window.closeIntelDrawer = closeIntelDrawer;
 
@@ -26690,19 +26508,24 @@
 
         function selectMapInMenu(mapId) {
             if (!isMapUnlocked(mapId)) {
-                if (typeof sfx !== "undefined" && sfx) sfx.playError();
+                if (typeof sfx !== "undefined" && sfx) {
+                    try { sfx.playError(); } catch (e) {}
+                }
                 showToast(
                     `🔒 MAP ${mapId} ĐANG BỊ KHÓA!`,
                     `Khi mới chơi chỉ mở Map 1. Hãy vượt qua Map ${mapId - 1} để mở khóa Map ${mapId}!`
                 );
                 return;
             }
-            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            if (typeof sfx !== "undefined" && sfx) {
+                try { sfx.playClick(); } catch (e) {}
+            }
             clearVictoryAutoTimers();
             window.currentMapId = MAP_REGISTRY[mapId] ? mapId : 1;
             campaignMode = true;
             updateMapUIState();
             initCampaign(true, false);
+            if (typeof closeMapDiffDrawer === "function") closeMapDiffDrawer();
         }
         window.selectMapInMenu = selectMapInMenu;
 
