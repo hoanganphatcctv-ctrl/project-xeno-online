@@ -6273,11 +6273,25 @@
 
                 if (data.t === "input" && this.isHost) {
                     pushTeammateSnapshot(data);
+                    if (typeof data.hp === "number") teammate.hp = data.hp;
+                    if (typeof data.mhp === "number") teammate.maxHp = data.mhp;
+                    if (typeof data.ar === "number") teammate.armor = data.ar;
+                    if (typeof data.mar === "number") teammate.maxArmor = data.mar;
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
+                    const prevDown = teammate.isDown;
                     teammate.isDown = !!data.down;
-                    if (typeof data.rev === "number") teammate.reviveProgress = data.rev;
+                    if (player.isDown && typeof data.selfRev === "number") {
+                        player.reviveProgress = data.selfRev;
+                    }
+                    if (teammate.isDown !== prevDown) {
+                        this.updateHUD();
+                    }
+                    if (teammate.isDown && player.isDown && !isGameOver) {
+                        this.sendPacket({ t: "game_over" });
+                        triggerPlayerDeath(true);
+                    }
                     return;
                 }
 
@@ -6295,15 +6309,32 @@
                     const p = data.p;
                     if (p) {
                         pushTeammateSnapshot(p);
+                        if (typeof p.hp === "number") teammate.hp = p.hp;
+                        if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
+                        if (typeof p.ar === "number") teammate.armor = p.ar;
+                        if (typeof p.mar === "number") teammate.maxArmor = p.mar;
+                        teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
+                        teammate.isShooting = !!p.shoot;
                         teammate.credits = p.cred || teammate.credits;
+                        const prevDown = teammate.isDown;
                         teammate.isDown = !!p.down;
-                        teammate.reviveProgress = p.rev || 0;
+                        if (teammate.isDown !== prevDown) {
+                            this.updateHUD();
+                        }
                     }
 
-                    if (data.selfHp !== undefined && player.hp > 0) player.hp = data.selfHp;
-                    if (data.selfArmor !== undefined) player.armor = data.selfArmor;
-                    if (data.selfDown !== undefined) player.isDown = !!data.selfDown;
-                    if (data.selfRev !== undefined) player.reviveProgress = data.selfRev;
+                    // KHÔNG ghi đè player.hp / player.armor / player.isDown của Client bằng gói snap trễ từ Host
+                    // (Tránh lỗi bất tử hồi ngược máu/giáp về trạng thái cũ trên máy Client).
+                    // Chỉ nhận tiến trình đang được Host cứu (selfRev) khi Client đang bị gục.
+                    if (player.isDown && typeof data.selfRev === "number") {
+                        player.reviveProgress = data.selfRev;
+                    }
+
+                    if (teammate.isDown && player.isDown && !isGameOver) {
+                        this.sendPacket({ t: "game_over" });
+                        triggerPlayerDeath(true);
+                        return;
+                    }
 
                     if (data.boss && window.bossEntity) {
                         window.bossEntity.hp = data.boss.hp;
@@ -6328,25 +6359,32 @@
                     teammate.isDown = true;
                     teammate.hp = 0;
                     teammate.armor = 0;
+                    teammate.reviveProgress = 0;
                     showToast("ĐỒNG ĐỘI BỊ HẠ GỤC!", "Tiếp cận trong vòng 75px và đứng yên 5 giây để hồi sinh đồng đội!");
                     this.updateHUD();
-                    if (player.isDown) {
-                        triggerPlayerDeath();
+                    if (player.isDown && !isGameOver) {
+                        this.sendPacket({ t: "game_over" });
+                        triggerPlayerDeath(true);
                     }
                     return;
                 }
 
                 if (data.t === "game_over") {
-                    isGameOver = true;
-                    triggerPlayerDeath();
+                    if (!isGameOver) {
+                        player.isDown = true;
+                        teammate.isDown = true;
+                        triggerPlayerDeath(true);
+                    }
                     return;
                 }
 
                 if (data.t === "revive_success") {
                     player.isDown = false;
-                    player.hp = 40;
-                    player.armor = 25;
+                    player.hp = Math.max(40, Math.round((player.maxHp || 100) * 0.4));
+                    player.armor = Math.max(player.armor || 0, 25);
                     player.reviveProgress = 0;
+                    player.invulnTimer = 90; // 1.5s bất tử bảo vệ sau khi vừa được cứu dậy
+                    setOpacity("damageVignette", 0);
                     showToast("ĐÃ ĐƯỢC CỨU SỐNG!", "Đồng đội đã cứu bạn dậy với 40% Máu & 25 Giáp!");
                     if (typeof sfx !== "undefined" && sfx) {
                         if (sfx.playPickup) sfx.playPickup();
@@ -6383,9 +6421,6 @@
                             down: player.isDown ? 1 : 0,
                             rev: Number((player.reviveProgress || 0).toFixed(2))
                         },
-                        selfHp: Math.round(teammate.hp),
-                        selfArmor: Math.round(teammate.armor),
-                        selfDown: teammate.isDown ? 1 : 0,
                         selfRev: Number((teammate.reviveProgress || 0).toFixed(2))
                     };
 
@@ -6482,11 +6517,16 @@
                         x: Math.round(player.x),
                         y: Math.round(player.y),
                         a: Number(player.angle.toFixed(2)),
+                        hp: Math.round(player.hp),
+                        mhp: player.maxHp,
+                        ar: Math.round(player.armor),
+                        mar: player.maxArmor,
                         w: player.currentWeapon,
                         shoot: mouse.down ? 1 : 0,
                         cred: player.credits,
                         down: player.isDown ? 1 : 0,
-                        rev: Number((player.reviveProgress || 0).toFixed(2))
+                        rev: Number((player.reviveProgress || 0).toFixed(2)),
+                        selfRev: Number((teammate.reviveProgress || 0).toFixed(2))
                     });
                 }
             },
@@ -6597,13 +6637,6 @@
                     teammate.x = s0.x + (s1.x - s0.x) * alpha;
                     teammate.y = s0.y + (s1.y - s0.y) * alpha;
                     teammate.angle = lerpAngle(s0.a, s1.a, alpha);
-
-                    teammate.hp = s1.hp;
-                    teammate.armor = s1.ar;
-                    teammate.currentWeapon = s1.w;
-                    teammate.isShooting = s1.shoot;
-                    teammate.isDown = s1.down;
-                    teammate.reviveProgress = s1.rev;
                 } else if (s0 && !s1) {
                     // Dead Reckoning extrapolation (dự đoán vị trí khi mạng bị trễ)
                     const dt = Math.min(0.2, (renderTime - s0.t) / 1000);
@@ -14245,11 +14278,11 @@
             }
         }
 
-        function triggerPlayerDeath() {
+        function triggerPlayerDeath(forceGameOver = false) {
             if (isGameOver || isMapWon) return;
 
             // XỬ LÝ CHẾ ĐỘ CO-OP 2 NGƯỜI: TRẠNG THÁI GỤC NGÃ & CỨU VÔ HẠN (CHỈ THUA KHI CẢ 2 CÙNG GỤC)
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
+            if (!forceGameOver && window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
                 if (!player.isDown) {
                     player.isDown = true;
                     player.hp = 0;
@@ -14273,10 +14306,16 @@
                     if (!window.teammate.isDown) {
                         return;
                     }
-                    // Nếu đồng đội ĐÃ gục -> Cả 2 cùng gục ngã -> THẤT BẠI NHIỆM VỤ!
+                    // Nếu đồng đội ĐÃ gục -> Cả 2 cùng gục ngã -> Phát tín hiệu thua cuộc cho cả 2 máy!
+                    if (window.XENO_COOP) {
+                        window.XENO_COOP.sendPacket({ t: "game_over" });
+                    }
                 } else {
                     if (!window.teammate.isDown) {
                         return;
+                    }
+                    if (window.XENO_COOP) {
+                        window.XENO_COOP.sendPacket({ t: "game_over" });
                     }
                 }
             }
@@ -26007,11 +26046,16 @@
             if (window.teammate) {
                 window.teammate.isDown = false;
                 window.teammate.reviveProgress = 0;
+                window.teammate.hp = 100;
+                window.teammate.armor = 100;
+                window.teammate.snapshotBuffer = [];
                 window.teammate.x = WORLD_W / 2 + 40;
                 window.teammate.y = WORLD_H / 2 + 40;
                 window.teammate.targetX = window.teammate.x;
                 window.teammate.targetY = window.teammate.y;
             }
+            window.coopHostOpenDoors = null;
+            window.pendingHostileBullets = [];
             player.speedBuffTimer = 0;
             player.freezeBuffTimer = 0;
             player.overdriveBuffTimer = 0;
