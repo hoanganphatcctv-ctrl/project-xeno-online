@@ -5183,6 +5183,123 @@
         window.CUSTOM_ASSETS = CUSTOM_ASSETS;
         window.useCustomPlayerWeaponSprites = true;
 
+        function promoteCanvasToGpuBitmap(canvas, onPromoted) {
+            if (!canvas || typeof createImageBitmap !== "function") return;
+            createImageBitmap(canvas).then((bmp) => {
+                if (typeof onPromoted === "function") onPromoted(bmp);
+                canvas.width = 0;
+                canvas.height = 0;
+            }).catch(() => {});
+        }
+
+        function bakeCustomPlayerSkinToGpu(skinAsset) {
+            if (!skinAsset || !skinAsset.img || !skinAsset.img.naturalWidth) return;
+            const size = 144;
+            const half = size * 0.5;
+            const c = document.createElement("canvas");
+            c.width = size;
+            c.height = size;
+            const sCtx = c.getContext("2d");
+            sCtx.save();
+            sCtx.translate(half, half);
+            sCtx.shadowColor = "rgba(0, 0, 0, 0.70)";
+            sCtx.shadowBlur = 10;
+            sCtx.shadowOffsetX = 3;
+            sCtx.shadowOffsetY = 4;
+            sCtx.rotate(-Math.PI / 2);
+            const scale = skinAsset.scale || 0.056;
+            sCtx.scale(scale, scale);
+            sCtx.drawImage(skinAsset.gpuBitmap || skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
+            sCtx.restore();
+            skinAsset.bakedSprite = c;
+            skinAsset.bakedHalf = half;
+            promoteCanvasToGpuBitmap(c, (bmp) => {
+                skinAsset.bakedSprite = bmp;
+            });
+        }
+
+        function bakeCustomCryoPodToGpu(podAsset) {
+            if (!podAsset || !podAsset.img || !podAsset.img.naturalWidth) return;
+            const baseH = 92;
+            const scale = baseH / 524;
+            const drawW = Math.ceil(433 * scale);
+            const drawH = Math.ceil(577 * scale);
+            const pad = 22;
+            const cw = drawW + pad * 2;
+            const ch = drawH + pad * 2;
+            const colors = ["rgba(45, 212, 191, 0.78)", "rgba(192, 132, 252, 0.78)"];
+            podAsset.bakedGlowSprites = [];
+            podAsset.bakedPadRatioX = pad / drawW;
+            podAsset.bakedPadRatioY = pad / drawH;
+            for (let v = 0; v < 2; v++) {
+                const c = document.createElement("canvas");
+                c.width = cw;
+                c.height = ch;
+                const pCtx = c.getContext("2d");
+                pCtx.save();
+                pCtx.shadowColor = colors[v];
+                pCtx.shadowBlur = 14;
+                pCtx.drawImage(podAsset.gpuBitmap || podAsset.img, pad, pad, drawW, drawH);
+                pCtx.restore();
+                podAsset.bakedGlowSprites[v] = c;
+                const idx = v;
+                promoteCanvasToGpuBitmap(c, (bmp) => {
+                    podAsset.bakedGlowSprites[idx] = bmp;
+                });
+            }
+        }
+
+        function bakeCustomEntityStripToGpu(assetEntry, baseRadius, drawMult, shadowAlpha, shadowRadiusMult) {
+            if (!assetEntry || !assetEntry.img || !assetEntry.img.naturalWidth) return;
+            const r = Math.max(12, baseRadius || 18);
+            const cellSize = Math.ceil(r * drawMult * 1.25);
+            const half = cellSize * 0.5;
+            const drawSize = r * drawMult;
+            const c = document.createElement("canvas");
+            c.width = cellSize;
+            c.height = cellSize * 3;
+            const eCtx = c.getContext("2d");
+
+            const tintCanvas = document.createElement("canvas");
+            tintCanvas.width = cellSize;
+            tintCanvas.height = cellSize;
+            const tCtx = tintCanvas.getContext("2d");
+
+            for (let st = 0; st < 3; st++) {
+                const oy = st * cellSize + half;
+                eCtx.save();
+                eCtx.translate(half, oy);
+                eCtx.fillStyle = `rgba(2, 6, 18, ${shadowAlpha})`;
+                eCtx.beginPath();
+                eCtx.arc(0, 0, r * shadowRadiusMult, 0, Math.PI * 2);
+                eCtx.fill();
+
+                if (st === 0) {
+                    eCtx.drawImage(assetEntry.gpuBitmap || assetEntry.img, -drawSize * 0.5, -drawSize * 0.5, drawSize, drawSize);
+                } else {
+                    tCtx.clearRect(0, 0, cellSize, cellSize);
+                    tCtx.save();
+                    tCtx.translate(half, half);
+                    tCtx.drawImage(assetEntry.gpuBitmap || assetEntry.img, -drawSize * 0.5, -drawSize * 0.5, drawSize, drawSize);
+                    tCtx.globalCompositeOperation = "source-atop";
+                    tCtx.fillStyle = (st === 1) ? "rgba(255, 255, 255, 0.88)" : "rgba(56, 189, 248, 0.58)";
+                    tCtx.fillRect(-half, -half, cellSize, cellSize);
+                    tCtx.restore();
+                    eCtx.drawImage(tintCanvas, -half, -half, cellSize, cellSize);
+                }
+                eCtx.restore();
+            }
+            tintCanvas.width = 0;
+            tintCanvas.height = 0;
+
+            assetEntry.bakedStrip = c;
+            assetEntry.bakedCellSize = cellSize;
+            assetEntry.bakedBaseRadius = r;
+            promoteCanvasToGpuBitmap(c, (bmp) => {
+                assetEntry.bakedStrip = bmp;
+            });
+        }
+
         function loadCustomAssetEntry(assetEntry, onLoaded) {
             if (!assetEntry || !assetEntry.src) return;
             const img = new Image();
@@ -5190,7 +5307,16 @@
             img.onload = () => {
                 assetEntry.loaded = true;
                 assetEntry.img = img;
-                if (typeof onLoaded === "function") onLoaded(assetEntry);
+                if (typeof createImageBitmap === "function") {
+                    createImageBitmap(img).then((bmp) => {
+                        assetEntry.gpuBitmap = bmp;
+                        if (typeof onLoaded === "function") onLoaded(assetEntry);
+                    }).catch(() => {
+                        if (typeof onLoaded === "function") onLoaded(assetEntry);
+                    });
+                } else {
+                    if (typeof onLoaded === "function") onLoaded(assetEntry);
+                }
             };
             img.onerror = () => {
                 if (!triedAlt && assetEntry.altSrc && assetEntry.altSrc !== assetEntry.src) {
@@ -5200,6 +5326,7 @@
                 }
                 assetEntry.loaded = false;
                 assetEntry.img = null;
+                assetEntry.gpuBitmap = null;
             };
             img.src = assetEntry.src;
         }
@@ -5225,14 +5352,14 @@
             loadCustomAssetEntry(CUSTOM_ASSETS.generator);
             loadCustomAssetEntry(CUSTOM_ASSETS.crosshair);
 
-            // 4. Kén ngủ đông
+            // 4. Kén ngủ đông (Pre-bake Bioluminescent Glow vào VRAM để khử shadowBlur mỗi frame)
             if (CUSTOM_ASSETS.cryoPods) {
-                CUSTOM_ASSETS.cryoPods.forEach((pod) => loadCustomAssetEntry(pod));
+                CUSTOM_ASSETS.cryoPods.forEach((pod) => loadCustomAssetEntry(pod, bakeCustomCryoPodToGpu));
             }
 
-            // 5. Skin nhân vật cầm vũ khí
+            // 5. Skin nhân vật cầm vũ khí (Pre-bake Rotate + Scale + DropShadow vào VRAM 128x128)
             if (CUSTOM_ASSETS.playerSkins) {
-                CUSTOM_ASSETS.playerSkins.forEach((skin) => loadCustomAssetEntry(skin));
+                CUSTOM_ASSETS.playerSkins.forEach((skin) => loadCustomAssetEntry(skin, bakeCustomPlayerSkinToGpu));
             }
 
             // 6. Vật phẩm rơi & Nâng cấp (Items)
@@ -5245,14 +5372,19 @@
                 Object.values(CUSTOM_ASSETS.barrels).forEach((barrelAsset) => loadCustomAssetEntry(barrelAsset));
             }
 
-            // 8. Quái vật thường (Monsters)
+            // 8. Quái vật thường (Monsters - Pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào VRAM)
             if (CUSTOM_ASSETS.monsters) {
-                Object.values(CUSTOM_ASSETS.monsters).forEach((monsterAsset) => loadCustomAssetEntry(monsterAsset));
+                Object.entries(CUSTOM_ASSETS.monsters).forEach(([typeKey, monsterAsset]) => {
+                    const baseR = (typeof ENEMY_TYPES !== "undefined" && ENEMY_TYPES[typeKey]) ? ENEMY_TYPES[typeKey].radius : 16;
+                    loadCustomAssetEntry(monsterAsset, (entry) => bakeCustomEntityStripToGpu(entry, baseR, 2.8, 0.52, 1.08));
+                });
             }
 
-            // 9. Trùm cuối chiến dịch (Bosses 1-10)
+            // 9. Trùm cuối chiến dịch (Bosses 1-10 - Pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào VRAM)
             if (CUSTOM_ASSETS.bosses) {
-                Object.values(CUSTOM_ASSETS.bosses).forEach((bossAsset) => loadCustomAssetEntry(bossAsset));
+                Object.values(CUSTOM_ASSETS.bosses).forEach((bossAsset) => {
+                    loadCustomAssetEntry(bossAsset, (entry) => bakeCustomEntityStripToGpu(entry, 46, 3.2, 0.65, 1.15));
+                });
             }
 
             // Cập nhật các thẻ <img> có data-asset-src
@@ -6880,19 +7012,17 @@
                 ctx.setLineDash([]);
                 ctx.restore();
 
-                ctx.save();
-                ctx.shadowColor = "rgba(0, 0, 0, 0.70)";
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 3;
-                ctx.shadowOffsetY = 4;
-
-                ctx.save();
-                ctx.rotate(-Math.PI / 2);
-                const scale = skinAsset.scale || 0.056;
-                ctx.scale(scale, scale);
-                ctx.drawImage(skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
-                ctx.restore();
-                ctx.restore();
+                if (skinAsset.bakedSprite) {
+                    const bh = skinAsset.bakedHalf || 72;
+                    ctx.drawImage(skinAsset.bakedSprite, -bh, -bh);
+                } else {
+                    ctx.save();
+                    ctx.rotate(-Math.PI / 2);
+                    const scale = skinAsset.scale || 0.056;
+                    ctx.scale(scale, scale);
+                    ctx.drawImage(skinAsset.gpuBitmap || skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
+                    ctx.restore();
+                }
             } else {
                 // FALLBACK PROCEDURAL CANVAS RENDERING GIỐNG HỆT NGƯỜI CHƠI CHÍNH
                 ctx.fillStyle = "#0f172a";
@@ -7457,11 +7587,16 @@
         const surfaceCanvas = document.createElement("canvas");
         surfaceCanvas.width = WORLD_W;
         surfaceCanvas.height = WORLD_H;
-        const surfaceCtx = surfaceCanvas.getContext("2d");
+        const surfaceCtx = surfaceCanvas.getContext("2d", {
+            alpha: false,
+            willReadFrequently: false
+        }) || surfaceCanvas.getContext("2d");
 
         const LIGHT_SCALE = 0.5;
         const lightCanvas = document.createElement("canvas");
-        const lightCtx = lightCanvas.getContext("2d");
+        const lightCtx = lightCanvas.getContext("2d", {
+            willReadFrequently: false
+        }) || lightCanvas.getContext("2d");
 
         let VIEW_W = Math.max(320, window.innerWidth);
         let VIEW_H = Math.max(240, window.innerHeight);
@@ -9156,8 +9291,21 @@
 
         function bakeBloodSplatter(x, y, radius, intensity = 1) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-            const pal = getBloodColors();
             const safeR = Math.max(4, radius || 10);
+            const stamps = (typeof XENO_RAM_CACHE !== "undefined" && XENO_RAM_CACHE.decalStamps && XENO_RAM_CACHE.decalStamps.blood)
+                ? (greenBloodMode ? XENO_RAM_CACHE.decalStamps.blood.green : XENO_RAM_CACHE.decalStamps.blood.red)
+                : null;
+            if (stamps && stamps.length > 0 && window.monsterRenderMode !== "vector") {
+                const stamp = stamps[(Math.random() * stamps.length) | 0];
+                const drawR = safeR * 1.95 * Math.min(1.45, 0.78 + intensity * 0.22);
+                surfaceCtx.save();
+                surfaceCtx.translate(x, y);
+                surfaceCtx.rotate(Math.random() * Math.PI * 2);
+                surfaceCtx.drawImage(stamp, -drawR, -drawR, drawR * 2, drawR * 2);
+                surfaceCtx.restore();
+                return;
+            }
+            const pal = getBloodColors();
             surfaceCtx.save();
             surfaceCtx.translate(x, y);
             const drops = Math.floor((5 + Math.random() * 6) * intensity);
@@ -9186,6 +9334,13 @@
         function bakeScorchCrater(x, y, radius, isNuclearGreen = false) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
             const safeR = Math.max(8, radius || 30);
+            const craterStamp = (typeof XENO_RAM_CACHE !== "undefined" && XENO_RAM_CACHE.decalStamps && XENO_RAM_CACHE.decalStamps.craters)
+                ? (isNuclearGreen ? XENO_RAM_CACHE.decalStamps.craters.green : XENO_RAM_CACHE.decalStamps.craters.dark)
+                : null;
+            if (craterStamp && window.monsterRenderMode !== "vector") {
+                surfaceCtx.drawImage(craterStamp, x - safeR, y - safeR, safeR * 2, safeR * 2);
+                return;
+            }
             surfaceCtx.save();
             const g = safeRadialGradient(surfaceCtx, x, y, 2, x, y, safeR);
             if (isNuclearGreen) {
@@ -9204,100 +9359,118 @@
             surfaceCtx.restore();
         }
 
-        function bakeAlienCorpse(e, frozenShatter = false) {
-            if (!e || !Number.isFinite(e.x) || !Number.isFinite(e.y)) return;
-            const pal = getBloodColors();
-            const r = Math.max(8, e.radius || 14);
-            bakeBloodSplatter(e.x, e.y, r * (e.isBoss ? 2.2 : 1.55), e.isBoss ? 3.2 : 1.5);
-
-            surfaceCtx.save();
-            surfaceCtx.translate(e.x, e.y);
-            surfaceCtx.rotate((e.angle || 0) + (Math.random() - 0.5) * 0.4);
-
-            const limbColor = frozenShatter ? "#38bdf8" : e.carapaceColor;
-            const bodyCol = frozenShatter ? "#0284c7" : e.bodyColor;
-            const spikeCol = frozenShatter ? "#bae6fd" : "#e2e8f0";
-
-            surfaceCtx.strokeStyle = limbColor;
-            surfaceCtx.lineWidth = Math.max(2, r * 0.18);
-            surfaceCtx.lineCap = "round";
+        function drawAlienCorpseVectorToCtx(targetCtx, r, isBoss, limbColor, bodyCol, spikeCol, brightCol) {
+            targetCtx.strokeStyle = limbColor;
+            targetCtx.lineWidth = Math.max(2, r * 0.18);
+            targetCtx.lineCap = "round";
             for (let side = -1; side <= 1; side += 2) {
                 for (let l = -1; l <= 1; l++) {
                     const jx = l * r * 0.48;
                     const jy = side * r * 1.02;
                     const tx = jx - r * 0.42;
                     const ty = side * r * 1.55;
-                    surfaceCtx.beginPath();
-                    surfaceCtx.moveTo(l * r * 0.2, side * r * 0.25);
-                    surfaceCtx.lineTo(jx, jy);
-                    surfaceCtx.lineTo(tx, ty);
-                    surfaceCtx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(l * r * 0.2, side * r * 0.25);
+                    targetCtx.lineTo(jx, jy);
+                    targetCtx.lineTo(tx, ty);
+                    targetCtx.stroke();
 
                     // Knee spike on shattered corpse limb
-                    surfaceCtx.fillStyle = spikeCol;
-                    surfaceCtx.beginPath();
-                    surfaceCtx.moveTo(jx, jy);
-                    surfaceCtx.lineTo(jx + r * 0.18, jy + side * r * 0.26);
-                    surfaceCtx.lineTo(jx - r * 0.10, jy + side * r * 0.06);
-                    surfaceCtx.closePath();
-                    surfaceCtx.fill();
+                    targetCtx.fillStyle = spikeCol;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(jx, jy);
+                    targetCtx.lineTo(jx + r * 0.18, jy + side * r * 0.26);
+                    targetCtx.lineTo(jx - r * 0.10, jy + side * r * 0.06);
+                    targetCtx.closePath();
+                    targetCtx.fill();
                 }
             }
 
-            if (e.isBoss) {
+            if (isBoss) {
                 // Shattered Boss Segmented Tail & 10-Spiked Morning-Star Mace on Floor
                 const tailEndX = -r * 1.95;
                 const tailEndY = r * 0.28;
-                surfaceCtx.strokeStyle = limbColor;
-                surfaceCtx.lineWidth = Math.max(6, r * 0.22);
-                surfaceCtx.beginPath();
-                surfaceCtx.moveTo(-r * 0.55, 0);
-                surfaceCtx.quadraticCurveTo(-r * 1.25, r * 0.42, tailEndX, tailEndY);
-                surfaceCtx.stroke();
+                targetCtx.strokeStyle = limbColor;
+                targetCtx.lineWidth = Math.max(6, r * 0.22);
+                targetCtx.beginPath();
+                targetCtx.moveTo(-r * 0.55, 0);
+                targetCtx.quadraticCurveTo(-r * 1.25, r * 0.42, tailEndX, tailEndY);
+                targetCtx.stroke();
 
-                surfaceCtx.fillStyle = spikeCol;
+                targetCtx.fillStyle = spikeCol;
                 for (let k = 0; k < 10; k++) {
                     const sa = (k / 10) * Math.PI * 2;
                     const spLen = (k % 2 === 0) ? r * 0.56 : r * 0.40;
-                    surfaceCtx.beginPath();
-                    surfaceCtx.moveTo(tailEndX + Math.cos(sa - 0.22) * r * 0.22, tailEndY + Math.sin(sa - 0.22) * r * 0.22);
-                    surfaceCtx.lineTo(tailEndX + Math.cos(sa) * spLen, tailEndY + Math.sin(sa) * spLen);
-                    surfaceCtx.lineTo(tailEndX + Math.cos(sa + 0.22) * r * 0.22, tailEndY + Math.sin(sa + 0.22) * r * 0.22);
-                    surfaceCtx.closePath();
-                    surfaceCtx.fill();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(tailEndX + Math.cos(sa - 0.22) * r * 0.22, tailEndY + Math.sin(sa - 0.22) * r * 0.22);
+                    targetCtx.lineTo(tailEndX + Math.cos(sa) * spLen, tailEndY + Math.sin(sa) * spLen);
+                    targetCtx.lineTo(tailEndX + Math.cos(sa + 0.22) * r * 0.22, tailEndY + Math.sin(sa + 0.22) * r * 0.22);
+                    targetCtx.closePath();
+                    targetCtx.fill();
                 }
-                surfaceCtx.fillStyle = bodyCol;
-                surfaceCtx.beginPath();
-                safeArc(surfaceCtx, tailEndX, tailEndY, r * 0.24);
-                surfaceCtx.fill();
+                targetCtx.fillStyle = bodyCol;
+                targetCtx.beginPath();
+                safeArc(targetCtx, tailEndX, tailEndY, r * 0.24);
+                targetCtx.fill();
             }
 
             // Jagged multi-angled chitinous corpse shell
-            surfaceCtx.fillStyle = limbColor;
-            surfaceCtx.beginPath();
-            surfaceCtx.moveTo(r * 0.95, 0);
-            surfaceCtx.lineTo(r * 0.42, -r * 0.72);
-            surfaceCtx.lineTo(-r * 0.15, -r * 0.86);
-            surfaceCtx.lineTo(-r * 0.62, -r * 0.58);
-            surfaceCtx.lineTo(-r * 1.15, 0);
-            surfaceCtx.lineTo(-r * 0.62, r * 0.58);
-            surfaceCtx.lineTo(-r * 0.15, r * 0.86);
-            surfaceCtx.lineTo(r * 0.42, r * 0.72);
-            surfaceCtx.closePath();
-            surfaceCtx.fill();
+            targetCtx.fillStyle = limbColor;
+            targetCtx.beginPath();
+            targetCtx.moveTo(r * 0.95, 0);
+            targetCtx.lineTo(r * 0.42, -r * 0.72);
+            targetCtx.lineTo(-r * 0.15, -r * 0.86);
+            targetCtx.lineTo(-r * 0.62, -r * 0.58);
+            targetCtx.lineTo(-r * 1.15, 0);
+            targetCtx.lineTo(-r * 0.62, r * 0.58);
+            targetCtx.lineTo(-r * 0.15, r * 0.86);
+            targetCtx.lineTo(r * 0.42, r * 0.72);
+            targetCtx.closePath();
+            targetCtx.fill();
 
-            surfaceCtx.fillStyle = frozenShatter ? "#bae6fd" : pal.bright;
-            surfaceCtx.beginPath();
-            safeArc(surfaceCtx, r * 0.18, 0, r * 0.38);
-            surfaceCtx.fill();
+            targetCtx.fillStyle = brightCol;
+            targetCtx.beginPath();
+            safeArc(targetCtx, r * 0.18, 0, r * 0.38);
+            targetCtx.fill();
 
-            surfaceCtx.fillStyle = bodyCol;
+            targetCtx.fillStyle = bodyCol;
             for (let s = -2; s <= 2; s++) {
-                surfaceCtx.beginPath();
-                surfaceCtx.moveTo(s * r * 0.26, -r * 0.18);
-                surfaceCtx.lineTo(s * r * 0.34 - 5, -r * 0.78);
-                surfaceCtx.lineTo(s * r * 0.34 + 4, -r * 0.18);
-                surfaceCtx.fill();
+                targetCtx.beginPath();
+                targetCtx.moveTo(s * r * 0.26, -r * 0.18);
+                targetCtx.lineTo(s * r * 0.34 - 5, -r * 0.78);
+                targetCtx.lineTo(s * r * 0.34 + 4, -r * 0.18);
+                targetCtx.fill();
+            }
+        }
+
+        function bakeAlienCorpse(e, frozenShatter = false) {
+            if (!e || !Number.isFinite(e.x) || !Number.isFinite(e.y)) return;
+            const r = Math.max(8, e.radius || 14);
+            bakeBloodSplatter(e.x, e.y, r * (e.isBoss ? 2.2 : 1.55), e.isBoss ? 3.2 : 1.5);
+
+            const corpseCache = (typeof XENO_RAM_CACHE !== "undefined" && XENO_RAM_CACHE.decalStamps && XENO_RAM_CACHE.decalStamps.corpses)
+                ? XENO_RAM_CACHE.decalStamps.corpses
+                : null;
+            const typeKey = e.isBoss ? "boss" : (e.typeKey || "crawler");
+            const modeKey = frozenShatter ? "frozen" : (greenBloodMode ? "green" : "red");
+            const stampEntry = corpseCache && corpseCache[typeKey] && corpseCache[typeKey][modeKey];
+
+            surfaceCtx.save();
+            surfaceCtx.translate(e.x, e.y);
+            surfaceCtx.rotate((e.angle || 0) + (Math.random() - 0.5) * 0.4);
+
+            if (stampEntry && stampEntry.sprite && window.monsterRenderMode !== "vector") {
+                const scale = r / stampEntry.baseR;
+                const drawHalf = stampEntry.half * scale;
+                const drawSize = drawHalf * 2;
+                surfaceCtx.drawImage(stampEntry.sprite, -drawHalf, -drawHalf, drawSize, drawSize);
+            } else {
+                const pal = getBloodColors();
+                const limbColor = frozenShatter ? "#38bdf8" : e.carapaceColor;
+                const bodyCol = frozenShatter ? "#0284c7" : e.bodyColor;
+                const spikeCol = frozenShatter ? "#bae6fd" : "#e2e8f0";
+                const brightCol = frozenShatter ? "#bae6fd" : pal.bright;
+                drawAlienCorpseVectorToCtx(surfaceCtx, r, !!e.isBoss, limbColor, bodyCol, spikeCol, brightCol);
             }
             surfaceCtx.restore();
 
@@ -11330,23 +11503,22 @@
                                      (CUSTOM_ASSETS.cryoPods && CUSTOM_ASSETS.cryoPods[0]);
 
                     if (podAsset && podAsset.loaded && podAsset.img) {
-                        // 1. VẼ BẰNG ASSET ẢNH MẪU ĐỘ NÉT CAO (ken_ngudong.png & ken_ngudong2.png)
-                        const pulse = 0.84 + 0.16 * Math.sin(now * 0.0035 + i * 1.3);
-
-                        // Ánh sáng sinh học phát quang buồng ngủ đông (Bioluminescent Cryo Stasis Glow)
-                        ctx.save();
-                        ctx.shadowColor = (podVariant === 1) ? "rgba(192, 132, 252, 0.75)" : "rgba(45, 212, 191, 0.75)";
-                        ctx.shadowBlur = 14 * pulse;
-
-                        // Tỷ lệ khớp chính xác với bounding box thân kén 280x524 trên ảnh 433x577
+                        // 1. VẼ BẰNG ASSET ẢNH MẪU ĐỘ NÉT CAO TỪ VRAM (ken_ngudong.png & ken_ngudong2.png) - ZERO SHADOWBLUR
                         const scale = sp.h / 524;
                         const drawW = 433 * scale;
                         const drawH = 577 * scale;
                         const drawX = (sp.w - drawW) * 0.5;
                         const drawY = (sp.h - drawH) * 0.5;
 
-                        ctx.drawImage(podAsset.img, drawX, drawY, drawW, drawH);
-                        ctx.restore();
+                        const glowIdx = (podVariant === 1) ? 1 : 0;
+                        const bakedGlow = podAsset.bakedGlowSprites && podAsset.bakedGlowSprites[glowIdx];
+                        if (bakedGlow) {
+                            const padX = drawW * (podAsset.bakedPadRatioX || 0.25);
+                            const padY = drawH * (podAsset.bakedPadRatioY || 0.19);
+                            ctx.drawImage(bakedGlow, drawX - padX, drawY - padY, drawW + padX * 2, drawH + padY * 2);
+                        } else {
+                            ctx.drawImage(podAsset.gpuBitmap || podAsset.img, drawX, drawY, drawW, drawH);
+                        }
 
                         // Nhãn HUD kỹ thuật quân sự trên đầu kén
                         ctx.font = "800 7.5px 'JetBrains Mono', monospace";
@@ -12393,7 +12565,7 @@
                         const dh = turretAsset.img.naturalHeight * scale;
                         const dx = -turretAsset.pivotX * scale;
                         const dy = -turretAsset.pivotY * scale;
-                        ctx.drawImage(turretAsset.img, dx, dy, dw, dh);
+                        ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
                     } else {
                         ctx.strokeStyle = "#4ade80";
                         ctx.lineWidth = 2.8;
@@ -12486,7 +12658,7 @@
                     const dx = -turretAsset.pivotX * scale;
                     const dy = -turretAsset.pivotY * scale;
 
-                    ctx.drawImage(turretAsset.img, dx, dy, dw, dh);
+                    ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
 
                     // Central tech energy core pulse
                     const corePulse = (Math.sin(now * 0.008) + 1) * 0.5;
@@ -16885,7 +17057,7 @@
                 const barrelAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.barrels) ? CUSTOM_ASSETS.barrels[br.barrelType || "tnt"] : null;
                 if (barrelAsset && barrelAsset.loaded && barrelAsset.img && barrelAsset.img.naturalWidth > 0) {
                     const bSize = r * 2.3;
-                    ctx.drawImage(barrelAsset.img, -bSize * 0.5, -bSize * 0.5, bSize, bSize);
+                    ctx.drawImage(barrelAsset.gpuBitmap || barrelAsset.img, -bSize * 0.5, -bSize * 0.5, bSize, bSize);
                     ctx.fillStyle = meta.bandCol;
                     ctx.font = "900 8px 'JetBrains Mono', monospace";
                     ctx.textAlign = "center";
@@ -16977,7 +17149,7 @@
                 // Tùy chỉnh Asset Thùng Gỗ / Crate (Tự động nhận nếu có ảnh trong assets/)
                 const crateAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.crate : null;
                 if (crateAsset && crateAsset.loaded && crateAsset.img && crateAsset.img.naturalWidth > 0) {
-                    ctx.drawImage(crateAsset.img, -hw, -hh, cw, ch);
+                    ctx.drawImage(crateAsset.gpuBitmap || crateAsset.img, -hw, -hh, cw, ch);
                     ctx.restore();
                 } else {
                     // Chân đế gỗ 2.5D dày dặn
@@ -17192,7 +17364,7 @@
                     } else {
                         dw = maxIconSize * aspect;
                     }
-                    ctx.drawImage(img, -dw / 2, -dh / 2 - 0.5, dw, dh);
+                    ctx.drawImage(itemAsset.gpuBitmap || img, -dw / 2, -dh / 2 - 0.5, dw, dh);
                 } else {
                     ctx.font = "800 10px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#ffffff";
@@ -20163,10 +20335,14 @@
 
         const XENO_RAM_CACHE = {
             initialized: false,
+            vgaAccelerated: typeof createImageBitmap === "function",
             frameCount: 16,
             totalCanvases: 0,
-            monsters: {}, // keyed by typeKey: { cellSize, half, pSize, pHalf, mSize, mHalf, parts, sheetCanvas }
-            bosses: {}    // keyed by mapId (1..10): { cellSize, half, pSize, pHalf, mSize, mHalf, hSize, hHalf, parts, sheetCanvas }
+            vramTextures: 0,
+            monsters: {}, // keyed by typeKey: { cellSize, half, pSize, pHalf, mSize, mHalf, parts, sheetCanvas, vramPromoted }
+            bosses: {},   // keyed by mapId (1..10): { cellSize, half, pSize, pHalf, mSize, mHalf, parts, sheetCanvas, vramPromoted }
+            decalStamps: null,
+            lightMasks: null
         };
         window.XENO_RAM_CACHE = XENO_RAM_CACHE;
 
@@ -20176,6 +20352,53 @@
             c.height = Math.max(2, Math.ceil(h));
             XENO_RAM_CACHE.totalCanvases++;
             return c;
+        }
+
+        function releaseGpuOrRamSurface(surf) {
+            if (!surf) return;
+            if (typeof surf.close === "function") {
+                try { surf.close(); } catch (err) {}
+            } else if ("width" in surf) {
+                surf.width = 0;
+                surf.height = 0;
+            }
+        }
+
+        // Chuyển đổi Offscreen Canvas từ CPU RAM sang Immutable GPU Texture (ImageBitmap) nằm thẳng trong VRAM của VGA
+        function promoteCacheEntryToVgaVram(entry) {
+            if (!entry || typeof createImageBitmap !== "function") return;
+            if (entry.sheetCanvas && typeof entry.sheetCanvas.close !== "function") {
+                const srcCanvas = entry.sheetCanvas;
+                createImageBitmap(srcCanvas).then((bmp) => {
+                    if (entry._evicted) {
+                        bmp.close();
+                        return;
+                    }
+                    entry.sheetCanvas = bmp;
+                    entry.vramPromoted = true;
+                    XENO_RAM_CACHE.vramTextures++;
+                    srcCanvas.width = 0;
+                    srcCanvas.height = 0;
+                    if (typeof updateMonsterRamCacheUI === "function") updateMonsterRamCacheUI();
+                }).catch(() => {});
+            }
+            if (entry.parts) {
+                Object.keys(entry.parts).forEach((pKey) => {
+                    const partCan = entry.parts[pKey];
+                    if (partCan && typeof partCan.close !== "function") {
+                        createImageBitmap(partCan).then((bmp) => {
+                            if (entry._evicted) {
+                                bmp.close();
+                                return;
+                            }
+                            entry.parts[pKey] = bmp;
+                            XENO_RAM_CACHE.vramTextures++;
+                            partCan.width = 0;
+                            partCan.height = 0;
+                        }).catch(() => {});
+                    }
+                });
+            }
         }
 
         // Bảng màu giải phẫu cho 5 hệ Quái theo 3 trạng thái (0: Normal, 1: HitFlash, 2: Chilled)
@@ -21243,7 +21466,7 @@
                 }
             }
 
-            // Tier 2: Pre-Compose the separated RAM parts into a 16-Frame × 3-State Atlas Sheet using ONLY drawImage!
+            // Tier 2: Pre-Compose the separated RAM parts + 2.5D Ground Contact Shadow into a 16-Frame × 3-State Atlas Sheet!
             const sheetCanvas = createRamCanvas(cellSize * F, cellSize * 3);
             const sCtx = sheetCanvas.getContext("2d");
             for (let st = 0; st < 3; st++) {
@@ -21254,6 +21477,12 @@
 
                     sCtx.save();
                     sCtx.translate(ox, oy);
+
+                    // 0. Bake 2.5D Ground Contact Shadow directly into Atlas Cell (Zero per-frame CPU arc!)
+                    sCtx.fillStyle = "rgba(2, 6, 18, 0.52)";
+                    sCtx.beginPath();
+                    safeArc(sCtx, 0, 0, r * 1.08);
+                    sCtx.fill();
 
                     // 1. Stamp Limbs & Tail from RAM
                     sCtx.drawImage(limbsAndTailCanvas, f * cellSize, st * cellSize, cellSize, cellSize, -half, -half, cellSize, cellSize);
@@ -21286,7 +21515,7 @@
                 }
             }
 
-            XENO_RAM_CACHE.monsters[typeKey] = {
+            const entry = {
                 r,
                 cellSize,
                 half,
@@ -21295,6 +21524,8 @@
                 mSize,
                 mHalf,
                 pincerConfig,
+                vramPromoted: false,
+                _evicted: false,
                 parts: {
                     carapace: carapaceCanvas,
                     pincerLeft: pincerLeftCanvas,
@@ -21304,6 +21535,8 @@
                 },
                 sheetCanvas
             };
+            XENO_RAM_CACHE.monsters[typeKey] = entry;
+            promoteCacheEntryToVgaVram(entry);
         }
 
         // Bảng cấu hình màu sắc cho 10 Boss (Map 1 -> Map 10)
@@ -21750,7 +21983,7 @@
             ctx = savedCtx;
             window.currentMapId = savedMapId;
 
-            XENO_RAM_CACHE.bosses[targetId] = {
+            const bossEntry = {
                 r,
                 cellSize,
                 half,
@@ -21759,6 +21992,8 @@
                 mSize,
                 mHalf,
                 maceAnchors,
+                vramPromoted: false,
+                _evicted: false,
                 parts: {
                     carapace: carapaceCanvas,
                     pincerLeft: pincerLeftCanvas,
@@ -21768,11 +22003,13 @@
                 },
                 sheetCanvas
             };
-            return XENO_RAM_CACHE.bosses[targetId];
+            XENO_RAM_CACHE.bosses[targetId] = bossEntry;
+            promoteCacheEntryToVgaVram(bossEntry);
+            return bossEntry;
         }
 
-        // HÀM DỌN DẸP RAM BOSS CŨ KHI ĐỔI MAP (CACHE EVICTION)
-        // Giải phóng pixel buffer của Boss map trước để giữ RAM luôn dưới 50MB
+        // HÀM DỌN DẸP VRAM / RAM BOSS CŨ KHI ĐỔI MAP (CACHE EVICTION)
+        // Giải phóng cả GPU ImageBitmap (.close()) lẫn Canvas buffer của Boss map trước để giữ VRAM/RAM luôn dưới 50MB
         function pruneOldBossCache(keepMapId) {
             const keepId = Math.max(1, Math.min(10, parseInt(keepMapId, 10) || 1));
             for (const id in XENO_RAM_CACHE.bosses) {
@@ -21780,14 +22017,11 @@
                 if (numId !== keepId) {
                     const entry = XENO_RAM_CACHE.bosses[id];
                     if (entry) {
-                        if (entry.sheetCanvas) {
-                            entry.sheetCanvas.width = 0;
-                            entry.sheetCanvas.height = 0;
-                        }
+                        entry._evicted = true;
+                        releaseGpuOrRamSurface(entry.sheetCanvas);
                         if (entry.parts) {
                             for (const pKey in entry.parts) {
-                                const c = entry.parts[pKey];
-                                if (c) { c.width = 0; c.height = 0; }
+                                releaseGpuOrRamSurface(entry.parts[pKey]);
                             }
                         }
                     }
@@ -21797,7 +22031,7 @@
         }
         window.pruneOldBossCache = pruneOldBossCache;
 
-        // HÀM LAZY-LOADING BOSS CHO RAM CACHE: Chỉ nạp khi thực sự cần & tự dọn boss map cũ
+        // HÀM LAZY-LOADING BOSS CHO VRAM CACHE: Chỉ nạp khi thực sự cần & tự dọn boss map cũ
         function ensureBossCacheEntry(mapId) {
             const targetId = Math.max(1, Math.min(10, parseInt(mapId, 10) || 1));
             pruneOldBossCache(targetId);
@@ -21811,14 +22045,171 @@
         }
         window.ensureBossCacheEntry = ensureBossCacheEntry;
 
+        // KHỞI TẠO BỘ ĐỆM VGA VRAM CHO XÁC QUÁI (CORPSES), VẾT MÁU (BLOOD), HỐ BOM (CRATERS) & MẶT NẠ ÁNH SÁNG (LIGHT MASKS)
+        function initVgaDecalAndLightStamps() {
+            if (XENO_RAM_CACHE.decalStamps) return;
+            const decalStamps = {
+                blood: { red: [], green: [] },
+                craters: { dark: null, green: null },
+                corpses: {}
+            };
+
+            // 1. Pre-bake 6 Red & 6 Green Blood Splatter Stamps (96x96) into GPU VRAM
+            const bloodPals = {
+                red:   { main: "rgba(185, 28, 28, 0.78)", dark: "rgba(127, 29, 29, 0.9)" },
+                green: { main: "rgba(34, 197, 94, 0.76)", dark: "rgba(21, 128, 61, 0.88)" }
+            };
+            ["red", "green"].forEach((palKey) => {
+                const pal = bloodPals[palKey];
+                for (let v = 0; v < 6; v++) {
+                    const c = createRamCanvas(96, 96);
+                    const bCtx = c.getContext("2d");
+                    bCtx.save();
+                    bCtx.translate(48, 48);
+                    const baseR = 20;
+                    const drops = 9 + (v % 4) * 2;
+                    for (let i = 0; i < drops; i++) {
+                        const ang = (i / drops) * Math.PI * 2 + (v * 0.67 + i * 1.31);
+                        const dist = ((i * 7 + v * 3) % 10) * 0.1 * baseR * 1.42;
+                        const dr = 2.4 + ((i * 5 + v) % 7) * 0.14 * (baseR * 0.42);
+                        bCtx.fillStyle = ((i + v) % 3 !== 0) ? pal.main : pal.dark;
+                        bCtx.beginPath();
+                        safeArc(bCtx, Math.cos(ang) * dist, Math.sin(ang) * dist, dr);
+                        bCtx.fill();
+                    }
+                    bCtx.restore();
+                    decalStamps.blood[palKey][v] = c;
+                    const idx = v;
+                    promoteCanvasToGpuBitmap(c, (bmp) => {
+                        decalStamps.blood[palKey][idx] = bmp;
+                        XENO_RAM_CACHE.vramTextures++;
+                    });
+                }
+            });
+
+            // 2. Pre-bake Dark & Nuclear Green Scorch Craters (128x128) into GPU VRAM
+            ["dark", "green"].forEach((cKey) => {
+                const c = createRamCanvas(128, 128);
+                const crCtx = c.getContext("2d");
+                const g = safeRadialGradient(crCtx, 64, 64, 3, 64, 64, 60);
+                if (cKey === "green") {
+                    g.addColorStop(0, "rgba(22, 163, 74, 0.65)");
+                    g.addColorStop(0.55, "rgba(21, 128, 61, 0.35)");
+                    g.addColorStop(1, "rgba(0, 0, 0, 0)");
+                } else {
+                    g.addColorStop(0, "rgba(8, 8, 12, 0.82)");
+                    g.addColorStop(0.55, "rgba(28, 25, 23, 0.45)");
+                    g.addColorStop(1, "rgba(0, 0, 0, 0)");
+                }
+                crCtx.fillStyle = g;
+                crCtx.beginPath();
+                safeArc(crCtx, 64, 64, 60);
+                crCtx.fill();
+                decalStamps.craters[cKey] = c;
+                promoteCanvasToGpuBitmap(c, (bmp) => {
+                    decalStamps.craters[cKey] = bmp;
+                    XENO_RAM_CACHE.vramTextures++;
+                });
+            });
+
+            // 3. Pre-bake Alien Corpse Stamps for 5 Monster Types + Boss (Red, Green, Frozen) into GPU VRAM
+            ["crawler", "stalker", "spitter", "brute", "praetorian", "boss"].forEach((tKey) => {
+                const cfg = ENEMY_TYPES[tKey] || ENEMY_TYPES.crawler;
+                const isBoss = (tKey === "boss");
+                const baseR = Math.max(10, cfg.radius || (isBoss ? 46 : 14));
+                const half = Math.ceil(baseR * (isBoss ? 2.65 : 1.85));
+                const sz = half * 2;
+                decalStamps.corpses[tKey] = {};
+
+                ["red", "green", "frozen"].forEach((mKey) => {
+                    const isFrozen = (mKey === "frozen");
+                    const c = createRamCanvas(sz, sz);
+                    const cpCtx = c.getContext("2d");
+                    cpCtx.save();
+                    cpCtx.translate(half, half);
+                    const limbColor = isFrozen ? "#38bdf8" : cfg.carapaceColor;
+                    const bodyCol   = isFrozen ? "#0284c7" : cfg.bodyColor;
+                    const spikeCol  = isFrozen ? "#bae6fd" : "#e2e8f0";
+                    const brightCol = isFrozen ? "#bae6fd" : (mKey === "green" ? "#4ade80" : "#ef4444");
+                    drawAlienCorpseVectorToCtx(cpCtx, baseR, isBoss, limbColor, bodyCol, spikeCol, brightCol);
+                    cpCtx.restore();
+
+                    const stampObj = { sprite: c, baseR, half };
+                    decalStamps.corpses[tKey][mKey] = stampObj;
+                    promoteCanvasToGpuBitmap(c, (bmp) => {
+                        stampObj.sprite = bmp;
+                        XENO_RAM_CACHE.vramTextures++;
+                    });
+                });
+            });
+
+            XENO_RAM_CACHE.decalStamps = decalStamps;
+
+            // 4. Pre-bake Screen Lighting Alpha Cutout Masks into GPU VRAM
+            const lightMasks = {};
+            const bakeRadialMask = (key, stops) => {
+                const c = createRamCanvas(256, 256);
+                const lCtx = c.getContext("2d");
+                const g = safeRadialGradient(lCtx, 128, 128, 8, 128, 128, 124);
+                stops.forEach(([pos, col]) => g.addColorStop(pos, col));
+                lCtx.fillStyle = g;
+                lCtx.beginPath();
+                safeArc(lCtx, 128, 128, 124);
+                lCtx.fill();
+                lightMasks[key] = c;
+                promoteCanvasToGpuBitmap(c, (bmp) => {
+                    lightMasks[key] = bmp;
+                    XENO_RAM_CACHE.vramTextures++;
+                });
+            };
+
+            bakeRadialMask("aura", [[0, "rgba(0,0,0,1)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("fire", [[0, "rgba(0,0,0,0.92)"], [0.6, "rgba(0,0,0,0.55)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("vat",  [[0, "rgba(0,0,0,0.75)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("core", [[0, "rgba(0,0,0,0.96)"], [0.65, "rgba(0,0,0,0.65)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("prop", [[0, "rgba(0,0,0,0.72)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("boss", [[0, "rgba(0,0,0,0.90)"], [1, "rgba(0,0,0,0)"]]);
+            bakeRadialMask("proj", [[0, "rgba(0,0,0,0.68)"], [1, "rgba(0,0,0,0)"]]);
+
+            // Pre-bake Flashlight Cone (580px length, -0.45..+0.45 rad)
+            const coneLen = 580;
+            const coneHalfY = Math.ceil(Math.sin(0.46) * coneLen) + 6;
+            const coneCan = createRamCanvas(coneLen + 8, coneHalfY * 2);
+            const ccCtx = coneCan.getContext("2d");
+            ccCtx.save();
+            ccCtx.translate(0, coneHalfY);
+            const gCone = safeRadialGradient(ccCtx, 0, 0, 12, 0, 0, coneLen);
+            gCone.addColorStop(0, "rgba(0,0,0,0.98)");
+            gCone.addColorStop(0.75, "rgba(0,0,0,0.65)");
+            gCone.addColorStop(1, "rgba(0,0,0,0)");
+            ccCtx.fillStyle = gCone;
+            ccCtx.beginPath();
+            ccCtx.moveTo(0, 0);
+            ccCtx.arc(0, 0, coneLen, -0.45, 0.45);
+            ccCtx.closePath();
+            ccCtx.fill();
+            ccCtx.restore();
+            lightMasks.cone = coneCan;
+            lightMasks.coneW = coneLen + 8;
+            lightMasks.coneH = coneHalfY * 2;
+            lightMasks.coneHalfY = coneHalfY;
+            promoteCanvasToGpuBitmap(coneCan, (bmp) => {
+                lightMasks.cone = bmp;
+                XENO_RAM_CACHE.vramTextures++;
+            });
+
+            XENO_RAM_CACHE.lightMasks = lightMasks;
+        }
+
         function initMonsterRamCache() {
             if (XENO_RAM_CACHE.initialized) return;
             XENO_RAM_CACHE.totalCanvases = 0;
+            XENO_RAM_CACHE.vramTextures = 0;
             ["crawler", "stalker", "spitter", "brute", "praetorian"].forEach(typeKey => {
                 buildMonsterCacheEntry(typeKey);
             });
-            // Tối ưu hóa Lazy-Loading: Chỉ nạp Boss của Map hiện tại thay vì nạp trước cả 10 Boss lúc khởi động
-            // Giúp giảm thời gian khởi động ban đầu và tiết kiệm ngay ~140MB - 150MB RAM!
+            initVgaDecalAndLightStamps();
+            // Tối ưu hóa Lazy-Loading: Chỉ nạp Boss của Map hiện tại vào VRAM thay vì nạp trước cả 10 Boss lúc khởi động
             const currentMap = window.currentMapId || 1;
             ensureBossCacheEntry(currentMap);
             XENO_RAM_CACHE.initialized = true;
@@ -21832,12 +22223,13 @@
             const btn = byId("sysModalMonsterCacheBtn");
             const mode = window.monsterRenderMode || "atlas";
             const loadedBosses = Object.keys(XENO_RAM_CACHE.bosses || {}).length;
+            const vramTag = XENO_RAM_CACHE.vgaAccelerated ? "VGA VRAM" : "RAM";
             if (txt) {
                 if (mode === "modular") {
-                    txt.textContent = `Tách Bộ Phận RAM (${XENO_RAM_CACHE.totalCanvases} Buffer • Boss: ${loadedBosses}/10)`;
+                    txt.textContent = `Tách Bộ Phận ${vramTag} (GPU ImageBitmap • Boss: ${loadedBosses}/10)`;
                     txt.className = "text-[10px] font-mono-tech text-cyan-300 mt-0.5";
                 } else if (mode === "atlas") {
-                    txt.textContent = `Đóng Gói 1-Blit RAM (Boss: ${loadedBosses}/10 • Cực Nhẹ)`;
+                    txt.textContent = `Đóng Gói 1-Blit ${vramTag} (GPU ImageBitmap • Boss: ${loadedBosses}/10)`;
                     txt.className = "text-[10px] font-mono-tech text-emerald-400 mt-0.5";
                 } else {
                     txt.textContent = "Vẽ Code Vector Gốc (CPU)";
@@ -21846,13 +22238,13 @@
             }
             if (badge) {
                 if (mode === "modular") {
-                    badge.textContent = `PARTS (${loadedBosses}B)`;
+                    badge.textContent = `GPU PARTS (${loadedBosses}B)`;
                     badge.className = "px-2.5 py-1 rounded-none bg-slate-800 text-[11px] font-mono-tech text-cyan-300 font-bold border border-cyan-500/40";
                 } else if (mode === "atlas") {
-                    badge.textContent = `1-BLIT (${loadedBosses}B)`;
+                    badge.textContent = `VGA 1-BLIT (${loadedBosses}B)`;
                     badge.className = "px-2.5 py-1 rounded-none bg-slate-800 text-[11px] font-mono-tech text-emerald-300 font-bold border border-emerald-500/40";
                 } else {
-                    badge.textContent = "VECTOR";
+                    badge.textContent = "CPU VECTOR";
                     badge.className = "px-2.5 py-1 rounded-none bg-slate-800 text-[11px] font-mono-tech text-amber-300 font-bold border border-amber-500/40";
                 }
             }
@@ -21871,16 +22263,16 @@
             window.monsterRenderMode = order[nextIdx];
             updateMonsterRamCacheUI();
             if (window.monsterRenderMode === "modular") {
-                showToast("BỘ ĐỆM QUÁI RAM: TÁCH BỘ PHẬN", "Lấy từng phần (Thân, 2 Càng, Chân/Đuôi, Chùy Gai) từ RAM ra ghép bằng drawImage — không vẽ đa giác bằng code!");
+                showToast("BỘ ĐỆM VGA VRAM: TÁCH BỘ PHẬN", "Lấy từng phần (Thân, 2 Càng, Chân/Đuôi, Chùy Gai) từ GPU ImageBitmap VRAM ghép bằng drawImage!");
             } else if (window.monsterRenderMode === "atlas") {
-                showToast("BỘ ĐỆM QUÁI RAM: SIÊU TỐC 1-BLIT", "Ghép sẵn các bộ phận thành 1 khung hình duy nhất trong RAM — chỉ tốn 1 lệnh drawImage cho mỗi quái!");
+                showToast("BỘ ĐỆM VGA VRAM: SIÊU TỐC 1-BLIT", "Texture ImageBitmap đóng gói sẵn cả Bóng 2.5D + Quái trong VRAM — chỉ tốn 1 lệnh GPU drawImage mỗi quái!");
             } else {
-                showToast("CHẾ ĐỘ VẼ CODE VECTOR GỐC", "Đã chuyển về vẽ đa giác trực tiếp bằng CPU để bạn đối chiếu FPS.");
+                showToast("CHẾ ĐỘ VẼ CODE VECTOR GỐC (CPU)", "Đã chuyển về vẽ đa giác trực tiếp bằng CPU để bạn đối chiếu FPS.");
             }
         }
         window.toggleMonsterRamCacheMode = toggleMonsterRamCacheMode;
 
-        // VẼ QUÁI TỪ BỘ ĐỆM RAM (LẤY TỪNG BỘ PHẬN HOẶC 1-BLIT SHEET TỪ RAM)
+        // VẼ QUÁI TỪ BỘ ĐỆM VGA VRAM (1-BLIT GPU TEXTURE SHEET HOẶC TÁCH BỘ PHẬN)
         function drawXenomorphMonster(e, isGlobalFrozen, visibleCount = 0) {
             if (!XENO_RAM_CACHE.initialized) initMonsterRamCache();
             const mode = window.monsterRenderMode || "atlas";
@@ -21890,19 +22282,16 @@
             }
 
             const typeKey = e.typeKey || "crawler";
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const flash = e.hitFlash > 0;
+            const stateIdx = flash ? 1 : (isChilled ? 2 : 0);
 
-            // Tùy chỉnh Asset Sprite cho Quái vật (Tự động nhận nếu có ảnh monster_*.png trong assets/)
+            // Tùy chỉnh Asset Sprite cho Quái vật (Đã pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào GPU ImageBitmap)
             const monsterAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.monsters) ? CUSTOM_ASSETS.monsters[typeKey] : null;
             if (monsterAsset && monsterAsset.loaded && monsterAsset.img && monsterAsset.img.naturalWidth > 0) {
                 const r = Math.max(8, e.radius || 14);
                 ctx.save();
                 ctx.translate(e.x, e.y);
-
-                // 2.5D Ground Contact Shadow
-                ctx.fillStyle = "rgba(2, 6, 18, 0.52)";
-                ctx.beginPath();
-                safeArc(ctx, 0, 3, r * 1.08);
-                ctx.fill();
 
                 if (e.nuclearSlowTimer > 0) {
                     ctx.strokeStyle = "rgba(74, 222, 128, 0.75)";
@@ -21913,8 +22302,15 @@
                 }
 
                 ctx.rotate(e.angle);
-                const mDrawSize = r * 2.8;
-                ctx.drawImage(monsterAsset.img, -mDrawSize * 0.5, -mDrawSize * 0.5, mDrawSize, mDrawSize);
+                if (monsterAsset.bakedStrip) {
+                    const cell = monsterAsset.bakedCellSize;
+                    const scale = r / (monsterAsset.bakedBaseRadius || 16);
+                    const drawSz = cell * scale;
+                    ctx.drawImage(monsterAsset.bakedStrip, 0, stateIdx * cell, cell, cell, -drawSz * 0.5, -drawSz * 0.5, drawSz, drawSz);
+                } else {
+                    const mDrawSize = r * 2.8;
+                    ctx.drawImage(monsterAsset.gpuBitmap || monsterAsset.img, -mDrawSize * 0.5, -mDrawSize * 0.5, mDrawSize, mDrawSize);
+                }
                 ctx.restore();
                 return;
             }
@@ -21926,22 +22322,27 @@
             }
 
             const r = Math.max(8, e.radius || cache.r);
-            const isChilled = isGlobalFrozen || e.chillTimer > 0;
-            const flash = e.hitFlash > 0;
-            const stateIdx = flash ? 1 : (isChilled ? 2 : 0);
 
             const F = XENO_RAM_CACHE.frameCount;
             const normPhase = ((e.legPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             const frameIdx = Math.floor((normPhase / (Math.PI * 2)) * F) & (F - 1);
 
+            const cell = cache.cellSize;
+            const half = cache.half;
+
+            // Adaptive Fallback: Dùng atlas 1-Blit nếu mode là atlas, hoặc khi mode là modular nhưng số quái trên màn hình > 60
+            const useAtlas = (mode === "atlas") || (mode === "modular" && visibleCount > 60);
+
             ctx.save();
             ctx.translate(e.x, e.y);
 
-            // 1. 2.5D Ground Contact Shadow
-            ctx.fillStyle = "rgba(2, 6, 18, 0.52)";
-            ctx.beginPath();
-            safeArc(ctx, 0, 3, r * 1.08);
-            ctx.fill();
+            // Ở chế độ Atlas 1-Blit, bóng tiếp đất 2.5D đã được đóng gói sẵn bên trong GPU ImageBitmap (0 lệnh safeArc CPU mỗi frame!)
+            if (!useAtlas) {
+                ctx.fillStyle = "rgba(2, 6, 18, 0.52)";
+                ctx.beginPath();
+                safeArc(ctx, 0, 3, r * 1.08);
+                ctx.fill();
+            }
 
             if (e.nuclearSlowTimer > 0) {
                 ctx.strokeStyle = "rgba(74, 222, 128, 0.75)";
@@ -21953,14 +22354,8 @@
 
             ctx.rotate(e.angle);
 
-            const cell = cache.cellSize;
-            const half = cache.half;
-
-            // Adaptive Fallback: Dùng atlas 1-Blit nếu mode là atlas, hoặc khi mode là modular nhưng số quái trên màn hình > 60
-            const useAtlas = (mode === "atlas") || (mode === "modular" && visibleCount > 60);
-
             if (useAtlas) {
-                // 1-Blit Composite Fetch from RAM with dynamic scale support for Elites / Scaled radii
+                // 1-Blit Composite Fetch from VGA VRAM (ImageBitmap) with dynamic scale support for Elites / Scaled radii
                 const scale = r / (cache.r || 14);
                 const drawSize = cell * scale;
                 const drawHalf = half * scale;
@@ -21976,13 +22371,13 @@
                     drawSize
                 );
             } else {
-                // MODULAR PARTS FETCH FROM RAM (Chân/Đuôi + Chùy Gai + 2 Càng xoay độc lập + Thân Giáp)
+                // MODULAR PARTS FETCH FROM VGA VRAM (Chân/Đuôi + Chùy Gai + 2 Càng xoay độc lập + Thân Giáp)
                 const parts = cache.parts;
                 const pSize = cache.pSize;
                 const pHalf = cache.pHalf;
                 const pCfg = cache.pincerConfig;
 
-                // A. Lấy bộ phận Chân & Đuôi từ RAM
+                // A. Lấy bộ phận Chân & Đuôi từ VRAM
                 ctx.drawImage(
                     parts.limbsAndTail,
                     frameIdx * cell,
@@ -21995,7 +22390,7 @@
                     cell
                 );
 
-                // B. Lấy bộ phận Chùy Gai từ RAM (đối với Brute)
+                // B. Lấy bộ phận Chùy Gai từ VRAM (đối với Brute)
                 if (parts.mace) {
                     const mSize = cache.mSize;
                     const mHalf = cache.mHalf;
@@ -22007,7 +22402,7 @@
                     ctx.restore();
                 }
 
-                // C. Lấy bộ phận Càng Trái & Càng Phải từ RAM và xoay theo nhịp kẹp thực tế
+                // C. Lấy bộ phận Càng Trái & Càng Phải từ VRAM và xoay theo nhịp kẹp thực tế
                 const pinch = Math.sin(e.legPhase * pCfg.freq) * pCfg.amp;
                 ctx.save();
                 ctx.translate(pCfg.px, -pCfg.py);
@@ -22021,7 +22416,7 @@
                 ctx.drawImage(parts.pincerRight, 0, stateIdx * pSize, pSize, pSize, -pHalf, -pHalf, pSize, pSize);
                 ctx.restore();
 
-                // D. Lấy bộ phận Thân Giáp, Đầu & Mắt từ RAM đặt lên trên
+                // D. Lấy bộ phận Thân Giáp, Đầu & Mắt từ VRAM đặt lên trên
                 ctx.drawImage(
                     parts.carapace,
                     0,
@@ -22064,26 +22459,29 @@
             }
         }
 
-        // VẼ 10 BOSS TỪ BỘ ĐỆM BỘ PHẬN RAM
+        // VẼ 10 BOSS TỪ BỘ ĐỆM VGA VRAM
         function drawBossFromRamCache(e, isGlobalFrozen, mapId) {
             const targetMapId = mapId || window.currentMapId || 1;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const flash = e.hitFlash > 0;
+            const stateIdx = flash ? 1 : (isChilled ? 2 : 0);
 
-            // Tùy chỉnh Asset Sprite cho Trùm cuối (Tự động nhận nếu có ảnh boss_*.png trong assets/)
+            // Tùy chỉnh Asset Sprite cho Trùm cuối (Đã pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào GPU ImageBitmap)
             const customBoss = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.bosses) ? CUSTOM_ASSETS.bosses[targetMapId] : null;
             if (customBoss && customBoss.loaded && customBoss.img && customBoss.img.naturalWidth > 0) {
                 const r = e.radius || 46;
                 ctx.save();
                 ctx.translate(e.x, e.y);
-
-                // 2.5D Ground Shadow
-                ctx.fillStyle = "rgba(2, 6, 18, 0.65)";
-                ctx.beginPath();
-                safeArc(ctx, 0, 4, r * 1.15);
-                ctx.fill();
-
                 ctx.rotate(e.angle);
-                const bSize = r * 3.2;
-                ctx.drawImage(customBoss.img, -bSize * 0.5, -bSize * 0.5, bSize, bSize);
+                if (customBoss.bakedStrip) {
+                    const cell = customBoss.bakedCellSize;
+                    const scale = r / (customBoss.bakedBaseRadius || 46);
+                    const drawSz = cell * scale;
+                    ctx.drawImage(customBoss.bakedStrip, 0, stateIdx * cell, cell, cell, -drawSz * 0.5, -drawSz * 0.5, drawSz, drawSz);
+                } else {
+                    const bSize = r * 3.2;
+                    ctx.drawImage(customBoss.gpuBitmap || customBoss.img, -bSize * 0.5, -bSize * 0.5, bSize, bSize);
+                }
                 ctx.restore();
                 return;
             }
@@ -22102,10 +22500,6 @@
                 else drawBossOmegaMonsterProcedural(e, isGlobalFrozen);
                 return;
             }
-
-            const isChilled = isGlobalFrozen || e.chillTimer > 0;
-            const flash = e.hitFlash > 0;
-            const stateIdx = flash ? 1 : (isChilled ? 2 : 0);
 
             const F = XENO_RAM_CACHE.frameCount;
             const normPhase = ((e.legPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -22345,7 +22739,7 @@
 
                     // Render custom drone sprite
                     const dSize = droneAsset.renderSize || 28;
-                    ctx.drawImage(droneAsset.img, -dSize * 0.5, -dSize * 0.5, dSize, dSize);
+                    ctx.drawImage(droneAsset.gpuBitmap || droneAsset.img, -dSize * 0.5, -dSize * 0.5, dSize, dSize);
 
                     // Rotor spinning disc blur / glow at 4 rotor positions
                     ctx.save();
@@ -22466,31 +22860,29 @@
                     }
                 }
 
-                // 3. Đổ bóng tiếp đất của thân giáp Mecha
-                ctx.save();
-                ctx.shadowColor = "rgba(0, 0, 0, 0.70)";
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 3;
-                ctx.shadowOffsetY = 4;
+                // 3. Vẽ Asset Nhân vật HD từ GPU VRAM (Đã pre-bake Bóng đổ + Xoay + Scale, ZERO shadowBlur mỗi frame!)
+                if (skinAsset.bakedSprite) {
+                    const bh = skinAsset.bakedHalf || 72;
+                    ctx.drawImage(skinAsset.bakedSprite, -bh, -bh);
+                } else {
+                    ctx.save();
+                    ctx.rotate(-Math.PI / 2);
+                    const scale = skinAsset.scale || 0.056;
+                    ctx.scale(scale, scale);
+                    ctx.drawImage(skinAsset.gpuBitmap || skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
+                    ctx.restore();
+                }
 
-                // 4. Vẽ Asset Nhân vật HD (sung_luc.png) căn chỉnh xoay và tỷ lệ chính xác
-                ctx.save();
-                ctx.rotate(-Math.PI / 2);
-                const scale = skinAsset.scale || 0.056;
-                ctx.scale(scale, scale);
-                ctx.drawImage(skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
-                ctx.restore();
-                ctx.restore();
-
-                // 5. Hiệu ứng Cuồng nộ (Overdrive Aura) nếu đang có buff
+                // 4. Hiệu ứng Cuồng nộ (Overdrive Aura) nếu đang có buff (Zero shadowBlur GPU stall)
                 if (isOverdrive) {
                     ctx.save();
-                    ctx.strokeStyle = "rgba(249, 115, 22, 0.65)";
-                    ctx.lineWidth = 2.0;
-                    ctx.shadowColor = "#ea580c";
-                    ctx.shadowBlur = 14;
+                    ctx.strokeStyle = "rgba(234, 88, 12, 0.28)";
+                    ctx.lineWidth = 6.5;
                     ctx.beginPath();
                     safeArc(ctx, 10, 0, 22);
+                    ctx.stroke();
+                    ctx.strokeStyle = "rgba(249, 115, 22, 0.78)";
+                    ctx.lineWidth = 2.0;
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -22998,6 +23390,9 @@
         }
 
         function renderScreenLighting(camX, camY) {
+            if (!XENO_RAM_CACHE.initialized) initMonsterRamCache();
+            const masks = XENO_RAM_CACHE.lightMasks;
+
             lightCtx.save();
             lightCtx.setTransform(LIGHT_SCALE, 0, 0, LIGHT_SCALE, 0, 0);
 
@@ -23011,114 +23406,80 @@
             const py = player.y - camY;
 
             const auraR = player.muzzleFlash > 0 ? 220 : 155;
-            lightCtx.save();
-            lightCtx.translate(px, py);
-            lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_aura_" + auraR, 0, 0, 16, 0, 0, auraR, [
-                [0, "rgba(0,0,0,1)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
-            lightCtx.beginPath();
-            safeArc(lightCtx, 0, 0, auraR);
-            lightCtx.fill();
-            lightCtx.restore();
+            if (masks && masks.aura) {
+                lightCtx.drawImage(masks.aura, px - auraR, py - auraR, auraR * 2, auraR * 2);
+            } else {
+                lightCtx.save();
+                lightCtx.translate(px, py);
+                lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_aura_" + auraR, 0, 0, 16, 0, 0, auraR, [
+                    [0, "rgba(0,0,0,1)"],
+                    [1, "rgba(0,0,0,0)"]
+                ]);
+                lightCtx.beginPath();
+                safeArc(lightCtx, 0, 0, auraR);
+                lightCtx.fill();
+                lightCtx.restore();
+            }
 
-            // Ambient glow punching through darkness for Fire Patches & Electric Sparks
-            const gFireLight = getCachedRadialGradient(lightCtx, "light_fire_115", 0, 0, 8, 0, 0, 115, [
-                [0, "rgba(0,0,0,0.92)"],
-                [0.6, "rgba(0,0,0,0.55)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            // Ambient glow punching through darkness for Fire Patches & Electric Sparks (1-Blit GPU Mask)
+            const fireMask = masks && masks.fire;
             for (let i = 0; i < firePatches.length; i++) {
                 const fp = firePatches[i];
                 const fx = fp.x - camX;
                 const fy = fp.y - camY;
                 if (fx < -130 || fx > VIEW_W + 130 || fy < -130 || fy > VIEW_H + 130) continue;
-                lightCtx.save();
-                lightCtx.translate(fx, fy);
-                lightCtx.fillStyle = gFireLight;
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, 115);
-                lightCtx.fill();
-                lightCtx.restore();
+                if (fireMask) {
+                    lightCtx.drawImage(fireMask, fx - 115, fy - 115, 230, 230);
+                }
             }
 
-            // Ambient glow punching through darkness for Green Nuclear Vats & Active Bosses
-            const gVat = getCachedRadialGradient(lightCtx, "light_vat_75", 0, 0, 6, 0, 0, 75, [
-                [0, "rgba(0,0,0,0.75)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            // Ambient glow punching through darkness for Green Nuclear Vats
+            const vatMask = masks && masks.vat;
             for (let i = 0; i < nuclearVats.length; i++) {
                 const vat = nuclearVats[i];
                 if (!vat.active) continue;
                 const vx = vat.x - camX;
                 const vy = vat.y - camY;
                 if (vx < -90 || vx > VIEW_W + 90 || vy < -90 || vy > VIEW_H + 90) continue;
-                lightCtx.save();
-                lightCtx.translate(vx, vy);
-                lightCtx.fillStyle = gVat;
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, 75);
-                lightCtx.fill();
-                lightCtx.restore();
+                if (vatMask) {
+                    lightCtx.drawImage(vatMask, vx - 75, vy - 75, 150, 150);
+                }
             }
 
             // Ánh sáng chớp nháy điện từ trường rực rỡ xung quanh Trạm Máy Móc Lõi Năng Lượng Đồ Sộ
-            const gCoreLight = getCachedRadialGradient(lightCtx, "light_ecore_260", 0, 0, 20, 0, 0, 260, [
-                [0, "rgba(0,0,0,0.96)"],
-                [0.65, "rgba(0,0,0,0.65)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            const coreMask = masks && masks.core;
             for (let i = 0; i < energyCoreStations.length; i++) {
                 const st = energyCoreStations[i];
                 const sx = st.x - camX;
                 const sy = st.y - camY;
                 if (sx < -280 || sx > VIEW_W + 280 || sy < -280 || sy > VIEW_H + 280) continue;
-                const flicker = 0.92 + Math.random() * 0.16;
-                lightCtx.save();
-                lightCtx.translate(sx, sy);
-                lightCtx.scale(flicker, flicker);
-                lightCtx.fillStyle = gCoreLight;
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, 260);
-                lightCtx.fill();
-                lightCtx.restore();
+                const rCore = 260 * (0.94 + Math.random() * 0.12);
+                if (coreMask) {
+                    lightCtx.drawImage(coreMask, sx - rCore, sy - rCore, rCore * 2, rCore * 2);
+                }
             }
 
             // Ánh sáng dịu từ Kén Ngủ Đông, Máy Gia Tốc Hạt và Siêu Máy Tính
-            const gPropLight = getCachedRadialGradient(lightCtx, "light_sprop_95", 0, 0, 8, 0, 0, 95, [
-                [0, "rgba(0,0,0,0.72)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            const propMask = masks && masks.prop;
             for (let i = 0; i < spaceProps.length; i++) {
                 const sp = spaceProps[i];
                 const spx = sp.x + sp.w * 0.5 - camX;
                 const spy = sp.y + sp.h * 0.5 - camY;
                 if (spx < -110 || spx > VIEW_W + 110 || spy < -110 || spy > VIEW_H + 110) continue;
-                lightCtx.save();
-                lightCtx.translate(spx, spy);
-                lightCtx.fillStyle = gPropLight;
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, 95);
-                lightCtx.fill();
-                lightCtx.restore();
+                if (propMask) {
+                    lightCtx.drawImage(propMask, spx - 95, spy - 95, 190, 190);
+                }
             }
 
-            const gBoss = getCachedRadialGradient(lightCtx, "light_boss_175", 0, 0, 10, 0, 0, 175, [
-                [0, "rgba(0,0,0,0.9)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            const bossMask = masks && masks.boss;
             for (let b = 0; b < activeBosses.length; b++) {
                 const boss = activeBosses[b];
                 if (!boss || !boss.active) continue;
                 const bx = boss.x - camX;
                 const by = boss.y - camY;
-                lightCtx.save();
-                lightCtx.translate(bx, by);
-                lightCtx.fillStyle = gBoss;
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, 175);
-                lightCtx.fill();
-                lightCtx.restore();
+                if (bossMask) {
+                    lightCtx.drawImage(bossMask, bx - 175, by - 175, 350, 350);
+                }
             }
 
             // Dynamic Light Holes for Active Laser Beam, Turrets & High-Energy Projectiles
@@ -23135,10 +23496,7 @@
                 lightCtx.restore();
             }
 
-            const gProj = getCachedRadialGradient(lightCtx, "light_proj_52", 0, 0, 4, 0, 0, 52, [
-                [0, "rgba(0,0,0,0.68)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
+            const projMask = masks && masks.proj;
             for (let i = 0; i < MAX_BULLETS; i += 2) {
                 const b = bullets[i];
                 if (!b.active) continue;
@@ -23146,30 +23504,30 @@
                     const bx = b.x - camX;
                     const by = b.y - camY;
                     if (bx < -60 || bx > VIEW_W + 60 || by < -60 || by > VIEW_H + 60) continue;
-                    lightCtx.save();
-                    lightCtx.translate(bx, by);
-                    lightCtx.fillStyle = gProj;
-                    lightCtx.beginPath();
-                    safeArc(lightCtx, 0, 0, 52);
-                    lightCtx.fill();
-                    lightCtx.restore();
+                    if (projMask) {
+                        lightCtx.drawImage(projMask, bx - 52, by - 52, 104, 104);
+                    }
                 }
             }
 
             lightCtx.save();
             lightCtx.translate(px, py);
             lightCtx.rotate(player.angle);
-            const coneLen = 580;
-            lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_cone_580", 0, 0, 12, 0, 0, coneLen, [
-                [0, "rgba(0,0,0,0.98)"],
-                [0.75, "rgba(0,0,0,0.65)"],
-                [1, "rgba(0,0,0,0)"]
-            ]);
-            lightCtx.beginPath();
-            lightCtx.moveTo(0, 0);
-            lightCtx.arc(0, 0, coneLen, -0.45, 0.45);
-            lightCtx.closePath();
-            lightCtx.fill();
+            if (masks && masks.cone) {
+                lightCtx.drawImage(masks.cone, 0, -masks.coneHalfY, masks.coneW, masks.coneH);
+            } else {
+                const coneLen = 580;
+                lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_cone_580", 0, 0, 12, 0, 0, coneLen, [
+                    [0, "rgba(0,0,0,0.98)"],
+                    [0.75, "rgba(0,0,0,0.65)"],
+                    [1, "rgba(0,0,0,0)"]
+                ]);
+                lightCtx.beginPath();
+                lightCtx.moveTo(0, 0);
+                lightCtx.arc(0, 0, coneLen, -0.45, 0.45);
+                lightCtx.closePath();
+                lightCtx.fill();
+            }
             lightCtx.restore();
 
             lightCtx.restore();
@@ -23250,9 +23608,7 @@
                     safeArc(minimapCtx, gx, gy, 4.5 + blink * 3.0);
                     minimapCtx.fill();
 
-                    // 2. Icon tia sét màu cam/vàng phát sáng chớp nháy (Vector Lightning Bolt)
-                    minimapCtx.shadowColor = "#f97316";
-                    minimapCtx.shadowBlur = 5 + blink * 5;
+                    // 2. Icon tia sét màu cam/vàng phát sáng chớp nháy (Zero shadowBlur GPU stall)
                     minimapCtx.fillStyle = blink > 0.4 ? "#fff7ed" : "#fb923c";
 
                     const s = 4.2 + blink * 0.8;
@@ -23266,9 +23622,11 @@
                     minimapCtx.closePath();
                     minimapCtx.fill();
                 } else {
-                    // Trạng thái đã kích hoạt: Icon tia sét màu cam tĩnh ổn định
-                    minimapCtx.shadowColor = "#f97316";
-                    minimapCtx.shadowBlur = 4;
+                    // Trạng thái đã kích hoạt: Icon tia sét màu cam tĩnh ổn định (Zero shadowBlur)
+                    minimapCtx.fillStyle = "rgba(249, 115, 22, 0.25)";
+                    minimapCtx.beginPath();
+                    safeArc(minimapCtx, gx, gy, 4.5);
+                    minimapCtx.fill();
                     minimapCtx.fillStyle = "#fb923c";
 
                     const s = 3.6;
@@ -23328,7 +23686,7 @@
             const crosshairAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.crosshair : null;
             if (crosshairAsset && crosshairAsset.loaded && crosshairAsset.img && crosshairAsset.img.naturalWidth > 0) {
                 const sz = crosshairAsset.size || 34;
-                ctx.drawImage(crosshairAsset.img, -sz * 0.5, -sz * 0.5, sz, sz);
+                ctx.drawImage(crosshairAsset.gpuBitmap || crosshairAsset.img, -sz * 0.5, -sz * 0.5, sz, sz);
                 ctx.restore();
                 return;
             }
@@ -25831,7 +26189,7 @@
             const genAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.generator : null;
             if (genAsset && genAsset.loaded && genAsset.img && genAsset.img.naturalWidth > 0) {
                 const gw = 84, gh = 64;
-                ctx.drawImage(genAsset.img, -gw * 0.5, -gh * 0.5, gw, gh);
+                ctx.drawImage(genAsset.gpuBitmap || genAsset.img, -gw * 0.5, -gh * 0.5, gw, gh);
                 if (isOnline) {
                     ctx.strokeStyle = "rgba(34, 197, 94, 0.75)";
                     ctx.lineWidth = 2.5;

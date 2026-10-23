@@ -9,8 +9,7 @@
 
 ## 📌 1. BỐI CẢNH & MỤC TIÊU DỰ ÁN
 
-- **Mã nguồn cũ (`alien-shooter-vercel/`)**: Là một file nguyên khối (`index.html`) chứa hơn 25.000 dòng mã nguồn JavaScript thuần kết hợp Tailwind CSS. Chế độ Co-op sử dụng WebRTC P2P (PeerJS).
-- **Mã nguồn mới (`alien-shooter-fullstack/`)**: Được tái cấu trúc theo mô hình **Client-Server Hiện Đại**:
+- **Kiến trúc hệ thống (`alien-shooter-fullstack/`)**: Vận hành duy nhất bản Online Fullstack kết hợp Engine HTML5 Canvas 200 FPS (`frontend/index.html`) và kiến trúc Client-Server / P2P Hybrid:
   - **Backend**: Node.js + Express + **Socket.io** chạy Dedicated Room & 30Hz Packet Relay.
   - **Frontend**: **React 18 + Vite + Tailwind CSS**, tách biệt hoàn toàn giữa UI giao diện và Canvas Engine đồ họa 60 - 200 FPS.
   - **Multiplayer Rules (Tuân thủ triệt để)**: 
