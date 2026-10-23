@@ -282,14 +282,24 @@ export class GameEngine {
     this.shells = [];
     this.floatingTexts = [];
 
-    // Enemies & Bosses
+    // Enemies & Bosses (Rule B: Managed via networkId & Map Registry)
     this.MAX_ENEMIES = 350;
+    this.nextEnemyId = 1;
+    this.enemiesById = new Map();
+    this.lastEnemySyncTime = 0;
+    this.enemySyncInterval = 80; // 12.5 Hz (within 10-15 Hz requirement)
     this.enemies = Array.from({ length: this.MAX_ENEMIES }, () => ({
+      id: 0,
       active: false,
       typeKey: "crawler",
       name: "Crawler",
       x: 0,
       y: 0,
+      serverX: 0,
+      serverY: 0,
+      vx: 0,
+      vy: 0,
+      targetPlayerId: "host",
       hp: 30,
       maxHp: 30,
       speed: 2.2,
@@ -485,9 +495,9 @@ export class GameEngine {
       if (this.isHost) {
         if (Array.isArray(packet.enemyHits)) {
           packet.enemyHits.forEach(h => {
-            const e = this.enemies[h.i];
+            const e = (h.id !== undefined && this.enemiesById.get(h.id)) || this.enemies[h.i];
             if (e && e.active) {
-              this.damageEnemy(e, h.dmg, 0, 0, h.t || "bullet");
+              this.damageEnemy(e, h.dmg, h.kx || 0, h.ky || 0, h.t || "bullet", h.attackerId || "client");
             }
           });
         }
@@ -531,7 +541,7 @@ export class GameEngine {
         }
       }
 
-      // Client updates Wave, Regular Enemies, Boss squad, Barrels, Crates & Items from Host
+      // Client updates Wave, Boss squad, Barrels, Crates & Items from Host
       if (!this.isHost) {
         if (packet.wave !== undefined) {
           this.currentWave = packet.wave;
@@ -576,6 +586,43 @@ export class GameEngine {
       }
     };
 
+    this._onSpawnEnemy = (payload) => {
+      if (!this.isHost && payload) {
+        this._spawnEnemyFromHostPayload(payload);
+      }
+    };
+
+    this._onSyncEnemies = (payload) => {
+      if (!this.isHost && payload) {
+        if (payload.wave !== undefined) this.currentWave = payload.wave;
+        if (Array.isArray(payload.enemies)) {
+          this._syncEnemiesFromHost(payload.enemies);
+        }
+      }
+    };
+
+    this._onEnemyHit = (payload) => {
+      if (this.isHost && payload) {
+        const e = this.enemiesById.get(payload.id);
+        if (e && e.active) {
+          this.damageEnemy(
+            e,
+            Number(payload.damage) || 0,
+            Number(payload.kx) || 0,
+            Number(payload.ky) || 0,
+            payload.bulletType || "bullet",
+            payload.attackerId || "client"
+          );
+        }
+      }
+    };
+
+    this._onEnemyDie = (payload) => {
+      if (!this.isHost && payload) {
+        this._handleClientEnemyDie(payload);
+      }
+    };
+
     this._onTeammateDown = () => {
       this.teammate.isDown = true;
       if (this.player.isDown) {
@@ -591,6 +638,10 @@ export class GameEngine {
     };
 
     socketService.on("remote_tick", this._onRemoteTick);
+    socketService.on("SPAWN_ENEMY", this._onSpawnEnemy);
+    socketService.on("SYNC_ENEMIES", this._onSyncEnemies);
+    socketService.on("ENEMY_HIT", this._onEnemyHit);
+    socketService.on("ENEMY_DIE", this._onEnemyDie);
     socketService.on("teammate_down", this._onTeammateDown);
     socketService.on("teammate_revived", this._onTeammateRevived);
   }
@@ -628,76 +679,143 @@ export class GameEngine {
     }
   }
 
+  _pickTargetPlayerId(ex, ey) {
+    if (this.mode !== "coop" || !this.teammate.active) return "host";
+    if (this.player.isDown && !this.teammate.isDown) return "client";
+    if (this.teammate.isDown && !this.player.isDown) return "host";
+    const dHost = Math.hypot(ex - this.player.x, ey - this.player.y);
+    const dClient = Math.hypot(ex - this.teammate.x, ey - this.teammate.y);
+    return dClient < dHost ? "client" : "host";
+  }
+
+  _resolveTargetPlayerPos(targetPlayerId) {
+    if (this.mode !== "coop" || !this.teammate.active) return this.player;
+    if (this.isHost) {
+      return targetPlayerId === "client" ? this.teammate : this.player;
+    }
+    return targetPlayerId === "client" ? this.player : this.teammate;
+  }
+
+  _spawnEnemyFromHostPayload(data) {
+    if (!data || !data.id) return null;
+    let e = this.enemiesById.get(data.id);
+    if (!e) {
+      for (let i = 0; i < this.MAX_ENEMIES; i++) {
+        if (!this.enemies[i].active) {
+          e = this.enemies[i];
+          break;
+        }
+      }
+    }
+    if (!e) return null;
+    const typeKey = data.type || "crawler";
+    const cfg = ENEMY_TYPES[typeKey] || ENEMY_TYPES.crawler;
+    e.id = data.id;
+    e.active = true;
+    e.typeKey = typeKey;
+    e.name = cfg.name;
+    e.x = Number(data.x) || 0;
+    e.y = Number(data.y) || 0;
+    e.serverX = e.x;
+    e.serverY = e.y;
+    e.vx = Number(data.vx) || 0;
+    e.vy = Number(data.vy) || 0;
+    e.hp = Number(data.hp) || cfg.hp;
+    e.maxHp = Number(data.maxHp) || e.hp;
+    e.speed = Number(data.speed) || cfg.speed;
+    e.radius = cfg.radius;
+    e.damage = cfg.damage;
+    e.reward = cfg.reward;
+    e.bodyColor = cfg.bodyColor;
+    e.carapaceColor = cfg.carapaceColor;
+    e.eyeColor = cfg.eyeColor;
+    e.legs = cfg.legs;
+    e.ranged = cfg.ranged;
+    e.isElite = !!cfg.isElite;
+    e.burstTriShot = !!cfg.burstTriShot;
+    e.targetPlayerId = data.targetPlayerId || "host";
+    const tPos = this._resolveTargetPlayerPos(e.targetPlayerId);
+    e.angle = Math.atan2(tPos.y - e.y, tPos.x - e.x);
+    e.hitFlash = 0;
+    e.chillTimer = 0;
+    e.burnTimer = 0;
+    e.legPhase = Math.random() * Math.PI * 2;
+    this.enemiesById.set(e.id, e);
+    return e;
+  }
+
+  _handleClientEnemyDie(data) {
+    if (!data || !data.id) return;
+    const e = this.enemiesById.get(data.id);
+    if (e && e.active) {
+      if (typeof data.x === "number") e.x = data.x;
+      if (typeof data.y === "number") e.y = data.y;
+      e.active = false;
+      this.enemiesById.delete(data.id);
+      this.kills++;
+      const reward = Number(data.reward) || e.reward || 3;
+      if (data.killerId === "client") {
+        this.player.credits += reward;
+        this.addFloatingText(e.x, e.y - 15, `+$${reward}`, "#fbbf24");
+      } else {
+        this.addFloatingText(e.x, e.y - 15, `ĐỒNG ĐỘI TIÊU DIỆT`, "#38bdf8");
+      }
+      sfx.playMonsterDeath(false);
+      this.bakeAlienCorpse(e, !!data.isFrozen);
+      this._notifyPlayerState();
+      for (let s = 0; s < 14; s++) {
+        this.spawnParticle(e.x, e.y, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, "#dc2626", 3.2, 24);
+      }
+    }
+    if (data.dropItem && data.dropItem.kind) {
+      this.itemManager.spawnDrop(data.dropItem.x, data.dropItem.y, data.dropItem.kind);
+    }
+  }
+
   _syncEnemiesFromHost(remoteEnemies) {
-    const activeIndices = new Set();
+    const seenIds = new Set();
     for (let k = 0; k < remoteEnemies.length; k++) {
       const re = remoteEnemies[k];
-      activeIndices.add(re.i);
-      let e = this.enemies[re.i];
-      if (!e) {
-        e = {
-          active: true,
-          typeKey: re.t,
-          name: "Crawler",
+      const netId = re.id !== undefined ? re.id : re.i;
+      if (netId === undefined) continue;
+      seenIds.add(netId);
+
+      let e = this.enemiesById.get(netId);
+      if (!e || !e.active) {
+        e = this._spawnEnemyFromHostPayload({
+          id: netId,
+          type: re.type || re.t || "crawler",
           x: re.x,
           y: re.y,
+          vx: re.vx || 0,
+          vy: re.vy || 0,
           hp: re.hp,
-          maxHp: re.mhp || 30,
-          speed: 2.2,
-          radius: 14,
-          damage: 8,
-          reward: 3,
-          bodyColor: "#16a34a",
-          carapaceColor: "#064e3b",
-          eyeColor: "#ef4444",
-          legs: 3,
-          ranged: false,
-          isElite: false,
-          burstTriShot: false,
-          shootCooldown: 100,
-          angle: re.a,
-          hitFlash: re.fl ? 3 : 0,
-          chillTimer: re.ch ? 30 : 0,
-          burnTimer: 0,
-          legPhase: 0
-        };
-        this.enemies[re.i] = e;
-      }
-      const cfg = ENEMY_TYPES[re.t] || ENEMY_TYPES.crawler;
-      if (!e.active) {
-        e.active = true;
-        e.typeKey = re.t;
-        e.name = cfg.name;
-        e.radius = cfg.radius;
-        e.damage = cfg.damage;
-        e.reward = cfg.reward;
-        e.bodyColor = cfg.bodyColor;
-        e.carapaceColor = cfg.carapaceColor;
-        e.eyeColor = cfg.eyeColor;
-        e.legs = cfg.legs;
-        e.speed = cfg.speed;
-        e.ranged = cfg.ranged;
-        e.isElite = !!cfg.isElite;
-        e.burstTriShot = !!cfg.burstTriShot;
-        e.x = re.x;
-        e.y = re.y;
+          maxHp: re.maxHp || re.mhp,
+          targetPlayerId: re.targetPlayerId || "host"
+        });
+        if (!e) continue;
       } else {
-        e.x += (re.x - e.x) * 0.45;
-        e.y += (re.y - e.y) * 0.45;
+        // Rule C: Update authoritative serverX / serverY & velocity without hard-snapping e.x = serverX
+        e.serverX = re.x;
+        e.serverY = re.y;
+        e.vx = typeof re.vx === "number" ? re.vx : 0;
+        e.vy = typeof re.vy === "number" ? re.vy : 0;
+        e.targetPlayerId = re.targetPlayerId || e.targetPlayerId || "host";
+        if (typeof re.hp === "number") e.hp = re.hp;
+        if (typeof re.maxHp === "number" || typeof re.mhp === "number") {
+          e.maxHp = re.maxHp || re.mhp;
+        }
       }
-      e.angle = re.a;
-      e.hp = re.hp;
-      e.maxHp = re.mhp || cfg.hp;
-      e.hitFlash = re.fl ? 3 : 0;
-      e.chillTimer = re.ch ? 30 : 0;
-      e.legPhase = (e.legPhase || 0) + 0.28;
     }
 
-    // Deactivate enemies that were killed on host
-    for (let i = 0; i < this.MAX_ENEMIES; i++) {
-      if (this.enemies[i].active && !activeIndices.has(i)) {
-        this.bakeAlienCorpse(this.enemies[i], this.enemies[i].chillTimer > 0);
-        this.enemies[i].active = false;
+    // Reconcile any stale enemies no longer present on Host
+    for (const [id, e] of this.enemiesById.entries()) {
+      if (!seenIds.has(id)) {
+        if (e.active) {
+          this.bakeAlienCorpse(e, e.chillTimer > 0);
+          e.active = false;
+        }
+        this.enemiesById.delete(id);
       }
     }
   }
@@ -813,6 +931,10 @@ export class GameEngine {
 
     if (this.mode === "coop") {
       socketService.off("remote_tick", this._onRemoteTick);
+      socketService.off("SPAWN_ENEMY", this._onSpawnEnemy);
+      socketService.off("SYNC_ENEMIES", this._onSyncEnemies);
+      socketService.off("ENEMY_HIT", this._onEnemyHit);
+      socketService.off("ENEMY_DIE", this._onEnemyDie);
       socketService.off("teammate_down", this._onTeammateDown);
       socketService.off("teammate_revived", this._onTeammateRevived);
     }
@@ -838,7 +960,7 @@ export class GameEngine {
 
       this.render();
 
-      // 30Hz Co-Op Network Packet Transmission
+      // 30Hz Co-Op Network Packet Transmission + 12.5Hz (80ms) SYNC_ENEMIES Batching
       if (this.mode === "coop") {
         const packet = {
           x: Math.round(this.player.x),
@@ -859,25 +981,31 @@ export class GameEngine {
         };
 
         if (this.isHost) {
-          const activeEnemies = [];
-          for (let i = 0; i < this.MAX_ENEMIES; i++) {
-            const e = this.enemies[i];
-            if (e.active) {
-              activeEnemies.push({
-                i,
-                t: e.typeKey,
+          packet.wave = this.currentWave;
+
+          // Rule C: Host batches SYNC_ENEMIES every 80ms (~12.5 Hz)
+          if (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval) {
+            this.lastEnemySyncTime = now;
+            const syncedEnemies = [];
+            for (const [id, e] of this.enemiesById.entries()) {
+              if (!e || !e.active) continue;
+              syncedEnemies.push({
+                id,
+                type: e.typeKey,
                 x: Math.round(e.x),
                 y: Math.round(e.y),
-                a: Number(e.angle.toFixed(2)),
+                vx: Number((e.vx || 0).toFixed(2)),
+                vy: Number((e.vy || 0).toFixed(2)),
                 hp: Math.round(e.hp),
-                mhp: e.maxHp,
-                fl: e.hitFlash > 0 ? 1 : 0,
-                ch: e.chillTimer > 0 ? 1 : 0
+                maxHp: e.maxHp,
+                targetPlayerId: e.targetPlayerId || "host"
               });
             }
+            socketService.sendEvent("SYNC_ENEMIES", {
+              wave: this.currentWave,
+              enemies: syncedEnemies
+            });
           }
-          packet.enemies = activeEnemies;
-          packet.wave = this.currentWave;
 
           if (this.bossSpawned) {
             packet.bosses = this.bosses.map(b => ({
@@ -902,10 +1030,7 @@ export class GameEngine {
           }
           packet.items = this.itemManager.collectActiveItems();
         } else {
-          // Client sending pending damage hits, explosions and pickups to Host
-          if (this.pendingEnemyHits.length > 0) {
-            packet.enemyHits = this.pendingEnemyHits.splice(0);
-          }
+          // Client sending pending boss hits, explosions and pickups to Host
           if (this.pendingBossHits.length > 0) {
             packet.bossHits = this.pendingBossHits.splice(0);
           }
@@ -932,6 +1057,9 @@ export class GameEngine {
   }
 
   spawnEnemy(forcedType = null) {
+    // Rule A: Client NEVER spawns enemies autonomously
+    if (this.mode === "coop" && !this.isHost) return null;
+
     for (let i = 0; i < this.MAX_ENEMIES; i++) {
       const e = this.enemies[i];
       if (!e.active) {
@@ -940,8 +1068,13 @@ export class GameEngine {
 
         const ang = Math.random() * Math.PI * 2;
         const dist = 600 + Math.random() * 400;
+        e.id = this.nextEnemyId++;
         e.x = Math.max(60, Math.min(this.WORLD_W - 60, this.player.x + Math.cos(ang) * dist));
         e.y = Math.max(60, Math.min(this.WORLD_H - 60, this.player.y + Math.sin(ang) * dist));
+        e.serverX = e.x;
+        e.serverY = e.y;
+        e.vx = 0;
+        e.vy = 0;
 
         e.active = true;
         e.typeKey = typeKey;
@@ -960,11 +1093,27 @@ export class GameEngine {
         e.isElite = !!cfg.isElite;
         e.burstTriShot = !!cfg.burstTriShot;
         e.shootCooldown = 80 + Math.random() * 60;
-        e.angle = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+        e.targetPlayerId = this._pickTargetPlayerId(e.x, e.y);
+        const tPos = this._resolveTargetPlayerPos(e.targetPlayerId);
+        e.angle = Math.atan2(tPos.y - e.y, tPos.x - e.x);
         e.hitFlash = 0;
         e.chillTimer = 0;
         e.burnTimer = 0;
         e.legPhase = Math.random() * Math.PI * 2;
+
+        this.enemiesById.set(e.id, e);
+        if (this.mode === "coop" && this.isHost) {
+          socketService.sendEvent("SPAWN_ENEMY", {
+            id: e.id,
+            type: e.typeKey,
+            x: Math.round(e.x),
+            y: Math.round(e.y),
+            hp: e.hp,
+            maxHp: e.maxHp,
+            speed: Number(e.speed.toFixed(2)),
+            targetPlayerId: e.targetPlayerId
+          });
+        }
         return e;
       }
     }
@@ -972,6 +1121,7 @@ export class GameEngine {
   }
 
   spawnBossSquad() {
+    if (this.mode === "coop" && !this.isHost) return;
     if (this.bossSpawned) return;
     this.bossSpawned = true;
 
@@ -1413,24 +1563,12 @@ export class GameEngine {
     ctx.restore();
   }
 
-  damageEnemy(e, amount, kx, ky, bulletType = "bullet") {
-    if (!e.active) return;
+  damageEnemy(e, amount, kx, ky, bulletType = "bullet", attackerId = "host") {
+    if (!e || !e.active) return;
 
-    e.hp -= amount;
     e.hitFlash = 3;
-    e.x += kx || 0;
-    e.y += ky || 0;
-
     if (bulletType === "flame") e.burnTimer = 45;
     if (bulletType === "cryo") e.chillTimer = 60;
-
-    // Queue damage to host if playing as coop client
-    if (!this.isHost && this.mode === "coop") {
-      const idx = this.enemies.indexOf(e);
-      if (idx !== -1) {
-        this.pendingEnemyHits.push({ i: idx, dmg: amount, t: bulletType });
-      }
-    }
 
     sfx.playMonsterHit();
     this.bakeBloodSplatter(e.x, e.y, e.radius, 1);
@@ -1448,13 +1586,39 @@ export class GameEngine {
       );
     }
 
+    // Rule D: Client shows immediate hit VFX/SFX (Client-side prediction) and sends ENEMY_HIT to Host without deleting enemy locally
+    if (this.mode === "coop" && !this.isHost) {
+      e.x += (kx || 0) * 0.35;
+      e.y += (ky || 0) * 0.35;
+      if (e.id) {
+        socketService.sendEvent("ENEMY_HIT", {
+          id: e.id,
+          damage: Number(amount.toFixed(2)),
+          kx: Number((kx || 0).toFixed(2)),
+          ky: Number((ky || 0).toFixed(2)),
+          bulletType,
+          attackerId: "client"
+        });
+      }
+      return;
+    }
+
+    e.hp -= amount;
+    e.x += kx || 0;
+    e.y += ky || 0;
+
     if (e.hp <= 0) {
       e.active = false;
+      if (e.id) this.enemiesById.delete(e.id);
       this.kills++;
-      this.player.credits += e.reward;
+      if (attackerId === "host" || this.mode !== "coop") {
+        this.player.credits += e.reward;
+        this.addFloatingText(e.x, e.y - 15, `+$${e.reward}`, "#fbbf24");
+      } else {
+        this.addFloatingText(e.x, e.y - 15, `ĐỒNG ĐỘI +$${e.reward}`, "#38bdf8");
+      }
       sfx.playMonsterDeath(false);
       this.bakeAlienCorpse(e, bulletType === "cryo");
-      this.addFloatingText(e.x, e.y - 15, `+$${e.reward}`, "#fbbf24");
       this._notifyPlayerState();
 
       // Bloodbath burst particles on death
@@ -1471,8 +1635,25 @@ export class GameEngine {
       }
 
       // 22% chance to drop Item / Cash
+      let droppedItemPayload = null;
       if (Math.random() < 0.22) {
-        this.itemManager.spawnDrop(e.x, e.y);
+        const drop = this.itemManager.spawnDrop(e.x, e.y);
+        if (drop) {
+          droppedItemPayload = { kind: drop.kind, x: Math.round(drop.x), y: Math.round(drop.y) };
+        }
+      }
+
+      // Rule D: Host broadcasts ENEMY_DIE to Client
+      if (this.mode === "coop" && this.isHost && e.id) {
+        socketService.sendEvent("ENEMY_DIE", {
+          id: e.id,
+          x: Math.round(e.x),
+          y: Math.round(e.y),
+          killerId: attackerId || "host",
+          reward: e.reward,
+          isFrozen: bulletType === "cryo",
+          dropItem: droppedItemPayload
+        });
       }
     }
   }
@@ -1809,9 +1990,10 @@ export class GameEngine {
       }
     }
 
-    // 7. Update Enemies & AI Navigation
+    // 7. Update Enemies & AI Navigation (Rules A, C, E: Host AI + Client Dead Reckoning & Lerp + Delta Time)
     const hasTeammate = this.teammate.active && !this.teammate.isDown;
     const isFrozen = this.globalFreezeTimer > 0;
+    const dtScale = dt / this.FIXED_PHYSICS_STEP;
 
     for (let i = 0; i < this.MAX_ENEMIES; i++) {
       const e = this.enemies[i];
@@ -1821,7 +2003,9 @@ export class GameEngine {
       if (e.chillTimer > 0) e.chillTimer--;
       if (e.burnTimer > 0) {
         e.burnTimer--;
-        if (e.burnTimer % 15 === 0) this.damageEnemy(e, 4, 0, 0, "flame");
+        if ((this.isHost || this.mode === "solo") && e.burnTimer % 15 === 0) {
+          this.damageEnemy(e, 4, 0, 0, "flame");
+        }
       }
 
       // Check walking on acid pools
@@ -1829,20 +2013,16 @@ export class GameEngine {
         const pool = this.world.acidPools[ap];
         if (Math.hypot(e.x - pool.x, e.y - pool.y) <= pool.radius) {
           e.chillTimer = 60; // Slowed by acid
-          this.damageEnemy(e, 1.2, 0, 0, "acid");
+          if (this.isHost || this.mode === "solo") {
+            this.damageEnemy(e, 1.2, 0, 0, "acid");
+          }
         }
       }
 
       if (this.isHost || this.mode === "solo") {
         if (!isFrozen) {
-          let targetPlayer = this.player;
-          if (this.player.isDown && hasTeammate) {
-            targetPlayer = this.teammate;
-          } else if (!this.player.isDown && hasTeammate) {
-            const distP1 = Math.hypot(e.x - this.player.x, e.y - this.player.y);
-            const distP2 = Math.hypot(e.x - this.teammate.x, e.y - this.teammate.y);
-            targetPlayer = distP2 < distP1 ? this.teammate : this.player;
-          }
+          e.targetPlayerId = this._pickTargetPlayerId(e.x, e.y);
+          const targetPlayer = this._resolveTargetPlayerPos(e.targetPlayerId);
 
           const edx = targetPlayer.x - e.x;
           const edy = targetPlayer.y - e.y;
@@ -1850,9 +2030,11 @@ export class GameEngine {
           e.angle = Math.atan2(edy, edx);
 
           const spd = e.speed * (e.chillTimer > 0 ? 0.45 : 1.0);
-          e.x += (edx / edist) * spd;
-          e.y += (edy / edist) * spd;
-          e.legPhase += 0.28;
+          e.vx = (edx / edist) * spd;
+          e.vy = (edy / edist) * spd;
+          e.x += e.vx * dtScale;
+          e.y += e.vy * dtScale;
+          e.legPhase += 0.28 * dtScale;
 
           this.world.resolveSliding(e);
 
@@ -1872,13 +2054,52 @@ export class GameEngine {
           }
 
           // Melee attack on Host
-          if (targetPlayer === this.player && edist < e.radius + this.player.radius) {
+          const pDist = Math.hypot(this.player.x - e.x, this.player.y - e.y) || 1;
+          if (!this.player.isDown && pDist < e.radius + this.player.radius) {
             this.damagePlayer(e.damage);
-            e.x -= (edx / edist) * 15;
-            e.y -= (edy / edist) * 15;
+            e.x -= ((this.player.x - e.x) / pDist) * 15;
+            e.y -= ((this.player.y - e.y) / pDist) * 15;
           }
+        } else {
+          e.vx = 0;
+          e.vy = 0;
         }
       } else {
+        // Rule C (Client): Dead Reckoning toward targetPlayerId + Linear Interpolation (Lerp)
+        const targetPlayer = this._resolveTargetPlayerPos(e.targetPlayerId || "host");
+        const tdx = targetPlayer.x - e.x;
+        const tdy = targetPlayer.y - e.y;
+        const tDist = Math.hypot(tdx, tdy) || 1;
+        const spd = e.speed * (e.chillTimer > 0 ? 0.45 : 1.0);
+
+        let predVx = typeof e.vx === "number" ? e.vx : (tdx / tDist) * spd;
+        let predVy = typeof e.vy === "number" ? e.vy : (tdy / tDist) * spd;
+        if (isFrozen) {
+          predVx = 0;
+          predVy = 0;
+        }
+
+        e.x += predVx * dtScale;
+        e.y += predVy * dtScale;
+
+        if (typeof e.serverX === "number" && typeof e.serverY === "number") {
+          e.serverX += predVx * dtScale;
+          e.serverY += predVy * dtScale;
+          const errDist = Math.hypot(e.serverX - e.x, e.serverY - e.y);
+          if (errDist > 420) {
+            e.x = e.serverX;
+            e.y = e.serverY;
+          } else if (errDist > 0.5) {
+            const lerpAlpha = 1 - Math.pow(1 - 0.22, dtScale);
+            e.x += (e.serverX - e.x) * lerpAlpha;
+            e.y += (e.serverY - e.y) * lerpAlpha;
+          }
+        }
+
+        this.world.resolveSliding(e);
+        e.angle = Math.atan2(tdy, tdx);
+        e.legPhase += 0.28 * dtScale;
+
         // Client side melee collision check
         const cdx = this.player.x - e.x;
         const cdy = this.player.y - e.y;
@@ -1894,9 +2115,11 @@ export class GameEngine {
       this.bosses.forEach(boss => {
         if (boss.active && boss.hp > 0) {
           if (boss.hitFlash > 0) boss.hitFlash--;
+          const bossTargetId = this._pickTargetPlayerId(boss.x, boss.y);
+          const bossTargetPlayer = this._resolveTargetPlayerPos(bossTargetId);
           updateBossAI(
             boss,
-            targetPlayer,
+            bossTargetPlayer,
             dt,
             (x, y, a, w, h) => this.spawnBullet(x, y, a, w, h),
             sfx,
@@ -1981,7 +2204,12 @@ export class GameEngine {
           if (!e.active) continue;
 
           if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + b.size) {
-            this.damageEnemy(e, b.damage, (b.vx / 10) * b.knockback, (b.vy / 10) * b.knockback, b.type);
+            if (b.isTeammate) {
+              e.hitFlash = 3;
+              this.spawnParticle(e.x, e.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#dc2626", 2.5, 10);
+            } else {
+              this.damageEnemy(e, b.damage, (b.vx / 10) * b.knockback, (b.vy / 10) * b.knockback, b.type);
+            }
             b.pierce--;
             if (b.pierce <= 0) {
               b.active = false;

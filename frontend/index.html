@@ -5599,6 +5599,8 @@
             socketUrl: localStorage.getItem("xeno_socket_url") || "https://project-xeno-server.onrender.com",
             connected: false,
             lastTickTime: 0,
+            lastEnemySyncTime: 0,
+            enemySyncInterval: 80, // 12.5 Hz (80ms) Host-Authoritative SYNC_ENEMIES batch interval
             tickRate: 60, // 60 Ticks/sec (16.66ms) - Chuẩn e-Sport LERP
             ping: 0,
             lastPingSent: 0,
@@ -6160,6 +6162,47 @@
                     return;
                 }
 
+                // =========================================================================
+                // HOST-AUTHORITATIVE ENEMY NETWORK EVENTS (SPAWN_ENEMY, SYNC_ENEMIES, ENEMY_HIT, ENEMY_DIE)
+                // =========================================================================
+                if (data.t === "SPAWN_ENEMY" && !this.isHost) {
+                    if (typeof spawnEnemyFromHost === "function") {
+                        spawnEnemyFromHost(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "SYNC_ENEMIES" && !this.isHost) {
+                    if (typeof syncEnemiesFromHostPacket === "function") {
+                        syncEnemiesFromHostPacket(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "ENEMY_HIT" && this.isHost) {
+                    if (typeof enemiesById !== "undefined" && data.id !== undefined) {
+                        const targetEnemy = enemiesById.get(data.id);
+                        if (targetEnemy && targetEnemy.active) {
+                            damageEnemy(
+                                targetEnemy,
+                                Number(data.damage) || 10,
+                                Number(data.kx) || 0,
+                                Number(data.ky) || 0,
+                                data.bulletType || "bullet",
+                                data.attackerId || "client"
+                            );
+                        }
+                    }
+                    return;
+                }
+
+                if (data.t === "ENEMY_DIE" && !this.isHost) {
+                    if (typeof handleClientEnemyDie === "function") {
+                        handleClientEnemyDie(data);
+                    }
+                    return;
+                }
+
                 if (data.t === "input" && this.isHost) {
                     pushTeammateSnapshot(data);
                     teammate.currentWeapon = data.w;
@@ -6290,6 +6333,40 @@
                     if (activeDrops.length > 0) snapPacket.drops = activeDrops;
 
                     this.sendPacket(snapPacket);
+
+                    // Định kỳ 10-15 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống
+                    if (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval) {
+                        this.lastEnemySyncTime = now;
+                        const syncedEnemies = [];
+                        for (let i = 0; i < MAX_ENEMIES; i++) {
+                            const e = enemies[i];
+                            if (e && e.active && e.id) {
+                                syncedEnemies.push({
+                                    id: e.id,
+                                    type: e.typeKey,
+                                    x: Math.round(e.x),
+                                    y: Math.round(e.y),
+                                    vx: Number((e.vx || 0).toFixed(2)),
+                                    vy: Number((e.vy || 0).toFixed(2)),
+                                    hp: Math.round(e.hp),
+                                    maxHp: Math.round(e.maxHp),
+                                    targetPlayerId: e.targetPlayerId || "host",
+                                    isBoss: e.isBoss ? 1 : 0,
+                                    bossIndex: e.bossIndex || 0,
+                                    shield: Math.round(e.shield || 0),
+                                    enraged: e.enraged ? 1 : 0,
+                                    skillState: e.skillState || "idle",
+                                    skillType: e.skillType || "",
+                                    skillAngle: Number((e.skillAngle || 0).toFixed(2))
+                                });
+                            }
+                        }
+                        this.sendPacket({
+                            t: "SYNC_ENEMIES",
+                            wave: currentWave,
+                            enemies: syncedEnemies
+                        });
+                    }
                 } else {
                     this.sendPacket({
                         t: "input",
@@ -6737,6 +6814,61 @@
         const enemies = Array.from({ length: MAX_ENEMIES }, () => ({ active: false }));
         const particles = Array.from({ length: MAX_PARTICLES }, () => ({ active: false }));
         const items = Array.from({ length: MAX_ITEMS }, () => ({ active: false }));
+
+        // ============================================================================
+        // HOST-AUTHORITATIVE ENEMY NETWORK ID REGISTRY & ROLE HELPERS
+        // ============================================================================
+        let nextEnemyId = 1;
+        const enemiesById = new Map();
+
+        function isCoopActive() {
+            return Boolean(window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected);
+        }
+
+        function isCoopHost() {
+            return isCoopActive() && Boolean(window.XENO_COOP.isHost);
+        }
+
+        function isCoopClient() {
+            return isCoopActive() && !window.XENO_COOP.isHost;
+        }
+
+        function pickAuthoritativeTargetPlayerId(ex, ey) {
+            if (!isCoopActive() || !window.teammate || !window.teammate.active) return "host";
+            const hostAlive = !player.isDown;
+            const clientAlive = !window.teammate.isDown;
+            if (hostAlive && !clientAlive) return "host";
+            if (!hostAlive && clientAlive) return "client";
+            const dHost = Math.hypot(player.x - ex, player.y - ey);
+            const dClient = Math.hypot(window.teammate.x - ex, window.teammate.y - ey);
+            return dClient < dHost ? "client" : "host";
+        }
+
+        function resolveEnemyTargetPosition(targetPlayerId) {
+            if (!isCoopActive() || !window.teammate || !window.teammate.active) {
+                return { x: player.x, y: player.y, isLocalPlayer: true };
+            }
+            if (window.XENO_COOP.isHost) {
+                if (targetPlayerId === "client" && !window.teammate.isDown) {
+                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                }
+                if (player.isDown && !window.teammate.isDown) {
+                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                }
+                return { x: player.x, y: player.y, isLocalPlayer: true };
+            } else {
+                // On Client: "client" is local `player`, "host" is `window.teammate`
+                if (targetPlayerId === "client" && !player.isDown) {
+                    return { x: player.x, y: player.y, isLocalPlayer: true };
+                }
+                if (targetPlayerId === "host" && !window.teammate.isDown) {
+                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                }
+                return !player.isDown
+                    ? { x: player.x, y: player.y, isLocalPlayer: true }
+                    : { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+            }
+        }
 
         // ============================================================================
         // 0-ALLOCATION SPATIAL HASH GRID (TỐI ƯU VA CHẠM ĐẠN-QUÁI & TÁCH QUÁI-QUÁI)
@@ -9175,14 +9307,14 @@
         }
 
         // Wall-safe flow sampling + multi-feeler corner steering so monsters never get stuck on doorway jambs, pillars, or consoles
-        function computeMonsterSteering(e, dx, dy, dist, moveSpeed) {
+        function computeMonsterSteering(e, dx, dy, dist, moveSpeed, targetX = player.x, targetY = player.y) {
             let dirX = dx / dist;
             let dirY = dy / dist;
 
             const bodyClearance = Math.min(28, Math.max(12, (e.radius || 14) + 3));
             const isStuck = (e.stuckFrames || 0) > 10;
 
-            if (isStuck || !hasPathClearance(e.x, e.y, player.x, player.y, e.radius)) {
+            if (isStuck || !hasPathClearance(e.x, e.y, targetX, targetY, e.radius)) {
                 const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
                 const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
                 const gIdx = gr * FLOW_COLS + gc;
@@ -11592,21 +11724,22 @@
          * 8. ENTITY SPAWNERS (BULLETS, ENEMIES, PRAETORIAN ELITE & MULTI-BOSS SQUAD)
          * ============================================================================
          */
-        function spawnBullet(x, y, angle, weapon, isHostile = false) {
+        function spawnBullet(x, y, angle, weapon, isHostile = false, isTeammate = false) {
             for (let i = 0; i < MAX_BULLETS; i++) {
                 const b = bullets[i];
                 if (!b.active) {
-                    const overdriveMult = (!isHostile && player.overdriveBuffTimer > 0) ? 2.0 : 1.0;
+                    const overdriveMult = (!isHostile && !isTeammate && player.overdriveBuffTimer > 0) ? 2.0 : 1.0;
                     b.active = true;
                     b.x = x;
                     b.y = y;
                     b.vx = Math.cos(angle) * weapon.speed;
                     b.vy = Math.sin(angle) * weapon.speed;
-                    b.damage = weapon.damage * (isHostile ? 1 : player.damageMultiplier * overdriveMult);
+                    b.damage = weapon.damage * ((isHostile || isTeammate) ? 1 : player.damageMultiplier * overdriveMult);
                     b.color = weapon.color || "#fbbf24";
                     b.size = Math.max(2, weapon.size || 3.5);
                     b.type = weapon.type || (isHostile ? "acid" : "bullet");
                     b.isHostile = isHostile;
+                    b.isTeammate = Boolean(isTeammate);
                     b.knockback = weapon.knockback || 2;
                     b.life = (b.type === "flame" || b.type === "boss_flame")
                         ? (weapon.life || (26 + Math.random() * 10))
@@ -11707,6 +11840,9 @@
         }
 
         function spawnEnemy(forcedType = null) {
+            // QUY TẮC A: Client tuyệt đối không tự ý chạy hàm spawn theo thời gian hay dùng random tạo quái
+            if (isCoopClient()) return null;
+
             for (let i = 0; i < MAX_ENEMIES; i++) {
                 const e = enemies[i];
                 // CRITICAL FIX: Never reuse a slot reserved by activeBosses!
@@ -11721,6 +11857,8 @@
                     const spdMult = mapCfg.enemySpeedMult * currentDifficulty.enemySpeedMult * (0.94 + Math.random() * 0.12);
                     const dmgMult = mapCfg.enemyDmgMult * (currentDifficulty.id === "hard" ? 1.12 : 1.0);
 
+                    // QUY TẮC B: Gán networkId duy nhất cho từng con quái và lưu vào Map dictionary
+                    e.id = nextEnemyId++;
                     e.active = true;
                     e.isBoss = false;
                     e.bossIndex = 0;
@@ -11729,6 +11867,10 @@
                     e.typeKey = typeKey;
                     e.x = vent.x + (Math.random() - 0.5) * 34;
                     e.y = vent.y + (Math.random() - 0.5) * 34;
+                    e.serverX = e.x;
+                    e.serverY = e.y;
+                    e.vx = 0;
+                    e.vy = 0;
                     e.hp = Math.round(cfg.hp * waveHpMult);
                     e.maxHp = e.hp;
                     e.speed = cfg.speed * spdMult;
@@ -11751,6 +11893,27 @@
                     e.lastDirX = undefined;
                     e.lastDirY = undefined;
                     resolveWallSliding(e);
+                    e.serverX = e.x;
+                    e.serverY = e.y;
+                    e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                    e.spawnedAt = performance.now();
+                    enemiesById.set(e.id, e);
+
+                    // Gửi gói tin SPAWN_ENEMY sang Client
+                    if (isCoopHost()) {
+                        window.XENO_COOP.sendPacket({
+                            t: "SPAWN_ENEMY",
+                            id: e.id,
+                            type: e.typeKey,
+                            x: Math.round(e.x),
+                            y: Math.round(e.y),
+                            hp: e.hp,
+                            maxHp: e.maxHp,
+                            speed: Number(e.speed.toFixed(2)),
+                            targetPlayerId: e.targetPlayerId,
+                            isBoss: 0
+                        });
+                    }
                     return e;
                 }
             }
@@ -11758,6 +11921,8 @@
         }
 
         function spawnBossSquad() {
+            // QUY TẮC A: Chỉ có Host được phép triệu hồi đội hình Boss
+            if (isCoopClient()) return;
             if (bossSpawned) return;
             const mapCfg = getCurrentMapConfig();
             const totalBosses = getTotalBossCountForCurrentMap();
@@ -11791,6 +11956,7 @@
                         const sx = Math.max(140, Math.min(WORLD_W - 140, player.x + off.dx));
                         const sy = Math.max(140, Math.min(WORLD_H - 140, player.y + off.dy));
 
+                        e.id = nextEnemyId++;
                         e.active = true;
                         e.isBoss = true;
                         e.isElite = false;
@@ -11799,6 +11965,10 @@
                         e.typeKey = "boss";
                         e.x = sx;
                         e.y = sy;
+                        e.serverX = sx;
+                        e.serverY = sy;
+                        e.vx = 0;
+                        e.vy = 0;
                         e.hp = hpScaled;
                         e.maxHp = hpScaled;
                         e.speed = mapCfg.bossSpeed * currentDifficulty.bossSpeedMult;
@@ -11842,7 +12012,29 @@
                         e.skillAngle = e.angle;
 
                         resolveWallSliding(e);
+                        e.serverX = e.x;
+                        e.serverY = e.y;
+                        e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                        e.spawnedAt = performance.now();
+                        enemiesById.set(e.id, e);
                         activeBosses.push(e);
+
+                        if (isCoopHost()) {
+                            window.XENO_COOP.sendPacket({
+                                t: "SPAWN_ENEMY",
+                                id: e.id,
+                                type: "boss",
+                                x: Math.round(e.x),
+                                y: Math.round(e.y),
+                                hp: e.hp,
+                                maxHp: e.maxHp,
+                                speed: Number(e.speed.toFixed(2)),
+                                targetPlayerId: e.targetPlayerId,
+                                isBoss: 1,
+                                bossIndex: e.bossIndex,
+                                skillType: e.skillType
+                            });
+                        }
                         break;
                     }
                 }
@@ -11857,6 +12049,237 @@
             sfx.playBossWarning();
             screenShake = 20;
             showToast(`CẢNH BÁO: ${activeBosses.length} TRÙM XUẤT HIỆN!`, mapCfg.bossSpawnMsg);
+        }
+
+        // ============================================================================
+        // CLIENT-SIDE NETWORK ENEMY HANDLERS (SPAWN_ENEMY, SYNC_ENEMIES, ENEMY_DIE)
+        // ============================================================================
+        function spawnEnemyFromHost(data) {
+            if (!data || !data.id) return null;
+            let e = enemiesById.get(data.id);
+            if (!e) {
+                for (let i = 0; i < MAX_ENEMIES; i++) {
+                    if (!enemies[i].active && !activeBosses.includes(enemies[i])) {
+                        e = enemies[i];
+                        break;
+                    }
+                }
+            }
+            if (!e) return null;
+
+            const isBoss = Boolean(data.isBoss);
+            const typeKey = isBoss ? "boss" : (data.type || "crawler");
+            const cfg = ENEMY_TYPES[typeKey] || ENEMY_TYPES.crawler;
+            const mapCfg = getCurrentMapConfig();
+            const dmgMult = mapCfg.enemyDmgMult * (currentDifficulty.id === "hard" ? 1.12 : 1.0);
+
+            e.id = data.id;
+            e.active = true;
+            e.isBoss = isBoss;
+            e.isElite = !isBoss && !!cfg.isElite;
+            e.bossIndex = data.bossIndex || (isBoss ? (activeBosses.length + 1) : 0);
+            e.farTimer = 0;
+            e.typeKey = typeKey;
+            e.x = data.x;
+            e.y = data.y;
+            e.serverX = data.x;
+            e.serverY = data.y;
+            e.vx = data.vx || 0;
+            e.vy = data.vy || 0;
+            e.hp = data.hp || cfg.hp;
+            e.maxHp = data.maxHp || e.hp;
+            e.speed = data.speed || (isBoss ? (mapCfg.bossSpeed * currentDifficulty.bossSpeedMult) : (cfg.speed * mapCfg.enemySpeedMult * currentDifficulty.enemySpeedMult));
+            e.radius = cfg.radius;
+            e.damage = isBoss
+                ? Math.round(cfg.damage * mapCfg.bossDmgMult * (currentDifficulty.id === "hard" ? 1.12 : 1.0))
+                : Math.max(4, Math.round(cfg.damage * dmgMult));
+            e.reward = isBoss
+                ? Math.round(cfg.reward * (1 + (window.currentMapId - 1) * 0.25))
+                : Math.max(2, Math.round(cfg.reward * currentDifficulty.rewardMult));
+            e.bodyColor = cfg.bodyColor;
+            e.carapaceColor = cfg.carapaceColor;
+            e.eyeColor = cfg.eyeColor;
+            e.legs = cfg.legs || 3;
+            e.ranged = !!cfg.ranged;
+            e.burstTriShot = !!cfg.burstTriShot;
+            e.shootCooldown = 110;
+            e.angle = Math.atan2(player.y - e.y, player.x - e.x);
+            e.hitFlash = 0;
+            e.burnTimer = 0;
+            e.chillTimer = 0;
+            e.nuclearSlowTimer = 0;
+            e.legPhase = (data.id % 7) * 0.9;
+            e.lastDirX = undefined;
+            e.lastDirY = undefined;
+            e.targetPlayerId = data.targetPlayerId || "host";
+            e.spawnedAt = performance.now();
+
+            if (isBoss) {
+                e.enraged = Boolean(data.enraged);
+                e.shield = data.shield || 0;
+                e.maxShield = Math.max(e.maxShield || 0, e.shield);
+                e.skillState = data.skillState || "idle";
+                e.skillType = data.skillType || "flame";
+                e.skillTimer = 90;
+                e.skillAngle = data.skillAngle || e.angle;
+                if (!activeBosses.includes(e)) {
+                    activeBosses.push(e);
+                }
+                if (!bossSpawned) {
+                    bossSpawned = true;
+                    const bossHud = byId("bossHudPanel");
+                    if (bossHud) bossHud.classList.remove("hidden");
+                    setText("bossNameTitle", mapCfg.bossTitle);
+                    sfx.playBossWarning();
+                    screenShake = 20;
+                    showToast(`CẢNH BÁO: TRÙM XUẤT HIỆN!`, mapCfg.bossSpawnMsg);
+                }
+                updateBossHUD();
+            }
+
+            enemiesById.set(e.id, e);
+            return e;
+        }
+
+        function syncEnemiesFromHostPacket(packet) {
+            if (!packet || !Array.isArray(packet.enemies)) return;
+            if (typeof packet.wave === "number" && packet.wave !== currentWave) {
+                currentWave = packet.wave;
+                updateTopLeftHUD();
+            }
+
+            const now = performance.now();
+            const seenIds = new Set();
+
+            for (let i = 0; i < packet.enemies.length; i++) {
+                const item = packet.enemies[i];
+                if (!item || !item.id) continue;
+                seenIds.add(item.id);
+
+                let e = enemiesById.get(item.id);
+                if (!e || !e.active) {
+                    e = spawnEnemyFromHost(item);
+                    if (!e) continue;
+                } else {
+                    e.serverX = item.x;
+                    e.serverY = item.y;
+                    e.vx = item.vx || 0;
+                    e.vy = item.vy || 0;
+                    e.hp = item.hp;
+                    e.maxHp = item.maxHp || e.maxHp;
+                    e.targetPlayerId = item.targetPlayerId || "host";
+
+                    // Chỉ gán trực tiếp nếu lệch quá lớn (> 420px do dịch chuyển/mới tạo), còn lại dùng Lerp mượt mà
+                    if (Math.hypot(e.serverX - e.x, e.serverY - e.y) > 420) {
+                        e.x = e.serverX;
+                        e.y = e.serverY;
+                    }
+
+                    if (e.isBoss || item.isBoss) {
+                        const prevEnraged = e.enraged;
+                        e.enraged = Boolean(item.enraged);
+                        e.shield = item.shield || 0;
+                        e.maxShield = Math.max(e.maxShield || 0, e.shield);
+                        e.skillState = item.skillState || e.skillState;
+                        e.skillType = item.skillType || e.skillType;
+                        if (typeof item.skillAngle === "number") e.skillAngle = item.skillAngle;
+                        if (!prevEnraged && e.enraged) {
+                            addFloatingText(e.x, e.y - 45, `TRÙM #${e.bossIndex || 1} CUỒNG NỘ: BẬT KHIÊN HUYẾT TƯƠNG!`, "#f43f5e");
+                        }
+                        updateBossHUD();
+                    }
+                }
+            }
+
+            // Dọn dẹp các con quái không còn tồn tại trong bản tin SYNC_ENEMIES của Host
+            for (const [id, e] of enemiesById.entries()) {
+                if (!seenIds.has(id)) {
+                    if (now - (e.spawnedAt || 0) > 600) {
+                        if (e.active) {
+                            bakeAlienCorpse(e, e.chillTimer > 0);
+                            e.active = false;
+                            if (e.isBoss) {
+                                e.isBoss = false;
+                                e.hp = 0;
+                                updateBossHUD();
+                                if (bossSpawned && getAliveBosses().length === 0) {
+                                    triggerMapVictory();
+                                }
+                            }
+                        }
+                        enemiesById.delete(id);
+                    }
+                }
+            }
+        }
+
+        function handleClientEnemyDie(data) {
+            if (!data || !data.id) return;
+            const e = enemiesById.get(data.id);
+            enemiesById.delete(data.id);
+
+            const deathX = (data.x !== undefined) ? data.x : (e ? e.x : player.x);
+            const deathY = (data.y !== undefined) ? data.y : (e ? e.y : player.y);
+            const isPlasma = Boolean(data.isPlasma);
+            const isFrozen = Boolean(data.isFrozen);
+            const wasBoss = Boolean(data.isBoss || (e && e.isBoss));
+
+            if (e && e.active) {
+                e.active = false;
+                e.x = deathX;
+                e.y = deathY;
+
+                sfx.playMonsterDeath(wasBoss, e.typeKey);
+
+                if (e.typeKey === "brute" || e.isElite || wasBoss || isPlasma) {
+                    bakeScorchCrater(e.x, e.y, wasBoss ? 95 : 42);
+                }
+                bakeAlienCorpse(e, isFrozen);
+
+                const pal = getBloodColors();
+                const pCount = wasBoss ? 55 : (e.isElite ? 24 : (e.typeKey === "brute" ? 16 : 8));
+                for (let i = 0; i < pCount; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 2 + Math.random() * (wasBoss ? 10 : 5.5);
+                    const col = isFrozen ? "#38bdf8" : (i % 2 === 0 ? pal.bright : e.bodyColor);
+                    spawnParticle(e.x, e.y, Math.cos(ang) * spd, Math.sin(ang) * spd, col, 3 + Math.random() * 3, 24);
+                }
+
+                if (e.isElite && data.killerId === "client") {
+                    addFloatingText(e.x, e.y - 16, `HẠ Á TRÙM PRAETORIAN +$${data.reward || e.reward}!`, "#c084fc");
+                }
+            }
+
+            // Cộng thưởng tiền riêng và số mạng hạ gục nếu Client là người kết liễu
+            if (data.killerId === "client") {
+                const rwd = data.reward || (e ? e.reward : 5);
+                player.credits += rwd;
+                campaignTotalCreditsEarned += rwd;
+                totalKillsCount++;
+                campaignKills++;
+            }
+
+            // Đồng bộ vật phẩm rơi ra từ quái theo quyết định của Host
+            if (data.dropItem && data.dropItem.kind) {
+                spawnItemDrop(data.dropItem.x, data.dropItem.y, data.dropItem.kind);
+            }
+
+            if (wasBoss) {
+                if (e) {
+                    e.isBoss = false;
+                    e.hp = 0;
+                }
+                updateBossHUD();
+                const remainingBosses = getAliveBosses().length;
+                if (remainingBosses > 0) {
+                    addFloatingText(deathX, deathY - 30, `ĐÃ HẠ 1 TRÙM! CÒN ${remainingBosses} TRÙM!`, "#fbbf24");
+                    showToast("ĐÃ HẠ 1 TRÙM!", `Còn ${remainingBosses} Trùm trên bản đồ — Đi theo mũi tên đỏ quanh người để truy kích!`);
+                } else {
+                    triggerMapVictory();
+                }
+            }
+
+            updateTopLeftHUD();
         }
 
         function getAliveBosses() {
@@ -12341,8 +12764,46 @@
             updateWeaponDockHUD();
         }
 
-        function damageEnemy(e, dmg, kx, ky, bulletType = "bullet") {
+        function damageEnemy(e, dmg, kx, ky, bulletType = "bullet", attackerId = "host") {
             if (!e || !e.active) return;
+
+            // =========================================================================
+            // QUY TẮC D: ĐỒNG BỘ SÁT THƯƠNG TRÊN CLIENT (CLIENT-SIDE PREDICTION + ENEMY_HIT)
+            // Client hiển thị hiệu ứng máu/tia lửa ngay lập tức nhưng KHÔNG tự ý trừ máu/xóa quái
+            // =========================================================================
+            if (isCoopClient()) {
+                e.hitFlash = 4;
+                sfx.playMonsterHit();
+                if (bulletType === "flame" && !e.isBoss) {
+                    e.burnTimer = 95;
+                } else if (bulletType === "cryo" && !e.isBoss) {
+                    e.chillTimer = 180;
+                }
+
+                const palClient = getBloodColors();
+                for (let i = 0; i < 3; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 1.5 + Math.random() * 4;
+                    const col = bulletType === "cryo" ? "#7dd3fc" : (bulletType === "acid" ? "#4ade80" : palClient.bright);
+                    spawnParticle(e.x, e.y, Math.cos(ang) * spd, Math.sin(ang) * spd, col, 2.5, 14);
+                }
+                if (Math.random() < 0.25) {
+                    bakeBloodSplatter(e.x, e.y, e.radius * 0.6, 0.5);
+                }
+
+                if (e.id) {
+                    window.XENO_COOP.sendPacket({
+                        t: "ENEMY_HIT",
+                        id: e.id,
+                        damage: Number(dmg.toFixed(1)),
+                        kx: Number((kx || 0).toFixed(2)),
+                        ky: Number((ky || 0).toFixed(2)),
+                        bulletType: bulletType || "bullet",
+                        attackerId: "client"
+                    });
+                }
+                return;
+            }
 
             // =========================================================================
             // HỆ THỐNG CÂN BẰNG TRÙM CHUYÊN SÂU (BOSS REBALANCING SYSTEM)
@@ -12459,35 +12920,74 @@
             }
 
             if (e.hp <= 0) {
-                killEnemy(e, bulletType === "plasma", bulletType === "cryo" || player.freezeBuffTimer > 0);
+                killEnemy(e, bulletType === "plasma", bulletType === "cryo" || player.freezeBuffTimer > 0, attackerId || "host");
             }
         }
 
-        function killEnemy(e, isPlasma = false, isFrozen = false) {
+        function killEnemy(e, isPlasma = false, isFrozen = false, killerId = "host") {
             if (!e || !e.active) return;
+            const wasBoss = Boolean(e.isBoss);
+            const enemyNetId = e.id;
             e.active = false;
-            player.credits += e.reward;
-            campaignTotalCreditsEarned += e.reward;
-            totalKillsCount++;
-            campaignKills++;
-            sfx.playMonsterDeath(Boolean(e.isBoss), e.typeKey);
+            if (enemyNetId) {
+                enemiesById.delete(enemyNetId);
+            }
 
-            if (e.typeKey === "brute" || e.isElite || e.isBoss || isPlasma) {
-                bakeScorchCrater(e.x, e.y, e.isBoss ? 95 : 42);
+            // Cộng tiền thưởng vào ví riêng của người tiêu diệt (Host hoặc Client)
+            if (!isCoopActive() || killerId === "host") {
+                player.credits += e.reward;
+                campaignTotalCreditsEarned += e.reward;
+                totalKillsCount++;
+                campaignKills++;
+            }
+
+            sfx.playMonsterDeath(wasBoss, e.typeKey);
+
+            if (e.typeKey === "brute" || e.isElite || wasBoss || isPlasma) {
+                bakeScorchCrater(e.x, e.y, wasBoss ? 95 : 42);
             }
 
             bakeAlienCorpse(e, isFrozen);
 
             const pal = getBloodColors();
-            const pCount = e.isBoss ? 55 : (e.isElite ? 24 : (e.typeKey === "brute" ? 16 : 8));
+            const pCount = wasBoss ? 55 : (e.isElite ? 24 : (e.typeKey === "brute" ? 16 : 8));
             for (let i = 0; i < pCount; i++) {
                 const ang = Math.random() * Math.PI * 2;
-                const spd = 2 + Math.random() * (e.isBoss ? 10 : 5.5);
+                const spd = 2 + Math.random() * (wasBoss ? 10 : 5.5);
                 const col = isFrozen ? "#38bdf8" : (i % 2 === 0 ? pal.bright : e.bodyColor);
                 spawnParticle(e.x, e.y, Math.cos(ang) * spd, Math.sin(ang) * spd, col, 3 + Math.random() * 3, 24);
             }
 
-            if (e.isBoss) {
+            let droppedItemPayload = null;
+            if (!wasBoss && itemDropCooldownFrames <= 0 && (e.isElite || Math.random() < currentDifficulty.dropRate)) {
+                const dropped = spawnItemDrop(e.x, e.y);
+                if (dropped) {
+                    itemDropCooldownFrames = currentDifficulty.itemCooldownSec * 60;
+                    droppedItemPayload = {
+                        kind: dropped.kind,
+                        x: Math.round(dropped.x),
+                        y: Math.round(dropped.y)
+                    };
+                }
+            }
+
+            // QUY TẮC D: Host phát gói tin ENEMY_DIE cho Client để xóa quái, nổ xác và rơi item đồng bộ
+            if (isCoopHost() && enemyNetId) {
+                window.XENO_COOP.sendPacket({
+                    t: "ENEMY_DIE",
+                    id: enemyNetId,
+                    x: Math.round(e.x),
+                    y: Math.round(e.y),
+                    killerId: killerId || "host",
+                    reward: e.reward,
+                    isPlasma: isPlasma ? 1 : 0,
+                    isFrozen: isFrozen ? 1 : 0,
+                    isBoss: wasBoss ? 1 : 0,
+                    dropItem: droppedItemPayload
+                });
+            }
+
+            if (wasBoss) {
                 e.isBoss = false;
                 e.hp = 0;
                 updateBossHUD();
@@ -12501,14 +13001,8 @@
                 return;
             }
 
-            if (e.isElite) {
+            if (e.isElite && (!isCoopActive() || killerId === "host")) {
                 addFloatingText(e.x, e.y - 16, `HẠ Á TRÙM PRAETORIAN +$${e.reward}!`, "#c084fc");
-            }
-
-            if (itemDropCooldownFrames <= 0 && (e.isElite || Math.random() < currentDifficulty.dropRate)) {
-                if (spawnItemDrop(e.x, e.y)) {
-                    itemDropCooldownFrames = currentDifficulty.itemCooldownSec * 60;
-                }
             }
 
             updateTopLeftHUD();
@@ -12956,7 +13450,7 @@
                     addFloatingText(player.x, player.y - 25, "BẠN ĐÃ BỊ HẠ GỤC! CHỜ CỨU...", "#f43f5e");
                     showToast("BẠN ĐÃ BỊ HẠ GỤC!", "Hãy chờ đồng đội đến gần trong 75px để cứu sống (5 giây)!");
 
-                    if (window.XENO_COOP.conn && window.XENO_COOP.conn.open) {
+                    if (window.XENO_COOP) {
                         window.XENO_COOP.sendPacket({ t: "player_down" });
                     }
 
@@ -13639,7 +14133,8 @@
          * 11. MAIN WORLD UPDATE LOOP
          * ============================================================================
          */
-        function updateWorld() {
+        function updateWorld(dt = FIXED_PHYSICS_STEP) {
+            const dtScale = dt / FIXED_PHYSICS_STEP;
             if (isGameOver) {
                 if (screenShake > 0) {
                     screenShake *= 0.86;
@@ -13886,13 +14381,13 @@
                 computeFlowField();
             }
 
-            // Player Movement & Jetpack Dash
+            // Player Movement & Jetpack Dash (Rule E: Delta Time / Fixed Timestep normalized)
             if (player.isDown) {
                 player.dashActiveTimer = 0;
             } else if (player.dashActiveTimer > 0) {
                 player.dashActiveTimer--;
-                player.x += player.dashVx;
-                player.y += player.dashVy;
+                player.x += player.dashVx * dtScale;
+                player.y += player.dashVy * dtScale;
                 resolveWallSliding(player);
                 player.trailHistory.push({ x: player.x, y: player.y, angle: player.angle, life: 14 });
             } else {
@@ -13905,9 +14400,9 @@
                 const activeSpeed = player.baseSpeed * (player.speedBuffTimer > 0 ? 1.50 : 1.0);
                 if (mx !== 0 || my !== 0) {
                     const len = Math.hypot(mx, my) || 0.0001;
-                    player.x += (mx / len) * activeSpeed;
-                    player.y += (my / len) * activeSpeed;
-                    player.walkCycle += 0.26;
+                    player.x += (mx / len) * activeSpeed * dtScale;
+                    player.y += (my / len) * activeSpeed * dtScale;
+                    player.walkCycle += 0.26 * dtScale;
                     resolveWallSliding(player);
 
                     if (player.speedBuffTimer > 0 && frameCounter % 2 === 0) {
@@ -13928,8 +14423,8 @@
                 if (window.teammate.isDown && !player.isDown) {
                     const distToTeammate = Math.hypot(player.x - window.teammate.x, player.y - window.teammate.y);
                     if (distToTeammate <= 75) {
-                        // 5 seconds total (5000ms). Each physics tick adds FIXED_PHYSICS_STEP (16.666ms)
-                        window.teammate.reviveProgress = (window.teammate.reviveProgress || 0) + (FIXED_PHYSICS_STEP / 5000);
+                        // 5 seconds total (5000ms). Each physics tick adds dt (16.666ms)
+                        window.teammate.reviveProgress = (window.teammate.reviveProgress || 0) + (dt / 5000);
                         if (frameCounter % 10 === 0) {
                             spawnParticle(
                                 window.teammate.x + (Math.random() - 0.5) * 36,
@@ -13951,21 +14446,19 @@
                             addFloatingText(window.teammate.x, window.teammate.y - 32, "ĐỒNG ĐỘI ĐÃ ĐƯỢC CỨU SỐNG!", "#10b981");
                             showToast("CỨU VIỆN THÀNH CÔNG!", "Đồng đội đã được hồi sinh với 40 HP & 25 Giáp!");
 
-                            if (window.XENO_COOP.conn && window.XENO_COOP.conn.open) {
-                                window.XENO_COOP.sendPacket({ t: "revive_success" });
-                            }
+                            window.XENO_COOP.sendPacket({ t: "revive_success" });
                             window.XENO_COOP.updateHUD();
                         }
                     } else {
                         // Rời xa khỏi bán kính 75px: tụt dần tiến trình cứu
                         if (window.teammate.reviveProgress > 0) {
-                            window.teammate.reviveProgress = Math.max(0, window.teammate.reviveProgress - (FIXED_PHYSICS_STEP / 2500));
+                            window.teammate.reviveProgress = Math.max(0, window.teammate.reviveProgress - (dt / 2500));
                         }
                     }
                 }
 
-                // HOST SIMULATION: BẮN SÚNG CỦA ĐỒNG ĐỘI TRÊN MÁY CHỦ HOST
-                if (window.XENO_COOP.isHost && window.teammate.isShooting && !window.teammate.isDown) {
+                // VISUAL SIMULATION: HIỂN THỊ ĐẠN CỦA ĐỒNG ĐỘI TRÊN CẢ HOST & CLIENT (isTeammate = true để không tính trùng sát thương)
+                if (window.teammate.isShooting && !window.teammate.isDown) {
                     const now = performance.now();
                     const tw = WEAPON_DATA[window.teammate.currentWeapon || 0];
                     if (tw && (!window.teammate.lastShotTime || (now - window.teammate.lastShotTime >= tw.fireRate))) {
@@ -13979,21 +14472,21 @@
                                 const spreadAng = window.teammate.angle + s * 0.08 + (Math.random() - 0.5) * 0.04;
                                 spawnBullet(tMuzzleX, tMuzzleY, spreadAng, {
                                     speed: 20, damage: tw.damage * 0.65, color: "#34d399", size: 3.2, type: "bullet", knockback: 2.0
-                                }, false);
+                                }, false, true);
                             }
                         } else if (tw.type === "rocket") {
                             spawnBullet(tMuzzleX, tMuzzleY, window.teammate.angle, {
                                 speed: 15, damage: tw.damage, color: "#f97316", size: 5.5, type: "rocket", knockback: 6.0
-                            }, false);
+                            }, false, true);
                         } else if (tw.type === "plasma") {
                             spawnBullet(tMuzzleX, tMuzzleY, window.teammate.angle, {
                                 speed: 19, damage: tw.damage, color: "#a855f7", size: 5.0, type: "plasma", knockback: 3.5
-                            }, false);
+                            }, false, true);
                         } else {
                             const spreadAng = window.teammate.angle + (Math.random() - 0.5) * (tw.spread || 0.05);
                             spawnBullet(tMuzzleX, tMuzzleY, spreadAng, {
                                 speed: 23, damage: tw.damage, color: "#34d399", size: 3.5, type: "bullet", knockback: 2.0
-                            }, false);
+                            }, false, true);
                         }
                         if (typeof sfx !== "undefined") sfx.playShoot(tw.type, window.teammate.currentWeapon || 0);
                     }
@@ -14252,47 +14745,49 @@
                 }
             }
 
-            // Dynamic Multi-Wave Spawner & Multi-Boss Wave Trigger
-            const totalWaves = getTotalWavesForCurrentMap();
-            const spec = getDynamicWaveSpec(currentWave);
-            const waveQuota = Math.max(10, Math.round(spec.total * currentDifficulty.densityMult));
-            const maxConcurrent = Math.max(8, Math.round(spec.maxActive * currentDifficulty.densityMult));
-            const spawnInterval = Math.max(18, Math.round(spec.interval * currentDifficulty.spawnIntervalMult));
+            // Dynamic Multi-Wave Spawner & Multi-Boss Wave Trigger (Rule A: HOST-AUTHORITATIVE ONLY)
+            if (!isCoopClient()) {
+                const totalWaves = getTotalWavesForCurrentMap();
+                const spec = getDynamicWaveSpec(currentWave);
+                const waveQuota = Math.max(10, Math.round(spec.total * currentDifficulty.densityMult));
+                const maxConcurrent = Math.max(8, Math.round(spec.maxActive * currentDifficulty.densityMult));
+                const spawnInterval = Math.max(18, Math.round(spec.interval * currentDifficulty.spawnIntervalMult));
 
-            if (currentWave >= totalWaves && !bossSpawned) {
-                spawnBossSquad();
-            }
+                if (currentWave >= totalWaves && !bossSpawned) {
+                    spawnBossSquad();
+                }
 
-            spawnTick++;
-            if (spawnedInWave < waveQuota && aliveCount < maxConcurrent && spawnTick >= spawnInterval) {
-                spawnTick = 0;
-                const toSpawn = Math.min(spec.batch, waveQuota - spawnedInWave, maxConcurrent - aliveCount);
-                for (let b = 0; b < toSpawn; b++) {
-                    if (spawnEnemy()) {
-                        spawnedInWave++;
-                        aliveCount++;
+                spawnTick++;
+                if (spawnedInWave < waveQuota && aliveCount < maxConcurrent && spawnTick >= spawnInterval) {
+                    spawnTick = 0;
+                    const toSpawn = Math.min(spec.batch, waveQuota - spawnedInWave, maxConcurrent - aliveCount);
+                    for (let b = 0; b < toSpawn; b++) {
+                        if (spawnEnemy()) {
+                            spawnedInWave++;
+                            aliveCount++;
+                        }
                     }
                 }
-            }
 
-            // Advance to next wave when current wave quota is met and nearly cleared
-            if (currentWave < totalWaves && spawnedInWave >= waveQuota && aliveCount <= 3) {
-                currentWave++;
-                spawnedInWave = 0;
-                spawnTick = 0;
-                updateTopLeftHUD();
-                if (currentWave >= totalWaves) {
-                    spawnBossSquad();
-                } else {
-                    const waveHint = (window.currentMapId === 1)
-                        ? `Quái loại 1 & 2 đang tiến vào — Bắn vỡ Cụm Thùng Gỗ & Cụm 3 Bình Nguyên Tử để lấy lợi thế!`
-                        : ((window.currentMapId === 2)
-                            ? `Nhịp độ tăng nhẹ — Khai thác Siêu Máy Tính [E], Cụm 3 Bình Nguyên Tử và Kho Súng [B]!`
-                            : `Á Trùm Praetorian & Bầy Xeno tăng cường — Kiểm tra Kho Súng [B] hoặc đặt Tháp Pháo [T]!`);
-                    showToast(
-                        `ĐỢT QUÁI THỨ ${currentWave} / ${totalWaves}`,
-                        waveHint
-                    );
+                // Advance to next wave when current wave quota is met and nearly cleared
+                if (currentWave < totalWaves && spawnedInWave >= waveQuota && aliveCount <= 3) {
+                    currentWave++;
+                    spawnedInWave = 0;
+                    spawnTick = 0;
+                    updateTopLeftHUD();
+                    if (currentWave >= totalWaves) {
+                        spawnBossSquad();
+                    } else {
+                        const waveHint = (window.currentMapId === 1)
+                            ? `Quái loại 1 & 2 đang tiến vào — Bắn vỡ Cụm Thùng Gỗ & Cụm 3 Bình Nguyên Tử để lấy lợi thế!`
+                            : ((window.currentMapId === 2)
+                                ? `Nhịp độ tăng nhẹ — Khai thác Siêu Máy Tính [E], Cụm 3 Bình Nguyên Tử và Kho Súng [B]!`
+                                : `Á Trùm Praetorian & Bầy Xeno tăng cường — Kiểm tra Kho Súng [B] hoặc đặt Tháp Pháo [T]!`);
+                        showToast(
+                            `ĐỢT QUÁI THỨ ${currentWave} / ${totalWaves}`,
+                            waveHint
+                        );
+                    }
                 }
             }
 
@@ -14448,7 +14943,14 @@
                                             const bSpeed = Math.hypot(b.vx, b.vy) || 0.0001;
                                             const kx = (b.vx / bSpeed) * b.knockback;
                                             const ky = (b.vy / bSpeed) * b.knockback;
-                                            damageEnemy(e, b.damage, kx, ky, b.type);
+                                            if (b.isTeammate) {
+                                                // Visual-only hit feedback for simulated teammate bullets (Client sends ENEMY_HIT directly for its real bullets)
+                                                e.hitFlash = 4;
+                                                const pal = getBloodColors();
+                                                spawnParticle(e.x, e.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, pal.bright, 2.5, 10);
+                                            } else {
+                                                damageEnemy(e, b.damage, kx, ky, b.type);
+                                            }
 
                                             if (b.type === "flame") {
                                                 if (b.hitCount === 0) b.hit0 = j;
@@ -14479,10 +14981,11 @@
                 }
             }
 
-            // Update Enemies, Elite Praetorians & Multi-Bosses
+            // Update Enemies, Elite Praetorians & Multi-Bosses (Host-Authoritative AI + Client Dead Reckoning & Lerp)
             const isGlobalFrozen = player.freezeBuffTimer > 0;
             let currentAlive = 0;
             let currentElites = 0;
+            const coopClientMode = isCoopClient();
 
             for (let i = 0; i < MAX_ENEMIES; i++) {
                 const e = enemies[i];
@@ -14495,30 +14998,105 @@
 
                 if (e.burnTimer > 0) {
                     e.burnTimer--;
-                    if (e.burnTimer % 12 === 0) {
+                    if (!coopClientMode && e.burnTimer % 12 === 0) {
                         damageEnemy(e, e.isBoss ? 3.5 : 6.0, 0, 0, "flame_dot");
                         if (!e.active) continue;
                     }
-                }
-
-                if (e.isBoss) {
-                    updateBossBehavior(e, isGlobalFrozen);
-                } else if (isGlobalFrozen) {
-                    continue;
                 }
 
                 if (e.chillTimer > 0) e.chillTimer--;
                 const chillMult = (isGlobalFrozen ? (e.isBoss ? 0.50 : 0.35) : 1.0)
                     * (e.chillTimer > 0 ? (e.isBoss ? 0.82 : 0.45) : 1.0)
                     * (e.nuclearSlowTimer > 0 ? (e.isBoss ? 0.80 : 0.50) : 1.0);
-
                 const bossCastMult = (e.isBoss && e.skillState !== "idle") ? 0.28 : 1.0;
-
-                const dx = player.x - e.x;
-                const dy = player.y - e.y;
-                const dist = Math.hypot(dx, dy) || 0.0001;
-
                 const stepSpeed = e.speed * chillMult * bossCastMult;
+
+                // =========================================================================
+                // QUY TẮC C & E (CLIENT): DEAD RECKONING + LINEAR INTERPOLATION (LERP)
+                // =========================================================================
+                if (coopClientMode) {
+                    const targetPos = resolveEnemyTargetPosition(e.targetPlayerId || "host");
+                    const tdx = targetPos.x - e.x;
+                    const tdy = targetPos.y - e.y;
+                    const tDist = Math.hypot(tdx, tdy) || 0.0001;
+
+                    // 1. Dead Reckoning: Dự đoán hướng di chuyển về targetPlayerId dựa trên vận tốc từ Host
+                    let predVx = (typeof e.vx === "number") ? e.vx : ((tdx / tDist) * stepSpeed);
+                    let predVy = (typeof e.vy === "number") ? e.vy : ((tdy / tDist) * stepSpeed);
+                    if (isGlobalFrozen && !e.isBoss) {
+                        predVx = 0;
+                        predVy = 0;
+                    }
+
+                    e.x += predVx * dtScale;
+                    e.y += predVy * dtScale;
+
+                    // Dịch chuyển mục tiêu chuẩn của Server theo vận tốc dự đoán giữa các bản tin 80ms
+                    if (typeof e.serverX === "number" && typeof e.serverY === "number") {
+                        e.serverX += predVx * dtScale;
+                        e.serverY += predVy * dtScale;
+
+                        // 2. Linear Interpolation (Lerp): Kéo mượt vị trí quái trên Client về vị trí chuẩn của Host
+                        const errDist = Math.hypot(e.serverX - e.x, e.serverY - e.y);
+                        if (errDist > 420) {
+                            e.x = e.serverX;
+                            e.y = e.serverY;
+                        } else if (errDist > 0.5) {
+                            const lerpAlpha = 1 - Math.pow(1 - 0.22, dtScale);
+                            e.x += (e.serverX - e.x) * lerpAlpha;
+                            e.y += (e.serverY - e.y) * lerpAlpha;
+                        }
+                    }
+
+                    resolveWallSliding(e);
+
+                    const lookX = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVx : tdx;
+                    const lookY = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVy : tdy;
+                    const targetAngle = Math.atan2(lookY, lookX);
+                    let diffAng = targetAngle - e.angle;
+                    while (diffAng > Math.PI) diffAng -= Math.PI * 2;
+                    while (diffAng < -Math.PI) diffAng += Math.PI * 2;
+                    e.angle += diffAng * 0.24 * dtScale;
+                    e.legPhase += 0.34 * chillMult * bossCastMult * dtScale;
+
+                    // Kiểm tra va chạm cận chiến với người chơi máy Client
+                    const pDx = player.x - e.x;
+                    const pDy = player.y - e.y;
+                    const pDist = Math.hypot(pDx, pDy) || 0.0001;
+                    if (pDist < e.radius + player.radius) {
+                        damagePlayer(e.damage);
+                        if (!e.isBoss) {
+                            e.x -= (pDx / pDist) * 18;
+                            e.y -= (pDy / pDist) * 18;
+                            resolveWallSliding(e);
+                        } else {
+                            player.x += (pDx / pDist) * 24;
+                            player.y += (pDy / pDist) * 24;
+                            resolveWallSliding(player);
+                        }
+                    }
+                    continue;
+                }
+
+                // =========================================================================
+                // QUY TẮC A, C & E (HOST / SOLO): TÍNH TOÁN AI THỰC TẾ & CẬP NHẬT VẬN TỐC
+                // =========================================================================
+                if (e.isBoss) {
+                    updateBossBehavior(e, isGlobalFrozen);
+                } else if (isGlobalFrozen) {
+                    e.vx = 0;
+                    e.vy = 0;
+                    continue;
+                }
+
+                // Định kỳ cập nhật targetPlayerId ("host" hoặc "client") gần nhất trên máy Host
+                if (!e.targetPlayerId || ((frameCounter + i) % 20 === 0)) {
+                    e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                }
+                const targetPos = resolveEnemyTargetPosition(e.targetPlayerId);
+                const dx = targetPos.x - e.x;
+                const dy = targetPos.y - e.y;
+                const dist = Math.hypot(dx, dy) || 0.0001;
 
                 // AI LOD / Throttle: Quái ở ngoài màn hình xa (dist > 1400px) chỉ cập nhật tính toán góc lái phức tạp 3 frame/lần
                 let dirX, dirY;
@@ -14527,7 +15105,7 @@
                     dirX = e.lastDirX;
                     dirY = e.lastDirY;
                 } else {
-                    const steered = computeMonsterSteering(e, dx, dy, dist, stepSpeed);
+                    const steered = computeMonsterSteering(e, dx, dy, dist, stepSpeed, targetPos.x, targetPos.y);
                     dirX = steered.dirX;
                     dirY = steered.dirY;
                     if (isFar) {
@@ -14541,7 +15119,7 @@
                     let diffAng = targetAngle - e.angle;
                     while (diffAng > Math.PI) diffAng -= Math.PI * 2;
                     while (diffAng < -Math.PI) diffAng += Math.PI * 2;
-                    e.angle += diffAng * 0.24;
+                    e.angle += diffAng * 0.24 * dtScale;
                 }
 
                 let vx = dirX * stepSpeed;
@@ -14575,8 +15153,8 @@
                                                 sepY += (ody / d) * push;
                                             }
                                             if (!o.isBoss) {
-                                                o.x -= (odx / d) * push;
-                                                o.y -= (ody / d) * push;
+                                                o.x -= (odx / d) * push * dtScale;
+                                                o.y -= (ody / d) * push * dtScale;
                                             }
                                         }
                                     }
@@ -14589,13 +15167,15 @@
 
                 const prevX = e.x;
                 const prevY = e.y;
-                e.x += vx + sepX;
-                e.y += vy + sepY;
+                e.vx = vx + sepX;
+                e.vy = vy + sepY;
+                e.x += e.vx * dtScale;
+                e.y += e.vy * dtScale;
                 resolveWallSliding(e);
 
                 // Anti-stuck detection & corner escape reflex
                 const actualMoved = Math.hypot(e.x - prevX, e.y - prevY);
-                if (stepSpeed > 0.2 && dist > e.radius + player.radius + 12 && actualMoved < stepSpeed * 0.28) {
+                if (stepSpeed > 0.2 && dist > e.radius + player.radius + 12 && actualMoved < stepSpeed * 0.28 * dtScale) {
                     e.stuckFrames = (e.stuckFrames || 0) + 1;
                     if (e.stuckFrames > 28) {
                         // Find nearest open flow cell center that doesn't cross a wall and nudge toward it
@@ -14624,8 +15204,8 @@
                             const edx = escX - e.x;
                             const edy = escY - e.y;
                             const elen = Math.hypot(edx, edy) || 1;
-                            e.x += (edx / elen) * (stepSpeed * 1.15);
-                            e.y += (edy / elen) * (stepSpeed * 1.15);
+                            e.x += (edx / elen) * (stepSpeed * 1.15) * dtScale;
+                            e.y += (edy / elen) * (stepSpeed * 1.15) * dtScale;
                             resolveWallSliding(e);
                         }
                         e.stuckFrames = 12;
@@ -14634,12 +15214,12 @@
                     e.stuckFrames = Math.max(0, e.stuckFrames - 2);
                 }
 
-                e.legPhase += 0.34 * chillMult * bossCastMult;
+                e.legPhase += 0.34 * chillMult * bossCastMult * dtScale;
 
                 // Ranged Attacks: Acid Spitter (1 shot) vs NEW Elite Xeno Praetorian (3-way high-speed Plasma/Acid fan!)
                 if (e.ranged && dist < (e.isElite ? 620 : 440) && dist > 95) {
                     e.shootCooldown--;
-                    if (e.shootCooldown <= 0 && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+                    if (e.shootCooldown <= 0 && hasLineOfSight(e.x, e.y, targetPos.x, targetPos.y)) {
                         const aim = Math.atan2(dy, dx);
                         if (e.isElite && e.burstTriShot) {
                             e.shootCooldown = Math.max(68, Math.round(96 * currentDifficulty.bossFireRateMult));
@@ -14669,16 +15249,19 @@
                     }
                 }
 
-                // Melee attack on player
-                if (dist < e.radius + player.radius) {
+                // Melee attack on local player
+                const pDx = player.x - e.x;
+                const pDy = player.y - e.y;
+                const pDist = Math.hypot(pDx, pDy) || 0.0001;
+                if (pDist < e.radius + player.radius) {
                     damagePlayer(e.damage);
                     if (!e.isBoss) {
-                        e.x -= (dx / dist) * 18;
-                        e.y -= (dy / dist) * 18;
+                        e.x -= (pDx / pDist) * 18;
+                        e.y -= (pDy / pDist) * 18;
                         resolveWallSliding(e);
                     } else {
-                        player.x += (dx / dist) * 24;
-                        player.y += (dy / dist) * 24;
+                        player.x += (pDx / pDist) * 24;
+                        player.y += (pDy / pDist) * 24;
                         resolveWallSliding(player);
                     }
                 }
@@ -24633,7 +25216,9 @@
             bakedCorpsesCount = 0;
             itemDropCooldownFrames = Math.floor(currentDifficulty.itemCooldownSec * 0.5 * 60);
 
-            enemies.forEach(e => { e.active = false; e.isBoss = false; e.enraged = false; e.shield = 0; e.maxShield = 0; });
+            nextEnemyId = 1;
+            enemiesById.clear();
+            enemies.forEach(e => { e.active = false; e.id = 0; e.isBoss = false; e.enraged = false; e.shield = 0; e.maxShield = 0; });
             bullets.forEach(b => b.active = false);
             items.forEach(it => it.active = false);
             particles.forEach(p => p.active = false);
@@ -24642,16 +25227,19 @@
             spawnProps();
             computeFlowField();
 
-            const openingCount = (window.currentMapId === 1)
-                ? (currentDifficulty.id === "hard" ? 6 : 4)
-                : ((window.currentMapId === 2)
-                    ? (currentDifficulty.id === "hard" ? 8 : 6)
-                    : (6 + window.currentMapId * 2 + (currentDifficulty.id === "hard" ? 4 : 2)));
-            for (let i = 0; i < openingCount; i++) {
-                const openType = (window.currentMapId >= 3 && i % 4 === 0)
-                    ? "spitter"
-                    : ((i % 3 === 1) ? "stalker" : "crawler");
-                if (spawnEnemy(openType)) spawnedInWave++;
+            // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn
+            if (!isCoopClient()) {
+                const openingCount = (window.currentMapId === 1)
+                    ? (currentDifficulty.id === "hard" ? 6 : 4)
+                    : ((window.currentMapId === 2)
+                        ? (currentDifficulty.id === "hard" ? 8 : 6)
+                        : (6 + window.currentMapId * 2 + (currentDifficulty.id === "hard" ? 4 : 2)));
+                for (let i = 0; i < openingCount; i++) {
+                    const openType = (window.currentMapId >= 3 && i % 4 === 0)
+                        ? "spitter"
+                        : ((i % 3 === 1) ? "stalker" : "crawler");
+                    if (spawnEnemy(openType)) spawnedInWave++;
+                }
             }
 
             updateTopLeftHUD();
@@ -24687,6 +25275,10 @@
             const modal = byId("fpsConfirmModal");
             if (modal) modal.classList.add("hidden");
             isPaused = false;
+            if (isCoopClient()) {
+                showToast("CHỈ CHỦ PHÒNG (HOST)", "Trong chế độ Co-Op, chỉ Chủ Phòng (Host) mới có quyền sinh quái!");
+                return;
+            }
 
             // 4 Corner Rooms of the 5x5 Matrix ([0,0], [0,4], [4,0], [4,4])
             const cornerCoords = [
@@ -24712,6 +25304,7 @@
                 const ang = Math.random() * Math.PI * 2;
                 const rad = 20 + Math.random() * 210;
 
+                e.id = nextEnemyId++;
                 e.active = true;
                 e.isBoss = false;
                 e.bossIndex = 0;
@@ -24720,6 +25313,10 @@
                 e.typeKey = typeKey;
                 e.x = corner.x + Math.cos(ang) * rad;
                 e.y = corner.y + Math.sin(ang) * rad;
+                e.serverX = e.x;
+                e.serverY = e.y;
+                e.vx = 0;
+                e.vy = 0;
                 e.hp = Math.round(cfg.hp * waveHpMult);
                 e.maxHp = e.hp;
                 e.speed = cfg.speed * spdMult * (0.94 + Math.random() * 0.12);
@@ -24733,13 +25330,30 @@
                 e.ranged = !!cfg.ranged;
                 e.burstTriShot = !!cfg.burstTriShot;
                 e.shootCooldown = e.isElite ? (85 + Math.random() * 40) : (105 + Math.random() * 75);
-                e.angle = Math.atan2(player.y - e.y, player.x - e.x);
+                e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                const targetPos = resolveEnemyTargetPosition(e.targetPlayerId);
+                e.angle = Math.atan2(targetPos.y - e.y, targetPos.x - e.x);
                 e.hitFlash = 0;
                 e.burnTimer = 0;
                 e.chillTimer = 0;
                 e.nuclearSlowTimer = 0;
                 e.legPhase = Math.random() * Math.PI * 2;
                 resolveWallSliding(e);
+                enemiesById.set(e.id, e);
+                if (isCoopHost()) {
+                    window.XENO_COOP.sendPacket({
+                        t: "SPAWN_ENEMY",
+                        id: e.id,
+                        type: e.typeKey,
+                        x: Math.round(e.x),
+                        y: Math.round(e.y),
+                        hp: e.hp,
+                        maxHp: e.maxHp,
+                        speed: Number(e.speed.toFixed(2)),
+                        targetPlayerId: e.targetPlayerId,
+                        isBoss: false
+                    });
+                }
                 spawnedTestCount++;
             }
 
@@ -25060,7 +25674,7 @@
                 let ticks = 0;
                 while (loopAccumulator >= FIXED_PHYSICS_STEP && ticks < MAX_PHYSICS_TICKS_PER_FRAME) {
                     frameCounter++;
-                    updateWorld();
+                    updateWorld(FIXED_PHYSICS_STEP);
                     loopAccumulator -= FIXED_PHYSICS_STEP;
                     ticks++;
                 }

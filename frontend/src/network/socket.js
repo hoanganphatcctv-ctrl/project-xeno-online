@@ -57,6 +57,22 @@ class SocketService {
       this._emitEvent("remote_tick", packet);
     });
 
+    this.socket.on("SPAWN_ENEMY", (payload) => {
+      this._emitEvent("SPAWN_ENEMY", payload);
+    });
+
+    this.socket.on("SYNC_ENEMIES", (payload) => {
+      this._emitEvent("SYNC_ENEMIES", payload);
+    });
+
+    this.socket.on("ENEMY_HIT", (payload) => {
+      this._emitEvent("ENEMY_HIT", payload);
+    });
+
+    this.socket.on("ENEMY_DIE", (payload) => {
+      this._emitEvent("ENEMY_DIE", payload);
+    });
+
     this.socket.on("teammate_down", () => {
       this._emitEvent("teammate_down");
     });
@@ -117,6 +133,11 @@ class SocketService {
     if (now - this.lastTickTime < 1000 / this.tickRate) return;
     this.lastTickTime = now;
     this.socket.emit("sync_tick", packet);
+  }
+
+  sendEvent(eventName, payload) {
+    if (!this.socket || !this.connected) return;
+    this.socket.emit(eventName, payload);
   }
 
   sendPlayerDown() {

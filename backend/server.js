@@ -150,11 +150,31 @@ io.on("connection", (socket) => {
     });
   });
 
-  // 4. CHUYỂN TIẾP GÓI TIN 30Hz TICK (RELAY PACKET)
+  // 4. CHUYỂN TIẾP GÓI TIN 30Hz TICK & SỰ KIỆN QUÁI VẬT HOST-AUTHORITATIVE (RELAY PACKETS)
   socket.on("sync_tick", (packet) => {
     if (!currentRoomId) return;
     // Gửi chuyển tiếp gói tin sang cho đồng đội trong phòng
     socket.to(currentRoomId).emit("remote_tick", packet);
+  });
+
+  socket.on("SPAWN_ENEMY", (payload) => {
+    if (!currentRoomId) return;
+    socket.to(currentRoomId).emit("SPAWN_ENEMY", payload);
+  });
+
+  socket.on("SYNC_ENEMIES", (payload) => {
+    if (!currentRoomId) return;
+    socket.to(currentRoomId).emit("SYNC_ENEMIES", payload);
+  });
+
+  socket.on("ENEMY_HIT", (payload) => {
+    if (!currentRoomId) return;
+    socket.to(currentRoomId).emit("ENEMY_HIT", payload);
+  });
+
+  socket.on("ENEMY_DIE", (payload) => {
+    if (!currentRoomId) return;
+    socket.to(currentRoomId).emit("ENEMY_DIE", payload);
   });
 
   // 5. TRẠNG THÁI GỤC NGÃ (DOWNED)
@@ -209,4 +229,6 @@ server.listen(PORT, () => {
   console.log(`⚡ Ready for 30Hz Network Ticks & Matchmaking`);
   console.log(`====================================================`);
 });
+
+
 
