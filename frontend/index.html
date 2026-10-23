@@ -9933,8 +9933,8 @@
                     let gradX = 0, gradY = 0;
 
                     for (let d = 0; d < 8; d++) {
-                        const dc = neighbors[d][0];
-                        const dr = neighbors[d][1];
+                        const dc = FLOW_NEIGHBORS[d][0];
+                        const dr = FLOW_NEIGHBORS[d][1];
                         const nc = c + dc;
                         const nr = r + dr;
                         if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
@@ -28875,15 +28875,15 @@
         function bootGameEngine() {
             if (window._hasBootedEngine) return;
             window._hasBootedEngine = true;
-            resizeCanvas();
-            loadSavedUserPreferences();
-            initCustomAssets();
-            initMonsterRamCache();
-            initFlowFieldWalls();
-            initCampaign(true);
-            scheduleNextFrame();
-            ensureReticleAnim();
-            startAssetPreloader();
+            try { resizeCanvas(); } catch (e) { console.error("resizeCanvas error:", e); }
+            try { loadSavedUserPreferences(); } catch (e) { console.error("loadSavedUserPreferences error:", e); }
+            try { initCustomAssets(); } catch (e) { console.error("initCustomAssets error:", e); }
+            try { initMonsterRamCache(); } catch (e) { console.error("initMonsterRamCache error:", e); }
+            try { initFlowFieldWalls(); } catch (e) { console.error("initFlowFieldWalls error:", e); }
+            try { initCampaign(true); } catch (e) { console.error("initCampaign error:", e); }
+            try { scheduleNextFrame(); } catch (e) { console.error("scheduleNextFrame error:", e); }
+            try { ensureReticleAnim(); } catch (e) { console.error("ensureReticleAnim error:", e); }
+            try { startAssetPreloader(); } catch (e) { console.error("startAssetPreloader error:", e); }
         }
 
         if (document.readyState === "complete" || document.readyState === "interactive") {
