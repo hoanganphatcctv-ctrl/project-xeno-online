@@ -27720,6 +27720,8 @@
 
             const totalAssets = assetQueue.length;
             let completedCount = 0;
+            if (counterText) counterText.textContent = `0 / ${totalAssets}`;
+            if (statusText) statusText.textContent = "Đang nạp dữ liệu hình ảnh, âm thanh chiến trường...";
 
             function updateProgress(itemDesc) {
                 completedCount++;
@@ -28715,7 +28717,9 @@
             }
         }, true);
 
-        window.onload = function () {
+        function bootGameEngine() {
+            if (window._hasBootedEngine) return;
+            window._hasBootedEngine = true;
             resizeCanvas();
             loadSavedUserPreferences();
             initCustomAssets();
@@ -28725,7 +28729,14 @@
             scheduleNextFrame();
             ensureReticleAnim();
             startAssetPreloader();
-        };
+        }
+
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            bootGameEngine();
+        } else {
+            window.addEventListener("DOMContentLoaded", bootGameEngine);
+            window.addEventListener("load", bootGameEngine);
+        }
     </script>
 </body>
 </html>
