@@ -5583,6 +5583,7 @@
         let autoTransitionInterval = null;
         let autoTransitionTimeout = null;
         let deathModalTimeout = null;
+        let victoryModalDelayTimeout = null;
         window.maxUnlockedMap = 1;
         window.allMapsCheatUnlocked = false;
         window.currentLobbyBgUrl = null;
@@ -6742,7 +6743,10 @@
                     clearTimeout(this._joinTimeout);
                     this._joinTimeout = null;
                 }
-                if (this._pingTimer) clearInterval(this._pingTimer);
+                if (this._pingTimer) {
+                    clearInterval(this._pingTimer);
+                    this._pingTimer = null;
+                }
                 if (this.socket) {
                     try { this.socket.disconnect(); } catch (e) {}
                     this.socket = null;
@@ -6945,12 +6949,14 @@
             // ========================================================================
             const ringPulse = 1.0 + Math.sin(now * 0.006) * 0.05;
             const ringRadius = 24.5 * ringPulse;
+            const roundedRingR = Math.round(ringRadius);
             ctx.save();
-            // Hào quang vàng dịu dưới mặt đất
-            const goldGrad = safeRadialGradient(ctx, 0, 1, 6, 0, 1, ringRadius + 8);
-            goldGrad.addColorStop(0, "rgba(250, 204, 21, 0.24)");
-            goldGrad.addColorStop(0.7, "rgba(245, 158, 11, 0.14)");
-            goldGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
+            // Hào quang vàng dịu dưới mặt đất (Cached RadialGradient)
+            const goldGrad = getCachedRadialGradient(ctx, "gold_ring_" + roundedRingR, 0, 1, 6, 0, 1, roundedRingR + 8, [
+                [0, "rgba(250, 204, 21, 0.24)"],
+                [0.7, "rgba(245, 158, 11, 0.14)"],
+                [1, "rgba(245, 158, 11, 0)"]
+            ]);
             ctx.fillStyle = goldGrad;
             ctx.beginPath();
             safeArc(ctx, 0, 1, ringRadius + 8);
@@ -7074,17 +7080,19 @@
                     }
                 }
 
-                // Jetpack Micro-Thruster Plumes
+                // Jetpack Micro-Thruster Plumes (Cached LinearGradient)
                 const jetLen = 6.5 + Math.abs(Math.sin(now * 0.032)) * 4.5;
+                const roundedJetLen = Math.round(jetLen);
                 for (let side = -1; side <= 1; side += 2) {
                     const ny = side * 6.0;
                     ctx.fillStyle = "#334155";
                     ctx.fillRect(-19.5, ny - 2.2, 2.8, 4.4);
 
-                    const jetGrad = ctx.createLinearGradient(-19.5, ny, -19.5 - jetLen, ny);
-                    jetGrad.addColorStop(0, "#ffffff");
-                    jetGrad.addColorStop(0.4, "#38bdf8");
-                    jetGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+                    const jetGrad = getCachedLinearGradient(ctx, `tm_jet_${roundedJetLen}_${side}`, -19.5, ny, -19.5 - roundedJetLen, ny, [
+                        [0, "#ffffff"],
+                        [0.4, "#38bdf8"],
+                        [1, "rgba(56, 189, 248, 0)"]
+                    ]);
                     ctx.fillStyle = jetGrad;
                     ctx.beginPath();
                     ctx.moveTo(-19.5, ny - 2.2);
@@ -7251,13 +7259,15 @@
             if (teammate.isShooting && wId !== 6) {
                 const flashX = hasCustomPlayerSkin ? (skinAsset.flashDist || 38) : (wId === 5 ? 45 : (wId === 2 ? 41 : 37));
                 const flashR = 9.0 + Math.random() * 6.5;
-                const gFlash = safeRadialGradient(ctx, flashX, 0, 1, flashX, 0, flashR);
-                gFlash.addColorStop(0, "#ffffff");
-                gFlash.addColorStop(0.5, wCol);
-                gFlash.addColorStop(1, "rgba(0,0,0,0)");
+                const roundR = Math.round(flashR);
+                const gFlash = getCachedRadialGradient(ctx, `flash_${wId}_${flashX}_${roundR}`, flashX, 0, 1, flashX, 0, roundR, [
+                    [0, "#ffffff"],
+                    [0.5, wCol],
+                    [1, "rgba(0,0,0,0)"]
+                ]);
                 ctx.fillStyle = gFlash;
                 ctx.beginPath();
-                safeArc(ctx, flashX, 0, flashR);
+                safeArc(ctx, flashX, 0, roundR);
                 ctx.fill();
             }
 
@@ -7767,6 +7777,12 @@
                     gain.gain.value = this.getSfxGain(vol);
                     source.connect(gain);
                     gain.connect(this.ctx.destination);
+                    source.onended = () => {
+                        try {
+                            source.disconnect();
+                            gain.disconnect();
+                        } catch (e) {}
+                    };
                     source.start(0);
                     return true;
                 } catch (err) {
@@ -7838,6 +7854,12 @@
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
                     this.playNoise(0.05, 1300, 0.10);
                 }
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.22);
             }
@@ -7907,6 +7929,12 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.78);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.78);
                 this.playNoise(0.55, 220, 0.45);
@@ -7938,6 +7966,12 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.18);
             }
@@ -7967,6 +8001,12 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.18);
             }
@@ -8017,6 +8057,12 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.065);
             }
@@ -8110,6 +8156,12 @@
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
+                    osc.onended = () => {
+                        try {
+                            osc.disconnect();
+                            gain.disconnect();
+                        } catch (e) {}
+                    };
                     osc.start(now);
                     osc.stop(now + 0.58);
                 } catch (e) {}
@@ -8129,6 +8181,12 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
+                osc.onended = () => {
+                    try {
+                        osc.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 osc.start(now);
                 osc.stop(now + 0.42);
             }
@@ -8153,7 +8211,16 @@
                 noise.connect(filter);
                 filter.connect(gain);
                 gain.connect(this.ctx.destination);
+                const stopTime = this.ctx.currentTime + duration + 0.05;
+                noise.onended = () => {
+                    try {
+                        noise.disconnect();
+                        filter.disconnect();
+                        gain.disconnect();
+                    } catch (e) {}
+                };
                 noise.start();
+                noise.stop(stopTime);
             }
 
             playSplat() {
@@ -10960,30 +11027,37 @@
             if (window.currentMapId === 4) {
                 const hazeX = centerX + Math.sin(now * 0.016) * 6;
                 const hazeY = centerY + Math.cos(now * 0.014) * 6;
-                const gMagma = safeRadialGradient(ctx, hazeX, hazeY, 18, hazeX, hazeY, 310 * pulse);
-                gMagma.addColorStop(0, "rgba(253, 224, 71, 0.42)");
-                gMagma.addColorStop(0.45, "rgba(249, 115, 22, 0.26)");
-                gMagma.addColorStop(1, "rgba(0, 0, 0, 0)");
+                const rStep = Math.max(20, Math.round((310 * pulse) / 15) * 15);
+                const gMagma = getCachedRadialGradient(ctx, "magma_haze_" + rStep, 0, 0, 18, 0, 0, rStep, [
+                    [0, "rgba(253, 224, 71, 0.42)"],
+                    [0.45, "rgba(249, 115, 22, 0.26)"],
+                    [1, "rgba(0, 0, 0, 0)"]
+                ]);
+                ctx.translate(hazeX, hazeY);
                 ctx.fillStyle = gMagma;
                 ctx.beginPath();
-                safeArc(ctx, hazeX, hazeY, 310);
+                safeArc(ctx, 0, 0, 310);
                 ctx.fill();
                 ctx.restore();
                 return;
             }
 
-            const gWarp = safeRadialGradient(ctx, centerX, centerY, 12, centerX, centerY, 260 * pulse);
-            if (window.currentMapId === 3) {
-                gWarp.addColorStop(0, "rgba(103, 232, 249, 0.38)");
-                gWarp.addColorStop(0.45, "rgba(45, 212, 191, 0.18)");
-            } else {
-                gWarp.addColorStop(0, "rgba(56, 189, 248, 0.36)");
-                gWarp.addColorStop(0.45, "rgba(139, 92, 246, 0.18)");
-            }
-            gWarp.addColorStop(1, "rgba(0, 0, 0, 0)");
+            const rStep = Math.max(20, Math.round((260 * pulse) / 15) * 15);
+            const mapKey = window.currentMapId === 3 ? "ice" : "warp";
+            const stops = window.currentMapId === 3 ? [
+                [0, "rgba(103, 232, 249, 0.38)"],
+                [0.45, "rgba(45, 212, 191, 0.18)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ] : [
+                [0, "rgba(56, 189, 248, 0.36)"],
+                [0.45, "rgba(139, 92, 246, 0.18)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ];
+            const gWarp = getCachedRadialGradient(ctx, `warp_haze_${mapKey}_${rStep}`, 0, 0, 12, 0, 0, rStep, stops);
+            ctx.translate(centerX, centerY);
             ctx.fillStyle = gWarp;
             ctx.beginPath();
-            safeArc(ctx, centerX, centerY, 260);
+            safeArc(ctx, 0, 0, 260);
             ctx.fill();
             ctx.restore();
         }
@@ -11349,13 +11423,17 @@
                         ctx.fill();
 
                         // Buồng kính băng Cryo phát quang xanh ngọc (Turquoise-Cyan Bioluminescent Cryo Glass)
-                        const glassGrad = ctx.createLinearGradient(6, 10, sp.w - 6, sp.h - 16);
-                        glassGrad.addColorStop(0, `rgba(153, 246, 228, ${0.64 * pulse})`);
-                        glassGrad.addColorStop(0.5, `rgba(45, 212, 191, ${0.46 * pulse})`);
-                        glassGrad.addColorStop(1, `rgba(14, 165, 233, ${0.68 * pulse})`);
+                        const glassGrad = getCachedLinearGradient(ctx, `cryo_glass_${sp.w}_${sp.h}`, 6, 10, sp.w - 6, sp.h - 16, [
+                            [0, "rgba(153, 246, 228, 0.64)"],
+                            [0.5, "rgba(45, 212, 191, 0.46)"],
+                            [1, "rgba(14, 165, 233, 0.68)"]
+                        ]);
+                        ctx.save();
+                        ctx.globalAlpha = pulse;
                         ctx.fillStyle = glassGrad;
                         drawRoundRect(ctx, 7, 10, sp.w - 14, sp.h - 24, 6);
                         ctx.fill();
+                        ctx.restore();
 
                         // Hình bóng phi hành gia đang ngủ đông bên trong kén
                         ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
@@ -11931,10 +12009,11 @@
                     ctx.stroke();
 
                     // Vết muội than & nhiệt hạch cháy xém loang lổ bên trong
-                    const blastGrad = safeRadialGradient(ctx, 0, 0, 4, 0, 0, 46);
-                    blastGrad.addColorStop(0, "rgba(4, 6, 8, 0.98)");
-                    blastGrad.addColorStop(0.65, "rgba(15, 23, 42, 0.85)");
-                    blastGrad.addColorStop(1, "rgba(2, 6, 23, 0)");
+                    const blastGrad = getCachedRadialGradient(ctx, "vat_blast_46", 0, 0, 4, 0, 0, 46, [
+                        [0, "rgba(4, 6, 8, 0.98)"],
+                        [0.65, "rgba(15, 23, 42, 0.85)"],
+                        [1, "rgba(2, 6, 23, 0)"]
+                    ]);
                     ctx.fillStyle = blastGrad;
                     ctx.beginPath();
                     safeArc(ctx, 0, 0, 46);
@@ -12145,17 +12224,21 @@
                 ctx.save();
                 ctx.translate(np.x, np.y);
 
-                const gPool = safeRadialGradient(ctx, 0, 0, 8, 0, 0, np.radius);
-                gPool.addColorStop(0, `rgba(74, 222, 128, ${0.62 * alpha})`);
-                gPool.addColorStop(0.6, `rgba(22, 163, 74, ${0.42 * alpha})`);
-                gPool.addColorStop(1, "rgba(0, 0, 0, 0)");
+                const rStep = Math.max(16, Math.round(np.radius / 4) * 4);
+                const gPool = getCachedRadialGradient(ctx, "nuclear_pool_" + rStep, 0, 0, 8, 0, 0, rStep, [
+                    [0, "rgba(74, 222, 128, 0.62)"],
+                    [0.6, "rgba(22, 163, 74, 0.42)"],
+                    [1, "rgba(0, 0, 0, 0)"]
+                ]);
+                ctx.globalAlpha = alpha;
                 ctx.fillStyle = gPool;
                 ctx.beginPath();
                 safeArc(ctx, 0, 0, np.radius);
                 ctx.fill();
 
                 // Bubbling green toxic rings
-                ctx.strokeStyle = `rgba(134, 239, 172, ${0.65 * alpha})`;
+                ctx.globalAlpha = 0.65 * alpha;
+                ctx.strokeStyle = "#86efac";
                 ctx.lineWidth = 2;
                 for (let b = 0; b < 4; b++) {
                     const bx = Math.cos(now * 0.003 + b * 1.7 + i) * (np.radius * 0.48);
@@ -14141,6 +14224,10 @@
         }
 
         function clearVictoryAutoTimers() {
+            if (victoryModalDelayTimeout) {
+                clearTimeout(victoryModalDelayTimeout);
+                victoryModalDelayTimeout = null;
+            }
             if (autoTransitionInterval) {
                 clearInterval(autoTransitionInterval);
                 autoTransitionInterval = null;
@@ -14203,7 +14290,8 @@
                 );
             }
 
-            setTimeout(() => {
+            victoryModalDelayTimeout = setTimeout(() => {
+                victoryModalDelayTimeout = null;
                 if (!isMapWon) return;
                 isPaused = true;
 
@@ -16707,21 +16795,29 @@
 
                 if (fp.isOilFire) {
                     // Váng dầu đen bóng bên dưới đám lửa
-                    ctx.fillStyle = `rgba(10, 14, 22, ${0.72 * alpha})`;
+                    ctx.save();
+                    ctx.globalAlpha = 0.72 * alpha;
+                    ctx.fillStyle = "#0a0e16";
                     ctx.beginPath();
                     safeArc(ctx, 0, 0, fp.radius * 1.12);
                     ctx.fill();
+                    ctx.restore();
                 }
 
-                const fg = safeRadialGradient(ctx, 0, 0, 4, 0, 0, fp.radius * flick);
-                fg.addColorStop(0, `rgba(255, 255, 255, ${0.85 * alpha})`);
-                fg.addColorStop(0.32, `rgba(253, 224, 71, ${0.78 * alpha})`);
-                fg.addColorStop(0.68, `rgba(249, 115, 22, ${0.58 * alpha})`);
-                fg.addColorStop(1, "rgba(220, 38, 38, 0)");
+                const rStep = Math.max(8, Math.round((fp.radius * flick) / 4) * 4);
+                const fg = getCachedRadialGradient(ctx, "fire_patch_" + rStep, 0, 0, 4, 0, 0, rStep, [
+                    [0, "rgba(255, 255, 255, 0.85)"],
+                    [0.32, "rgba(253, 224, 71, 0.78)"],
+                    [0.68, "rgba(249, 115, 22, 0.58)"],
+                    [1, "rgba(220, 38, 38, 0)"]
+                ]);
+                ctx.save();
+                ctx.globalAlpha = alpha;
                 ctx.fillStyle = fg;
                 ctx.beginPath();
-                safeArc(ctx, 0, 0, fp.radius * flick);
+                safeArc(ctx, 0, 0, rStep);
                 ctx.fill();
+                ctx.restore();
 
                 // Các lưỡi lửa động nhảy múa
                 for (let t = 0; t < 4; t++) {
@@ -16729,10 +16825,13 @@
                     const tr = fp.radius * 0.42;
                     const tx = Math.cos(tang) * tr;
                     const ty = Math.sin(tang) * tr;
-                    ctx.fillStyle = (t % 2 === 0) ? `rgba(253, 224, 71, ${0.75 * alpha})` : `rgba(239, 68, 68, ${0.65 * alpha})`;
+                    ctx.save();
+                    ctx.globalAlpha = (t % 2 === 0 ? 0.75 : 0.65) * alpha;
+                    ctx.fillStyle = (t % 2 === 0) ? "#fde047" : "#ef4444";
                     ctx.beginPath();
                     safeArc(ctx, tx, ty, (8 + (t * 3)) * flick);
                     ctx.fill();
+                    ctx.restore();
                 }
                 ctx.restore();
             }
@@ -17553,7 +17652,7 @@
 
             drawCrosshair();
 
-            if (frameCounter % 3 === 0) renderRadarMinimap();
+            if (frameCounter % 6 === 0) renderRadarMinimap();
         }
 
         function drawBossGroundTelegraph(boss) {
@@ -22630,15 +22729,17 @@
                 ctx.setLineDash([]);
                 ctx.restore();
 
-                // 2. Hiệu ứng phản lực Thrusters khi đang lướt [SPACE] hoặc Speed Buff
+                // 2. Hiệu ứng phản lực Thrusters khi đang lướt [SPACE] hoặc Speed Buff (Cached LinearGradient)
                 if (player.dashActiveTimer > 0 || player.speedBuffTimer > 0) {
                     const jetLen = 14 + Math.abs(Math.sin(now * 0.035)) * 6;
+                    const roundedJetLen = Math.round(jetLen);
                     for (let side = -1; side <= 1; side += 2) {
                         const ny = side * 8.0;
-                        const jetGrad = ctx.createLinearGradient(-12, ny, -12 - jetLen, ny);
-                        jetGrad.addColorStop(0, "#ffffff");
-                        jetGrad.addColorStop(0.4, isOverdrive ? "#f97316" : "#38bdf8");
-                        jetGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+                        const jetGrad = getCachedLinearGradient(ctx, `p_dash_jet_${roundedJetLen}_${isOverdrive ? 'od' : 'norm'}_${side}`, -12, ny, -12 - roundedJetLen, ny, [
+                            [0, "#ffffff"],
+                            [0.4, isOverdrive ? "#f97316" : "#38bdf8"],
+                            [1, "rgba(56, 189, 248, 0)"]
+                        ]);
                         ctx.fillStyle = jetGrad;
                         ctx.beginPath();
                         ctx.moveTo(-12, ny - 2);
@@ -22726,15 +22827,17 @@
 
             // Jetpack Micro-Thruster Plumes
             const jetLen = (isSpeed ? 16 : 6.5) + Math.abs(Math.sin(now * 0.032)) * 4.5;
+            const roundJet = Math.round(jetLen / 2) * 2;
             for (let side = -1; side <= 1; side += 2) {
                 const ny = side * 6.0;
                 ctx.fillStyle = "#334155";
                 ctx.fillRect(-19.5, ny - 2.2, 2.8, 4.4);
 
-                const jetGrad = ctx.createLinearGradient(-19.5, ny, -19.5 - jetLen, ny);
-                jetGrad.addColorStop(0, "#ffffff");
-                jetGrad.addColorStop(0.4, isOverdrive ? "#f97316" : "#38bdf8");
-                jetGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+                const jetGrad = getCachedLinearGradient(ctx, `p_thruster_${side}_${roundJet}_${isOverdrive ? 1 : 0}`, -19.5, ny, -19.5 - roundJet, ny, [
+                    [0, "#ffffff"],
+                    [0.4, isOverdrive ? "#f97316" : "#38bdf8"],
+                    [1, "rgba(56, 189, 248, 0)"]
+                ]);
                 ctx.fillStyle = jetGrad;
                 ctx.beginPath();
                 ctx.moveTo(-19.5, ny - 2.2);
@@ -23153,13 +23256,15 @@
             if (player.muzzleFlash > 0) {
                 const flashX = hasCustomPlayerSkin ? (skinAsset.flashDist || 38) : (wId === 5 ? 45 : (wId === 2 ? 41 : 37));
                 const flashR = 9.5 + Math.random() * 7.5;
-                const gFlash = safeRadialGradient(ctx, flashX, 0, 1, flashX, 0, flashR);
-                gFlash.addColorStop(0, "#ffffff");
-                gFlash.addColorStop(0.5, wCol);
-                gFlash.addColorStop(1, "rgba(0,0,0,0)");
+                const roundR = Math.round(flashR);
+                const gFlash = getCachedRadialGradient(ctx, `flash_${wId}_${flashX}_${roundR}`, flashX, 0, 1, flashX, 0, roundR, [
+                    [0, "#ffffff"],
+                    [0.5, wCol],
+                    [1, "rgba(0,0,0,0)"]
+                ]);
                 ctx.fillStyle = gFlash;
                 ctx.beginPath();
-                safeArc(ctx, flashX, 0, flashR);
+                safeArc(ctx, flashX, 0, roundR);
                 ctx.fill();
 
                 // Directional Muzzle Spike Cross
@@ -23892,6 +23997,9 @@
             if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
+            if (typeof resetFramePacer === "function") {
+                resetFramePacer();
+            }
             isPaused = false;
             if (typeof sfx !== "undefined" && sfx) {
                 sfx.playBgm("ingame");
@@ -23904,6 +24012,16 @@
             mouse.down = false;
             player.activeLaserBeam = null;
             clearVictoryAutoTimers();
+
+            // Dọn dẹp phiên Co-Op khi rời trận quay về sảnh
+            if (window.XENO_COOP && window.XENO_COOP.active) {
+                try {
+                    if (window.XENO_COOP.connected) {
+                        window.XENO_COOP.sendPacket({ t: "leave" });
+                    }
+                    window.XENO_COOP.cleanup();
+                } catch (e) {}
+            }
 
             const pauseModal = byId("pauseModal");
             const armoryModal = byId("armoryModal");
@@ -26296,13 +26414,18 @@
             }
 
             // Radial vignette simulating NVG tube optics
-            const grad = ctx.createRadialGradient(
-                VIEW_W / 2, VIEW_H / 2, Math.min(VIEW_W, VIEW_H) * 0.38,
-                VIEW_W / 2, VIEW_H / 2, Math.max(VIEW_W, VIEW_H) * 0.72
+            const r0 = Math.round(Math.min(VIEW_W, VIEW_H) * 0.38);
+            const r1 = Math.round(Math.max(VIEW_W, VIEW_H) * 0.72);
+            const grad = getCachedRadialGradient(
+                ctx, `nvg_vignette_${VIEW_W}_${VIEW_H}`,
+                VIEW_W / 2, VIEW_H / 2, r0,
+                VIEW_W / 2, VIEW_H / 2, r1,
+                [
+                    [0, "rgba(0, 0, 0, 0)"],
+                    [0.65, "rgba(0, 0, 0, 0.28)"],
+                    [1, "rgba(0, 0, 0, 0.85)"]
+                ]
             );
-            grad.addColorStop(0, "rgba(0, 0, 0, 0)");
-            grad.addColorStop(0.65, "rgba(0, 0, 0, 0.28)");
-            grad.addColorStop(1, "rgba(0, 0, 0, 0.85)");
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
@@ -26651,6 +26774,25 @@
             bossSpawned = false;
             activeBosses = [];
             turrets.length = 0;
+            floatingTexts.length = 0;
+            if (player.trailHistory) player.trailHistory.length = 0;
+            if (window.teammate && window.teammate.trailHistory) window.teammate.trailHistory.length = 0;
+            mouse.down = false;
+            screenShake = 0;
+            for (const k in keys) { keys[k] = false; }
+            if (window.cheatMTimeout) {
+                clearTimeout(window.cheatMTimeout);
+                window.cheatMTimeout = null;
+            }
+            if (!isCoopActive()) {
+                if (window.XENO_COOP && window.XENO_COOP.active) {
+                    try { window.XENO_COOP.cleanup(); } catch (e) {}
+                }
+                if (window.teammate) {
+                    window.teammate.active = false;
+                    window.teammate.snapshotBuffer = [];
+                }
+            }
             if (pendingTurretDeploy) pendingTurretDeploy.active = false;
             setText("upgTurretLv", 0);
             setText("hudTurretCount", "0/4");
@@ -27195,13 +27337,13 @@
                 return;
             }
 
-            // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 15 FPS
+            // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 10 FPS
             // và không spin-lock CPU để mức sử dụng CPU về ~0-1% ngay khi vào web!
             if (isPaused || isMapWon) {
                 const now = performance.now();
                 gameLoop(now);
                 framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 66);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
                 return;
             }
 
@@ -27243,7 +27385,7 @@
             }
 
             if (isPaused || isMapWon) {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 66);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
                 return;
             }
 
@@ -27305,23 +27447,25 @@
                 renderWorld();
             }
 
-            // 30Hz Co-Op P2P Network Transmission (Strictly decoupled from 200 FPS Canvas loop)
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected) {
+            // 30Hz Co-Op P2P Network Transmission (Chỉ gửi khi đang trong trận chiến thực sự)
+            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && !isPaused && !isMapWon && !isGameOver) {
                 if (!window.XENO_COOP.lastTickTime || (now - window.XENO_COOP.lastTickTime) >= (1000 / window.XENO_COOP.tickRate)) {
                     window.XENO_COOP.lastTickTime = now;
                     window.XENO_COOP.sendTick(now);
                 }
             }
 
-            fpsFrames++;
-            const fpsElapsed = now - fpsLastCheck;
-            if (fpsElapsed >= 450) {
-                const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
-                const rawFps = (fpsFrames * 1000) / Math.max(1, fpsElapsed);
-                const displayFps = Math.min(targetFps, Math.round(rawFps));
-                setText("hudFps", displayFps);
-                fpsFrames = 0;
-                fpsLastCheck = now;
+            if (!isPaused && !isMapWon) {
+                fpsFrames++;
+                const fpsElapsed = now - fpsLastCheck;
+                if (fpsElapsed >= 450) {
+                    const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
+                    const rawFps = (fpsFrames * 1000) / Math.max(1, fpsElapsed);
+                    const displayFps = Math.min(targetFps, Math.round(rawFps));
+                    setText("hudFps", displayFps);
+                    fpsFrames = 0;
+                    fpsLastCheck = now;
+                }
             }
 
             scheduleNextFrame();
@@ -27663,10 +27807,11 @@
             ctx.clearRect(0, 0, w, h);
 
             // Ambient radial glow behind
-            const ambGlow = ctx.createRadialGradient(cx, cy, 4, cx, cy, rMax * 0.85);
-            ambGlow.addColorStop(0, "rgba(56, 189, 248, 0.22)");
-            ambGlow.addColorStop(0.55, "rgba(16, 185, 129, 0.08)");
-            ambGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+            const ambGlow = getCachedRadialGradient(ctx, `reticle_amb_${Math.round(rMax)}`, cx, cy, 4, cx, cy, rMax * 0.85, [
+                [0, "rgba(56, 189, 248, 0.22)"],
+                [0.55, "rgba(16, 185, 129, 0.08)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
             ctx.fillStyle = ambGlow;
             ctx.beginPath();
             ctx.arc(cx, cy, rMax * 0.85, 0, Math.PI * 2);
@@ -27742,10 +27887,11 @@
             ctx.rotate(now * 0.0011);
 
             // Radar Sweep Sector (60-deg fading fan)
-            const sweepGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, rMax - 22);
-            sweepGrad.addColorStop(0, "rgba(56, 189, 248, 0.40)");
-            sweepGrad.addColorStop(0.7, "rgba(16, 185, 129, 0.12)");
-            sweepGrad.addColorStop(1, "rgba(16, 185, 129, 0.0)");
+            const sweepGrad = getCachedRadialGradient(ctx, `reticle_sweep_${Math.round(rMax)}`, 0, 0, 4, 0, 0, rMax - 22, [
+                [0, "rgba(56, 189, 248, 0.40)"],
+                [0.7, "rgba(16, 185, 129, 0.12)"],
+                [1, "rgba(16, 185, 129, 0.0)"]
+            ]);
             ctx.fillStyle = sweepGrad;
             ctx.beginPath();
             ctx.moveTo(0, 0);
@@ -27823,11 +27969,14 @@
 
             // 6. Central Singularity Core & Pulse
             const pulse = (Math.sin(now * 0.005) + 1) * 0.5;
-            const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 15 + pulse * 4);
-            coreGrad.addColorStop(0, "#ffffff");
-            coreGrad.addColorStop(0.3, "#38bdf8");
-            coreGrad.addColorStop(0.7, "#10b981");
-            coreGrad.addColorStop(1, "rgba(2, 132, 199, 0)");
+            const roundPulse = Math.round(pulse * 4);
+            const coreR = 15 + roundPulse;
+            const coreGrad = getCachedRadialGradient(ctx, `reticle_core_${roundPulse}`, 0, 0, 2, 0, 0, coreR, [
+                [0, "#ffffff"],
+                [0.3, "#38bdf8"],
+                [0.7, "#10b981"],
+                [1, "rgba(2, 132, 199, 0)"]
+            ]);
             ctx.fillStyle = coreGrad;
             ctx.beginPath();
             ctx.arc(0, 0, 15 + pulse * 4, 0, Math.PI * 2);
