@@ -3768,6 +3768,13 @@
     </div>
 
     <script>
+        var _dockBuiltSignature = "";
+        var _dockBtnEls = [];
+        var _dockStatusEls = [];
+        var _dockLastClass = [];
+        var _dockLastStatusText = [];
+        var _dockLastStatusClass = [];
+
         /**
          * ============================================================================
          * 1. SAFE DOM & CANVAS HELPERS
@@ -6315,7 +6322,7 @@
                     }
                     window.currentMapId = data.mapId || 1;
                     window.closeCoopModal();
-                    window.closeMainMenuSettings();
+                    window.closeMainMenuSettings(true);
                     this.updateHUD();
                     showToast("CO-OP XUẤT TRẬN", `Tiến vào Map ${window.currentMapId} cùng đồng đội! (Tick ${this.tickRate}Hz)`);
                     if (typeof simulateMissionLoading === "function") {
@@ -7426,7 +7433,7 @@
                 mapId: window.currentMapId || 1
             });
             window.closeCoopModal();
-            window.closeMainMenuSettings();
+            window.closeMainMenuSettings(true);
             showToast("BẮT ĐẦU CO-OP", `Tiến vào Map ${window.currentMapId || 1} cùng đồng đội!`);
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
@@ -23843,16 +23850,23 @@
             if (container) container.innerHTML = html;
         }
 
-        let _dockBuiltSignature = "";
-        const _dockBtnEls = [];
-        const _dockStatusEls = [];
-        const _dockLastClass = [];
-        const _dockLastStatusText = [];
-        const _dockLastStatusClass = [];
+        var _dockBuiltSignature = "";
+        var _dockBtnEls = [];
+        var _dockStatusEls = [];
+        var _dockLastClass = [];
+        var _dockLastStatusText = [];
+        var _dockLastStatusClass = [];
 
         function updateWeaponDockHUD(forceRebuild = false) {
             const dock = byId("weaponDockContainer");
             if (!dock) return;
+
+            if (typeof _dockBuiltSignature === "undefined") _dockBuiltSignature = "";
+            if (!Array.isArray(_dockBtnEls)) _dockBtnEls = [];
+            if (!Array.isArray(_dockStatusEls)) _dockStatusEls = [];
+            if (!Array.isArray(_dockLastClass)) _dockLastClass = [];
+            if (!Array.isArray(_dockLastStatusText)) _dockLastStatusText = [];
+            if (!Array.isArray(_dockLastStatusClass)) _dockLastStatusClass = [];
 
             let sig = "";
             for (let i = 0; i < WEAPON_DATA.length; i++) {
@@ -23970,6 +23984,12 @@
         window.selectDifficulty = selectDifficulty;
 
         function isAnyBlockingModalOpen() {
+            if (typeof isMissionLoadingSimulating !== "undefined" && isMissionLoadingSimulating) return true;
+            if (typeof isMapTransitionLoading !== "undefined" && isMapTransitionLoading) return true;
+            if (typeof isLobbyLoadingSimulating !== "undefined" && isLobbyLoadingSimulating) return true;
+            const preloader = byId("gamePreloaderScreen");
+            if (preloader && !preloader.classList.contains("hidden") && preloader.style.display !== "none") return true;
+
             const ids = [
                 "mainSettingsModal",
                 "pauseModal",
@@ -23982,7 +24002,7 @@
             ];
             for (let i = 0; i < ids.length; i++) {
                 const el = byId(ids[i]);
-                if (el && !el.classList.contains("hidden")) return true;
+                if (el && !el.classList.contains("hidden") && el.style.display !== "none") return true;
             }
             return false;
         }
@@ -24050,6 +24070,7 @@
                 setText("pauseWaveLabel", `${currentWave} / ${totalWaves}`);
                 setText("pauseCreditsLabel", `$${player.credits.toLocaleString("vi-VN")}`);
                 pauseModal.classList.remove("hidden");
+                pauseModal.style.display = "flex";
             } else {
                 resumeGame();
             }
@@ -24057,6 +24078,23 @@
         window.togglePauseMenu = togglePauseMenu;
 
         function resumeGame() {
+            if (typeof isMissionLoadingSimulating !== "undefined" && isMissionLoadingSimulating) {
+                isPaused = true;
+                return;
+            }
+            if (typeof isMapTransitionLoading !== "undefined" && isMapTransitionLoading) {
+                isPaused = true;
+                return;
+            }
+            if (typeof isLobbyLoadingSimulating !== "undefined" && isLobbyLoadingSimulating) {
+                isPaused = true;
+                return;
+            }
+            const preloader = byId("gamePreloaderScreen");
+            if (preloader && !preloader.classList.contains("hidden") && preloader.style.display !== "none") {
+                isPaused = true;
+                return;
+            }
             if (isGameOver || isMapWon) {
                 initCampaign(false, false);
                 return;
@@ -24067,12 +24105,12 @@
             const codexModal = byId("lobbyCodexModal");
             const victoryModal = byId("victoryModal");
             const gameOverModal = byId("gameOverModal");
-            if (pauseModal) pauseModal.classList.add("hidden");
-            if (settingsModal) settingsModal.classList.add("hidden");
-            if (armoryModal) armoryModal.classList.add("hidden");
-            if (codexModal) codexModal.classList.add("hidden");
-            if (victoryModal) victoryModal.classList.add("hidden");
-            if (gameOverModal) gameOverModal.classList.add("hidden");
+            if (pauseModal) { pauseModal.classList.add("hidden"); pauseModal.style.display = "none"; }
+            if (settingsModal) { settingsModal.classList.add("hidden"); settingsModal.style.display = "none"; }
+            if (armoryModal) { armoryModal.classList.add("hidden"); armoryModal.style.display = "none"; }
+            if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
+            if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
+            if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
             isPaused = false;
             if (typeof sfx !== "undefined" && sfx) {
                 sfx.playBgm("ingame");
@@ -24092,15 +24130,17 @@
             const victoryModal = byId("victoryModal");
             const gameOverModal = byId("gameOverModal");
             const settingsModal = byId("mainSettingsModal");
-            if (pauseModal) pauseModal.classList.add("hidden");
-            if (armoryModal) armoryModal.classList.add("hidden");
-            if (codexModal) codexModal.classList.add("hidden");
-            if (victoryModal) victoryModal.classList.add("hidden");
-            if (gameOverModal) gameOverModal.classList.add("hidden");
+            if (pauseModal) { pauseModal.classList.add("hidden"); pauseModal.style.display = "none"; }
+            if (armoryModal) { armoryModal.classList.add("hidden"); armoryModal.style.display = "none"; }
+            if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
+            if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
+            if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
 
             // CRITICAL FIX: Luôn mở sẵn Sảnh (mainSettingsModal) ngay từ đầu để nằm ngay dưới màn hình load (z-[100])
-            // Tuyệt đối không để ẩn sảnh trong quá trình load, tránh tình trạng màn load tắt đi bị lộ màn hình game rồi mới hiện sảnh!
-            if (settingsModal) settingsModal.classList.remove("hidden");
+            if (settingsModal) {
+                settingsModal.classList.remove("hidden");
+                settingsModal.style.display = "flex";
+            }
 
             // Reset match state into clean lobby idle mode immediately
             initCampaign(true, false);
@@ -24123,13 +24163,13 @@
 
         function closeMainMenuSettings(bypassLoading = false) {
             const codexModal = byId("lobbyCodexModal");
-            if (codexModal) codexModal.classList.add("hidden");
+            if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             const mapDrawer = byId("lobbyMapDiffDrawer");
-            if (mapDrawer) mapDrawer.classList.add("hidden");
+            if (mapDrawer) { mapDrawer.classList.add("hidden"); mapDrawer.style.display = "none"; }
             const intelDrawer = byId("lobbyIntelDrawer");
-            if (intelDrawer) intelDrawer.classList.add("hidden");
+            if (intelDrawer) { intelDrawer.classList.add("hidden"); intelDrawer.style.display = "none"; }
 
-            // Giả lập màn hình tải trận chiến dịch ngẫu nhiên 3 - 5 giây khi bắt đầu vào trận
+            // Giả lập màn hình tải trận chiến dịch khi bắt đầu vào trận
             if (!bypassLoading && typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
                     closeMainMenuSettings(true);
@@ -24142,12 +24182,16 @@
                 sfx.playBgm("ingame");
             }
 
+            const settingsModal = byId("mainSettingsModal");
+            if (settingsModal) {
+                settingsModal.classList.add("hidden");
+                settingsModal.style.display = "none";
+            }
+
             if (isGameOver || isMapWon || player.hp <= 0) {
                 initCampaign(false, false);
                 return;
             }
-            const settingsModal = byId("mainSettingsModal");
-            if (settingsModal) settingsModal.classList.add("hidden");
             syncPauseState();
         }
         window.closeMainMenuSettings = closeMainMenuSettings;
@@ -27750,6 +27794,7 @@
                 preloaderScreen.style.pointerEvents = "none";
                 setTimeout(() => {
                     preloaderScreen.classList.add("hidden");
+                    preloaderScreen.style.display = "none";
                 }, 700);
             }
 
@@ -27757,6 +27802,7 @@
             const settingsModal = byId("mainSettingsModal");
             if (settingsModal) {
                 settingsModal.classList.remove("hidden");
+                settingsModal.style.display = "flex";
             }
         }
         window.enterGameFromPreloader = enterGameFromPreloader;
@@ -27994,7 +28040,7 @@
             reticleAnimRunning = true;
             function frame(now) {
                 const preloader = byId("gamePreloaderScreen");
-                if (preloader && !preloader.classList.contains("hidden")) {
+                if (preloader && !preloader.classList.contains("hidden") && preloader.style.display !== "none") {
                     renderPreloaderReticle(now);
                     requestAnimationFrame(frame);
                 } else {
@@ -28149,6 +28195,11 @@
             if (isMissionLoadingSimulating) return;
             isMissionLoadingSimulating = true;
 
+            // Strictly keep game paused during mission loading
+            isPaused = true;
+            if (typeof mouse !== "undefined") mouse.down = false;
+            if (typeof player !== "undefined") player.activeLaserBeam = null;
+
             const preloader = byId("gamePreloaderScreen");
             const progressBar = byId("preloaderProgressBar");
             const percentText = byId("preloaderPercentText");
@@ -28162,13 +28213,25 @@
 
             // Close lobby & any open modals
             const settingsModal = byId("mainSettingsModal");
-            if (settingsModal) settingsModal.classList.add("hidden");
+            if (settingsModal) {
+                settingsModal.classList.add("hidden");
+                settingsModal.style.display = "none";
+            }
             const codexModal = byId("lobbyCodexModal");
-            if (codexModal) codexModal.classList.add("hidden");
+            if (codexModal) {
+                codexModal.classList.add("hidden");
+                codexModal.style.display = "none";
+            }
             const mapDrawer = byId("lobbyMapDiffDrawer");
-            if (mapDrawer) mapDrawer.classList.add("hidden");
+            if (mapDrawer) {
+                mapDrawer.classList.add("hidden");
+                mapDrawer.style.display = "none";
+            }
             const intelDrawer = byId("lobbyIntelDrawer");
-            if (intelDrawer) intelDrawer.classList.add("hidden");
+            if (intelDrawer) {
+                intelDrawer.classList.add("hidden");
+                intelDrawer.style.display = "none";
+            }
 
             const mapLore = MAP_TRANSITION_LORE[targetMapId] || MAP_TRANSITION_LORE[1];
             const mapCfg = (typeof MAP_REGISTRY !== "undefined" && MAP_REGISTRY[targetMapId])
@@ -28176,7 +28239,10 @@
                 : { name: `CHIẾN TRƯỜNG KHU VỰC ${targetMapId}` };
 
             // Set UI for Mission Deployment Mode
-            if (actionWrapper) actionWrapper.classList.add("hidden");
+            if (actionWrapper) {
+                actionWrapper.classList.add("hidden");
+                actionWrapper.style.display = "none";
+            }
             if (phaseBadge) {
                 phaseBadge.textContent = mapLore ? mapLore.phase : `TRIỂN KHAI // MAP ${targetMapId}`;
                 phaseBadge.className = "px-2.5 py-0.5 rounded-none bg-cyan-500/20 text-cyan-300 font-mono-tech font-bold text-[10px] border border-cyan-400/40 shadow-[0_0_12px_rgba(56,189,248,0.4)]";
@@ -28199,6 +28265,7 @@
             // Make preloader screen visible
             if (preloader) {
                 preloader.classList.remove("hidden");
+                preloader.style.display = "flex";
                 preloader.style.opacity = "1";
                 preloader.style.pointerEvents = "all";
                 preloader.style.cursor = "wait";
@@ -28207,7 +28274,7 @@
             ensureReticleAnim();
 
             if (typeof sfx !== "undefined" && sfx) {
-                sfx.playSample("energy_on", 0.45);
+                try { sfx.playSample("energy_on", 0.45); } catch (e) {}
             }
 
             const stages = (mapLore && mapLore.stages) ? mapLore.stages : [
@@ -28218,7 +28285,7 @@
                 { pct: 96, text: `[5/5] Hoàn tất chuẩn bị! Đang mở cổng dịch chuyển tức thời...` }
             ];
 
-            const durationMs = 3000 + Math.random() * 2000;
+            const durationMs = 2400 + Math.random() * 1000;
             const startTime = performance.now();
 
             function updateStep(now) {
@@ -28245,25 +28312,33 @@
                         radarTag.textContent = "LOCKED // IN ACTION";
                         radarTag.className = "absolute -bottom-3 px-2.5 py-0.5 rounded-none bg-emerald-950/95 border border-emerald-400 text-[9px] font-mono-tech text-emerald-200 font-extrabold tracking-widest uppercase shadow-[0_0_16px_rgba(16,185,129,0.7)] transition-all animate-pulse";
                     }
-                    if (typeof onDone === "function") {
-                        onDone();
-                    }
+
+                    // Play combat entry audio
                     if (typeof sfx !== "undefined" && sfx) {
-                        sfx.playSample("door", 0.75);
-                        sfx.playBgm("ingame");
+                        try {
+                            sfx.playSample("door", 0.75);
+                            sfx.playBgm("ingame");
+                        } catch (e) {}
                     }
-                    setTimeout(() => {
-                        if (preloader) {
-                            preloader.style.opacity = "0";
-                            preloader.style.pointerEvents = "none";
-                            setTimeout(() => {
-                                preloader.classList.add("hidden");
-                                isMissionLoadingSimulating = false;
-                            }, 400);
-                        } else {
-                            isMissionLoadingSimulating = false;
+
+                    // TẮT NGAY MÀN HÌNH PRELOADER: display: none, opacity: 0, hidden, pointerEvents: none
+                    if (preloader) {
+                        preloader.style.opacity = "0";
+                        preloader.style.pointerEvents = "none";
+                        preloader.style.display = "none";
+                        preloader.classList.add("hidden");
+                    }
+                    isMissionLoadingSimulating = false;
+
+                    // Chỉ sau khi màn hình preloader đã đóng hoàn toàn mới kích hoạt vào trận
+                    try {
+                        if (typeof onDone === "function") {
+                            onDone();
                         }
-                    }, 350);
+                    } catch (err) {
+                        console.error("Error executing onDone during mission load:", err);
+                        isPaused = false;
+                    }
                 }
             }
 
@@ -28280,6 +28355,11 @@
             if (isMapTransitionLoading) return;
             isMapTransitionLoading = true;
 
+            // Strictly pause game during map transition
+            isPaused = true;
+            if (typeof mouse !== "undefined") mouse.down = false;
+            if (typeof player !== "undefined") player.activeLaserBeam = null;
+
             const preloader = byId("gamePreloaderScreen");
             const progressBar = byId("preloaderProgressBar");
             const percentText = byId("preloaderPercentText");
@@ -28293,20 +28373,20 @@
 
             // Đóng tất cả các modal in-game hiện hành
             const victoryModal = byId("victoryModal");
-            if (victoryModal) victoryModal.classList.add("hidden");
+            if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             const pauseModal = byId("pauseModal");
-            if (pauseModal) pauseModal.classList.add("hidden");
+            if (pauseModal) { pauseModal.classList.add("hidden"); pauseModal.style.display = "none"; }
             const armoryModal = byId("armoryModal");
-            if (armoryModal) armoryModal.classList.add("hidden");
+            if (armoryModal) { armoryModal.classList.add("hidden"); armoryModal.style.display = "none"; }
             const gameOverModal = byId("gameOverModal");
-            if (gameOverModal) gameOverModal.classList.add("hidden");
+            if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
             const settingsModal = byId("mainSettingsModal");
-            if (settingsModal) settingsModal.classList.add("hidden");
+            if (settingsModal) { settingsModal.classList.add("hidden"); settingsModal.style.display = "none"; }
 
             const mapLore = MAP_TRANSITION_LORE[targetMapId] || MAP_TRANSITION_LORE[1];
 
             // Cấu hình giao diện nạp màn hình chuyển Map
-            if (actionWrapper) actionWrapper.classList.add("hidden");
+            if (actionWrapper) { actionWrapper.classList.add("hidden"); actionWrapper.style.display = "none"; }
             if (phaseBadge) {
                 phaseBadge.textContent = mapLore.phase;
                 phaseBadge.className = "px-2.5 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 font-mono-tech font-bold text-[10px] border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.4)]";
@@ -28329,6 +28409,7 @@
 
             if (preloader) {
                 preloader.classList.remove("hidden");
+                preloader.style.display = "flex";
                 preloader.style.opacity = "1";
                 preloader.style.pointerEvents = "all";
                 preloader.style.cursor = "wait";
@@ -28337,10 +28418,10 @@
             ensureReticleAnim();
 
             if (typeof sfx !== "undefined" && sfx) {
-                sfx.playSample("energy_on", 0.5);
+                try { sfx.playSample("energy_on", 0.5); } catch (e) {}
             }
 
-            const durationMs = 3200 + Math.random() * 1000;
+            const durationMs = 2600 + Math.random() * 800;
             const startTime = performance.now();
             const stages = mapLore.stages;
 
@@ -28369,25 +28450,27 @@
                         radarTag.className = "absolute -bottom-3 px-2.5 py-0.5 rounded-none bg-emerald-950/95 border border-emerald-400 text-[9px] font-mono-tech text-emerald-200 font-extrabold tracking-widest uppercase shadow-[0_0_16px_rgba(16,185,129,0.7)] transition-all animate-pulse";
                     }
                     if (typeof sfx !== "undefined" && sfx) {
-                        sfx.playSample("door", 0.75);
-                        sfx.playBossWarning();
-                        sfx.playBgm("ingame");
+                        try {
+                            sfx.playSample("door", 0.75);
+                            sfx.playBossWarning();
+                            sfx.playBgm("ingame");
+                        } catch (e) {}
                     }
-                    if (typeof onDone === "function") {
-                        onDone();
+                    if (preloader) {
+                        preloader.style.opacity = "0";
+                        preloader.style.pointerEvents = "none";
+                        preloader.style.display = "none";
+                        preloader.classList.add("hidden");
                     }
-                    setTimeout(() => {
-                        if (preloader) {
-                            preloader.style.opacity = "0";
-                            preloader.style.pointerEvents = "none";
-                            setTimeout(() => {
-                                preloader.classList.add("hidden");
-                                isMapTransitionLoading = false;
-                            }, 400);
-                        } else {
-                            isMapTransitionLoading = false;
+                    isMapTransitionLoading = false;
+                    try {
+                        if (typeof onDone === "function") {
+                            onDone();
                         }
-                    }, 350);
+                    } catch (e) {
+                        console.error("Error in onDone map transition:", e);
+                        isPaused = false;
+                    }
                 }
             }
 
@@ -28405,6 +28488,10 @@
             if (isLobbyLoadingSimulating) return;
             isLobbyLoadingSimulating = true;
 
+            isPaused = true;
+            if (typeof mouse !== "undefined") mouse.down = false;
+            if (typeof player !== "undefined") player.activeLaserBeam = null;
+
             const preloader = byId("gamePreloaderScreen");
             const progressBar = byId("preloaderProgressBar");
             const percentText = byId("preloaderPercentText");
@@ -28418,28 +28505,31 @@
 
             // Close all active in-game modals
             const pauseModal = byId("pauseModal");
-            if (pauseModal) pauseModal.classList.add("hidden");
+            if (pauseModal) { pauseModal.classList.add("hidden"); pauseModal.style.display = "none"; }
             const armoryModal = byId("armoryModal");
-            if (armoryModal) armoryModal.classList.add("hidden");
+            if (armoryModal) { armoryModal.classList.add("hidden"); armoryModal.style.display = "none"; }
             const codexModal = byId("lobbyCodexModal");
-            if (codexModal) codexModal.classList.add("hidden");
+            if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             const victoryModal = byId("victoryModal");
-            if (victoryModal) victoryModal.classList.add("hidden");
+            if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             const gameOverModal = byId("gameOverModal");
-            if (gameOverModal) gameOverModal.classList.add("hidden");
+            if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
             const mapDrawer = byId("lobbyMapDiffDrawer");
-            if (mapDrawer) mapDrawer.classList.add("hidden");
+            if (mapDrawer) { mapDrawer.classList.add("hidden"); mapDrawer.style.display = "none"; }
             const intelDrawer = byId("lobbyIntelDrawer");
-            if (intelDrawer) intelDrawer.classList.add("hidden");
+            if (intelDrawer) { intelDrawer.classList.add("hidden"); intelDrawer.style.display = "none"; }
 
-            // CRITICAL FIX: Đảm bảo sảnh (mainSettingsModal) hiển thị sẵn bên dưới màn load
+            // Ensure lobby modal is displayed under preloader
             const settingsModal = byId("mainSettingsModal");
-            if (settingsModal) settingsModal.classList.remove("hidden");
+            if (settingsModal) {
+                settingsModal.classList.remove("hidden");
+                settingsModal.style.display = "flex";
+            }
 
-            const durationMs = 2000 + Math.random() * 1500;
+            const durationMs = 1800 + Math.random() * 1000;
             const startTime = performance.now();
 
-            if (actionWrapper) actionWrapper.classList.add("hidden");
+            if (actionWrapper) { actionWrapper.classList.add("hidden"); actionWrapper.style.display = "none"; }
             if (phaseBadge) {
                 phaseBadge.textContent = "RÚT QUÂN // VỀ SẢNH TỔNG";
                 phaseBadge.className = "px-2.5 py-0.5 rounded-none bg-amber-500/20 text-amber-300 font-mono-tech font-bold text-[10px] border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.4)]";
@@ -28461,6 +28551,7 @@
 
             if (preloader) {
                 preloader.classList.remove("hidden");
+                preloader.style.display = "flex";
                 preloader.style.opacity = "1";
                 preloader.style.pointerEvents = "all";
                 preloader.style.cursor = "wait";
@@ -28469,7 +28560,7 @@
             ensureReticleAnim();
 
             if (typeof sfx !== "undefined" && sfx) {
-                sfx.playSample("energy_on", 0.45);
+                try { sfx.playSample("energy_on", 0.45); } catch (e) {}
             }
 
             const stages = [
@@ -28504,28 +28595,30 @@
                         radarTag.textContent = "LOBBY // READY";
                         radarTag.className = "absolute -bottom-3 px-2.5 py-0.5 rounded-none bg-emerald-950/95 border border-emerald-400 text-[9px] font-mono-tech text-emerald-200 font-extrabold tracking-widest uppercase shadow-[0_0_16px_rgba(16,185,129,0.7)] transition-all animate-pulse";
                     }
-                    if (typeof onDone === "function") {
-                        onDone();
+                    if (preloader) {
+                        preloader.style.opacity = "0";
+                        preloader.style.pointerEvents = "none";
+                        preloader.style.display = "none";
+                        preloader.classList.add("hidden");
                     }
+                    isLobbyLoadingSimulating = false;
                     if (settingsModal) {
                         settingsModal.classList.remove("hidden");
+                        settingsModal.style.display = "flex";
                     }
                     if (typeof sfx !== "undefined" && sfx) {
-                        sfx.playSample("door", 0.75);
-                        sfx.playBgm("lobby");
+                        try {
+                            sfx.playSample("door", 0.75);
+                            sfx.playBgm("lobby");
+                        } catch (e) {}
                     }
-                    setTimeout(() => {
-                        if (preloader) {
-                            preloader.style.opacity = "0";
-                            preloader.style.pointerEvents = "none";
-                            setTimeout(() => {
-                                preloader.classList.add("hidden");
-                                isLobbyLoadingSimulating = false;
-                            }, 400);
-                        } else {
-                            isLobbyLoadingSimulating = false;
+                    try {
+                        if (typeof onDone === "function") {
+                            onDone();
                         }
-                    }, 350);
+                    } catch (e) {
+                        console.error("Error in onDone lobby load:", e);
+                    }
                 }
             }
 
@@ -28535,6 +28628,11 @@
 
         function startNewCampaignFromLobby() {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            const settingsModal = byId("mainSettingsModal");
+            if (settingsModal) {
+                settingsModal.classList.add("hidden");
+                settingsModal.style.display = "none";
+            }
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
                     initCampaign(false, false);
