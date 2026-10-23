@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PROJECT XENO: RELOADED // CHIẾN DỊCH TÁC CHIẾN 10 KHU VỰC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -3821,6 +3821,16 @@
                 el.style.opacity = strVal;
             }
         }
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        window.escapeHtml = escapeHtml;
         function getCachedRadialGradient(c, key, x0, y0, r0, x1, y1, r1, stops) {
             let g = _radialGradCache.get(key);
             if (!g) {
@@ -6364,13 +6374,23 @@
                     if (typeof enemiesById !== "undefined" && data.id !== undefined) {
                         const targetEnemy = enemiesById.get(data.id);
                         if (targetEnemy && targetEnemy.active) {
+                            // Input clamping: max 2,500 damage per projectile to prevent hacked damage injection
+                            const rawDmg = Number(data.damage);
+                            const validDmg = (!isNaN(rawDmg) && rawDmg > 0) ? Math.min(2500, rawDmg) : 10;
+                            const rawKx = Number(data.kx);
+                            const rawKy = Number(data.ky);
+                            const validKx = !isNaN(rawKx) ? Math.max(-40, Math.min(40, rawKx)) : 0;
+                            const validKy = !isNaN(rawKy) ? Math.max(-40, Math.min(40, rawKy)) : 0;
+                            const validBulletType = typeof data.bulletType === "string" ? data.bulletType.slice(0, 32) : "bullet";
+                            const validAttackerId = typeof data.attackerId === "string" ? data.attackerId.slice(0, 32) : "client";
+
                             damageEnemy(
                                 targetEnemy,
-                                Number(data.damage) || 10,
-                                Number(data.kx) || 0,
-                                Number(data.ky) || 0,
-                                data.bulletType || "bullet",
-                                data.attackerId || "client"
+                                validDmg,
+                                validKx,
+                                validKy,
+                                validBulletType,
+                                validAttackerId
                             );
                         }
                     }
@@ -6432,10 +6452,10 @@
 
                 if (data.t === "input" && this.isHost) {
                     pushTeammateSnapshot(data);
-                    if (typeof data.hp === "number") teammate.hp = data.hp;
-                    if (typeof data.mhp === "number") teammate.maxHp = data.mhp;
-                    if (typeof data.ar === "number") teammate.armor = data.ar;
-                    if (typeof data.mar === "number") teammate.maxArmor = data.mar;
+                    if (typeof data.hp === "number" && !isNaN(data.hp)) teammate.hp = Math.max(0, Math.min(5000, data.hp));
+                    if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
+                    if (typeof data.ar === "number" && !isNaN(data.ar)) teammate.armor = Math.max(0, Math.min(5000, data.ar));
+                    if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
@@ -14399,7 +14419,10 @@
                 }
 
                 const vicModal = byId("victoryModal");
-                if (vicModal) vicModal.classList.remove("hidden");
+                if (vicModal) {
+                    vicModal.classList.remove("hidden");
+                    vicModal.style.display = "flex";
+                }
             }, 1000);
         }
 
@@ -15458,7 +15481,7 @@
          */
         function updateWorld(dt = FIXED_PHYSICS_STEP) {
             const dtScale = dt / FIXED_PHYSICS_STEP;
-            if (isGameOver) {
+            if (isGameOver || isMapWon) {
                 if (screenShake > 0) {
                     screenShake *= 0.86;
                     if (screenShake < 0.2) screenShake = 0;
@@ -15481,7 +15504,7 @@
                 }
                 return;
             }
-            if (isPaused || isMapWon) return;
+            if (isPaused) return;
 
             updateAutoDoors();
 
@@ -24547,10 +24570,14 @@
                     const sx = (img.width - minSide) * 0.5;
                     const sy = (img.height - minSide) * 0.5;
                     cx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-                    const compressed = c.toDataURL("image/jpeg", 0.90);
+                    const compressed = c.toDataURL("image/jpeg", 0.82);
                     applyAvatarDataUrl(compressed);
-                    try { localStorage.setItem("xeno_custom_avatar", compressed); } catch (e) {}
-                    showToast("ĐÃ CẬP NHẬT AVATAR", "Ảnh đại diện mới của bạn đã được lưu!");
+                    try {
+                        localStorage.setItem("xeno_custom_avatar", compressed);
+                        showToast("ĐÃ CẬP NHẬT AVATAR", "Ảnh đại diện mới của bạn đã được lưu!");
+                    } catch (e) {
+                        showToast("BỘ NHỚ ĐẦY", "Bộ nhớ LocalStorage bị đầy, avatar chỉ hiển thị tạm thời!");
+                    }
                 };
                 img.src = ev.target.result;
             };
@@ -24644,7 +24671,7 @@
                 const img = new Image();
                 img.onload = function () {
                     const c = document.createElement("canvas");
-                    const maxW = 1920, maxH = 1080;
+                    const maxW = 1280, maxH = 720;
                     let w = img.width, h = img.height;
                     if (w > maxW || h > maxH) {
                         const scale = Math.min(maxW / w, maxH / h);
@@ -24655,10 +24682,14 @@
                     c.height = h;
                     const cx = c.getContext("2d");
                     cx.drawImage(img, 0, 0, w, h);
-                    const compressed = c.toDataURL("image/jpeg", 0.86);
+                    const compressed = c.toDataURL("image/jpeg", 0.75);
                     applyLobbyBackgroundSource(compressed, true);
-                    try { localStorage.setItem("xeno_custom_lobby_bg", compressed); } catch (e) {}
-                    showToast("ĐÃ ĐỔI ẢNH NỀN SẢNH CHỜ", "Hình nền sảnh chờ mới đã được áp dụng và lưu lại!");
+                    try {
+                        localStorage.setItem("xeno_custom_lobby_bg", compressed);
+                        showToast("ĐÃ ĐỔI ẢNH NỀN SẢNH CHỜ", "Hình nền sảnh chờ mới đã được áp dụng và lưu lại!");
+                    } catch (e) {
+                        showToast("BỘ NHỚ ĐẦY", "Bộ nhớ LocalStorage đầy (tối đa 5MB), ảnh nền chỉ áp dụng tạm thời trong phiên này!");
+                    }
                 };
                 img.src = ev.target.result;
             };
@@ -24786,9 +24817,11 @@
          * ============================================================================
          */
         // Tự động định tuyến qua Vercel API Route (/api/sync) khi chạy trên Web để bảo mật Database
-        window.XENO_CLOUD_API_URL = (window.location.protocol === "file:")
-            ? "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec"
-            : "/api/sync";
+        const IS_LOCAL_FILE_MODE = (typeof window !== "undefined" && window.location && window.location.protocol === "file:");
+        const DIRECT_SCRIPT_URL = IS_LOCAL_FILE_MODE 
+            ? "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec" 
+            : "";
+        window.XENO_CLOUD_API_URL = IS_LOCAL_FILE_MODE ? DIRECT_SCRIPT_URL : "/api/sync";
 
         const XenoAuth = {
             user: null,
@@ -24815,8 +24848,7 @@
 
             async callApi(action, payload = {}) {
                 const bodyData = JSON.stringify({ action, ...payload });
-                const directUrl = "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec";
-                const primaryUrl = window.XENO_CLOUD_API_URL || directUrl;
+                const primaryUrl = window.XENO_CLOUD_API_URL || (IS_LOCAL_FILE_MODE ? DIRECT_SCRIPT_URL : "/api/sync");
                 try {
                     const res = await fetch(primaryUrl, {
                         method: "POST",
@@ -24827,8 +24859,8 @@
                     if (res.ok) {
                         return await res.json();
                     }
-                    if (primaryUrl !== directUrl) {
-                        const fallbackRes = await fetch(directUrl, {
+                    if (IS_LOCAL_FILE_MODE && DIRECT_SCRIPT_URL && primaryUrl !== DIRECT_SCRIPT_URL) {
+                        const fallbackRes = await fetch(DIRECT_SCRIPT_URL, {
                             method: "POST",
                             headers: { "Content-Type": "text/plain;charset=utf-8" },
                             body: bodyData,
@@ -24838,9 +24870,9 @@
                     }
                     return await res.json();
                 } catch (err) {
-                    if (primaryUrl !== directUrl) {
+                    if (IS_LOCAL_FILE_MODE && DIRECT_SCRIPT_URL && primaryUrl !== DIRECT_SCRIPT_URL) {
                         try {
-                            const fallbackRes = await fetch(directUrl, {
+                            const fallbackRes = await fetch(DIRECT_SCRIPT_URL, {
                                 method: "POST",
                                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                                 body: bodyData,
@@ -25235,7 +25267,10 @@
             if (avatarBox) {
                 const img = byId("lobbyAvatarImg");
                 if (img && !img.classList.contains("hidden") && img.src) {
-                    avatarBox.innerHTML = `<img src="${img.src}" class="w-full h-full object-cover" />`;
+                    const newImg = document.createElement("img");
+                    newImg.src = img.src;
+                    newImg.className = "w-full h-full object-cover";
+                    avatarBox.replaceChildren(newImg);
                 } else {
                     const initials = (XenoAuth.user.displayName || XenoAuth.user.username || "X").substring(0, 2).toUpperCase();
                     avatarBox.textContent = initials;
@@ -25390,7 +25425,7 @@
                 if (res && res.success) {
                     if (alertBox) {
                         alertBox.className = "text-xs p-3 rounded-none font-mono-tech bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 leading-relaxed";
-                        alertBox.innerHTML = `<b>THÀNH CÔNG!</b><br />${res.message}`;
+                        alertBox.innerHTML = `<b>THÀNH CÔNG!</b><br />${escapeHtml(res.message)}`;
                         alertBox.classList.remove("hidden");
                     }
                 } else {
@@ -25474,15 +25509,15 @@
                                 <td class="py-2.5 px-2 text-center">${rankBadge}</td>
                                 <td class="py-2.5 px-3">
                                     <div class="font-bold text-white flex items-center gap-1.5 font-mono-tech">
-                                        <span>${item.displayName || "Chiến Binh"}</span>
+                                        <span>${escapeHtml(item.displayName || "Chiến Binh")}</span>
                                         ${isMe ? '<span class="text-[9px] px-1 rounded-none bg-emerald-400 text-slate-950 font-black">BẠN</span>' : ''}
                                     </div>
-                                    <div class="text-[9px] text-slate-500 uppercase">Độ khó: ${item.difficulty || "normal"}</div>
+                                    <div class="text-[9px] text-slate-500 uppercase">Độ khó: ${escapeHtml(item.difficulty || "normal")}</div>
                                 </td>
-                                <td class="py-2.5 px-2 text-center font-bold text-cyan-300">Map ${item.maxMapReached || 1}</td>
-                                <td class="py-2.5 px-2 text-center font-bold text-rose-400">${(item.campaignKills || 0).toLocaleString("vi-VN")}</td>
+                                <td class="py-2.5 px-2 text-center font-bold text-cyan-300">Map ${Number(item.maxMapReached) || 1}</td>
+                                <td class="py-2.5 px-2 text-center font-bold text-rose-400">${(Number(item.campaignKills) || 0).toLocaleString("vi-VN")}</td>
                                 <td class="py-2.5 px-2 text-center font-mono-tech text-emerald-400">${timeStr}</td>
-                                <td class="py-2.5 px-2 text-center font-black text-amber-300">${item.totalVictories || 0} ★</td>
+                                <td class="py-2.5 px-2 text-center font-black text-amber-300">${Number(item.totalVictories) || 0} ★</td>
                             </tr>
                         `;
                     });
@@ -25491,7 +25526,7 @@
                     if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 font-mono-tech text-xs">Không thể tải dữ liệu bảng xếp hạng.</td></tr>`;
                 }
             } catch (err) {
-                if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 font-mono-tech text-xs">Lỗi: ${err.message}</td></tr>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-rose-400 font-mono-tech text-xs">Lỗi: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
         window.refreshLeaderboardData = refreshLeaderboardData;
@@ -25919,7 +25954,7 @@
                     } catch (e1) {}
                 }
                 if (!data || !data.success) {
-                    const apiUrl = window.XENO_CLOUD_API_URL || "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec";
+                    const apiUrl = window.XENO_CLOUD_API_URL || (IS_LOCAL_FILE_MODE ? DIRECT_SCRIPT_URL : "/api/sync");
                     const resp = await fetch(apiUrl, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -26655,6 +26690,13 @@
         function startFullCampaignFromMap1() {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             clearVictoryAutoTimers();
+            const vicModal = byId("victoryModal");
+            if (vicModal) {
+                vicModal.classList.add("hidden");
+                vicModal.style.display = "none";
+            }
+            isTransitioningMap = false;
+            if (typeof isMapTransitionLoading !== "undefined") isMapTransitionLoading = false;
             window.currentMapId = 1;
             campaignMode = true;
             updateMapUIState();
@@ -26670,6 +26712,13 @@
             }
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             clearVictoryAutoTimers();
+            const vicModal = byId("victoryModal");
+            if (vicModal) {
+                vicModal.classList.add("hidden");
+                vicModal.style.display = "none";
+            }
+            isTransitioningMap = false;
+            if (typeof isMapTransitionLoading !== "undefined") isMapTransitionLoading = false;
             window.currentMapId = MAP_REGISTRY[mapId] ? mapId : 1;
             updateMapUIState();
             initCampaign(false, carryOver);
@@ -26683,7 +26732,10 @@
             isTransitioningMap = true;
 
             const vicModal = byId("victoryModal");
-            if (vicModal) vicModal.classList.add("hidden");
+            if (vicModal) {
+                vicModal.classList.add("hidden");
+                vicModal.style.display = "none";
+            }
 
             const nextMapId = window.currentMapId < 10 ? (window.currentMapId + 1) : 1;
             if (nextMapId > (window.maxUnlockedMap || 1)) {
@@ -26799,9 +26851,9 @@
             setOpacity("damageVignette", 0);
 
             const gameOverModal = byId("gameOverModal");
-            if (gameOverModal) gameOverModal.classList.add("hidden");
+            if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
             const victoryModal = byId("victoryModal");
-            if (victoryModal) victoryModal.classList.add("hidden");
+            if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             totalKillsCount = 0;
             mapStageStartTime = performance.now();
             buildMapArchitecture(window.currentMapId);
@@ -27339,7 +27391,7 @@
 
             // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 10 FPS
             // và không spin-lock CPU để mức sử dụng CPU về ~0-1% ngay khi vào web!
-            if (isPaused || isMapWon) {
+            if (isPaused) {
                 const now = performance.now();
                 gameLoop(now);
                 framePacerPending = true;
@@ -27384,7 +27436,7 @@
                 return;
             }
 
-            if (isPaused || isMapWon) {
+            if (isPaused) {
                 framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
                 return;
             }
@@ -27411,7 +27463,7 @@
 
             if (elapsed > MAX_ACCUMULATED_TIME) elapsed = MAX_ACCUMULATED_TIME;
 
-            if (isPaused || isMapWon) {
+            if (isPaused) {
                 loopAccumulator = 0;
                 // Khi đang ở màn hình chờ / sảnh chờ (Menu modal đang mở), chỉ vẽ nền tĩnh vài frame đầu
                 // để không tốn GPU/CPU vẽ lại toàn bộ bản đồ mỗi frame khi người chơi chưa bấm Bắt Đầu!
@@ -28442,6 +28494,7 @@
                     } catch (e) {
                         console.error("Error in onDone map transition:", e);
                         isPaused = false;
+                        if (typeof isTransitioningMap !== "undefined") isTransitioningMap = false;
                     }
                 }
             }
