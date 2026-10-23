@@ -5374,8 +5374,9 @@
 
             // 8. Quái vật thường (Monsters - Pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào VRAM)
             if (CUSTOM_ASSETS.monsters) {
+                const defaultMonsterRadii = { crawler: 14, stalker: 15, spitter: 15, brute: 21, praetorian: 26 };
                 Object.entries(CUSTOM_ASSETS.monsters).forEach(([typeKey, monsterAsset]) => {
-                    const baseR = (typeof ENEMY_TYPES !== "undefined" && ENEMY_TYPES[typeKey]) ? ENEMY_TYPES[typeKey].radius : 16;
+                    const baseR = defaultMonsterRadii[typeKey] || 16;
                     loadCustomAssetEntry(monsterAsset, (entry) => bakeCustomEntityStripToGpu(entry, baseR, 2.8, 0.52, 1.08));
                 });
             }
@@ -27329,7 +27330,7 @@
 
             // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 15 FPS
             // và không spin-lock CPU để mức sử dụng CPU về ~0-1% ngay khi vào web!
-            if (isPaused || inLobby || isMapWon) {
+            if (isPaused || isMapWon) {
                 const now = performance.now();
                 gameLoop(now);
                 framePacerPending = true;
@@ -27374,7 +27375,7 @@
                 return;
             }
 
-            if (isPaused || inLobby || isMapWon) {
+            if (isPaused || isMapWon) {
                 framePacerTimeoutId = setTimeout(onFramePacerTick, 66);
                 return;
             }
