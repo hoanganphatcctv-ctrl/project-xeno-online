@@ -5410,11 +5410,10 @@
                 });
             }
 
-            // 9. Trùm cuối chiến dịch (Bosses 1-10 - Pre-bake 3 trạng thái Normal/HitFlash/Chilled + Bóng 2.5D vào VRAM)
+            // 9. Trùm cuối chiến dịch (Lazy-loading Boss của Map hiện tại thay vì tải 10 Boss cùng lúc lúc mở game)
             if (CUSTOM_ASSETS.bosses) {
-                Object.values(CUSTOM_ASSETS.bosses).forEach((bossAsset) => {
-                    loadCustomAssetEntry(bossAsset, (entry) => bakeCustomEntityStripToGpu(entry, 46, 3.2, 0.65, 1.15));
-                });
+                const currentMap = window.currentMapId || 1;
+                loadBossAssetForMap(currentMap);
             }
 
             // Cập nhật các thẻ <img> có data-asset-src
@@ -5424,6 +5423,17 @@
             });
         }
         window.initCustomAssets = initCustomAssets;
+
+        function loadBossAssetForMap(mapId) {
+            if (!CUSTOM_ASSETS || !CUSTOM_ASSETS.bosses) return;
+            const targetId = Math.max(1, Math.min(10, parseInt(mapId, 10) || 1));
+            const bossAsset = CUSTOM_ASSETS.bosses[targetId];
+            if (bossAsset && !bossAsset.loaded) {
+                loadCustomAssetEntry(bossAsset, (entry) => bakeCustomEntityStripToGpu(entry, 46, 3.2, 0.65, 1.15));
+            }
+        }
+        window.loadBossAssetForMap = loadBossAssetForMap;
+
         initCustomAssets();
 
         function getWeaponIconMarkup(idx, imgClasses = "max-h-6 max-w-full object-contain filter drop-shadow", wrapperClasses = "h-6 w-14 flex items-center justify-end") {
@@ -5668,6 +5678,18 @@
             trailHistory: []
         };
 
+        // BỘ ĐỆM POOL TÁI SỬ DỤNG CHO VẾT SAU ẢNH (ZERO-ALLOCATION PLAYER TRAIL)
+        const _playerTrailPool = [];
+        function addPlayerTrail(x, y, angle, life) {
+            let tr = _playerTrailPool.pop();
+            if (!tr) tr = { x: 0, y: 0, angle: 0, life: 0 };
+            tr.x = x;
+            tr.y = y;
+            tr.angle = angle;
+            tr.life = life;
+            player.trailHistory.push(tr);
+        }
+
         // ĐỒNG ĐỘI (PLAYER 2) CHO CHẾ ĐỘ CO-OP ONLINE 2 NGƯỜI
         const teammate = {
             active: false,
@@ -5708,21 +5730,20 @@
 
         function pushTeammateSnapshot(data) {
             const now = performance.now();
-            const snap = {
-                t: now,
-                x: data.x,
-                y: data.y,
-                a: data.a !== undefined ? data.a : (teammate.targetAngle || teammate.angle),
-                hp: data.hp !== undefined ? data.hp : teammate.hp,
-                mhp: data.mhp || teammate.maxHp,
-                ar: data.ar !== undefined ? data.ar : teammate.armor,
-                mar: data.mar || teammate.maxArmor,
-                w: data.w !== undefined ? data.w : teammate.currentWeapon,
-                shoot: !!data.shoot,
-                cred: data.cred !== undefined ? data.cred : teammate.credits,
-                down: !!data.down,
-                rev: data.rev || 0
-            };
+            let snap = (teammate.snapshotBuffer.length > 25) ? teammate.snapshotBuffer.shift() : {};
+            snap.t = now;
+            snap.x = data.x;
+            snap.y = data.y;
+            snap.a = data.a !== undefined ? data.a : (teammate.targetAngle || teammate.angle);
+            snap.hp = data.hp !== undefined ? data.hp : teammate.hp;
+            snap.mhp = data.mhp || teammate.maxHp;
+            snap.ar = data.ar !== undefined ? data.ar : teammate.armor;
+            snap.mar = data.mar || teammate.maxArmor;
+            snap.w = data.w !== undefined ? data.w : teammate.currentWeapon;
+            snap.shoot = !!data.shoot;
+            snap.cred = data.cred !== undefined ? data.cred : teammate.credits;
+            snap.down = !!data.down;
+            snap.rev = data.rev || 0;
 
             if (teammate.snapshotBuffer.length > 0) {
                 const prev = teammate.snapshotBuffer[teammate.snapshotBuffer.length - 1];
@@ -5733,9 +5754,6 @@
 
             teammate.snapshotBuffer.push(snap);
             teammate.lastPacketTime = now;
-            if (teammate.snapshotBuffer.length > 25) {
-                teammate.snapshotBuffer.shift();
-            }
 
             teammate.targetX = snap.x;
             teammate.targetY = snap.y;
@@ -7543,29 +7561,55 @@
             return dClient < dHost ? "client" : "host";
         }
 
+        const _targetPosShared = { x: 0, y: 0, isLocalPlayer: true };
         function resolveEnemyTargetPosition(targetPlayerId) {
             if (!isCoopActive() || !window.teammate || !window.teammate.active) {
-                return { x: player.x, y: player.y, isLocalPlayer: true };
+                _targetPosShared.x = player.x;
+                _targetPosShared.y = player.y;
+                _targetPosShared.isLocalPlayer = true;
+                return _targetPosShared;
             }
             if (window.XENO_COOP.isHost) {
                 if (targetPlayerId === "client" && !window.teammate.isDown) {
-                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                    _targetPosShared.x = window.teammate.x;
+                    _targetPosShared.y = window.teammate.y;
+                    _targetPosShared.isLocalPlayer = false;
+                    return _targetPosShared;
                 }
                 if (player.isDown && !window.teammate.isDown) {
-                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                    _targetPosShared.x = window.teammate.x;
+                    _targetPosShared.y = window.teammate.y;
+                    _targetPosShared.isLocalPlayer = false;
+                    return _targetPosShared;
                 }
-                return { x: player.x, y: player.y, isLocalPlayer: true };
+                _targetPosShared.x = player.x;
+                _targetPosShared.y = player.y;
+                _targetPosShared.isLocalPlayer = true;
+                return _targetPosShared;
             } else {
                 // On Client: "client" is local `player`, "host" is `window.teammate`
                 if (targetPlayerId === "client" && !player.isDown) {
-                    return { x: player.x, y: player.y, isLocalPlayer: true };
+                    _targetPosShared.x = player.x;
+                    _targetPosShared.y = player.y;
+                    _targetPosShared.isLocalPlayer = true;
+                    return _targetPosShared;
                 }
                 if (targetPlayerId === "host" && !window.teammate.isDown) {
-                    return { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                    _targetPosShared.x = window.teammate.x;
+                    _targetPosShared.y = window.teammate.y;
+                    _targetPosShared.isLocalPlayer = false;
+                    return _targetPosShared;
                 }
-                return !player.isDown
-                    ? { x: player.x, y: player.y, isLocalPlayer: true }
-                    : { x: window.teammate.x, y: window.teammate.y, isLocalPlayer: false };
+                if (!player.isDown) {
+                    _targetPosShared.x = player.x;
+                    _targetPosShared.y = player.y;
+                    _targetPosShared.isLocalPlayer = true;
+                } else {
+                    _targetPosShared.x = window.teammate.x;
+                    _targetPosShared.y = window.teammate.y;
+                    _targetPosShared.isLocalPlayer = false;
+                }
+                return _targetPosShared;
             }
         }
 
@@ -7630,7 +7674,8 @@
         };
         let generatorOnline = false;
         let fullbrightCheatActive = false;
-        const floatingTexts = [];
+        const MAX_FLOATING_TEXTS = 64;
+        const floatingTexts = Array.from({ length: MAX_FLOATING_TEXTS }, () => ({ active: false, x: 0, y: 0, text: "", color: "#ffffff", life: 0 }));
 
         const gameCanvas = byId("gameCanvas");
         let ctx = gameCanvas.getContext("2d", {
@@ -7744,6 +7789,7 @@
                 this.lastFlameTime = 0;
                 this.lastLaserTime = 0;
                 this.lastMonsterHitTime = 0;
+                this.lastMonsterDeathTime = 0;
                 this.lastFootstepTime = 0;
                 this.masterVol = 1.0;
                 this.sfxVol = 1.0;
@@ -7922,6 +7968,10 @@
                     this.playSample("monster_death2", 0.85);
                     return;
                 }
+                const now = performance.now();
+                if (now - (this.lastMonsterDeathTime || 0) < 32) return;
+                this.lastMonsterDeathTime = now;
+
                 const samples = ["monster_death", "monster_death2", "monster_death4", "monster_death5"];
                 const pick = samples[Math.floor(Math.random() * samples.length)];
                 if (!this.playSample(pick, 0.6, 0.15)) {
@@ -9398,11 +9448,10 @@
             surfaceCtx.restore();
         }
 
+        const STATIC_BLOOD_COLORS_GREEN = { main: "rgba(34, 197, 94, 0.76)", dark: "rgba(21, 128, 61, 0.88)", bright: "#4ade80" };
+        const STATIC_BLOOD_COLORS_RED = { main: "rgba(185, 28, 28, 0.78)", dark: "rgba(127, 29, 29, 0.9)", bright: "#ef4444" };
         function getBloodColors() {
-            if (greenBloodMode) {
-                return { main: "rgba(34, 197, 94, 0.76)", dark: "rgba(21, 128, 61, 0.88)", bright: "#4ade80" };
-            }
-            return { main: "rgba(185, 28, 28, 0.78)", dark: "rgba(127, 29, 29, 0.9)", bright: "#ef4444" };
+            return greenBloodMode ? STATIC_BLOOD_COLORS_GREEN : STATIC_BLOOD_COLORS_RED;
         }
 
         function bakeBloodSplatter(x, y, radius, intensity = 1) {
@@ -9439,6 +9488,8 @@
 
         function bakeShellCasing(x, y, angle) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            // Tối ưu RAM & VRAM: Sampling 35% vỏ đạn để giảm 65% số lần dirty surfaceCanvas 75MB
+            if (Math.random() > 0.35) return;
             surfaceCtx.save();
             surfaceCtx.translate(x, y);
             surfaceCtx.rotate(angle || 0);
@@ -9784,6 +9835,11 @@
             return idx;
         }
 
+        const FLOW_NEIGHBORS = [
+            [-1, 0, 10], [1, 0, 10], [0, -1, 10], [0, 1, 10],
+            [-1, -1, 14], [1, -1, 14], [-1, 1, 14], [1, 1, 14]
+        ];
+
         function computeFlowField(forceUpdate = false) {
             let pc = Math.max(1, Math.min(FLOW_COLS - 2, Math.floor(player.x / CELL)));
             let pr = Math.max(1, Math.min(FLOW_ROWS - 2, Math.floor(player.y / CELL)));
@@ -9828,11 +9884,6 @@
                 }
             }
 
-            const neighbors = [
-                [-1, 0, 10], [1, 0, 10], [0, -1, 10], [0, 1, 10],
-                [-1, -1, 14], [1, -1, 14], [-1, 1, 14], [1, 1, 14]
-            ];
-
             while (head < tail) {
                 const curr = flowGrid.queue[head++];
                 flowGrid.inQueue[curr] = 0;
@@ -9841,9 +9892,9 @@
                 const cd = flowGrid.dist[curr];
 
                 for (let d = 0; d < 8; d++) {
-                    const dc = neighbors[d][0];
-                    const dr = neighbors[d][1];
-                    const stepCost = neighbors[d][2];
+                    const dc = FLOW_NEIGHBORS[d][0];
+                    const dr = FLOW_NEIGHBORS[d][1];
+                    const stepCost = FLOW_NEIGHBORS[d][2];
                     const nc = cc + dc;
                     const nr = cr + dr;
                     if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
@@ -10185,6 +10236,9 @@
         }
 
         // Wall-safe flow sampling + multi-feeler corner steering so monsters never get stuck on doorway jambs, pillars, or consoles
+        const STATIC_FEELER_OFFSETS = [0.35, -0.35, 0.70, -0.70, 1.05, -1.05, 1.45, -1.45, 1.85, -1.85];
+        const _steerResultShared = { dirX: 0, dirY: 0 };
+
         function computeMonsterSteering(e, dx, dy, dist, moveSpeed, targetX = player.x, targetY = player.y) {
             let dirX = dx / dist;
             let dirY = dy / dist;
@@ -10274,13 +10328,12 @@
 
             if (circleHitsStaticObstacle(e.x + dirX * lookAhead, e.y + dirY * lookAhead, probeRadius) || isStuck) {
                 const baseAng = Math.atan2(dirY, dirX);
-                const feelerOffsets = [0.35, -0.35, 0.70, -0.70, 1.05, -1.05, 1.45, -1.45, 1.85, -1.85];
                 let bestAng = baseAng;
                 let bestScore = -999999;
                 let foundClearFeeler = false;
 
-                for (let k = 0; k < feelerOffsets.length; k++) {
-                    const testAng = baseAng + feelerOffsets[k];
+                for (let k = 0; k < STATIC_FEELER_OFFSETS.length; k++) {
+                    const testAng = baseAng + STATIC_FEELER_OFFSETS[k];
                     const tx = Math.cos(testAng);
                     const ty = Math.sin(testAng);
                     const px = e.x + tx * lookAhead;
@@ -10312,7 +10365,9 @@
                 }
             }
 
-            return { dirX, dirY };
+            _steerResultShared.dirX = dirX;
+            _steerResultShared.dirY = dirY;
+            return _steerResultShared;
         }
 
         function resolveWallSliding(entity) {
@@ -13082,6 +13137,8 @@
             return e;
         }
 
+        const _seenEnemyIdsShared = new Set();
+
         function syncEnemiesFromHostPacket(packet) {
             if (!packet || !Array.isArray(packet.enemies)) return;
             if (typeof packet.wave === "number" && packet.wave !== currentWave) {
@@ -13090,7 +13147,11 @@
             }
 
             if (Array.isArray(packet.openDoors)) {
-                window.coopHostOpenDoors = new Set(packet.openDoors);
+                if (!window.coopHostOpenDoors) window.coopHostOpenDoors = new Set();
+                window.coopHostOpenDoors.clear();
+                for (let i = 0; i < packet.openDoors.length; i++) {
+                    window.coopHostOpenDoors.add(packet.openDoors[i]);
+                }
             }
 
             // Đồng bộ tức thì mọi vật thể (thùng gỗ, thùng nhiên liệu, trụ hạt nhân, máy phát điện) từ Chủ phòng
@@ -13133,12 +13194,12 @@
             }
 
             const now = performance.now();
-            const seenIds = new Set();
+            _seenEnemyIdsShared.clear();
 
             for (let i = 0; i < packet.enemies.length; i++) {
                 const item = packet.enemies[i];
                 if (!item || !item.id) continue;
-                seenIds.add(item.id);
+                _seenEnemyIdsShared.add(item.id);
 
                 let e = enemiesById.get(item.id);
                 if (!e || !e.active) {
@@ -13185,7 +13246,7 @@
 
             // Dọn dẹp các con quái không còn tồn tại trong bản tin SYNC_ENEMIES của Host
             for (const [id, e] of enemiesById.entries()) {
-                if (!seenIds.has(id)) {
+                if (!_seenEnemyIdsShared.has(id)) {
                     if (now - (e.spawnedAt || 0) > 600) {
                         if (e.active) {
                             bakeAlienCorpse(e, e.chillTimer > 0);
@@ -13194,7 +13255,7 @@
                                 e.isBoss = false;
                                 e.hp = 0;
                                 updateBossHUD();
-                                if (bossSpawned && getAliveBosses().length === 0) {
+                                if (bossSpawned && countAliveBosses() === 0) {
                                     triggerMapVictory();
                                 }
                             }
@@ -13379,8 +13440,31 @@
             updateTopLeftHUD();
         }
 
+        const _aliveBossesShared = [];
+        function countAliveBosses() {
+            let count = 0;
+            for (let i = 0; i < activeBosses.length; i++) {
+                const b = activeBosses[i];
+                if (b && b.active && b.isBoss && b.hp > 0) count++;
+            }
+            return count;
+        }
+
         function getAliveBosses() {
-            return activeBosses.filter(b => b && b.active && b.isBoss && b.hp > 0);
+            _aliveBossesShared.length = 0;
+            for (let i = 0; i < activeBosses.length; i++) {
+                const b = activeBosses[i];
+                if (b && b.active && b.isBoss && b.hp > 0) _aliveBossesShared.push(b);
+            }
+            return _aliveBossesShared;
+        }
+
+        function countActiveTurrets() {
+            let count = 0;
+            for (let i = 0; i < turrets.length; i++) {
+                if (turrets[i].active) count++;
+            }
+            return count;
         }
 
         function updateBossHUD() {
@@ -13420,7 +13504,32 @@
 
         function addFloatingText(x, y, text, color) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-            floatingTexts.push({ x, y, text, color: color || "#ffffff", life: 54 });
+            for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
+                const ft = floatingTexts[i];
+                if (!ft.active) {
+                    ft.active = true;
+                    ft.x = x;
+                    ft.y = y;
+                    ft.text = text;
+                    ft.color = color || "#ffffff";
+                    ft.life = 54;
+                    return;
+                }
+            }
+            let minIdx = 0, minLife = 999;
+            for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
+                if (floatingTexts[i].life < minLife) {
+                    minLife = floatingTexts[i].life;
+                    minIdx = i;
+                }
+            }
+            const ft = floatingTexts[minIdx];
+            ft.active = true;
+            ft.x = x;
+            ft.y = y;
+            ft.text = text;
+            ft.color = color || "#ffffff";
+            ft.life = 54;
         }
 
         /**
@@ -13515,7 +13624,7 @@
 
         function deployAutoTurret(fromShop = false) {
             if ((!fromShop && isPaused) || isGameOver || isMapWon || player.isDown) return;
-            const activeTurrets = turrets.filter(t => t.active).length;
+            const activeTurrets = countActiveTurrets();
             if (activeTurrets >= 4) {
                 if (typeof sfx !== "undefined" && sfx) sfx.playError();
                 showToast("ĐẠT GIỚI HẠN THÁP PHÁO", "Tối đa 4 Tháp Pháo Tự Động hoạt động cùng lúc trên bản đồ!");
@@ -15519,11 +15628,12 @@
                     p.life--;
                     if (p.life <= 0) p.active = false;
                 }
-                for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
                     const ft = floatingTexts[i];
+                    if (!ft.active) continue;
                     ft.y -= 0.9;
                     ft.life--;
-                    if (ft.life <= 0) floatingTexts.splice(i, 1);
+                    if (ft.life <= 0) ft.active = false;
                 }
                 return;
             }
@@ -15539,7 +15649,7 @@
 
             // Failsafe: if Boss wave has spawned and zero Bosses remain alive, trigger victory immediately
             if (bossSpawned && !isMapWon && !isGameOver) {
-                if (getAliveBosses().length === 0) {
+                if (countAliveBosses() === 0) {
                     triggerMapVictory();
                     return;
                 }
@@ -15764,7 +15874,7 @@
                 player.x += player.dashVx * dtScale;
                 player.y += player.dashVy * dtScale;
                 resolveWallSliding(player);
-                player.trailHistory.push({ x: player.x, y: player.y, angle: player.angle, life: 14 });
+                addPlayerTrail(player.x, player.y, player.angle, 14);
             } else {
                 let mx = 0, my = 0;
                 if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
@@ -15781,7 +15891,7 @@
                     resolveWallSliding(player);
 
                     if (player.speedBuffTimer > 0 && frameCounter % 2 === 0) {
-                        player.trailHistory.push({ x: player.x, y: player.y, angle: player.angle, life: 12 });
+                        addPlayerTrail(player.x, player.y, player.angle, 12);
                     }
                 }
             }
@@ -15861,8 +15971,15 @@
             }
 
             for (let i = player.trailHistory.length - 1; i >= 0; i--) {
-                player.trailHistory[i].life--;
-                if (player.trailHistory[i].life <= 0) player.trailHistory.splice(i, 1);
+                const tr = player.trailHistory[i];
+                tr.life--;
+                if (tr.life <= 0) {
+                    _playerTrailPool.push(tr);
+                    const last = player.trailHistory.pop();
+                    if (i < player.trailHistory.length) {
+                        player.trailHistory[i] = last;
+                    }
+                }
             }
 
             // Station Generator 5-Second Hold-E Cranking Logic
@@ -16011,7 +16128,7 @@
                         }
                         if (pendingTurretDeploy.elapsedMs >= pendingTurretDeploy.durationMs) {
                             pendingTurretDeploy.active = false;
-                            if (player.credits >= 350 && turrets.filter(t => t.active).length < 4) {
+                            if (player.credits >= 350 && countActiveTurrets() < 4) {
                                 player.credits -= 350;
                                 turrets.push({
                                     active: true,
@@ -16031,7 +16148,7 @@
                                     color: "#4ade80",
                                     alpha: 0.95
                                 });
-                                const activeCount = turrets.filter(t => t.active).length;
+                                const activeCount = countActiveTurrets();
                                 setText("upgTurretLv", activeCount);
                                 setText("hudTurretCount", `${activeCount}/4`);
                                 addFloatingText(pendingTurretDeploy.x, pendingTurretDeploy.y - 28, "TRIỂN KHAI THÁP PHÁO THÀNH CÔNG!", "#4ade80");
@@ -16749,11 +16866,12 @@
                 p.life--;
                 if (p.life <= 0) p.active = false;
             }
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
                 const ft = floatingTexts[i];
+                if (!ft.active) continue;
                 ft.y -= 0.9;
                 ft.life--;
-                if (ft.life <= 0) floatingTexts.splice(i, 1);
+                if (ft.life <= 0) ft.active = false;
             }
         }
 
@@ -17673,8 +17791,9 @@
             }
             ctx.globalAlpha = 1;
 
-            for (let i = 0; i < floatingTexts.length; i++) {
+            for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
                 const ft = floatingTexts[i];
+                if (!ft.active) continue;
                 ctx.save();
                 ctx.font = "800 12px 'JetBrains Mono', monospace";
                 ctx.fillStyle = ft.color;
@@ -21968,12 +22087,11 @@
         // HÀM LAZY-LOADING BOSS CHO VRAM CACHE: Chỉ nạp khi thực sự cần & tự dọn boss map cũ
         function ensureBossCacheEntry(mapId) {
             const targetId = Math.max(1, Math.min(10, parseInt(mapId, 10) || 1));
+            if (XENO_RAM_CACHE.bosses[targetId]) return XENO_RAM_CACHE.bosses[targetId];
             pruneOldBossCache(targetId);
-            if (!XENO_RAM_CACHE.bosses[targetId]) {
-                buildBossCacheEntry(targetId);
-                if (typeof updateMonsterRamCacheUI === "function") {
-                    updateMonsterRamCacheUI();
-                }
+            buildBossCacheEntry(targetId);
+            if (typeof updateMonsterRamCacheUI === "function") {
+                updateMonsterRamCacheUI();
             }
             return XENO_RAM_CACHE.bosses[targetId];
         }
@@ -23663,7 +23781,7 @@
             if (type === "speed") return (player.speedLevel - 1) >= MAX_SHOP_UPGRADE_LEVELS ? 0 : Math.round(280 * Math.pow(1.48, Math.max(0, player.speedLevel - 1)));
             if (type === "damage") return (player.dmgLevel - 1) >= MAX_SHOP_UPGRADE_LEVELS ? 0 : Math.round(420 * Math.pow(1.52, Math.max(0, player.dmgLevel - 1)));
             if (type === "drone") return player.droneCount >= 3 ? 0 : Math.round(650 * Math.pow(1.60, player.droneCount));
-            if (type === "turret") return turrets.filter(t => t.active).length >= 4 ? 0 : 350;
+            if (type === "turret") return countActiveTurrets() >= 4 ? 0 : 350;
             return 300;
         }
 
@@ -26857,8 +26975,12 @@
             bossSpawned = false;
             activeBosses = [];
             turrets.length = 0;
-            floatingTexts.length = 0;
-            if (player.trailHistory) player.trailHistory.length = 0;
+            floatingTexts.forEach(ft => { ft.active = false; });
+            if (player.trailHistory) {
+                while (player.trailHistory.length > 0) {
+                    _playerTrailPool.push(player.trailHistory.pop());
+                }
+            }
             if (window.teammate && window.teammate.trailHistory) window.teammate.trailHistory.length = 0;
             mouse.down = false;
             screenShake = 0;
@@ -26889,6 +27011,9 @@
             mapStageStartTime = performance.now();
             buildMapArchitecture(window.currentMapId);
             // Đảm bảo Boss của Map hiện tại được chuẩn bị sẵn trong RAM Cache (Lazy-loading)
+            if (typeof loadBossAssetForMap === "function") {
+                loadBossAssetForMap(window.currentMapId);
+            }
             if (typeof ensureBossCacheEntry === "function") {
                 ensureBossCacheEntry(window.currentMapId);
             }
@@ -27759,9 +27884,14 @@
                         });
                     } else if (item.type === "bgm") {
                         try {
-                            const res = await fetch(item.url);
-                            if (!res.ok && item.altUrl) {
-                                await fetch(item.altUrl);
+                            const targetAudio = (typeof sfx !== "undefined" && sfx)
+                                ? ((item.url.includes("nhac_nen") || item.url.includes("nhacnen")) ? sfx.bgmLobby : sfx.bgmIngame)
+                                : null;
+                            if (targetAudio) {
+                                targetAudio.load();
+                            } else {
+                                const res = await fetch(item.url);
+                                if (!res.ok && item.altUrl) await fetch(item.altUrl);
                             }
                         } catch (e) {
                             // Safe audio fallback
@@ -27847,6 +27977,9 @@
                 setTimeout(() => {
                     preloaderScreen.classList.add("hidden");
                     preloaderScreen.style.display = "none";
+                    if (typeof releasePreloaderCanvas === "function") {
+                        releasePreloaderCanvas();
+                    }
                 }, 700);
             }
 
@@ -28091,9 +28224,30 @@
             ctx.restore();
         }
 
+        function releasePreloaderCanvas() {
+            const canvas = byId("preloaderHoloCanvas");
+            if (canvas) {
+                canvas.width = 0;
+                canvas.height = 0;
+            }
+            if (typeof _radialGradCache !== "undefined" && _radialGradCache) {
+                for (const key of _radialGradCache.keys()) {
+                    if (key.startsWith("reticle_")) {
+                        _radialGradCache.delete(key);
+                    }
+                }
+            }
+        }
+        window.releasePreloaderCanvas = releasePreloaderCanvas;
+
         let reticleAnimRunning = false;
         function ensureReticleAnim() {
             if (reticleAnimRunning) return;
+            const canvas = byId("preloaderHoloCanvas");
+            if (canvas && (canvas.width !== 220 || canvas.height !== 220)) {
+                canvas.width = 220;
+                canvas.height = 220;
+            }
             reticleAnimRunning = true;
             function frame(now) {
                 const preloader = byId("gamePreloaderScreen");
@@ -28102,6 +28256,7 @@
                     requestAnimationFrame(frame);
                 } else {
                     reticleAnimRunning = false;
+                    releasePreloaderCanvas();
                 }
             }
             requestAnimationFrame(frame);
