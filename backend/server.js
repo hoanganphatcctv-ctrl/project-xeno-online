@@ -123,11 +123,13 @@ io.on("connection", (socket) => {
 
     room.state = "in_game";
     room.mapId = data?.mapId || 1;
+    room.hz = data?.hz === 60 ? 60 : 30;
 
-    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId}`);
+    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.hz}Hz)`);
 
     io.to(currentRoomId).emit("mission_started", {
       mapId: room.mapId,
+      hz: room.hz,
       startTime: Date.now()
     });
   });

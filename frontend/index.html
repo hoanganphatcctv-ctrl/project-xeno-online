@@ -1177,7 +1177,7 @@
     <!-- TAC-OPS ONLINE CO-OP STATUS BADGE (HUD) -->
     <div id="coopTopHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1 bg-slate-950/90 border border-cyan-400/50 text-[10px] font-mono-tech shadow-lg pointer-events-none">
         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-        <span class="text-cyan-300 font-extrabold uppercase">CO-OP ONLINE // 30Hz</span>
+        <span id="coopHudBannerTitle" class="text-cyan-300 font-extrabold uppercase">CO-OP ONLINE // 60Hz</span>
         <span class="text-slate-600">|</span>
         <span id="coopHudRole" class="text-white font-bold">HOST</span>
         <span class="text-slate-600">|</span>
@@ -6092,7 +6092,8 @@
                     if (this.socket && this.socket.connected) {
                         try {
                             if (data.t === "start") {
-                                this.socket.emit("start_mission", { mapId: data.mapId });
+                                this.socket.emit("start_mission", { mapId: data.mapId, hz: this.tickRate });
+                                this.socket.emit("sync_tick", { t: "tick_rate_sync", hz: this.tickRate });
                             } else if (data.t === "player_down") {
                                 this.socket.emit("player_down");
                             } else if (data.t === "revive_success") {
@@ -6115,42 +6116,74 @@
 
             startPingInterval() {
                 if (this._pingTimer) clearInterval(this._pingTimer);
-                this._pingTimer = setInterval(() => {
-                    if (this.engineMode === "socket") {
-                        if (this.socket && this.socket.connected) {
-                            const start = performance.now();
-                            this.socket.emit("ping_check", () => {
-                                this.ping = Math.max(1, Math.round(performance.now() - start));
-                                this.updateHUD();
-                            });
-                        }
-                    } else {
-                        if (this.conn && this.conn.open) {
-                            this.lastPingSent = performance.now();
-                            this.sendPacket({ t: "ping", time: this.lastPingSent });
-                        }
-                    }
-                }, 1200);
+                const sendProbe = () => {
+                    this.lastPingSent = performance.now();
+                    this.sendPacket({
+                        t: "ping",
+                        time: this.lastPingSent,
+                        hz: this.tickRate
+                    });
+                };
+                sendProbe();
+                this._pingTimer = setInterval(sendProbe, 1000);
             },
 
             handleData(data) {
                 if (!data || !data.t) return;
 
+                if (data.t === "tick_rate_sync" && !this.isHost && data.hz) {
+                    this.tickRate = data.hz === 60 ? 60 : 30;
+                    if (typeof window.syncCoopTickButtons === "function") {
+                        window.syncCoopTickButtons(this.tickRate);
+                    }
+                    this.updateHUD();
+                    return;
+                }
+
                 if (data.t === "ping") {
-                    this.sendPacket({ t: "pong", time: data.time });
+                    if (!this.isHost && data.hz) {
+                        const newHz = data.hz === 60 ? 60 : 30;
+                        if (this.tickRate !== newHz) {
+                            this.tickRate = newHz;
+                            if (typeof window.syncCoopTickButtons === "function") {
+                                window.syncCoopTickButtons(this.tickRate);
+                            }
+                        }
+                    }
+                    this.sendPacket({ t: "pong", time: data.time, hz: this.tickRate });
+                    this.updateHUD();
                     return;
                 }
 
                 if (data.t === "pong") {
-                    this.ping = Math.max(1, Math.round(performance.now() - (data.time || this.lastPingSent)));
+                    const rawRtt = Math.max(0.1, performance.now() - (typeof data.time === "number" ? data.time : this.lastPingSent));
+                    this.ping = this.ping > 0
+                        ? Number((this.ping * 0.6 + rawRtt * 0.4).toFixed(1))
+                        : Number(rawRtt.toFixed(1));
+                    if (!this.isHost && data.hz) {
+                        const newHz = data.hz === 60 ? 60 : 30;
+                        if (this.tickRate !== newHz) {
+                            this.tickRate = newHz;
+                            if (typeof window.syncCoopTickButtons === "function") {
+                                window.syncCoopTickButtons(this.tickRate);
+                            }
+                        }
+                    }
                     this.updateHUD();
                     return;
                 }
 
                 if (data.t === "start") {
+                    if (data.hz) {
+                        this.tickRate = data.hz === 60 ? 60 : 30;
+                        if (typeof window.syncCoopTickButtons === "function") {
+                            window.syncCoopTickButtons(this.tickRate);
+                        }
+                    }
                     window.currentMapId = data.mapId || 1;
                     window.closeCoopModal();
                     window.closeMainMenuSettings();
+                    this.updateHUD();
                     showToast("CO-OP XUẤT TRẬN", `Tiến vào Map ${window.currentMapId} cùng đồng đội! (Tick ${this.tickRate}Hz)`);
                     if (typeof simulateMissionLoading === "function") {
                         simulateMissionLoading(window.currentMapId, () => {
@@ -6163,7 +6196,7 @@
                 }
 
                 // =========================================================================
-                // HOST-AUTHORITATIVE ENEMY NETWORK EVENTS (SPAWN_ENEMY, SYNC_ENEMIES, ENEMY_HIT, ENEMY_DIE)
+                // HOST-AUTHORITATIVE ENEMY & WORLD NETWORK EVENTS
                 // =========================================================================
                 if (data.t === "SPAWN_ENEMY" && !this.isHost) {
                     if (typeof spawnEnemyFromHost === "function") {
@@ -6175,6 +6208,13 @@
                 if (data.t === "SYNC_ENEMIES" && !this.isHost) {
                     if (typeof syncEnemiesFromHostPacket === "function") {
                         syncEnemiesFromHostPacket(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "ENEMY_SHOOT" && !this.isHost) {
+                    if (typeof handleClientEnemyShoot === "function") {
+                        handleClientEnemyShoot(data);
                     }
                     return;
                 }
@@ -6203,6 +6243,34 @@
                     return;
                 }
 
+                if (data.t === "PROP_HIT" && this.isHost) {
+                    if (typeof handleHostPropHit === "function") {
+                        handleHostPropHit(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "PROP_STATE" && !this.isHost) {
+                    if (typeof handleClientPropState === "function") {
+                        handleClientPropState(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "PROP_DESTROY" && !this.isHost) {
+                    if (typeof handleClientPropDestroy === "function") {
+                        handleClientPropDestroy(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "WORLD_INTERACT") {
+                    if (typeof handleRemoteWorldInteract === "function") {
+                        handleRemoteWorldInteract(data);
+                    }
+                    return;
+                }
+
                 if (data.t === "input" && this.isHost) {
                     pushTeammateSnapshot(data);
                     teammate.currentWeapon = data.w;
@@ -6214,6 +6282,16 @@
                 }
 
                 if (data.t === "snap" && !this.isHost) {
+                    if (data.hz) {
+                        const newHz = data.hz === 60 ? 60 : 30;
+                        if (this.tickRate !== newHz) {
+                            this.tickRate = newHz;
+                            if (typeof window.syncCoopTickButtons === "function") {
+                                window.syncCoopTickButtons(this.tickRate);
+                            }
+                            this.updateHUD();
+                        }
+                    }
                     const p = data.p;
                     if (p) {
                         pushTeammateSnapshot(p);
@@ -6290,6 +6368,7 @@
                     const snapPacket = {
                         t: "snap",
                         seq: this.seq,
+                        hz: this.tickRate,
                         p: {
                             x: Math.round(player.x),
                             y: Math.round(player.y),
@@ -6334,7 +6413,7 @@
 
                     this.sendPacket(snapPacket);
 
-                    // Định kỳ 10-15 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống
+                    // Định kỳ 10-15 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống + trạng thái Cửa & Vật thể
                     if (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval) {
                         this.lastEnemySyncTime = now;
                         const syncedEnemies = [];
@@ -6348,6 +6427,7 @@
                                     y: Math.round(e.y),
                                     vx: Number((e.vx || 0).toFixed(2)),
                                     vy: Number((e.vy || 0).toFixed(2)),
+                                    a: Number((e.angle || 0).toFixed(2)),
                                     hp: Math.round(e.hp),
                                     maxHp: Math.round(e.maxHp),
                                     targetPlayerId: e.targetPlayerId || "host",
@@ -6361,10 +6441,38 @@
                                 });
                             }
                         }
+
+                        // Đồng bộ danh sách cửa đang mở từ Host
+                        const openDoors = [];
+                        for (let d = 0; d < DOORS.length; d++) {
+                            if (DOORS[d].openAmount > 0.08) {
+                                openDoors.push(d);
+                            }
+                        }
+
+                        // Đồng bộ danh sách vật thể đã bị phá hủy từ Host (đảm bảo không bao giờ sót 1 máu)
+                        const deadCrates = [];
+                        for (let c = 0; c < crates.length; c++) {
+                            if (!crates[c].active) deadCrates.push(c);
+                        }
+                        const deadBarrels = [];
+                        for (let b = 0; b < barrels.length; b++) {
+                            if (!barrels[b].active) deadBarrels.push(b);
+                        }
+                        const deadVats = [];
+                        for (let v = 0; v < nuclearVats.length; v++) {
+                            if (!nuclearVats[v].active) deadVats.push(v);
+                        }
+
                         this.sendPacket({
                             t: "SYNC_ENEMIES",
                             wave: currentWave,
-                            enemies: syncedEnemies
+                            enemies: syncedEnemies,
+                            openDoors: openDoors,
+                            deadCrates: deadCrates,
+                            deadBarrels: deadBarrels,
+                            deadVats: deadVats,
+                            genOn: (mapGenerator && mapGenerator.active) ? 1 : 0
                         });
                     }
                 } else {
@@ -6385,6 +6493,7 @@
 
             updateHUD() {
                 const hud = byId("coopTopHUD");
+                const bannerTitleEl = byId("coopHudBannerTitle");
                 const roleEl = byId("coopHudRole");
                 const pingEl = byId("coopHudPing");
                 const reviveEl = byId("coopHudRevive");
@@ -6399,9 +6508,21 @@
                     return;
                 }
 
+                const hz = this.tickRate === 60 ? 60 : 30;
                 if (hud) hud.classList.remove("hidden");
-                if (roleEl) roleEl.textContent = (this.isHost ? "HOST (P1)" : "CLIENT (P2)") + ` • ${this.tickRate}Hz LERP`;
-                if (pingEl) pingEl.textContent = `PING: ${this.ping || 15}ms`;
+                if (bannerTitleEl) bannerTitleEl.textContent = `CO-OP ONLINE // ${hz}Hz`;
+                if (roleEl) roleEl.textContent = (this.isHost ? "HOST (P1)" : "CLIENT (P2)") + ` • ${hz}Hz LERP`;
+                if (pingEl) {
+                    const pVal = this.ping > 0 ? Number(this.ping).toFixed(1) : "--";
+                    pingEl.textContent = `PING: ${pVal}ms`;
+                    if (this.ping > 120) {
+                        pingEl.className = "text-rose-400 font-bold";
+                    } else if (this.ping > 55) {
+                        pingEl.className = "text-amber-300 font-bold";
+                    } else {
+                        pingEl.className = "text-emerald-400 font-bold";
+                    }
+                }
                 if (reviveEl) {
                     if (teammate.isDown) {
                         reviveEl.classList.remove("hidden");
@@ -6443,10 +6564,12 @@
 
         window.XENO_COOP = XENO_COOP;
 
-        // VẼ ĐỒNG ĐỘI (PLAYER 2) VỚI BỘ GIÁP MECHA XANH NGỌC (EMERALD) & CƠ CHẾ HỒI SINH
+        // VẼ ĐỒNG ĐỘI SỬ DỤNG ASSET NHÂN VẬT GIỐNG HỆT MÌNH + VÒNG VÀNG DƯỚI CHÂN ĐỂ NHẬN BIẾT
         function drawTeammatePlayer() {
-            if (!teammate.active) return;
+            if (!teammate.active || isGameOver) return;
             const now = performance.now();
+            const prevX = teammate.x;
+            const prevY = teammate.y;
 
             // ========================================================================
             // COMMERCIAL-GRADE CLIENT-SIDE SNAPSHOT BUFFER (60Hz / 30Hz LERP + EXTRAPOLATION)
@@ -6499,6 +6622,58 @@
                 teammate.angle = lerpAngle(teammate.angle, teammate.targetAngle || teammate.angle, 0.35);
             }
 
+            const movedDist = Math.hypot(teammate.x - prevX, teammate.y - prevY);
+            if (movedDist > 0.15) {
+                teammate.walkCycle = (teammate.walkCycle || 0) + Math.min(0.42, movedDist * 0.085);
+            }
+
+            const wId = teammate.currentWeapon || 0;
+            const wCol = (typeof WEAPON_DATA !== "undefined" && WEAPON_DATA[wId]) ? WEAPON_DATA[wId].color : "#38bdf8";
+
+            // Nếu đồng đội đang bắn Súng #7 (Hyperion Laser Beam), vẽ tia Laser của đồng đội trên màn hình
+            if (teammate.isShooting && !teammate.isDown && wId === 6) {
+                const dirX = Math.cos(teammate.angle);
+                const dirY = Math.sin(teammate.angle);
+                const muzzleX = teammate.x + dirX * 36;
+                const muzzleY = teammate.y + dirY * 36;
+                let endX = muzzleX;
+                let endY = muzzleY;
+                for (let d = 14; d <= 960; d += 14) {
+                    const tx = muzzleX + dirX * d;
+                    const ty = muzzleY + dirY * d;
+                    if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
+                        endX = tx;
+                        endY = ty;
+                        break;
+                    }
+                    endX = tx;
+                    endY = ty;
+                }
+                ctx.save();
+                ctx.lineCap = "round";
+                ctx.strokeStyle = "rgba(0, 245, 212, 0.28)";
+                ctx.lineWidth = 14;
+                ctx.beginPath();
+                ctx.moveTo(muzzleX, muzzleY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#00f5d4";
+                ctx.lineWidth = 5.5;
+                ctx.beginPath();
+                ctx.moveTo(muzzleX, muzzleY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(muzzleX, muzzleY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.restore();
+            }
+
             ctx.save();
             ctx.translate(teammate.x, teammate.y);
 
@@ -6543,100 +6718,347 @@
                 return;
             }
 
-            // Đồng đội đang hoạt động: Giáp Mecha Xanh Ngọc (Emerald)
+            // ========================================================================
+            // VÒNG VÀNG DƯỚI CHÂN ĐỒNG ĐỘI (GOLDEN IDENTIFICATION RING UNDER FEET)
+            // ========================================================================
+            const ringPulse = 1.0 + Math.sin(now * 0.006) * 0.05;
+            const ringRadius = 24.5 * ringPulse;
+            ctx.save();
+            // Hào quang vàng dịu dưới mặt đất
+            const goldGrad = safeRadialGradient(ctx, 0, 1, 6, 0, 1, ringRadius + 8);
+            goldGrad.addColorStop(0, "rgba(250, 204, 21, 0.24)");
+            goldGrad.addColorStop(0.7, "rgba(245, 158, 11, 0.14)");
+            goldGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
+            ctx.fillStyle = goldGrad;
+            ctx.beginPath();
+            safeArc(ctx, 0, 1, ringRadius + 8);
+            ctx.fill();
+
+            // Vòng vàng chính sắc nét dưới chân
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            safeArc(ctx, 0, 1, ringRadius);
+            ctx.stroke();
+
+            // Vòng viền vàng sáng bên trong
+            ctx.strokeStyle = "rgba(254, 240, 138, 0.85)";
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 1, ringRadius - 3.5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+
+            // ========================================================================
+            // RENDER NHÂN VẬT ĐỒNG ĐỘI GIỐNG HỆT ASSET CỦA NGƯỜI CHƠI CHÍNH (drawMarinePlayer)
+            // ========================================================================
             ctx.rotate(teammate.angle);
 
-            // 1. Giày chiến thuật
-            for (let side of [-1, 1]) {
+            const armorPrimary = "#1e293b";
+            const armorPlate   = "#0284c7";
+            const armorBright  = "#38bdf8";
+            const visorCol     = "#00f5d4";
+
+            // 1. Tactical Combat Boots & Articulated Knee Pads (Walk Cycle)
+            const stride = Math.sin(teammate.walkCycle || 0) * 7.0;
+            for (let side = -1; side <= 1; side += 2) {
+                const footX = (side === -1 ? stride : -stride) - 1.5;
+                const footY = side * 10.2;
                 ctx.save();
-                ctx.translate(-1.5, side * 10.2);
+                ctx.translate(footX, footY);
                 ctx.fillStyle = "#0f172a";
-                ctx.strokeStyle = "#34d399";
+                ctx.strokeStyle = "#475569";
                 ctx.lineWidth = 1.3;
                 drawRoundRect(ctx, -6.5, -3.8, 13, 7.6, 2.5);
                 ctx.fill();
                 ctx.stroke();
+                ctx.fillStyle = "#334155";
+                ctx.fillRect(1.5, -2.8, 4, 5.6);
                 ctx.restore();
             }
 
-            // 2. Thân giáp Mecha Emerald Green
-            ctx.fillStyle = "#064e3b";
-            ctx.strokeStyle = "#10b981";
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.moveTo(-10, -12);
-            ctx.lineTo(7.5, -10);
-            ctx.lineTo(11, 0);
-            ctx.lineTo(7.5, 10);
-            ctx.lineTo(-10, 12);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
+                ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === wId)
+                : null;
+            const hasCustomPlayerSkin = window.useCustomPlayerWeaponSprites && skinAsset && skinAsset.loaded && skinAsset.img;
 
-            // Tấm ốp ngực
-            ctx.fillStyle = "#047857";
-            ctx.beginPath();
-            ctx.moveTo(-6, -8);
-            ctx.lineTo(5, -6.5);
-            ctx.lineTo(7, 0);
-            ctx.lineTo(5, 6.5);
-            ctx.lineTo(-6, 8);
-            ctx.closePath();
-            ctx.fill();
-
-            // Giáp vai pauldrons
-            for (let side of [-1, 1]) {
+            if (hasCustomPlayerSkin) {
+                // RENDER BẰNG ASSET NHÂN VẬT HD CỦA 7 SÚNG (GIỐNG HỆT NGƯỜI CHƠI CHÍNH)
+                const sightStartX = skinAsset.gunLen || 38;
                 ctx.save();
-                ctx.translate(-0.5, side * 13.2);
-                ctx.fillStyle = "#064e3b";
-                ctx.strokeStyle = "#34d399";
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(-8.5, -side * 3.2, 16, 7);
-                ctx.fillRect(-8.5, -side * 3.2, 16, 7);
+                ctx.strokeStyle = "rgba(251, 191, 36, 0.30)";
+                ctx.lineWidth = 1.1;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(sightStartX, 0);
+                ctx.lineTo(165, 0);
+                ctx.stroke();
+                ctx.setLineDash([]);
                 ctx.restore();
-            }
 
-            // Vẽ súng đồng đội
-            const wId = teammate.currentWeapon || 0;
-            const customWp = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.weapons[wId] : null;
-            if (customWp && customWp.loaded && customWp.img) {
-                const pw = 24;
-                const ph = pw * (customWp.img.naturalHeight / customWp.img.naturalWidth);
-                ctx.drawImage(customWp.img, 8, -ph * 0.45, pw, ph);
+                ctx.save();
+                ctx.shadowColor = "rgba(0, 0, 0, 0.70)";
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 4;
+
+                ctx.save();
+                ctx.rotate(-Math.PI / 2);
+                const scale = skinAsset.scale || 0.056;
+                ctx.scale(scale, scale);
+                ctx.drawImage(skinAsset.img, -skinAsset.pivotX, -skinAsset.pivotY);
+                ctx.restore();
+                ctx.restore();
             } else {
-                ctx.fillStyle = "#1e293b";
-                ctx.strokeStyle = "#10b981";
+                // FALLBACK PROCEDURAL CANVAS RENDERING GIỐNG HỆT NGƯỜI CHƠI CHÍNH
+                ctx.fillStyle = "#0f172a";
+                ctx.strokeStyle = "#64748b";
                 ctx.lineWidth = 1.5;
-                ctx.fillRect(8, -3.5, 22, 7);
-                ctx.strokeRect(8, -3.5, 22, 7);
+                drawRoundRect(ctx, -17.5, -10.5, 9, 21, 3);
+                ctx.fill();
+                ctx.stroke();
+
+                if (wId === 3) {
+                    for (let side = -1; side <= 1; side += 2) {
+                        ctx.fillStyle = "#991b1b";
+                        ctx.strokeStyle = "#f97316";
+                        ctx.lineWidth = 1.3;
+                        drawRoundRect(ctx, -19.5, side * 5.8 - 3.6, 9, 7.2, 3);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.fillStyle = "#fde047";
+                        ctx.fillRect(-16, side * 5.8 - 1.5, 2.5, 3);
+                    }
+                } else if (wId === 2) {
+                    ctx.strokeStyle = "#ca8a04";
+                    ctx.lineWidth = 4.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-12, 8);
+                    ctx.quadraticCurveTo(-2, 16, 8, 9);
+                    ctx.stroke();
+                    ctx.strokeStyle = "#fde047";
+                    ctx.lineWidth = 2.2;
+                    ctx.setLineDash([2.5, 2.5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else {
+                    ctx.fillStyle = "#475569";
+                    ctx.fillRect(-15, -12.5, 2, 3);
+                    if (Math.sin(now * 0.008) > 0) {
+                        ctx.fillStyle = "#38bdf8";
+                        ctx.beginPath();
+                        safeArc(ctx, -14, -13, 1.6);
+                        ctx.fill();
+                    }
+                }
+
+                // Jetpack Micro-Thruster Plumes
+                const jetLen = 6.5 + Math.abs(Math.sin(now * 0.032)) * 4.5;
+                for (let side = -1; side <= 1; side += 2) {
+                    const ny = side * 6.0;
+                    ctx.fillStyle = "#334155";
+                    ctx.fillRect(-19.5, ny - 2.2, 2.8, 4.4);
+
+                    const jetGrad = ctx.createLinearGradient(-19.5, ny, -19.5 - jetLen, ny);
+                    jetGrad.addColorStop(0, "#ffffff");
+                    jetGrad.addColorStop(0.4, "#38bdf8");
+                    jetGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+                    ctx.fillStyle = jetGrad;
+                    ctx.beginPath();
+                    ctx.moveTo(-19.5, ny - 2.2);
+                    ctx.lineTo(-19.5 - jetLen, ny);
+                    ctx.lineTo(-19.5, ny + 2.2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Ballistic Plate Carrier Vest (Torso)
+                ctx.fillStyle = armorPrimary;
+                ctx.strokeStyle = armorBright;
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(-10, -12);
+                ctx.lineTo(7.5, -10);
+                ctx.lineTo(11, 0);
+                ctx.lineTo(7.5, 10);
+                ctx.lineTo(-10, 12);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = armorPlate;
+                ctx.beginPath();
+                ctx.moveTo(-6, -8);
+                ctx.lineTo(5, -6.5);
+                ctx.lineTo(7, 0);
+                ctx.lineTo(5, 6.5);
+                ctx.lineTo(-6, 8);
+                ctx.closePath();
+                ctx.fill();
+
+                // Articulated Armored Shoulder Pauldrons
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.save();
+                    ctx.translate(-0.5, side * 13.2);
+                    ctx.rotate(side * 0.14);
+                    ctx.fillStyle = armorPrimary;
+                    ctx.strokeStyle = armorBright;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-8.5, -side * 3.2);
+                    ctx.lineTo(7.5, -side * 2.2);
+                    ctx.lineTo(9.5, side * 3.8);
+                    ctx.lineTo(-6.5, side * 4.8);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.strokeStyle = visorCol;
+                    ctx.lineWidth = 1.3;
+                    ctx.beginPath();
+                    ctx.moveTo(-2, side * 0.5);
+                    ctx.lineTo(2, side * 2.2);
+                    ctx.lineTo(5, side * 0.5);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Weapon Model & Arms
+                const customWp = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.weapons[wId] : null;
+                const canDrawCustomSprite = window.useCustomPlayerWeaponSprites && customWp && customWp.loaded && customWp.img && customWp.img.naturalWidth > 0;
+
+                if (canDrawCustomSprite) {
+                    if (wId === 0) {
+                        for (let side = -1; side <= 1; side += 2) {
+                            const ay = side * 9.0;
+                            ctx.fillStyle = "#334155";
+                            ctx.strokeStyle = armorBright;
+                            ctx.lineWidth = 1.2;
+                            drawRoundRect(ctx, 1, ay - 2.8, 11, 5.6, 2);
+                            ctx.fill();
+                            ctx.stroke();
+
+                            ctx.fillStyle = "#0f172a";
+                            ctx.beginPath();
+                            safeArc(ctx, 12, ay, 2.6);
+                            ctx.fill();
+
+                            const pw = 22;
+                            const ph = pw * (customWp.img.naturalHeight / customWp.img.naturalWidth);
+                            ctx.drawImage(customWp.img, 8, ay - ph * 0.45, pw, ph);
+                        }
+                    } else {
+                        ctx.strokeStyle = "#334155";
+                        ctx.lineWidth = 4.6;
+                        ctx.lineCap = "round";
+                        ctx.beginPath();
+                        ctx.moveTo(2, -11); ctx.lineTo(18, -2.5);
+                        ctx.moveTo(2, 11);  ctx.lineTo(10, 2.5);
+                        ctx.stroke();
+
+                        const targetLen = wId === 2 ? 42 : (wId === 5 ? 40 : (wId === 6 ? 42 : 36));
+                        if (customWp.crop) {
+                            const c = customWp.crop;
+                            const targetH = targetLen * (c.sh / c.sw);
+                            ctx.drawImage(customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
+                        } else {
+                            const imgW = customWp.img.naturalWidth;
+                            const imgH = customWp.img.naturalHeight;
+                            const targetH = targetLen * (imgH / imgW);
+                            ctx.drawImage(customWp.img, 6, -targetH * 0.5, targetLen, targetH);
+                        }
+                    }
+                } else {
+                    ctx.strokeStyle = "#334155";
+                    ctx.lineWidth = 4.6;
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(2, -11); ctx.lineTo(18, -2.5);
+                    ctx.moveTo(2, 11);  ctx.lineTo(10, 2.5);
+                    ctx.stroke();
+
+                    ctx.fillStyle = "#1e293b";
+                    ctx.strokeStyle = "#94a3b8";
+                    ctx.lineWidth = 1.3;
+                    drawRoundRect(ctx, 6, -4.0, 28, 8.0, 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Ops-Core Tactical Ballistic Helmet & Quad-Tube Panoramic Night Vision Goggles (GPNVG-18)
+                ctx.fillStyle = "#0f172a";
+                ctx.strokeStyle = "#64748b";
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(-8.5, -6.8);
+                ctx.lineTo(2.2, -8.8);
+                ctx.lineTo(8.5, -5.2);
+                ctx.lineTo(9.5, 0);
+                ctx.lineTo(8.5, 5.2);
+                ctx.lineTo(2.2, 8.8);
+                ctx.lineTo(-8.5, 6.8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = "#334155";
+                ctx.fillRect(-8.5, -4.5, 3.2, 9.0);
+                ctx.fillStyle = armorPlate;
+                ctx.fillRect(-3.5, -8.2, 6.5, 1.6);
+                ctx.fillRect(-3.5, 6.6, 6.5, 1.6);
+
+                ctx.fillStyle = visorCol;
+                ctx.beginPath();
+                ctx.moveTo(3.5, -6.0);
+                ctx.lineTo(8.4, -3.4);
+                ctx.lineTo(8.4, 3.4);
+                ctx.lineTo(3.5, 6.0);
+                ctx.lineTo(5.2, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                for (let nv = -4.2; nv <= 4.2; nv += 2.8) {
+                    ctx.beginPath();
+                    safeArc(ctx, 8.8, nv, 1.15);
+                    ctx.fill();
+                }
             }
 
-            // Mũ giáp & Kính Visor ngọc bích
-            ctx.fillStyle = "#022c22";
-            ctx.beginPath();
-            safeArc(ctx, -1, 0, 7.5);
-            ctx.fill();
-            ctx.fillStyle = "#34d399";
-            ctx.fillRect(2.5, -3, 3, 6);
+            // Tia lửa đầu nòng (Muzzle Flash) khi đồng đội đang bóp cò
+            if (teammate.isShooting && wId !== 6) {
+                const flashX = hasCustomPlayerSkin ? (skinAsset.flashDist || 38) : (wId === 5 ? 45 : (wId === 2 ? 41 : 37));
+                const flashR = 9.0 + Math.random() * 6.5;
+                const gFlash = safeRadialGradient(ctx, flashX, 0, 1, flashX, 0, flashR);
+                gFlash.addColorStop(0, "#ffffff");
+                gFlash.addColorStop(0.5, wCol);
+                gFlash.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.fillStyle = gFlash;
+                ctx.beginPath();
+                safeArc(ctx, flashX, 0, flashR);
+                ctx.fill();
+            }
 
             ctx.restore();
 
-            // 3. Tên đồng đội & Thanh máu trên đầu
-            const barW = 44;
-            const hpRatio = Math.max(0, teammate.hp / (teammate.maxHp || 100));
+            // 3. Tên đồng đội & Thanh máu trên đầu (màu vàng kim đồng bộ với vòng vàng dưới chân)
+            const barW = 46;
+            const hpRatio = Math.max(0, Math.min(1, teammate.hp / (teammate.maxHp || 100)));
             ctx.save();
-            ctx.translate(teammate.x, teammate.y - 28);
+            ctx.translate(teammate.x, teammate.y - 30);
 
-            ctx.font = "800 8px 'JetBrains Mono', monospace";
-            ctx.fillStyle = "#34d399";
+            ctx.font = "800 8.5px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "#fde047";
             ctx.textAlign = "center";
-            ctx.fillText("P2 • ĐỒNG ĐỘI", 0, -5);
+            ctx.fillText(XENO_COOP.isHost ? "P2 • ĐỒNG ĐỘI" : "P1 • CHỦ PHÒNG", 0, -5);
 
             ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
-            ctx.fillRect(-barW * 0.5, 0, barW, 4);
+            ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
 
-            ctx.fillStyle = "#10b981";
-            ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3);
+            ctx.fillStyle = "#fbbf24";
+            ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
 
             ctx.restore();
         }
@@ -6716,8 +7138,7 @@
             }
         };
 
-        window.setCoopTickRate = function(rate) {
-            XENO_COOP.tickRate = rate === 60 ? 60 : 30;
+        window.syncCoopTickButtons = function(rate) {
             const btn30 = byId("coopTick30Btn");
             const btn60 = byId("coopTick60Btn");
             if (rate === 60) {
@@ -6726,6 +7147,15 @@
             } else {
                 if (btn30) btn30.className = "px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
                 if (btn60) btn60.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+            }
+        };
+
+        window.setCoopTickRate = function(rate) {
+            XENO_COOP.tickRate = rate === 60 ? 60 : 30;
+            window.syncCoopTickButtons(XENO_COOP.tickRate);
+            XENO_COOP.updateHUD();
+            if (XENO_COOP.isHost && XENO_COOP.connected) {
+                XENO_COOP.sendPacket({ t: "tick_rate_sync", hz: XENO_COOP.tickRate });
             }
             showToast("TICK RATE", `Đã thiết lập tần số đồng bộ mạng: ${XENO_COOP.tickRate}Hz (Nội suy LERP)`);
         };
@@ -8923,46 +9353,75 @@
         function computeFlowField(forceUpdate = false) {
             let pc = Math.max(1, Math.min(FLOW_COLS - 2, Math.floor(player.x / CELL)));
             let pr = Math.max(1, Math.min(FLOW_ROWS - 2, Math.floor(player.y / CELL)));
-            if (!forceUpdate && !flowGrid.dirty && pc === flowGrid.lastPc && pr === flowGrid.lastPr) {
+            const hasTeammate = isCoopActive() && window.teammate && window.teammate.active && !window.teammate.isDown;
+            const tc = hasTeammate ? Math.max(1, Math.min(FLOW_COLS - 2, Math.floor(window.teammate.x / CELL))) : -1;
+            const tr = hasTeammate ? Math.max(1, Math.min(FLOW_ROWS - 2, Math.floor(window.teammate.y / CELL))) : -1;
+
+            if (
+                !forceUpdate &&
+                !flowGrid.dirty &&
+                pc === flowGrid.lastPc &&
+                pr === flowGrid.lastPr &&
+                tc === flowGrid.lastTc &&
+                tr === flowGrid.lastTr
+            ) {
                 return;
             }
             flowGrid.lastPc = pc;
             flowGrid.lastPr = pr;
+            flowGrid.lastTc = tc;
+            flowGrid.lastTr = tr;
             flowGrid.dirty = false;
             flowGrid.dist.fill(-1);
             flowGrid.inQueue.fill(0);
-            let startIdx = pr * FLOW_COLS + pc;
 
-            if (flowGrid.blocked[startIdx]) {
-                let bestRadDist = 999999;
-                for (let rad = 1; rad <= 3; rad++) {
-                    for (let dr = -rad; dr <= rad; dr++) {
-                        for (let dc = -rad; dc <= rad; dc++) {
-                            const nr = pr + dr, nc = pc + dc;
-                            if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
-                                const idx = nr * FLOW_COLS + nc;
-                                if (!flowGrid.blocked[idx]) {
-                                    const cx = nc * CELL + CELL * 0.5;
-                                    const cy = nr * CELL + CELL * 0.5;
-                                    const dSq = (cx - player.x) * (cx - player.x) + (cy - player.y) * (cy - player.y);
-                                    if (dSq < bestRadDist) {
-                                        bestRadDist = dSq;
-                                        pr = nr; pc = nc;
-                                        startIdx = idx;
+            function resolveUnblockedCellIdx(baseR, baseC, worldX, worldY) {
+                let r = baseR, c = baseC;
+                let idx = r * FLOW_COLS + c;
+                if (flowGrid.blocked[idx]) {
+                    let bestRadDist = 999999;
+                    for (let rad = 1; rad <= 3; rad++) {
+                        for (let dr = -rad; dr <= rad; dr++) {
+                            for (let dc = -rad; dc <= rad; dc++) {
+                                const nr = r + dr, nc = c + dc;
+                                if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
+                                    const candIdx = nr * FLOW_COLS + nc;
+                                    if (!flowGrid.blocked[candIdx]) {
+                                        const cx = nc * CELL + CELL * 0.5;
+                                        const cy = nr * CELL + CELL * 0.5;
+                                        const dSq = (cx - worldX) * (cx - worldX) + (cy - worldY) * (cy - worldY);
+                                        if (dSq < bestRadDist) {
+                                            bestRadDist = dSq;
+                                            idx = candIdx;
+                                        }
                                     }
                                 }
                             }
                         }
+                        if (bestRadDist < 999999) break;
                     }
-                    if (bestRadDist < 999999) break;
                 }
+                return idx;
             }
 
             const qMax = flowGrid.queue.length;
             let head = 0, tail = 0;
-            flowGrid.queue[tail++] = startIdx;
-            flowGrid.dist[startIdx] = 0;
-            flowGrid.inQueue[startIdx] = 1;
+
+            // Seed BFS với cả Chủ phòng (player) và Đồng đội (window.teammate) để quái tìm đường tấn công cả 2 người chơi
+            if (!player.isDown || !hasTeammate) {
+                const startIdx = resolveUnblockedCellIdx(pr, pc, player.x, player.y);
+                flowGrid.queue[tail++] = startIdx;
+                flowGrid.dist[startIdx] = 0;
+                flowGrid.inQueue[startIdx] = 1;
+            }
+            if (hasTeammate) {
+                const mateIdx = resolveUnblockedCellIdx(tr, tc, window.teammate.x, window.teammate.y);
+                if (!flowGrid.inQueue[mateIdx] && tail < qMax) {
+                    flowGrid.queue[tail++] = mateIdx;
+                    flowGrid.dist[mateIdx] = 0;
+                    flowGrid.inQueue[mateIdx] = 1;
+                }
+            }
 
             const neighbors = [
                 [-1, 0, 10], [1, 0, 10], [0, -1, 10], [0, 1, 10],
@@ -9092,6 +9551,21 @@
                 const pDist = Math.hypot(player.x - nearPx, player.y - nearPy);
 
                 let shouldOpen = pDist <= playerTriggerDist;
+
+                // Kiểm tra đồng đội (window.teammate) đi qua cửa để mở cửa đồng bộ trên cả 2 máy
+                if (!shouldOpen && window.teammate && window.teammate.active) {
+                    const nearTx = Math.max(d.x, Math.min(window.teammate.x, d.x + d.w));
+                    const nearTy = Math.max(d.y, Math.min(window.teammate.y, d.y + d.h));
+                    const tDist = Math.hypot(window.teammate.x - nearTx, window.teammate.y - nearTy);
+                    if (tDist <= playerTriggerDist) {
+                        shouldOpen = true;
+                    }
+                }
+
+                // Trên Client: Đồng bộ thêm trạng thái cửa mở từ Host
+                if (!shouldOpen && isCoopClient() && window.coopHostOpenDoors && window.coopHostOpenDoors.has(i)) {
+                    shouldOpen = true;
+                }
 
                 if (!shouldOpen) {
                     for (let j = 0; j < MAX_ENEMIES; j++) {
@@ -11724,7 +12198,10 @@
          * 8. ENTITY SPAWNERS (BULLETS, ENEMIES, PRAETORIAN ELITE & MULTI-BOSS SQUAD)
          * ============================================================================
          */
-        function spawnBullet(x, y, angle, weapon, isHostile = false, isTeammate = false) {
+        window.pendingHostileBullets = [];
+        window.coopHostOpenDoors = new Set();
+
+        function spawnBullet(x, y, angle, weapon, isHostile = false, isTeammate = false, fromNetwork = false) {
             for (let i = 0; i < MAX_BULLETS; i++) {
                 const b = bullets[i];
                 if (!b.active) {
@@ -11752,6 +12229,22 @@
                     b.hit2 = -1;
                     b.hit3 = -1;
                     b.hitCount = 0;
+
+                    if (isHostile && !fromNetwork && isCoopHost()) {
+                        window.pendingHostileBullets.push([
+                            Math.round(x),
+                            Math.round(y),
+                            Number(angle.toFixed(3)),
+                            Number((weapon.speed || 8).toFixed(1)),
+                            Math.round(weapon.damage || 10),
+                            b.color,
+                            Number(b.size.toFixed(1)),
+                            b.type,
+                            Math.round(b.life),
+                            b.splashRadius || 0,
+                            b.pierce || 1
+                        ]);
+                    }
                     return b;
                 }
             }
@@ -11823,17 +12316,39 @@
         }
 
         function pickNearbyVent() {
-            // Prefer vents in immediate adjacent sectors (260px - 1180px) so enemies rush the player quickly
+            // Trong Co-op: Luân phiên sinh quái quanh cả Chủ phòng (Host) và Đồng đội (Client) để quái tấn công đều cả 2 người chơi
+            let refX = player.x;
+            let refY = player.y;
+            const hasMate = isCoopActive() && window.teammate && window.teammate.active && !window.teammate.isDown;
+            if (hasMate) {
+                if (player.isDown) {
+                    refX = window.teammate.x;
+                    refY = window.teammate.y;
+                } else {
+                    window._ventTargetToggle = !window._ventTargetToggle;
+                    if (window._ventTargetToggle) {
+                        refX = window.teammate.x;
+                        refY = window.teammate.y;
+                    }
+                }
+            }
+
+            const isSafeFromBoth = (v) => {
+                if (!player.isDown && Math.hypot(v.x - player.x, v.y - player.y) < 250) return false;
+                if (hasMate && Math.hypot(v.x - window.teammate.x, v.y - window.teammate.y) < 250) return false;
+                return true;
+            };
+
             const closeCandidates = VENTS.filter(v => {
-                const d = Math.hypot(v.x - player.x, v.y - player.y);
-                return d > 260 && d < 1180;
+                const d = Math.hypot(v.x - refX, v.y - refY);
+                return d > 260 && d < 1180 && isSafeFromBoth(v);
             });
             if (closeCandidates.length > 0) {
                 return closeCandidates[Math.floor(Math.random() * closeCandidates.length)];
             }
             const midCandidates = VENTS.filter(v => {
-                const d = Math.hypot(v.x - player.x, v.y - player.y);
-                return d >= 220 && d < 1800;
+                const d = Math.hypot(v.x - refX, v.y - refY);
+                return d >= 220 && d < 1800 && isSafeFromBoth(v);
             });
             const pool = midCandidates.length > 0 ? midCandidates : VENTS;
             return pool[Math.floor(Math.random() * pool.length)];
@@ -11884,7 +12399,6 @@
                     e.ranged = !!cfg.ranged;
                     e.burstTriShot = !!cfg.burstTriShot;
                     e.shootCooldown = e.isElite ? (85 + Math.random() * 40) : (105 + Math.random() * 75);
-                    e.angle = 0;
                     e.hitFlash = 0;
                     e.burnTimer = 0;
                     e.chillTimer = 0;
@@ -11896,6 +12410,9 @@
                     e.serverX = e.x;
                     e.serverY = e.y;
                     e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                    const initTarget = resolveEnemyTargetPosition(e.targetPlayerId);
+                    e.angle = Math.atan2(initTarget.y - e.y, initTarget.x - e.x);
+                    e.serverAngle = e.angle;
                     e.spawnedAt = performance.now();
                     enemiesById.set(e.id, e);
 
@@ -11907,6 +12424,7 @@
                             type: e.typeKey,
                             x: Math.round(e.x),
                             y: Math.round(e.y),
+                            a: Number((e.angle || 0).toFixed(2)),
                             hp: e.hp,
                             maxHp: e.maxHp,
                             speed: Number(e.speed.toFixed(2)),
@@ -11981,6 +12499,7 @@
                         e.legs = 4;
                         e.ranged = false;
                         e.angle = Math.atan2(player.y - sy, player.x - sx);
+                        e.serverAngle = e.angle;
                         e.hitFlash = 0;
                         e.burnTimer = 0;
                         e.chillTimer = 0;
@@ -12004,10 +12523,10 @@
                                         : ((window.currentMapId === 6)
                                             ? (bIdx % 3 === 0 ? "void_nova" : (bIdx % 3 === 1 ? "void_laser_fan" : "void_meteor_storm"))
                                             : ((window.currentMapId === 5)
-                                                ? (bIdx === 0 ? "hive_quake" : (bIdx % 2 === 1 ? "hive_acid" : "hive_plasma"))
-                                                : ((window.currentMapId === 4)
-                                                    ? (bIdx % 2 === 0 ? "quake" : "meteor")
-                                                    : (bIdx % 2 === 0 ? "flame" : "plasma")))))));
+                                                 ? (bIdx === 0 ? "hive_quake" : (bIdx % 2 === 1 ? "hive_acid" : "hive_plasma"))
+                                                 : ((window.currentMapId === 4)
+                                                     ? (bIdx % 2 === 0 ? "quake" : "meteor")
+                                                     : (bIdx % 2 === 0 ? "flame" : "plasma")))))));
                         e.skillTimer = Math.round((65 + bIdx * 32) * currentDifficulty.bossFireRateMult);
                         e.skillAngle = e.angle;
 
@@ -12026,6 +12545,7 @@
                                 type: "boss",
                                 x: Math.round(e.x),
                                 y: Math.round(e.y),
+                                a: Number((e.angle || 0).toFixed(2)),
                                 hp: e.hp,
                                 maxHp: e.maxHp,
                                 speed: Number(e.speed.toFixed(2)),
@@ -12052,7 +12572,7 @@
         }
 
         // ============================================================================
-        // CLIENT-SIDE NETWORK ENEMY HANDLERS (SPAWN_ENEMY, SYNC_ENEMIES, ENEMY_DIE)
+        // CLIENT-SIDE NETWORK ENEMY & WORLD HANDLERS (SPAWN_ENEMY, SYNC_ENEMIES, ENEMY_DIE, PROP_*)
         // ============================================================================
         function spawnEnemyFromHost(data) {
             if (!data || !data.id) return null;
@@ -12103,7 +12623,10 @@
             e.ranged = !!cfg.ranged;
             e.burstTriShot = !!cfg.burstTriShot;
             e.shootCooldown = 110;
-            e.angle = Math.atan2(player.y - e.y, player.x - e.x);
+            e.targetPlayerId = data.targetPlayerId || "host";
+            const initTarget = resolveEnemyTargetPosition(e.targetPlayerId);
+            e.angle = typeof data.a === "number" ? data.a : Math.atan2(initTarget.y - e.y, initTarget.x - e.x);
+            e.serverAngle = e.angle;
             e.hitFlash = 0;
             e.burnTimer = 0;
             e.chillTimer = 0;
@@ -12111,7 +12634,6 @@
             e.legPhase = (data.id % 7) * 0.9;
             e.lastDirX = undefined;
             e.lastDirY = undefined;
-            e.targetPlayerId = data.targetPlayerId || "host";
             e.spawnedAt = performance.now();
 
             if (isBoss) {
@@ -12121,7 +12643,7 @@
                 e.skillState = data.skillState || "idle";
                 e.skillType = data.skillType || "flame";
                 e.skillTimer = 90;
-                e.skillAngle = data.skillAngle || e.angle;
+                e.skillAngle = typeof data.skillAngle === "number" ? data.skillAngle : e.angle;
                 if (!activeBosses.includes(e)) {
                     activeBosses.push(e);
                 }
@@ -12148,6 +12670,44 @@
                 updateTopLeftHUD();
             }
 
+            if (Array.isArray(packet.openDoors)) {
+                window.coopHostOpenDoors = new Set(packet.openDoors);
+            }
+
+            // Đồng bộ tức thì mọi vật thể (thùng gỗ, thùng nhiên liệu, trụ hạt nhân, máy phát điện) từ Chủ phòng
+            if (Array.isArray(packet.deadCrates)) {
+                for (let i = 0; i < packet.deadCrates.length; i++) {
+                    const idx = packet.deadCrates[i];
+                    if (crates[idx] && crates[idx].active) {
+                        breakSupplyCrate(crates[idx], true, null, 0);
+                    }
+                }
+            }
+            if (Array.isArray(packet.deadBarrels)) {
+                for (let i = 0; i < packet.deadBarrels.length; i++) {
+                    const idx = packet.deadBarrels[i];
+                    if (barrels[idx] && barrels[idx].active) {
+                        explodeBarrel(barrels[idx], true);
+                    }
+                }
+            }
+            if (Array.isArray(packet.deadVats)) {
+                for (let i = 0; i < packet.deadVats.length; i++) {
+                    const idx = packet.deadVats[i];
+                    if (nuclearVats[idx] && nuclearVats[idx].active) {
+                        shatterNuclearVat(nuclearVats[idx], true);
+                    }
+                }
+            }
+            if (packet.genOn && mapGenerator && !mapGenerator.active) {
+                mapGenerator.active = true;
+                mapGenerator.holdTimer = 5000;
+                generatorOnline = true;
+                updateTopLeftHUD();
+                if (typeof dismissGeneratorTip === "function") dismissGeneratorTip();
+                if (typeof updateStationPowerUI === "function") updateStationPowerUI();
+            }
+
             const now = performance.now();
             const seenIds = new Set();
 
@@ -12165,6 +12725,9 @@
                     e.serverY = item.y;
                     e.vx = item.vx || 0;
                     e.vy = item.vy || 0;
+                    if (typeof item.a === "number") {
+                        e.serverAngle = item.a;
+                    }
                     e.hp = item.hp;
                     e.maxHp = item.maxHp || e.maxHp;
                     e.targetPlayerId = item.targetPlayerId || "host";
@@ -12182,7 +12745,12 @@
                         e.maxShield = Math.max(e.maxShield || 0, e.shield);
                         e.skillState = item.skillState || e.skillState;
                         e.skillType = item.skillType || e.skillType;
-                        if (typeof item.skillAngle === "number") e.skillAngle = item.skillAngle;
+                        if (typeof item.skillAngle === "number") {
+                            e.skillAngle = item.skillAngle;
+                            if (e.skillState !== "idle") {
+                                e.serverAngle = item.skillAngle;
+                            }
+                        }
                         if (!prevEnraged && e.enraged) {
                             addFloatingText(e.x, e.y - 45, `TRÙM #${e.bossIndex || 1} CUỒNG NỘ: BẬT KHIÊN HUYẾT TƯƠNG!`, "#f43f5e");
                         }
@@ -12210,6 +12778,111 @@
                         enemiesById.delete(id);
                     }
                 }
+            }
+        }
+
+        function handleClientEnemyShoot(data) {
+            if (!data || !Array.isArray(data.b)) return;
+            for (let i = 0; i < data.b.length; i++) {
+                const arr = data.b[i];
+                if (!Array.isArray(arr) || arr.length < 8) continue;
+                spawnBullet(
+                    arr[0],
+                    arr[1],
+                    arr[2],
+                    {
+                        speed: arr[3],
+                        damage: arr[4],
+                        color: arr[5],
+                        size: arr[6],
+                        type: arr[7],
+                        life: arr[8] || 110,
+                        splashRadius: arr[9] || 0,
+                        pierce: arr[10] || 1
+                    },
+                    true,
+                    false,
+                    true
+                );
+            }
+        }
+
+        function handleHostPropHit(data) {
+            if (!data || !isCoopHost()) return;
+            const idx = data.idx;
+            const dmg = Number(data.dmg) || 20;
+            if (data.kind === "crate") {
+                const cr = crates[idx];
+                if (cr && cr.active) {
+                    damageSupplyCrate(cr, dmg);
+                }
+            } else if (data.kind === "barrel") {
+                const br = barrels[idx];
+                if (br && br.active) {
+                    explodeBarrel(br);
+                }
+            } else if (data.kind === "vat") {
+                const vat = nuclearVats[idx];
+                if (vat && vat.active) {
+                    vat.hp -= dmg;
+                    if (vat.hp <= 0) {
+                        shatterNuclearVat(vat);
+                    } else {
+                        window.XENO_COOP.sendPacket({
+                            t: "PROP_STATE",
+                            kind: "vat",
+                            idx: idx,
+                            hp: Math.round(vat.hp)
+                        });
+                    }
+                }
+            }
+        }
+
+        function handleClientPropState(data) {
+            if (!data) return;
+            const idx = data.idx;
+            if (data.kind === "crate" && crates[idx] && crates[idx].active) {
+                crates[idx].hp = data.hp;
+                crates[idx].hitWobble = 1.0;
+            } else if (data.kind === "vat" && nuclearVats[idx] && nuclearVats[idx].active) {
+                nuclearVats[idx].hp = data.hp;
+            }
+        }
+
+        function handleClientPropDestroy(data) {
+            if (!data) return;
+            const idx = data.idx;
+            if (data.kind === "crate" && crates[idx] && crates[idx].active) {
+                breakSupplyCrate(crates[idx], true, data.dropItem || null, data.cashReward || 0);
+            } else if (data.kind === "barrel" && barrels[idx] && barrels[idx].active) {
+                explodeBarrel(barrels[idx], true);
+            } else if (data.kind === "vat" && nuclearVats[idx] && nuclearVats[idx].active) {
+                shatterNuclearVat(nuclearVats[idx], true);
+            }
+        }
+
+        function handleRemoteWorldInteract(data) {
+            if (!data) return;
+            if (data.kind === "generator" && mapGenerator && !mapGenerator.active) {
+                mapGenerator.active = true;
+                mapGenerator.holdTimer = 5000;
+                generatorOnline = true;
+                if (typeof sfx !== "undefined") {
+                    if (sfx.playGenerator) sfx.playGenerator();
+                    else if (sfx.playEnergyOn) sfx.playEnergyOn();
+                    else sfx.playPickup();
+                }
+                screenShake = Math.max(screenShake, 14);
+                addFloatingText(mapGenerator.x, mapGenerator.y - 45, "MÁY PHÁT ĐIỆN: ĐỒNG ĐỘI ĐÃ KHỞI ĐỘNG", "#4ade80");
+                showToast("MÁY PHÁT ĐIỆN ĐÃ KHỞI ĐỘNG!", "Đồng đội đã khôi phục năng lượng toàn trạm.");
+                updateTopLeftHUD();
+                if (typeof dismissGeneratorTip === "function") dismissGeneratorTip();
+                if (typeof updateStationPowerUI === "function") updateStationPowerUI();
+            } else if (data.kind === "desk" && computerDesks[data.idx]) {
+                computerDesks[data.idx].hacked = true;
+            } else if (data.kind === "supercomputer" && spaceProps[data.idx]) {
+                spaceProps[data.idx].hacked = true;
             }
         }
 
@@ -12483,6 +13156,9 @@
                     addFloatingText(cd.x + cd.w * 0.5, cd.y - 12, `HACK THÀNH CÔNG +$${reward} & +30 GIÁP!`, "#38bdf8");
                     showToast("ĐÃ HACK MÁY CHỦ DỮ LIỆU!", `Thu thập +$${reward} ngân quỹ tác chiến & nạp +30 Giáp Nano!`);
                     updateTopLeftHUD();
+                    if (isCoopActive()) {
+                        window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "desk", idx: i });
+                    }
                     return;
                 }
             }
@@ -12502,6 +13178,9 @@
                     addFloatingText(sp.x + sp.w * 0.5, sp.y - 14, `SIÊU MÁY TÍNH +$${reward} & +35 GIÁP!`, "#00f5d4");
                     showToast("ĐÃ TRÍCH XUẤT SIÊU MÁY TÍNH LƯỢNG TỬ!", `Giải mã thành công: Nhận +$${reward} ngân quỹ & +35 Giáp Nano!`);
                     updateTopLeftHUD();
+                    if (isCoopActive()) {
+                        window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "supercomputer", idx: i });
+                    }
                     return;
                 }
             }
@@ -12530,9 +13209,32 @@
         }
         window.triggerInteractionKeyE = triggerInteractionKeyE;
 
-        function shatterNuclearVat(vat) {
+        function shatterNuclearVat(vat, fromNetwork = false) {
             if (!vat || !vat.active) return;
+            const vatIdx = nuclearVats.indexOf(vat);
+
+            // Trên Client: gửi sự kiện bắn vỡ lên Chủ phòng để Chủ phòng quyết định 100%
+            if (isCoopClient() && !fromNetwork) {
+                if (vatIdx !== -1) {
+                    window.XENO_COOP.sendPacket({
+                        t: "PROP_HIT",
+                        kind: "vat",
+                        idx: vatIdx,
+                        dmg: 999
+                    });
+                }
+                return;
+            }
+
             vat.active = false;
+            if (isCoopHost() && vatIdx !== -1) {
+                window.XENO_COOP.sendPacket({
+                    t: "PROP_DESTROY",
+                    kind: "vat",
+                    idx: vatIdx
+                });
+            }
+
             if (typeof initFlowFieldWalls === "function") {
                 initFlowFieldWalls();
                 computeFlowField();
@@ -12562,24 +13264,26 @@
 
             addFloatingText(vat.x, vat.y - 18, "PHÁ VỠ TRỤ HẠT NHÂN!", "#4ade80");
 
-            // Immediate blast damage + slow to nearby enemies
-            for (let i = 0; i < MAX_ENEMIES; i++) {
-                const e = enemies[i];
-                if (!e.active) continue;
-                const d = Math.hypot(e.x - vat.x, e.y - vat.y) || 0.0001;
-                if (d < 185) {
-                    const ang = Math.atan2(e.y - vat.y, e.x - vat.x);
-                    e.nuclearSlowTimer = 240;
-                    damageEnemy(e, 195 * (1 - d / 210), Math.cos(ang) * 14, Math.sin(ang) * 14, "acid");
+            // Immediate blast damage + slow to nearby enemies & chain reaction (Authoritative on Host/Solo)
+            if (!isCoopClient()) {
+                for (let i = 0; i < MAX_ENEMIES; i++) {
+                    const e = enemies[i];
+                    if (!e.active) continue;
+                    const d = Math.hypot(e.x - vat.x, e.y - vat.y) || 0.0001;
+                    if (d < 185) {
+                        const ang = Math.atan2(e.y - vat.y, e.x - vat.x);
+                        e.nuclearSlowTimer = 240;
+                        damageEnemy(e, 195 * (1 - d / 210), Math.cos(ang) * 14, Math.sin(ang) * 14, "acid");
+                    }
                 }
-            }
 
-            // Kích nổ dây chuyền các bình còn lại trong Cụm 3 Bình Nguyên Tử
-            for (let i = 0; i < nuclearVats.length; i++) {
-                const other = nuclearVats[i];
-                if (other.active && Math.hypot(other.x - vat.x, other.y - vat.y) < 88) {
-                    other.hp = 0;
-                    shatterNuclearVat(other);
+                // Kích nổ dây chuyền các bình còn lại trong Cụm 3 Bình Nguyên Tử
+                for (let i = 0; i < nuclearVats.length; i++) {
+                    const other = nuclearVats[i];
+                    if (other.active && Math.hypot(other.x - vat.x, other.y - vat.y) < 88) {
+                        other.hp = 0;
+                        shatterNuclearVat(other);
+                    }
                 }
             }
         }
@@ -12694,8 +13398,26 @@
                     if (!vat.active) continue;
                     const rSum = vat.radius + beamHalfWidth;
                     if (pointToSegmentDistSq(vat.x, vat.y, muzzleX, muzzleY, endX, endY) <= rSum * rSum) {
-                        vat.hp -= totalDmg;
-                        if (vat.hp <= 0) shatterNuclearVat(vat);
+                        if (isCoopClient()) {
+                            window.XENO_COOP.sendPacket({
+                                t: "PROP_HIT",
+                                kind: "vat",
+                                idx: v,
+                                dmg: Number(totalDmg.toFixed(1))
+                            });
+                        } else {
+                            vat.hp -= totalDmg;
+                            if (vat.hp <= 0) {
+                                shatterNuclearVat(vat);
+                            } else if (isCoopHost() && frameCounter % 3 === 0) {
+                                window.XENO_COOP.sendPacket({
+                                    t: "PROP_STATE",
+                                    kind: "vat",
+                                    idx: v,
+                                    hp: Math.round(vat.hp)
+                                });
+                            }
+                        }
                     }
                 }
                 for (let p = 0; p < barrels.length; p++) {
@@ -13195,12 +13917,36 @@
             });
         }
 
-        function explodeBarrel(barrel) {
+        function explodeBarrel(barrel, fromNetwork = false) {
             if (!barrel || !barrel.active) return;
+            const barrelIdx = barrels.indexOf(barrel);
+
+            // Client-side: gửi yêu cầu kích nổ lên Host để Host quyết định 100%
+            if (isCoopClient() && !fromNetwork) {
+                barrel.hitWobble = 1.0;
+                if (barrelIdx >= 0 && window.XENO_COOP) {
+                    window.XENO_COOP.sendPacket({
+                        t: "PROP_HIT",
+                        kind: "barrel",
+                        idx: barrelIdx,
+                        dmg: 999
+                    });
+                }
+                return;
+            }
+
             barrel.active = false;
             flowGrid.dirty = true;
             if (typeof initFlowFieldWalls === "function") {
                 initFlowFieldWalls();
+            }
+
+            if (isCoopHost() && !fromNetwork && barrelIdx >= 0 && window.XENO_COOP) {
+                window.XENO_COOP.sendPacket({
+                    t: "PROP_DESTROY",
+                    kind: "barrel",
+                    idx: barrelIdx
+                });
             }
 
             const bType = barrel.barrelType || "tnt";
@@ -13212,6 +13958,7 @@
             }
 
             screenShake = 22;
+            const allowAuthoritativeEnemyDmg = !isCoopClient();
 
             if (bType === "acid") {
                 // THÙNG XANH LỤC (Toxic Bio-Acid): Nổ vỡ tạo hồ axit ăn mòn làm chậm quái 10 giây
@@ -13239,7 +13986,9 @@
                     if (d < 195) {
                         const ang = Math.atan2(e.y - barrel.y, e.x - barrel.x);
                         e.nuclearSlowTimer = Math.max(e.nuclearSlowTimer || 0, 10 * 60);
-                        damageEnemy(e, 185 * (1 - d / 215), Math.cos(ang) * 14, Math.sin(ang) * 14, "acid");
+                        if (allowAuthoritativeEnemyDmg) {
+                            damageEnemy(e, 185 * (1 - d / 215), Math.cos(ang) * 14, Math.sin(ang) * 14, "acid");
+                        }
                     }
                 }
             } else if (bType === "cryo") {
@@ -13262,7 +14011,9 @@
                     if (d < 225) {
                         const ang = Math.atan2(e.y - barrel.y, e.x - barrel.x);
                         e.chillTimer = Math.max(e.chillTimer || 0, Math.round(4.5 * 60)); // 4.5 giây đóng băng
-                        damageEnemy(e, 175 * (1 - d / 245), Math.cos(ang) * 12, Math.sin(ang) * 12, "cryo");
+                        if (allowAuthoritativeEnemyDmg) {
+                            damageEnemy(e, 175 * (1 - d / 245), Math.cos(ang) * 12, Math.sin(ang) * 12, "cryo");
+                        }
                     }
                 }
             } else if (bType === "oil") {
@@ -13300,7 +14051,9 @@
                     if (d < 195) {
                         const ang = Math.atan2(e.y - barrel.y, e.x - barrel.x);
                         e.burnTimer = Math.max(e.burnTimer || 0, 180);
-                        damageEnemy(e, 210 * (1 - d / 215), Math.cos(ang) * 15, Math.sin(ang) * 15, "flame");
+                        if (allowAuthoritativeEnemyDmg) {
+                            damageEnemy(e, 210 * (1 - d / 215), Math.cos(ang) * 15, Math.sin(ang) * 15, "flame");
+                        }
                     }
                 }
             } else {
@@ -13336,16 +14089,20 @@
                     if (d < 195) {
                         const ang = Math.atan2(e.y - barrel.y, e.x - barrel.x);
                         e.burnTimer = Math.max(e.burnTimer || 0, 120);
-                        damageEnemy(e, 245 * (1 - d / 215), Math.cos(ang) * 16, Math.sin(ang) * 16, "flame");
+                        if (allowAuthoritativeEnemyDmg) {
+                            damageEnemy(e, 245 * (1 - d / 215), Math.cos(ang) * 16, Math.sin(ang) * 16, "flame");
+                        }
                     }
                 }
             }
 
-            barrels.forEach(other => {
-                if (other.active && Math.hypot(other.x - barrel.x, other.y - barrel.y) < 150) {
-                    explodeBarrel(other);
-                }
-            });
+            if (allowAuthoritativeEnemyDmg) {
+                barrels.forEach(other => {
+                    if (other.active && Math.hypot(other.x - barrel.x, other.y - barrel.y) < 150) {
+                        explodeBarrel(other, false);
+                    }
+                });
+            }
         }
 
         function damageSupplyCrate(crate, dmg) {
@@ -13354,7 +14111,6 @@
                 crate.hp = 75;
                 crate.maxHp = 75;
             }
-            crate.hp -= dmg;
             crate.hitWobble = 1.0;
             crate.wobbleDir = (Math.random() > 0.5) ? 1 : -1;
             if (typeof sfx !== "undefined" && sfx && sfx.playCrateHit) {
@@ -13365,13 +14121,36 @@
                 const spd = 1.2 + Math.random() * 3.5;
                 spawnParticle(crate.x, crate.y, Math.cos(ang) * spd, Math.sin(ang) * spd, s % 2 === 0 ? "#d97706" : "#fbbf24", 2.8, 12);
             }
+
+            const crateIdx = crates.indexOf(crate);
+            if (isCoopClient()) {
+                if (crateIdx >= 0 && window.XENO_COOP) {
+                    window.XENO_COOP.sendPacket({
+                        t: "PROP_HIT",
+                        kind: "crate",
+                        idx: crateIdx,
+                        dmg: Number(dmg.toFixed(1))
+                    });
+                }
+                return;
+            }
+
+            crate.hp -= dmg;
             if (crate.hp <= 0) {
-                breakSupplyCrate(crate);
+                breakSupplyCrate(crate, false);
+            } else if (isCoopHost() && crateIdx >= 0 && window.XENO_COOP) {
+                window.XENO_COOP.sendPacket({
+                    t: "PROP_STATE",
+                    kind: "crate",
+                    idx: crateIdx,
+                    hp: Math.round(crate.hp)
+                });
             }
         }
 
-        function breakSupplyCrate(crate) {
+        function breakSupplyCrate(crate, fromNetwork = false, netDropItem = null, netCashReward = null) {
             if (!crate || !crate.active) return;
+            const crateIdx = crates.indexOf(crate);
             crate.active = false;
             flowGrid.dirty = true;
             if (typeof initFlowFieldWalls === "function") {
@@ -13417,16 +14196,52 @@
                 const spd = 1.5 + Math.random() * 4.5;
                 spawnParticle(crate.x, crate.y, Math.cos(ang) * spd, Math.sin(ang) * spd, "#d97706", 3.8, 18);
             }
+
+            if (isCoopClient() && fromNetwork) {
+                if (netDropItem && netDropItem.kind) {
+                    spawnItemDrop(
+                        typeof netDropItem.x === "number" ? netDropItem.x : crate.x,
+                        typeof netDropItem.y === "number" ? netDropItem.y : crate.y,
+                        netDropItem.kind
+                    );
+                } else if (typeof netCashReward === "number" && netCashReward > 0) {
+                    player.credits += netCashReward;
+                    campaignTotalCreditsEarned += netCashReward;
+                    addFloatingText(crate.x, crate.y, `+$${netCashReward} TIẾP TẾ`, "#fbbf24");
+                    updateTopLeftHUD();
+                }
+                return;
+            }
+
+            let syncedDropItem = null;
+            let syncedCashReward = 0;
             if (itemDropCooldownFrames <= 0 && Math.random() < 0.35) {
-                if (spawnItemDrop(crate.x, crate.y)) {
+                const dropped = spawnItemDrop(crate.x, crate.y);
+                if (dropped) {
                     itemDropCooldownFrames = Math.floor(currentDifficulty.itemCooldownSec * 0.65 * 60);
+                    syncedDropItem = {
+                        kind: dropped.kind,
+                        x: Math.round(dropped.x),
+                        y: Math.round(dropped.y)
+                    };
                 }
             } else if (Math.random() < 0.40) {
                 const crateCash = 10 + Math.floor(Math.random() * 6) + (window.currentMapId - 1) * 2;
+                syncedCashReward = crateCash;
                 player.credits += crateCash;
                 campaignTotalCreditsEarned += crateCash;
                 addFloatingText(crate.x, crate.y, `+$${crateCash} TIẾP TẾ`, "#fbbf24");
                 updateTopLeftHUD();
+            }
+
+            if (isCoopHost() && crateIdx >= 0 && window.XENO_COOP) {
+                window.XENO_COOP.sendPacket({
+                    t: "PROP_DESTROY",
+                    kind: "crate",
+                    idx: crateIdx,
+                    dropItem: syncedDropItem,
+                    cashReward: syncedCashReward
+                });
             }
         }
 
@@ -13581,23 +14396,27 @@
             const chillMult = (isGlobalFrozen ? 0.45 : 1.0) * (boss.chillTimer > 0 ? 0.82 : 1.0) * (boss.nuclearSlowTimer > 0 ? 0.80 : 1.0);
             const enrageSpeedMult = boss.enraged ? 1.15 : 1.0;
             boss.speed = mapCfg.bossSpeed * currentDifficulty.bossSpeedMult * enrageSpeedMult;
+            if (!boss.targetPlayerId || (frameCounter + (boss.bossIndex || 1) * 7) % 20 === 0) {
+                boss.targetPlayerId = pickAuthoritativeTargetPlayerId(boss.x, boss.y);
+            }
+            const targetPos = resolveEnemyTargetPosition(boss.targetPlayerId);
             if (!Number.isFinite(boss.x) || !Number.isFinite(boss.y)) {
-                boss.x = player.x + 260;
-                boss.y = player.y;
+                boss.x = targetPos.x + 260;
+                boss.y = targetPos.y;
                 resolveWallSliding(boss);
             }
-            const dx = player.x - boss.x;
-            const dy = player.y - boss.y;
+            const dx = targetPos.x - boss.x;
+            const dy = targetPos.y - boss.y;
             const distToPlayer = Math.hypot(dx, dy) || 0.0001;
 
-            // Anti-stuck & anti-lost mechanism: if Boss is too far (>1050px) for >4 seconds, warp Boss near player
+            // Anti-stuck & anti-lost mechanism: if Boss is too far (>1050px) for >4 seconds, warp Boss near target player
             if (distToPlayer > 1050) {
                 boss.farTimer = (boss.farTimer || 0) + 1;
                 if (boss.farTimer > 240) {
                     boss.farTimer = 0;
                     const warpAng = Math.random() * Math.PI * 2;
-                    boss.x = Math.max(160, Math.min(WORLD_W - 160, player.x + Math.cos(warpAng) * 320));
-                    boss.y = Math.max(160, Math.min(WORLD_H - 160, player.y + Math.sin(warpAng) * 320));
+                    boss.x = Math.max(160, Math.min(WORLD_W - 160, targetPos.x + Math.cos(warpAng) * 320));
+                    boss.y = Math.max(160, Math.min(WORLD_H - 160, targetPos.y + Math.sin(warpAng) * 320));
                     resolveWallSliding(boss);
                     addFloatingText(boss.x, boss.y - 30, `BOSS #${boss.bossIndex || 1} ĐÃ ÁP SÁT!`, "#f43f5e");
                 }
@@ -14207,7 +15026,9 @@
                         const d = Math.hypot(e.x - st.x, e.y - st.y);
                         if (d < st.outerRadius + e.radius) {
                             e.chillTimer = Math.max(e.chillTimer || 0, 35);
-                            damageEnemy(e, e.isBoss ? 8 : 11, 0, 0, "plasma");
+                            if (!isCoopClient()) {
+                                damageEnemy(e, e.isBoss ? 8 : 11, 0, 0, "plasma");
+                            }
                         }
                     }
                 }
@@ -14227,7 +15048,9 @@
                         if (!e.active) continue;
                         if (Math.hypot(e.x - np.x, e.y - np.y) < np.radius + e.radius) {
                             e.nuclearSlowTimer = 45;
-                            damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
+                            if (!isCoopClient()) {
+                                damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
+                            }
                         }
                     }
                 }
@@ -14258,7 +15081,9 @@
                         if (!e.active) continue;
                         if (Math.hypot(e.x - fp.x, e.y - fp.y) < fp.radius + e.radius) {
                             e.burnTimer = Math.max(e.burnTimer || 0, 75);
-                            damageEnemy(e, e.isBoss ? 9 : 14, 0, 0, "flame");
+                            if (!isCoopClient()) {
+                                damageEnemy(e, e.isBoss ? 9 : 14, 0, 0, "flame");
+                            }
                         }
                     }
                 }
@@ -14529,6 +15354,9 @@
                         updateTopLeftHUD();
                         if (typeof dismissGeneratorTip === "function") dismissGeneratorTip();
                         if (typeof updateStationPowerUI === "function") updateStationPowerUI();
+                        if (isCoopActive() && window.XENO_COOP) {
+                            window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "generator" });
+                        }
                     }
                 } else {
                     if (mapGenerator.holdTimer > 0) {
@@ -14865,19 +15693,55 @@
                                 b.damage = 0;
                             }
                         }
+                    } else if (
+                        isCoopActive() &&
+                        window.teammate &&
+                        window.teammate.active &&
+                        !window.teammate.isDown &&
+                        Math.hypot(b.x - window.teammate.x, b.y - window.teammate.y) < player.radius + b.size * 0.75
+                    ) {
+                        if (b.type === "boss_meteor") {
+                            detonateMagmaMeteor(b.x, b.y, 0, b.splashRadius || 92);
+                            b.active = false;
+                        } else {
+                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#ef4444", 2.6, 12);
+                            if (b.type !== "boss_flame" && b.type !== "boss_magma_orb") {
+                                b.active = false;
+                            }
+                        }
                     }
                     continue;
                 }
 
-                // Check Intact Green Nuclear Bio-Vats
+                // Check Intact Green Nuclear Bio-Vats (Host-Authoritative sync)
                 let hitProp = false;
                 for (let v = 0; v < nuclearVats.length; v++) {
                     const vat = nuclearVats[v];
                     if (vat.active && Math.hypot(b.x - vat.x, b.y - vat.y) < vat.radius + b.size) {
-                        vat.hp -= b.damage;
                         spawnParticle(b.x, b.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#4ade80", 3, 12);
-                        if (vat.hp <= 0) {
-                            shatterNuclearVat(vat);
+                        if (!b.isTeammate) {
+                            if (isCoopClient()) {
+                                if (window.XENO_COOP) {
+                                    window.XENO_COOP.sendPacket({
+                                        t: "PROP_HIT",
+                                        kind: "vat",
+                                        idx: v,
+                                        dmg: Number(b.damage.toFixed(1))
+                                    });
+                                }
+                            } else {
+                                vat.hp -= b.damage;
+                                if (vat.hp <= 0) {
+                                    shatterNuclearVat(vat);
+                                } else if (isCoopHost() && window.XENO_COOP) {
+                                    window.XENO_COOP.sendPacket({
+                                        t: "PROP_STATE",
+                                        kind: "vat",
+                                        idx: v,
+                                        hp: Math.round(vat.hp)
+                                    });
+                                }
+                            }
                         }
                         b.active = false;
                         hitProp = true;
@@ -14886,11 +15750,16 @@
                 }
                 if (hitProp) continue;
 
-                // Check Explosive Barrels
+                // Check Explosive Barrels (Host-Authoritative sync)
                 for (let p = 0; p < barrels.length; p++) {
                     const br = barrels[p];
                     if (br.active && Math.hypot(b.x - br.x, b.y - br.y) < br.radius + b.size) {
-                        explodeBarrel(br);
+                        if (b.isTeammate) {
+                            br.hitWobble = 1.0;
+                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#fbbf24", 2.5, 10);
+                        } else {
+                            explodeBarrel(br);
+                        }
                         b.active = false;
                         hitProp = true;
                         break;
@@ -14898,14 +15767,20 @@
                 }
                 if (hitProp) continue;
 
-                // Check Supply Crates (AABB & circle hit with HP & hitWobble)
+                // Check Supply Crates (AABB & circle hit with Host-Authoritative HP & hitWobble)
                 for (let c = 0; c < crates.length; c++) {
                     const cr = crates[c];
                     if (!cr.active) continue;
                     const hw = (cr.w || 34) * 0.5 + b.size;
                     const hh = (cr.h || 34) * 0.5 + b.size;
                     if (Math.abs(b.x - cr.x) <= hw && Math.abs(b.y - cr.y) <= hh) {
-                        damageSupplyCrate(cr, b.damage);
+                        if (b.isTeammate) {
+                            cr.hitWobble = 1.0;
+                            cr.wobbleDir = (Math.random() > 0.5) ? 1 : -1;
+                            spawnParticle(cr.x, cr.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#fbbf24", 2.5, 10);
+                        } else {
+                            damageSupplyCrate(cr, b.damage);
+                        }
                         b.active = false;
                         hitProp = true;
                         break;
@@ -15050,13 +15925,20 @@
 
                     resolveWallSliding(e);
 
-                    const lookX = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVx : tdx;
-                    const lookY = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVy : tdy;
-                    const targetAngle = Math.atan2(lookY, lookX);
+                    let targetAngle;
+                    if (e.isBoss && e.skillState !== "idle" && typeof e.skillAngle === "number") {
+                        targetAngle = e.skillAngle;
+                    } else if (typeof e.serverAngle === "number") {
+                        targetAngle = e.serverAngle;
+                    } else {
+                        const lookX = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVx : tdx;
+                        const lookY = (Math.abs(predVx) + Math.abs(predVy) > 0.05) ? predVy : tdy;
+                        targetAngle = Math.atan2(lookY, lookX);
+                    }
                     let diffAng = targetAngle - e.angle;
                     while (diffAng > Math.PI) diffAng -= Math.PI * 2;
                     while (diffAng < -Math.PI) diffAng += Math.PI * 2;
-                    e.angle += diffAng * 0.24 * dtScale;
+                    e.angle += diffAng * 0.28 * dtScale;
                     e.legPhase += 0.34 * chillMult * bossCastMult * dtScale;
 
                     // Kiểm tra va chạm cận chiến với người chơi máy Client
@@ -15221,6 +16103,7 @@
                     e.shootCooldown--;
                     if (e.shootCooldown <= 0 && hasLineOfSight(e.x, e.y, targetPos.x, targetPos.y)) {
                         const aim = Math.atan2(dy, dx);
+                        e.angle = aim;
                         if (e.isElite && e.burstTriShot) {
                             e.shootCooldown = Math.max(68, Math.round(96 * currentDifficulty.bossFireRateMult));
                             const dmgScaled = Math.max(8, Math.round(10 * getCurrentMapConfig().enemyDmgMult));
@@ -15264,10 +16147,33 @@
                         player.y += (pDy / pDist) * 24;
                         resolveWallSliding(player);
                     }
+                } else if (
+                    isCoopHost() &&
+                    window.teammate &&
+                    window.teammate.active &&
+                    !window.teammate.isDown
+                ) {
+                    // Melee bounce on Host when enemy collides with Client teammate (so enemy doesn't stack inside teammate's body)
+                    const tDx = window.teammate.x - e.x;
+                    const tDy = window.teammate.y - e.y;
+                    const tDist = Math.hypot(tDx, tDy) || 0.0001;
+                    if (tDist < e.radius + player.radius && !e.isBoss) {
+                        e.x -= (tDx / tDist) * 18;
+                        e.y -= (tDy / tDist) * 18;
+                        resolveWallSliding(e);
+                    }
                 }
             }
             setText("hudEnemiesLeft", currentAlive);
             setText("hudElitesLeft", currentElites);
+
+            // Phát đồng bộ toàn bộ đạn quái / Boss vừa bắn trong tick này từ Host sang Client
+            if (isCoopHost() && window.pendingHostileBullets && window.pendingHostileBullets.length > 0 && window.XENO_COOP) {
+                window.XENO_COOP.sendPacket({
+                    t: "ENEMY_SHOOT",
+                    b: window.pendingHostileBullets.splice(0, 64)
+                });
+            }
 
             // Update Collectible Items
             for (let i = 0; i < MAX_ITEMS; i++) {
