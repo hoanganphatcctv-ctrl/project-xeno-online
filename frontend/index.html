@@ -950,6 +950,18 @@
             clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
             cursor: pointer;
         }
+
+        /* DEFENSIVE CORE STYLES (Chống vỡ giao diện nếu CDN Tailwind phản hồi chậm hoặc bị chặn) */
+        .hidden { display: none !important; }
+        .fixed { position: fixed !important; }
+        .absolute { position: absolute !important; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .z-0 { z-index: 0 !important; }
+        .z-10 { z-index: 10 !important; }
+        .z-20 { z-index: 20 !important; }
+        .z-30 { z-index: 30 !important; }
+        .z-50 { z-index: 50 !important; }
+        .z-\[100\] { z-index: 100 !important; }
     </style>
 </head>
 <body class="relative w-screen h-screen overflow-hidden select-none">
@@ -6400,6 +6412,13 @@
                 if (data.t === "ENEMY_DIE" && !this.isHost) {
                     if (typeof handleClientEnemyDie === "function") {
                         handleClientEnemyDie(data);
+                    }
+                    return;
+                }
+
+                if (data.t === "TRANSITION_MAP" && !this.isHost) {
+                    if (typeof transitionToNextMap === "function") {
+                        transitionToNextMap();
                     }
                     return;
                 }
@@ -14311,9 +14330,10 @@
             }
 
             victoryModalDelayTimeout = setTimeout(() => {
-                victoryModalDelayTimeout = null;
-                if (!isMapWon) return;
-                isPaused = true;
+                try {
+                    victoryModalDelayTimeout = null;
+                    if (!isMapWon) return;
+                    isPaused = true;
 
                 const rankBox = byId("winGrandRankBox");
                 const cdBanner = byId("winAutoCountdownBanner");
@@ -14423,7 +14443,10 @@
                     vicModal.classList.remove("hidden");
                     vicModal.style.display = "flex";
                 }
-            }, 1000);
+            } catch (err) {
+                console.error("Lỗi hiển thị modal chiến thắng:", err);
+            }
+        }, 1000);
         }
 
         function spawnFirePatch(x, y, radius = 48, durationFrames = 320, isOilFire = false) {
@@ -26742,6 +26765,14 @@
                 window.maxUnlockedMap = nextMapId;
             }
             const nextCfg = MAP_REGISTRY[nextMapId] || MAP_REGISTRY[1];
+
+            // ĐỒNG BỘ CO-OP: Host phát lệnh chuyển Map cho đồng đội
+            if (isCoopHost()) {
+                window.XENO_COOP.sendPacket({
+                    t: "TRANSITION_MAP",
+                    targetMapId: nextMapId
+                });
+            }
 
             // Kích hoạt màn hình tải chuyển map chuyên nghiệp với nhảy chữ chi tiết cho map kế tiếp
             if (typeof simulateMapTransitionLoading === "function") {

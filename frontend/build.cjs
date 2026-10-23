@@ -72,10 +72,8 @@ async function processHtmlAndMinifyJs() {
           console.log(`✅ Nén & làm rối mã thành công! Dung lượng giảm còn ${(minifiedJs.length / 1024).toFixed(1)} KB (Tiết kiệm ${((1 - minifiedJs.length / jsCode.length) * 100).toFixed(1)}%).`);
         }
       } else {
-        minifiedJs = jsCode
-          .replace(/\/\*[\s\S]*?\*\//g, '')
-          .replace(/\/\/[^\n\r]*/g, '')
-          .replace(/^\s*[\r\n]/gm, '');
+        console.warn('⚠️ Không tìm thấy thư viện Terser, giữ nguyên mã nguồn an toàn (không dùng regex cắt comment).');
+        minifiedJs = jsCode;
       }
     } catch (err) {
       console.warn('⚠️ Lỗi Terser, dùng mã an toàn:', err.message);
