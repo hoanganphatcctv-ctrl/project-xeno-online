@@ -6271,6 +6271,24 @@
                     return;
                 }
 
+                if (data.t === "PLAYER_SHOOT") {
+                    if (typeof fireTeammateWeaponVisual === "function" && teammate.active && !teammate.isDown) {
+                        if (typeof data.w === "number") teammate.currentWeapon = data.w;
+                        if (typeof data.a === "number") {
+                            teammate.angle = data.a;
+                            teammate.targetAngle = data.a;
+                        }
+                        teammate.lastShotTime = performance.now();
+                        fireTeammateWeaponVisual(
+                            typeof data.w === "number" ? data.w : (teammate.currentWeapon || 0),
+                            teammate.x,
+                            teammate.y,
+                            typeof data.a === "number" ? data.a : teammate.angle
+                        );
+                    }
+                    return;
+                }
+
                 if (data.t === "input" && this.isHost) {
                     pushTeammateSnapshot(data);
                     if (typeof data.hp === "number") teammate.hp = data.hp;
@@ -6507,6 +6525,9 @@
                             deadCrates: deadCrates,
                             deadBarrels: deadBarrels,
                             deadVats: deadVats,
+                            genX: mapGenerator ? Math.round(mapGenerator.x) : 0,
+                            genY: mapGenerator ? Math.round(mapGenerator.y) : 0,
+                            genRoom: mapGenerator ? (mapGenerator.roomName || "") : "",
                             genOn: (mapGenerator && mapGenerator.active) ? 1 : 0
                         });
                     }
@@ -6663,15 +6684,16 @@
             const wId = teammate.currentWeapon || 0;
             const wCol = (typeof WEAPON_DATA !== "undefined" && WEAPON_DATA[wId]) ? WEAPON_DATA[wId].color : "#38bdf8";
 
-            // Nếu đồng đội đang bắn Súng #7 (Hyperion Laser Beam), vẽ tia Laser của đồng đội trên màn hình
-            if (teammate.isShooting && !teammate.isDown && wId === 6) {
+            // Nếu đồng đội đang bắn Súng #7 (Hyperion Laser Beam), vẽ tia Laser 3 lớp + vòng sóng lượng tử giống hệt người chơi chính
+            const hasActiveTeammateLaser = (teammate.activeLaserBeam && teammate.activeLaserBeam.timer > 0) || (teammate.isShooting && !teammate.isDown && wId === 6);
+            if (hasActiveTeammateLaser && !teammate.isDown && wId === 6) {
                 const dirX = Math.cos(teammate.angle);
                 const dirY = Math.sin(teammate.angle);
                 const muzzleX = teammate.x + dirX * 36;
                 const muzzleY = teammate.y + dirY * 36;
                 let endX = muzzleX;
                 let endY = muzzleY;
-                for (let d = 14; d <= 960; d += 14) {
+                for (let d = 14; d <= 980; d += 14) {
                     const tx = muzzleX + dirX * d;
                     const ty = muzzleY + dirY * d;
                     if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
@@ -6682,28 +6704,55 @@
                     endX = tx;
                     endY = ty;
                 }
+                const heat = Math.min(1.0, teammate.laserHeat || 0.45);
+                const pulseW = 1 + Math.sin(now * 0.045) * 0.18;
+                const beamW = (6.5 + heat * 8.5) * pulseW;
+                const outerColor = heat > 0.65 ? "rgba(244, 114, 182, 0.34)" : "rgba(0, 245, 212, 0.30)";
+                const midColor = heat > 0.65 ? "#f472b6" : "#00f5d4";
+
                 ctx.save();
                 ctx.lineCap = "round";
-                ctx.strokeStyle = "rgba(0, 245, 212, 0.28)";
-                ctx.lineWidth = 14;
+                ctx.strokeStyle = outerColor;
+                ctx.lineWidth = beamW * 2.4;
                 ctx.beginPath();
                 ctx.moveTo(muzzleX, muzzleY);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
 
-                ctx.strokeStyle = "#00f5d4";
-                ctx.lineWidth = 5.5;
+                ctx.strokeStyle = midColor;
+                ctx.lineWidth = beamW * 1.1;
                 ctx.beginPath();
                 ctx.moveTo(muzzleX, muzzleY);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
 
                 ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 2.2;
+                ctx.lineWidth = 2.6 + heat * 2.8;
                 ctx.beginPath();
                 ctx.moveTo(muzzleX, muzzleY);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
+
+                // Vòng sóng xung kích lượng tử chạy dọc tia Laze Hyperion của đồng đội
+                const bdx = endX - muzzleX;
+                const bdy = endY - muzzleY;
+                const bLen = Math.hypot(bdx, bdy) || 1;
+                const bAng = Math.atan2(bdy, bdx);
+                const ringSpacing = 95;
+                const scroll = (now * 0.45) % ringSpacing;
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.8;
+                for (let d = scroll; d < bLen - 20; d += ringSpacing) {
+                    const rx = muzzleX + (bdx / bLen) * d;
+                    const ry = muzzleY + (bdy / bLen) * d;
+                    ctx.save();
+                    ctx.translate(rx, ry);
+                    ctx.rotate(bAng);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 3.5, 7 + heat * 6, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
                 ctx.restore();
             }
 
@@ -8533,12 +8582,39 @@
             generatorOnline = false;
             if (typeof updateStationPowerUI === "function") updateStationPowerUI();
             const nonCenterRooms = (ROOMS && ROOMS.length > 0) ? ROOMS.filter(r => !r.isCenter) : [];
+
+            // Sử dụng hàm băm tất định (Deterministic Seeded PRNG) dựa trên Map ID + Mã Phòng Co-op
+            // để cả Chủ phòng (Host) và Khách (Client) luôn sinh Nhà Máy Điện ở đúng 1 căn phòng và tọa độ giống hệt nhau
+            const mapId = window.currentMapId || 1;
+            const roomCodeStr = (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.roomCode)
+                ? String(window.XENO_COOP.roomCode).trim().toUpperCase()
+                : `MAP_${mapId}`;
+            let seed = (mapId * 2654435761) >>> 0;
+            for (let i = 0; i < roomCodeStr.length; i++) {
+                seed = Math.imul(seed ^ roomCodeStr.charCodeAt(i), 16777619) >>> 0;
+            }
+            const nextGenRand = () => {
+                seed = (seed + 0x6D2B79F5) >>> 0;
+                let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+
             const targetRoom = (nonCenterRooms.length > 0)
-                ? nonCenterRooms[Math.floor(Math.random() * nonCenterRooms.length)]
+                ? nonCenterRooms[Math.floor(nextGenRand() * nonCenterRooms.length)]
                 : ((ROOMS && ROOMS.length > 0) ? ROOMS[0] : { x: WORLD_W / 2, y: WORLD_H / 2, w: 800, h: 800, name: "KHU VỰC TRẠM" });
 
-            const rx = targetRoom.x + targetRoom.w * 0.5 + (Math.random() - 0.5) * Math.min(220, targetRoom.w * 0.28);
-            const ry = targetRoom.y + targetRoom.h * 0.5 + (Math.random() - 0.5) * Math.min(180, targetRoom.h * 0.28);
+            let rx = Math.round(targetRoom.x + targetRoom.w * 0.5);
+            let ry = Math.round(targetRoom.y + targetRoom.h * 0.5);
+            for (let attempt = 0; attempt < 12; attempt++) {
+                const candX = Math.round(targetRoom.x + targetRoom.w * 0.5 + (nextGenRand() - 0.5) * Math.min(220, targetRoom.w * 0.28));
+                const candY = Math.round(targetRoom.y + targetRoom.h * 0.5 + (nextGenRand() - 0.5) * Math.min(180, targetRoom.h * 0.28));
+                if (typeof isAreaClearForProp !== "function" || isAreaClearForProp(candX, candY, 48)) {
+                    rx = candX;
+                    ry = candY;
+                    break;
+                }
+            }
 
             mapGenerator = {
                 x: Math.round(rx),
@@ -9381,6 +9457,211 @@
                 }
             }
             flowGrid.dirty = true;
+            syncFlowFieldWorkerWalls();
+        }
+
+        // ============================================================================
+        // MULTI-THREADED WEB WORKER FOR 11,700-CELL BFS PATHFINDING (FLOW FIELD)
+        // Tách toàn bộ thuật toán tìm đường BFS 130x90 ô + Gradient Vector sang luồng
+        // CPU phụ (Web Worker) để giải phóng Main Thread, chống khựng hình tuyệt đối!
+        // ============================================================================
+        let flowFieldWorker = null;
+        let flowFieldWorkerBusy = false;
+        let flowFieldWorkerPendingArgs = null;
+
+        function initFlowFieldWorker() {
+            if (flowFieldWorker || typeof Worker === "undefined" || typeof Blob === "undefined") return;
+            try {
+                const workerCode = `
+                    const FLOW_COLS = ${FLOW_COLS};
+                    const FLOW_ROWS = ${FLOW_ROWS};
+                    const CELL = ${CELL};
+                    const total = FLOW_COLS * FLOW_ROWS;
+                    let blocked = new Uint8Array(total);
+                    let penalty = new Uint8Array(total);
+                    const dist = new Int32Array(total);
+                    const queue = new Int32Array(total * 4);
+                    const inQueue = new Uint8Array(total);
+                    const neighbors = [
+                        [-1, 0, 10], [1, 0, 10], [0, -1, 10], [0, 1, 10],
+                        [-1, -1, 14], [1, -1, 14], [-1, 1, 14], [1, 1, 14]
+                    ];
+
+                    function resolveUnblockedCellIdx(baseR, baseC, worldX, worldY) {
+                        let r = baseR, c = baseC;
+                        let idx = r * FLOW_COLS + c;
+                        if (blocked[idx]) {
+                            let bestRadDist = 999999;
+                            for (let rad = 1; rad <= 3; rad++) {
+                                for (let dr = -rad; dr <= rad; dr++) {
+                                    for (let dc = -rad; dc <= rad; dc++) {
+                                        const nr = r + dr, nc = c + dc;
+                                        if (nr >= 0 && nr < FLOW_ROWS && nc >= 0 && nc < FLOW_COLS) {
+                                            const candIdx = nr * FLOW_COLS + nc;
+                                            if (!blocked[candIdx]) {
+                                                const cx = nc * CELL + CELL * 0.5;
+                                                const cy = nr * CELL + CELL * 0.5;
+                                                const dSq = (cx - worldX) * (cx - worldX) + (cy - worldY) * (cy - worldY);
+                                                if (dSq < bestRadDist) {
+                                                    bestRadDist = dSq;
+                                                    idx = candIdx;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (bestRadDist < 999999) break;
+                            }
+                        }
+                        return idx;
+                    }
+
+                    self.onmessage = function(ev) {
+                        const msg = ev.data;
+                        if (!msg) return;
+                        if (msg.type === "walls") {
+                            blocked = new Uint8Array(msg.blocked);
+                            penalty = new Uint8Array(msg.penalty);
+                            return;
+                        }
+                        if (msg.type === "compute") {
+                            dist.fill(-1);
+                            inQueue.fill(0);
+                            const qMax = queue.length;
+                            let head = 0, tail = 0;
+
+                            if (!msg.playerDown || !msg.hasTeammate) {
+                                const startIdx = resolveUnblockedCellIdx(msg.pr, msg.pc, msg.px, msg.py);
+                                queue[tail++] = startIdx;
+                                dist[startIdx] = 0;
+                                inQueue[startIdx] = 1;
+                            }
+                            if (msg.hasTeammate) {
+                                const mateIdx = resolveUnblockedCellIdx(msg.tr, msg.tc, msg.tx, msg.ty);
+                                if (!inQueue[mateIdx] && tail < qMax) {
+                                    queue[tail++] = mateIdx;
+                                    dist[mateIdx] = 0;
+                                    inQueue[mateIdx] = 1;
+                                }
+                            }
+
+                            while (head < tail) {
+                                const curr = queue[head++];
+                                inQueue[curr] = 0;
+                                const cr = (curr / FLOW_COLS) | 0;
+                                const cc = curr - cr * FLOW_COLS;
+                                const cd = dist[curr];
+
+                                for (let d = 0; d < 8; d++) {
+                                    const dc = neighbors[d][0];
+                                    const dr = neighbors[d][1];
+                                    const stepCost = neighbors[d][2];
+                                    const nc = cc + dc;
+                                    const nr = cr + dr;
+                                    if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
+                                    const nIdx = nr * FLOW_COLS + nc;
+                                    if (blocked[nIdx]) continue;
+                                    if (dc !== 0 && dr !== 0) {
+                                        if (blocked[cr * FLOW_COLS + nc] || blocked[nr * FLOW_COLS + cc]) continue;
+                                    }
+                                    const newDist = cd + stepCost + penalty[nIdx];
+                                    const oldDist = dist[nIdx];
+                                    if (oldDist === -1 || newDist < oldDist) {
+                                        dist[nIdx] = newDist;
+                                        if (!inQueue[nIdx] && tail < qMax) {
+                                            inQueue[nIdx] = 1;
+                                            queue[tail++] = nIdx;
+                                        }
+                                    }
+                                }
+                            }
+
+                            const outDirX = new Float32Array(total);
+                            const outDirY = new Float32Array(total);
+                            for (let r = 0; r < FLOW_ROWS; r++) {
+                                for (let c = 0; c < FLOW_COLS; c++) {
+                                    const idx = r * FLOW_COLS + c;
+                                    const cd = dist[idx];
+                                    if (cd <= 0) continue;
+                                    let bestD = cd;
+                                    let bestVx = 0, bestVy = 0;
+                                    let gradX = 0, gradY = 0;
+                                    for (let d = 0; d < 8; d++) {
+                                        const dc = neighbors[d][0];
+                                        const dr = neighbors[d][1];
+                                        const nc = c + dc;
+                                        const nr = r + dr;
+                                        if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
+                                        const nIdx = nr * FLOW_COLS + nc;
+                                        if (blocked[nIdx]) continue;
+                                        if (dc !== 0 && dr !== 0) {
+                                            if (blocked[r * FLOW_COLS + nc] || blocked[nr * FLOW_COLS + c]) continue;
+                                        }
+                                        const nd = dist[nIdx];
+                                        if (nd >= 0 && nd < cd) {
+                                            const drop = cd - nd;
+                                            const invLen = (dc !== 0 && dr !== 0) ? 0.70710678 : 1.0;
+                                            gradX += dc * invLen * drop;
+                                            gradY += dr * invLen * drop;
+                                            if (nd < bestD) {
+                                                bestD = nd;
+                                                bestVx = dc * invLen;
+                                                bestVy = dr * invLen;
+                                            }
+                                        }
+                                    }
+                                    const vx = bestVx * 0.65 + gradX * 0.35;
+                                    const vy = bestVy * 0.65 + gradY * 0.35;
+                                    const len = Math.hypot(vx, vy);
+                                    if (len > 0.0001) {
+                                        outDirX[idx] = vx / len;
+                                        outDirY[idx] = vy / len;
+                                    }
+                                }
+                            }
+
+                            self.postMessage(
+                                { type: "result", dirX: outDirX.buffer, dirY: outDirY.buffer },
+                                [outDirX.buffer, outDirY.buffer]
+                            );
+                        }
+                    };
+                `;
+                const blob = new Blob([workerCode], { type: "application/javascript" });
+                const url = URL.createObjectURL(blob);
+                flowFieldWorker = new Worker(url);
+                flowFieldWorker.onmessage = function(ev) {
+                    const data = ev.data;
+                    if (data && data.type === "result") {
+                        flowGrid.dirX.set(new Float32Array(data.dirX));
+                        flowGrid.dirY.set(new Float32Array(data.dirY));
+                        flowFieldWorkerBusy = false;
+                        if (flowFieldWorkerPendingArgs) {
+                            const nextArgs = flowFieldWorkerPendingArgs;
+                            flowFieldWorkerPendingArgs = null;
+                            flowFieldWorkerBusy = true;
+                            flowFieldWorker.postMessage(nextArgs);
+                        }
+                    }
+                };
+                flowFieldWorker.onerror = function() {
+                    flowFieldWorker = null;
+                    flowFieldWorkerBusy = false;
+                };
+            } catch (err) {
+                flowFieldWorker = null;
+            }
+        }
+
+        function syncFlowFieldWorkerWalls() {
+            initFlowFieldWorker();
+            if (!flowFieldWorker) return;
+            const bCopy = new Uint8Array(flowGrid.blocked);
+            const pCopy = new Uint8Array(flowGrid.penalty);
+            flowFieldWorker.postMessage(
+                { type: "walls", blocked: bCopy.buffer, penalty: pCopy.buffer },
+                [bCopy.buffer, pCopy.buffer]
+            );
         }
 
         function computeFlowField(forceUpdate = false) {
@@ -9405,6 +9686,28 @@
             flowGrid.lastTc = tc;
             flowGrid.lastTr = tr;
             flowGrid.dirty = false;
+
+            // Nếu đã có kết quả khởi tạo lần đầu và Web Worker đang hoạt động, đẩy việc tính toán sang luồng phụ!
+            if (flowFieldWorker && !forceUpdate) {
+                const payload = {
+                    type: "compute",
+                    pc, pr,
+                    px: player.x, py: player.y,
+                    playerDown: !!player.isDown,
+                    hasTeammate: !!hasTeammate,
+                    tc, tr,
+                    tx: hasTeammate ? window.teammate.x : 0,
+                    ty: hasTeammate ? window.teammate.y : 0
+                };
+                if (flowFieldWorkerBusy) {
+                    flowFieldWorkerPendingArgs = payload;
+                } else {
+                    flowFieldWorkerBusy = true;
+                    flowFieldWorker.postMessage(payload);
+                }
+                return;
+            }
+
             flowGrid.dist.fill(-1);
             flowGrid.inQueue.fill(0);
 
@@ -12732,6 +13035,11 @@
                     }
                 }
             }
+            if (mapGenerator && typeof packet.genX === "number" && typeof packet.genY === "number") {
+                mapGenerator.x = packet.genX;
+                mapGenerator.y = packet.genY;
+                if (packet.genRoom) mapGenerator.roomName = packet.genRoom;
+            }
             if (packet.genOn && mapGenerator && !mapGenerator.active) {
                 mapGenerator.active = true;
                 mapGenerator.holdTimer = 5000;
@@ -13336,6 +13644,102 @@
             return (px - bx) * (px - bx) + (py - by) * (py - by);
         }
 
+        function fireTeammateWeaponVisual(wId, originX, originY, aimAngle, fromPacket = false) {
+            if (!window.teammate || !window.teammate.active || window.teammate.isDown) return;
+            const w = WEAPON_DATA[wId] || WEAPON_DATA[0];
+            if (!w) return;
+            const now = performance.now();
+            // Chống bắn đúp nếu cả gói tin PLAYER_SHOOT và vòng lặp giữ chuột cùng kích hoạt sát nhau
+            if (window.teammate.lastShotTime && (now - window.teammate.lastShotTime < w.fireRate * 0.55)) {
+                return;
+            }
+            window.teammate.lastShotTime = now;
+            window.teammate.currentWeapon = w.id !== undefined ? w.id : wId;
+
+            const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
+                ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === w.id)
+                : null;
+            const hasCustomSkin = window.useCustomPlayerWeaponSprites && skinAsset && skinAsset.loaded && skinAsset.img;
+            const gunLen = hasCustomSkin ? (skinAsset.gunLen || 38) : (w.id === 5 ? 38 : (w.id === 2 ? 34 : 26));
+            const muzzleX = originX + Math.cos(aimAngle) * gunLen;
+            const muzzleY = originY + Math.sin(aimAngle) * gunLen;
+
+            if (typeof sfx !== "undefined") {
+                sfx.playShoot(w.type, w.id !== undefined ? w.id : wId);
+            }
+
+            // Vũ khí số 7 (id: 6) - Đại Pháo Laser X-7: Hiển thị tia Laser năng lượng xuyên thấu chuẩn xác thay vì chấm đạn!
+            if (w.type === "laser") {
+                window.teammate.laserHeat = Math.min(1.0, (window.teammate.laserHeat || 0) + 0.055);
+                const dirX = Math.cos(aimAngle);
+                const dirY = Math.sin(aimAngle);
+                const maxRange = w.maxRange || 980;
+                const stepSize = 14;
+                let endX = muzzleX;
+                let endY = muzzleY;
+                let hitWall = false;
+
+                for (let d = stepSize; d <= maxRange; d += stepSize) {
+                    const tx = muzzleX + dirX * d;
+                    const ty = muzzleY + dirY * d;
+                    if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
+                        endX = tx;
+                        endY = ty;
+                        hitWall = true;
+                        break;
+                    }
+                    endX = tx;
+                    endY = ty;
+                }
+
+                const beamHalfWidth = 6.5 + window.teammate.laserHeat * 8.5;
+                window.teammate.activeLaserBeam = {
+                    x1: muzzleX,
+                    y1: muzzleY,
+                    x2: endX,
+                    y2: endY,
+                    heat: window.teammate.laserHeat,
+                    width: beamHalfWidth,
+                    timer: 6
+                };
+
+                if (hitWall) {
+                    for (let s = 0; s < 2; s++) {
+                        spawnParticle(
+                            endX,
+                            endY,
+                            (Math.random() - 0.5) * 6,
+                            (Math.random() - 0.5) * 6,
+                            window.teammate.laserHeat > 0.6 ? "#f472b6" : "#00f5d4",
+                            2.6,
+                            11
+                        );
+                    }
+                }
+                return;
+            }
+
+            // Tất cả 6 vũ khí còn lại (Lục đôi, Shotgun 8 viên, Minigun, Súng phun lửa, Súng băng Cryo, Đại pháo Plasma):
+            // Sử dụng trực tiếp thông số gốc từ WEAPON_DATA[w.id] để hình ảnh, màu sắc, kích thước, số lượng đạn giống hệt 100%!
+            const pellets = w.pellets || 1;
+            for (let i = 0; i < pellets; i++) {
+                const spreadAng = aimAngle + (Math.random() - 0.5) * (w.spread || 0);
+                let bx = muzzleX;
+                let by = muzzleY;
+                if (w.id === 0) {
+                    const side = hasCustomSkin ? (i === 0 ? -1.8 : 1.8) : (i === 0 ? -7 : 7);
+                    bx += Math.cos(aimAngle + Math.PI / 2) * side;
+                    by += Math.sin(aimAngle + Math.PI / 2) * side;
+                }
+                spawnBullet(bx, by, spreadAng, w, false, true);
+            }
+
+            if (w.ejectShells) {
+                const sAng = aimAngle + Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                bakeShellCasing(originX + Math.cos(sAng) * 16, originY + Math.sin(sAng) * 16, Math.random() * Math.PI);
+            }
+        }
+
         function fireCurrentWeapon() {
             if (isGameOver || isPaused || isMapWon || player.isDown) return;
             const w = WEAPON_DATA[player.currentWeapon];
@@ -13362,6 +13766,18 @@
             screenShake = Math.min(14, screenShake + w.shake);
 
             sfx.playShoot(w.type, w.id !== undefined ? w.id : player.currentWeapon);
+
+            if (isCoopActive() && window.XENO_COOP && window.XENO_COOP.connected) {
+                if (w.type !== "laser" || (frameCounter % 2 === 0)) {
+                    window.XENO_COOP.sendPacket({
+                        t: "PLAYER_SHOOT",
+                        w: w.id !== undefined ? w.id : player.currentWeapon,
+                        x: Math.round(player.x),
+                        y: Math.round(player.y),
+                        a: Number(player.angle.toFixed(3))
+                    });
+                }
+            }
 
             const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
                 ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === w.id)
@@ -15321,39 +15737,31 @@
                     }
                 }
 
-                // VISUAL SIMULATION: HIỂN THỊ ĐẠN CỦA ĐỒNG ĐỘI TRÊN CẢ HOST & CLIENT (isTeammate = true để không tính trùng sát thương)
+                // VISUAL SIMULATION: HIỂN THỊ ĐẠN CỦA ĐỒNG ĐỘI TRÊN CẢ HOST & CLIENT CHUẨN 100% THEO WEAPON_DATA
+                const tmWeaponId = window.teammate.currentWeapon || 0;
+                const tmWeapon = WEAPON_DATA[tmWeaponId] || WEAPON_DATA[0];
                 if (window.teammate.isShooting && !window.teammate.isDown) {
-                    const now = performance.now();
-                    const tw = WEAPON_DATA[window.teammate.currentWeapon || 0];
-                    if (tw && (!window.teammate.lastShotTime || (now - window.teammate.lastShotTime >= tw.fireRate))) {
-                        window.teammate.lastShotTime = now;
-                        const gunLen = 28;
-                        const tMuzzleX = window.teammate.x + Math.cos(window.teammate.angle) * gunLen;
-                        const tMuzzleY = window.teammate.y + Math.sin(window.teammate.angle) * gunLen;
-
-                        if (tw.type === "shotgun") {
-                            for (let s = -2; s <= 2; s++) {
-                                const spreadAng = window.teammate.angle + s * 0.08 + (Math.random() - 0.5) * 0.04;
-                                spawnBullet(tMuzzleX, tMuzzleY, spreadAng, {
-                                    speed: 20, damage: tw.damage * 0.65, color: "#34d399", size: 3.2, type: "bullet", knockback: 2.0
-                                }, false, true);
-                            }
-                        } else if (tw.type === "rocket") {
-                            spawnBullet(tMuzzleX, tMuzzleY, window.teammate.angle, {
-                                speed: 15, damage: tw.damage, color: "#f97316", size: 5.5, type: "rocket", knockback: 6.0
-                            }, false, true);
-                        } else if (tw.type === "plasma") {
-                            spawnBullet(tMuzzleX, tMuzzleY, window.teammate.angle, {
-                                speed: 19, damage: tw.damage, color: "#a855f7", size: 5.0, type: "plasma", knockback: 3.5
-                            }, false, true);
-                        } else {
-                            const spreadAng = window.teammate.angle + (Math.random() - 0.5) * (tw.spread || 0.05);
-                            spawnBullet(tMuzzleX, tMuzzleY, spreadAng, {
-                                speed: 23, damage: tw.damage, color: "#34d399", size: 3.5, type: "bullet", knockback: 2.0
-                            }, false, true);
-                        }
-                        if (typeof sfx !== "undefined") sfx.playShoot(tw.type, window.teammate.currentWeapon || 0);
+                    fireTeammateWeaponVisual(
+                        tmWeaponId,
+                        window.teammate.x,
+                        window.teammate.y,
+                        window.teammate.angle,
+                        false
+                    );
+                } else {
+                    if (window.teammate.laserHeat > 0) {
+                        window.teammate.laserHeat = Math.max(0, window.teammate.laserHeat - 0.04);
                     }
+                    if (window.teammate.activeLaserBeam) {
+                        window.teammate.activeLaserBeam.timer--;
+                        if (window.teammate.activeLaserBeam.timer <= 0) {
+                            window.teammate.activeLaserBeam = null;
+                        }
+                    }
+                }
+                if (tmWeapon && tmWeapon.type !== "laser" && window.teammate.activeLaserBeam) {
+                    window.teammate.activeLaserBeam = null;
+                    window.teammate.laserHeat = 0;
                 }
             }
 
@@ -26537,7 +26945,8 @@
         let nextFrameDeadline = 0;
         let framePacerPending = false;
         let framePacerTimeoutId = null;
-        const frameChannel = (typeof MessageChannel !== "undefined") ? new MessageChannel() : null;
+        let framePacerRafId = null;
+        let idleBackgroundRenderedFrames = 0;
 
         function resetFramePacer() {
             const now = performance.now();
@@ -26545,18 +26954,34 @@
             loopLastTime = now;
             fpsFrames = 0;
             fpsLastCheck = now;
+            idleBackgroundRenderedFrames = 0;
         }
         window.resetFramePacer = resetFramePacer;
 
-        function onFramePacerTick() {
+        function onFramePacerTick(rafTimestamp) {
             framePacerPending = false;
+            framePacerTimeoutId = null;
+            framePacerRafId = null;
+
             if (document.hidden) {
                 framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 200);
                 return;
             }
+
+            // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 15 FPS
+            // và không spin-lock CPU để mức sử dụng CPU về ~0-1% ngay khi vào web!
+            if (isPaused || inLobby || isMapWon) {
+                const now = performance.now();
+                gameLoop(now);
+                framePacerPending = true;
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 66);
+                return;
+            }
+
+            idleBackgroundRenderedFrames = 0;
             const now = performance.now();
-            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
+            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
             const targetInterval = 1000 / targetFps;
 
             if (!nextFrameDeadline) {
@@ -26564,17 +26989,12 @@
             }
 
             const remaining = nextFrameDeadline - now;
-            if (remaining > 2.2) {
+            if (remaining > 1.5) {
                 framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining - 1.4)));
-                return;
-            }
-            if (remaining > 0.08) {
-                framePacerPending = true;
-                if (frameChannel) {
-                    frameChannel.port2.postMessage(0);
+                if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
+                    framePacerRafId = requestAnimationFrame(onFramePacerTick);
                 } else {
-                    framePacerTimeoutId = setTimeout(onFramePacerTick, 0);
+                    framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
                 }
                 return;
             }
@@ -26587,25 +27007,31 @@
             gameLoop(now);
         }
 
-        if (frameChannel) {
-            frameChannel.port1.onmessage = onFramePacerTick;
-        }
-
         function scheduleNextFrame() {
             if (framePacerPending) return;
             framePacerPending = true;
+
+            if (document.hidden) {
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 200);
+                return;
+            }
+
+            if (isPaused || inLobby || isMapWon) {
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 66);
+                return;
+            }
+
+            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
+            if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
+                framePacerRafId = requestAnimationFrame(onFramePacerTick);
+                return;
+            }
+
             const now = performance.now();
-            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
             const targetInterval = 1000 / targetFps;
             if (!nextFrameDeadline) nextFrameDeadline = now + targetInterval;
             const remaining = nextFrameDeadline - now;
-            if (remaining > 2.2) {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining - 1.4)));
-            } else if (frameChannel) {
-                frameChannel.port2.postMessage(0);
-            } else {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 0);
-            }
+            framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
         }
 
         function gameLoop(now) {
@@ -26619,7 +27045,15 @@
 
             if (isPaused || isMapWon) {
                 loopAccumulator = 0;
+                // Khi đang ở màn hình chờ / sảnh chờ (Menu modal đang mở), chỉ vẽ nền tĩnh vài frame đầu
+                // để không tốn GPU/CPU vẽ lại toàn bộ bản đồ mỗi frame khi người chơi chưa bấm Bắt Đầu!
+                if (idleBackgroundRenderedFrames < 3) {
+                    idleBackgroundRenderedFrames++;
+                    updateAim();
+                    renderWorld();
+                }
             } else {
+                idleBackgroundRenderedFrames = 0;
                 loopAccumulator += elapsed;
                 let ticks = 0;
                 while (loopAccumulator >= FIXED_PHYSICS_STEP && ticks < MAX_PHYSICS_TICKS_PER_FRAME) {
@@ -26641,10 +27075,9 @@
                     camera.x += (targetCamX - camera.x) * alpha;
                     camera.y += (targetCamY - camera.y) * alpha;
                 }
+                updateAim();
+                renderWorld();
             }
-
-            updateAim();
-            renderWorld();
 
             // 30Hz Co-Op P2P Network Transmission (Strictly decoupled from 200 FPS Canvas loop)
             if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected) {
