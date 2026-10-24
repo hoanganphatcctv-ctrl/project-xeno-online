@@ -1289,7 +1289,7 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[8.5px] font-mono-tech text-slate-400 px-1 pt-1 border-t border-slate-800/80">
-                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block shrink-0"></span>Bạn</span>
+                <span class="flex items-center gap-1 text-emerald-300 font-bold"><svg viewBox="0 0 12 12" class="w-2.5 h-2.5 fill-emerald-400 inline-block shrink-0"><polygon points="11,6 1,1.5 3.5,6 1,10.5"/></svg>Bạn</span>
                 <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0"></span>Quái/Boss</span>
                 <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block shrink-0"></span>Á Trùm</span>
                 <span class="flex items-center gap-1 text-orange-300 font-bold" title="Nhà máy điện / Máy phát điện trạm"><span class="text-orange-400 text-[10px] leading-none inline-block animate-pulse shrink-0">⚡</span>Nhà Máy Điện</span>
@@ -5161,6 +5161,12 @@
                 { src: "assets/ken_ngudong.png", altSrc: "assets/cryopod_1.png", img: null, loaded: false },
                 { src: "assets/ken_ngudong2.png", altSrc: "assets/cryopod_2.png", img: null, loaded: false }
             ],
+            particleAccelerator: {
+                src: "assets/may_gia_toc.png",
+                altSrc: "assets/particle_accelerator.png",
+                img: null,
+                loaded: false
+            },
             monsters: {
                 crawler:    { src: "assets/monster_crawler.png", altSrc: "assets/crawler.png", img: null, loaded: false },
                 stalker:    { src: "assets/monster_stalker.png", altSrc: "assets/stalker.png", img: null, loaded: false },
@@ -5330,6 +5336,47 @@
             }
         }
 
+        function bakeCustomParticleAcceleratorToGpu(accAsset) {
+            if (!accAsset || !accAsset.img || !accAsset.img.naturalWidth) return;
+            const drawW = 240;
+            const drawH = 72;
+            const pad = 20;
+            const cw = drawW + pad * 2;
+            const ch = drawH + pad * 2;
+            const glowConfigs = [
+                { primary: "rgba(56, 189, 248, 0.68)", secondary: "rgba(251, 146, 60, 0.38)", blur1: 12, blur2: 6 },
+                { primary: "rgba(168, 85, 247, 0.65)", secondary: "rgba(34, 211, 238, 0.75)", blur1: 15, blur2: 8 }
+            ];
+            accAsset.bakedGlowSprites = [];
+            accAsset.bakedPadRatioX = pad / drawW;
+            accAsset.bakedPadRatioY = pad / drawH;
+            for (let v = 0; v < 2; v++) {
+                const c = document.createElement("canvas");
+                c.width = cw;
+                c.height = ch;
+                const aCtx = c.getContext("2d");
+                const cfg = glowConfigs[v];
+                // Lớp phát quang viền ngoài màu sắc nhẹ (Cyan / Tím / Cam năng lượng)
+                aCtx.save();
+                aCtx.shadowColor = cfg.primary;
+                aCtx.shadowBlur = cfg.blur1;
+                aCtx.drawImage(accAsset.gpuBitmap || accAsset.img, pad, pad, drawW, drawH);
+                aCtx.restore();
+
+                aCtx.save();
+                aCtx.shadowColor = cfg.secondary;
+                aCtx.shadowBlur = cfg.blur2;
+                aCtx.drawImage(accAsset.gpuBitmap || accAsset.img, pad, pad, drawW, drawH);
+                aCtx.restore();
+
+                accAsset.bakedGlowSprites[v] = c;
+                const idx = v;
+                promoteCanvasToGpuBitmap(c, (bmp) => {
+                    accAsset.bakedGlowSprites[idx] = bmp;
+                });
+            }
+        }
+
         function bakeCustomEntityStripToGpu(assetEntry, baseRadius, drawMult, shadowAlpha, shadowRadiusMult) {
             if (!assetEntry || !assetEntry.img || !assetEntry.img.naturalWidth) return;
             const r = Math.max(12, baseRadius || 18);
@@ -5433,9 +5480,12 @@
             loadCustomAssetEntry(CUSTOM_ASSETS.generator);
             loadCustomAssetEntry(CUSTOM_ASSETS.crosshair);
 
-            // 4. Kén ngủ đông (Pre-bake Bioluminescent Glow vào VRAM để khử shadowBlur mỗi frame)
+            // 4. Kén ngủ đông & Máy gia tốc hạt (Pre-bake Bioluminescent Glow vào VRAM để khử shadowBlur mỗi frame)
             if (CUSTOM_ASSETS.cryoPods) {
                 CUSTOM_ASSETS.cryoPods.forEach((pod) => loadCustomAssetEntry(pod, bakeCustomCryoPodToGpu));
+            }
+            if (CUSTOM_ASSETS.particleAccelerator) {
+                loadCustomAssetEntry(CUSTOM_ASSETS.particleAccelerator, bakeCustomParticleAcceleratorToGpu);
             }
 
             // 5. Skin nhân vật cầm vũ khí (Pre-bake Rotate + Scale + DropShadow vào VRAM 128x128)
@@ -11637,129 +11687,207 @@
                     }
 
                 } else if (sp.type === "particle_accelerator") {
-                    // 2. MÁY GIA TỐC HẠT (PARTICLE ACCELERATOR: Chùm hạt photon chạy tuần hoàn tốc độ cao qua các cuộn cảm từ trường)
-                    const isVert = (sp.orient === "v");
-                    ctx.fillStyle = "#0f172a";
-                    ctx.strokeStyle = "#f59e0b";
-                    ctx.lineWidth = 2.2;
-                    drawRoundRect(ctx, 0, 0, sp.w, sp.h, 8);
-                    ctx.fill();
-                    ctx.stroke();
+                    // 2. MÁY GIA TỐC HẠT (PARTICLE ACCELERATOR: Linh hoạt nằm ngang/dọc theo hướng vật thể, kèm tia sét & nhấp nháy trong đường ống + phát quang viền nhẹ)
+                    const isVert = (sp.orient === "v" || sp.h > sp.w);
+                    const accAsset = CUSTOM_ASSETS.particleAccelerator;
 
-                    if (!isVert) {
-                        ctx.fillStyle = "#020617";
-                        ctx.fillRect(10, sp.h * 0.5 - 12, sp.w - 20, 24);
-                        ctx.strokeStyle = "#38bdf8";
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(10, sp.h * 0.5 - 12, sp.w - 20, 24);
+                    if (accAsset && accAsset.loaded && accAsset.img) {
+                        const majorLen = isVert ? sp.h : sp.w;
+                        const minorThick = isVert ? sp.w : sp.h;
+                        const drawW = majorLen * 1.06;
+                        const drawH = minorThick * 1.10;
 
-                        const beamPulse = 0.65 + 0.35 * Math.sin(now * 0.02 + i);
-                        ctx.strokeStyle = `rgba(34, 211, 238, ${beamPulse})`;
-                        ctx.lineWidth = 7;
+                        ctx.save();
+                        ctx.translate(sp.w * 0.5, sp.h * 0.5);
+                        if (isVert) {
+                            ctx.rotate(Math.PI * 0.5);
+                        }
+
+                        // A. PHÁT QUANG MÀU SẮC NHẸ Ở VIỀN XUNG QUANH (Soft Multi-Color Outer Rim Glow - Zero shadowBlur)
+                        const colorShift = (Math.sin(now * 0.0035 + i * 1.4) + 1) * 0.5;
+                        const rimPulse = 0.72 + 0.28 * Math.sin(now * 0.006 + i * 0.9);
+
+                        // Lớp hào quang nền dịu nhẹ ôm quanh thân máy (chuyển sắc mượt giữa Xanh Cyan, Tím Lượng Tử và Cam Nhiệt Hạch)
+                        ctx.save();
+                        ctx.globalAlpha = 0.22 * rimPulse;
+                        ctx.strokeStyle = colorShift > 0.5 ? "#38bdf8" : "#a855f7";
+                        ctx.lineWidth = 4.5;
+                        drawRoundRect(ctx, -drawW * 0.48, -drawH * 0.42, drawW * 0.96, drawH * 0.84, 14);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        // Vẽ Sprite Máy Gia Tốc đã pre-bake viền phát sáng trong VRAM
+                        const glow0 = accAsset.bakedGlowSprites && accAsset.bakedGlowSprites[0];
+                        const glow1 = accAsset.bakedGlowSprites && accAsset.bakedGlowSprites[1];
+                        if (glow0) {
+                            const padX = drawW * (accAsset.bakedPadRatioX || 0.083);
+                            const padY = drawH * (accAsset.bakedPadRatioY || 0.277);
+                            ctx.drawImage(glow0, -drawW * 0.5 - padX, -drawH * 0.5 - padY, drawW + padX * 2, drawH + padY * 2);
+                            if (glow1) {
+                                ctx.save();
+                                ctx.globalAlpha = 0.35 + 0.45 * colorShift;
+                                ctx.drawImage(glow1, -drawW * 0.5 - padX, -drawH * 0.5 - padY, drawW + padX * 2, drawH + padY * 2);
+                                ctx.restore();
+                            }
+                        } else {
+                            ctx.drawImage(accAsset.gpuBitmap || accAsset.img, -drawW * 0.5, -drawH * 0.5, drawW, drawH);
+                        }
+
+                        // B. HIỆU ỨNG TIA SÉT PHÓNG ĐIỆN & CHỚP NHÁY BÊN TRONG ĐƯỜNG ỐNG KÍNH (Inside Glass Tube Chamber)
+                        const tubeX0 = -drawW * 0.275;
+                        const tubeX1 = drawW * 0.285;
+                        const tubeLen = tubeX1 - tubeX0;
+                        const tubeHalfY = drawH * 0.185;
+
+                        ctx.save();
+                        ctx.globalCompositeOperation = "lighter";
+
+                        // B1. Luồng Plasma lõi trung tâm nhấp nháy dọc trong đường ống
+                        const coreFlicker = 0.28 + 0.25 * Math.sin(now * 0.024 + i * 2.1) + 0.15 * Math.cos(now * 0.053);
+                        ctx.strokeStyle = `rgba(56, 189, 248, ${coreFlicker.toFixed(2)})`;
+                        ctx.lineWidth = drawH * 0.16;
+                        ctx.lineCap = "round";
                         ctx.beginPath();
-                        ctx.moveTo(12, sp.h * 0.5);
-                        ctx.lineTo(sp.w - 12, sp.h * 0.5);
+                        ctx.moveTo(tubeX0 + 4, 0);
+                        ctx.lineTo(tubeX1 - 4, 0);
                         ctx.stroke();
 
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2.4;
+                        // B2. Hai luồng tia sét điện từ (Jagged Lightning Arcs) phóng qua lại và phân nhánh bên trong đường ống
+                        const segs = 9;
+                        const stepX = tubeLen / segs;
+
+                        // Tia sét chính (Xanh Điện Quang + Lõi Trắng Sáng)
                         ctx.beginPath();
-                        ctx.moveTo(12, sp.h * 0.5);
-                        ctx.lineTo(sp.w - 12, sp.h * 0.5);
+                        for (let s = 0; s <= segs; s++) {
+                            const lx = tubeX0 + s * stepX;
+                            let ly = 0;
+                            if (s > 0 && s < segs) {
+                                const env = Math.sin((s / segs) * Math.PI); // Thu hẹp ở 2 đầu cực phóng điện
+                                const wave1 = Math.sin(now * 0.038 + s * 2.35 + i * 1.7);
+                                const wave2 = Math.cos(now * 0.071 - s * 3.10 + i * 0.9);
+                                ly = (wave1 * 0.62 + wave2 * 0.38) * tubeHalfY * 0.92 * env;
+                            }
+                            if (s === 0) ctx.moveTo(lx, ly);
+                            else ctx.lineTo(lx, ly);
+                        }
+                        ctx.strokeStyle = "rgba(56, 189, 248, 0.85)";
+                        ctx.lineWidth = 2.6;
+                        ctx.stroke();
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                        ctx.lineWidth = 1.1;
                         ctx.stroke();
 
-                        // 3 Chùm hạt Photon chạy tuần hoàn tốc độ cao kèm đuôi sao chổi
-                        const trackLen = sp.w - 32;
+                        // Tia sét phụ đan chéo (Xanh Ngọc / Tím Lượng Tử nhấp nháy tần số cao)
+                        const subArcAlpha = 0.35 + 0.45 * Math.abs(Math.sin(now * 0.045 + i));
+                        ctx.beginPath();
+                        for (let s = 0; s <= segs; s++) {
+                            const lx = tubeX0 + s * stepX;
+                            let ly = 0;
+                            if (s > 0 && s < segs) {
+                                const env = Math.sin((s / segs) * Math.PI);
+                                const wave = Math.cos(now * 0.052 + s * 2.8 - i * 1.3);
+                                ly = wave * tubeHalfY * 0.85 * env;
+                            }
+                            if (s === 0) ctx.moveTo(lx, ly);
+                            else ctx.lineTo(lx, ly);
+
+                            // Nhánh tia sét phụ phóng chạm vào thành ống kính ở giữa
+                            if ((s === 3 || s === 6) && ((Math.floor(now * 0.03 + s + i) % 3) === 0)) {
+                                const branchDir = (s % 2 === 0) ? 1 : -1;
+                                ctx.moveTo(lx, ly);
+                                ctx.lineTo(lx + stepX * 0.45, branchDir * tubeHalfY * 0.98);
+                                ctx.moveTo(lx, ly);
+                            }
+                        }
+                        ctx.strokeStyle = (Math.floor(now * 0.02 + i) % 2 === 0)
+                            ? `rgba(103, 232, 249, ${subArcAlpha.toFixed(2)})`
+                            : `rgba(192, 132, 252, ${subArcAlpha.toFixed(2)})`;
+                        ctx.lineWidth = 1.35;
+                        ctx.stroke();
+
+                        // B3. Các hạt Photon năng lượng chạy dọc trong ống & chớp sáng tại các vòng cuộn cảm
                         for (let p = 0; p < 3; p++) {
-                            const pOffset = ((now * 0.36 + i * 40 + p * (trackLen / 3)) % trackLen);
-                            const px = 16 + pOffset;
-                            const py = sp.h * 0.5 + Math.sin(now * 0.03 + p * 2) * 2.5;
-                            ctx.strokeStyle = (p % 2 === 0) ? "#fde047" : "#e879f9";
-                            ctx.lineWidth = 3.2;
+                            const prog = ((now * 0.0018 + p * 0.333 + i * 0.17) % 1);
+                            const dir = (p % 2 === 0) ? 1 : -1;
+                            const px = dir > 0 ? (tubeX0 + prog * tubeLen) : (tubeX1 - prog * tubeLen);
+                            const py = Math.sin(now * 0.025 + p * 2.1) * (tubeHalfY * 0.35);
+
+                            ctx.fillStyle = (p === 1) ? "rgba(240, 171, 252, 0.75)" : "rgba(103, 232, 249, 0.80)";
                             ctx.beginPath();
-                            ctx.moveTo(Math.max(14, px - 14), py);
-                            ctx.lineTo(px, py);
-                            ctx.stroke();
+                            safeArc(ctx, px, py, 3.6);
+                            ctx.fill();
 
                             ctx.fillStyle = "#ffffff";
                             ctx.beginPath();
-                            safeArc(ctx, px, py, 3.8);
+                            safeArc(ctx, px, py, 1.6);
                             ctx.fill();
                         }
 
-                        // 5 Cuộn cảm từ trường siêu dẫn phát sáng tuần tự
-                        const coilCount = 5;
-                        for (let c = 0; c < coilCount; c++) {
-                            const cx = 18 + c * ((sp.w - 36) / (coilCount - 1));
-                            const coilGlow = Math.sin(now * 0.015 - c * 0.8) > 0.2;
-                            ctx.fillStyle = "#1e293b";
-                            ctx.strokeStyle = coilGlow ? "#fde047" : "#38bdf8";
-                            ctx.lineWidth = 1.8;
-                            drawRoundRect(ctx, cx - 6, 3, 12, sp.h - 6, 3);
-                            ctx.fill();
-                            ctx.stroke();
-                        }
+                        // B4. Nhấp nháy nhẹ ở 2 cụm vòng đèn tròn màu cam 2 đầu máy & đèn báo trên thanh giằng
+                        const ringBlink = 0.18 + 0.24 * Math.sin(now * 0.012 + i * 1.5);
+                        ctx.fillStyle = `rgba(251, 146, 60, ${ringBlink.toFixed(2)})`;
+                        ctx.beginPath();
+                        safeArc(ctx, -drawW * 0.378, -drawH * 0.01, drawH * 0.15);
+                        safeArc(ctx, drawW * 0.396, -drawH * 0.01, drawH * 0.15);
+                        ctx.fill();
 
+                        ctx.restore(); // Kết thúc lớp additive lighter
+                        ctx.restore(); // Khôi phục hệ tọa độ gốc của prop để vẽ chữ không bị xoay ngược
+
+                        // Nhãn kỹ thuật phía trên Máy Gia Tốc
                         ctx.font = "800 8px 'JetBrains Mono', monospace";
                         ctx.fillStyle = "#fbbf24";
                         ctx.textAlign = "center";
-                        ctx.fillText("MÁY GIA TỐC HẠT // PHOTON COLLIDER", sp.w * 0.5, -5);
+                        ctx.fillText(isVert ? "MÁY GIA TỐC" : "MÁY GIA TỐC HẠT // PHOTON COLLIDER", sp.w * 0.5, -6);
+
                     } else {
-                        ctx.fillStyle = "#020617";
-                        ctx.fillRect(sp.w * 0.5 - 12, 10, 24, sp.h - 20);
-                        ctx.strokeStyle = "#38bdf8";
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(sp.w * 0.5 - 12, 10, 24, sp.h - 20);
-
-                        const beamPulse = 0.65 + 0.35 * Math.sin(now * 0.02 + i);
-                        ctx.strokeStyle = `rgba(34, 211, 238, ${beamPulse})`;
-                        ctx.lineWidth = 7;
-                        ctx.beginPath();
-                        ctx.moveTo(sp.w * 0.5, 12);
-                        ctx.lineTo(sp.w * 0.5, sp.h - 12);
+                        // FALLBACK: Đồ họa vector mặc định nếu ảnh chưa tải xong
+                        ctx.fillStyle = "#0f172a";
+                        ctx.strokeStyle = "#f59e0b";
+                        ctx.lineWidth = 2.2;
+                        drawRoundRect(ctx, 0, 0, sp.w, sp.h, 8);
+                        ctx.fill();
                         ctx.stroke();
 
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2.4;
-                        ctx.beginPath();
-                        ctx.moveTo(sp.w * 0.5, 12);
-                        ctx.lineTo(sp.w * 0.5, sp.h - 12);
-                        ctx.stroke();
+                        if (!isVert) {
+                            ctx.fillStyle = "#020617";
+                            ctx.fillRect(10, sp.h * 0.5 - 12, sp.w - 20, 24);
+                            ctx.strokeStyle = "#38bdf8";
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(10, sp.h * 0.5 - 12, sp.w - 20, 24);
 
-                        const trackLen = sp.h - 32;
-                        for (let p = 0; p < 3; p++) {
-                            const pOffset = ((now * 0.36 + i * 40 + p * (trackLen / 3)) % trackLen);
-                            const py = 16 + pOffset;
-                            const px = sp.w * 0.5 + Math.sin(now * 0.03 + p * 2) * 2.5;
-                            ctx.strokeStyle = (p % 2 === 0) ? "#fde047" : "#e879f9";
-                            ctx.lineWidth = 3.2;
+                            const beamPulse = 0.65 + 0.35 * Math.sin(now * 0.02 + i);
+                            ctx.strokeStyle = `rgba(34, 211, 238, ${beamPulse})`;
+                            ctx.lineWidth = 7;
                             ctx.beginPath();
-                            ctx.moveTo(px, Math.max(14, py - 14));
-                            ctx.lineTo(px, py);
+                            ctx.moveTo(12, sp.h * 0.5);
+                            ctx.lineTo(sp.w - 12, sp.h * 0.5);
                             ctx.stroke();
 
-                            ctx.fillStyle = "#ffffff";
+                            ctx.font = "800 8px 'JetBrains Mono', monospace";
+                            ctx.fillStyle = "#fbbf24";
+                            ctx.textAlign = "center";
+                            ctx.fillText("MÁY GIA TỐC HẠT // PHOTON COLLIDER", sp.w * 0.5, -5);
+                        } else {
+                            ctx.fillStyle = "#020617";
+                            ctx.fillRect(sp.w * 0.5 - 12, 10, 24, sp.h - 20);
+                            ctx.strokeStyle = "#38bdf8";
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(sp.w * 0.5 - 12, 10, 24, sp.h - 20);
+
+                            const beamPulse = 0.65 + 0.35 * Math.sin(now * 0.02 + i);
+                            ctx.strokeStyle = `rgba(34, 211, 238, ${beamPulse})`;
+                            ctx.lineWidth = 7;
                             ctx.beginPath();
-                            safeArc(ctx, px, py, 3.8);
-                            ctx.fill();
-                        }
-
-                        const coilCount = 5;
-                        for (let c = 0; c < coilCount; c++) {
-                            const cy = 18 + c * ((sp.h - 36) / (coilCount - 1));
-                            const coilGlow = Math.sin(now * 0.015 - c * 0.8) > 0.2;
-                            ctx.fillStyle = "#1e293b";
-                            ctx.strokeStyle = coilGlow ? "#fde047" : "#38bdf8";
-                            ctx.lineWidth = 1.8;
-                            drawRoundRect(ctx, 3, cy - 6, sp.w - 6, 12, 3);
-                            ctx.fill();
+                            ctx.moveTo(sp.w * 0.5, 12);
+                            ctx.lineTo(sp.w * 0.5, sp.h - 12);
                             ctx.stroke();
-                        }
 
-                        ctx.font = "800 8px 'JetBrains Mono', monospace";
-                        ctx.fillStyle = "#fbbf24";
-                        ctx.textAlign = "center";
-                        ctx.fillText("MÁY GIA TỐC", sp.w * 0.5, -5);
+                            ctx.font = "800 8px 'JetBrains Mono', monospace";
+                            ctx.fillStyle = "#fbbf24";
+                            ctx.textAlign = "center";
+                            ctx.fillText("MÁY GIA TỐC", sp.w * 0.5, -5);
+                        }
                     }
 
                 } else if (sp.type === "supercomputer") {
@@ -15893,6 +16021,9 @@
                 player.dashActiveTimer--;
                 player.x += player.dashVx * dtScale;
                 player.y += player.dashVy * dtScale;
+                if (player.dashVx !== 0 || player.dashVy !== 0) {
+                    player.moveAngle = Math.atan2(player.dashVy, player.dashVx);
+                }
                 resolveWallSliding(player);
                 addPlayerTrail(player.x, player.y, player.angle, 14);
             } else {
@@ -15907,6 +16038,7 @@
                     const len = Math.hypot(mx, my) || 0.0001;
                     player.x += (mx / len) * activeSpeed * dtScale;
                     player.y += (my / len) * activeSpeed * dtScale;
+                    player.moveAngle = Math.atan2(my, mx);
                     player.walkCycle += 0.26 * dtScale;
                     resolveWallSliding(player);
 
@@ -23661,32 +23793,7 @@
                 minimapCtx.fillRect(d.x * scaleX, d.y * scaleY, Math.max(1.5, d.w * scaleX), Math.max(1.5, d.h * scaleY));
             });
 
-            // Green Nuclear Vats on Minimap
-            minimapCtx.fillStyle = "#4ade80";
-            for (let i = 0; i < nuclearVats.length; i++) {
-                const v = nuclearVats[i];
-                if (v.active) minimapCtx.fillRect(v.x * scaleX - 1.2, v.y * scaleY - 1.2, 2.4, 2.4);
-            }
-
-            // Colossal Energy Core Stations on Minimap (Cyan/Violet pulsing beacon)
-            minimapCtx.fillStyle = "#38bdf8";
-            for (let i = 0; i < energyCoreStations.length; i++) {
-                const st = energyCoreStations[i];
-                minimapCtx.beginPath();
-                safeArc(minimapCtx, st.x * scaleX, st.y * scaleY, 4.2);
-                minimapCtx.fill();
-            }
-
-            // Hackable Computer Consoles on Minimap
-            minimapCtx.fillStyle = "#38bdf8";
-            for (let i = 0; i < computerDesks.length; i++) {
-                const cd = computerDesks[i];
-                if (cd.hackable && !cd.hacked) {
-                    minimapCtx.fillRect((cd.x + cd.w * 0.5) * scaleX - 1.5, (cd.y + cd.h * 0.5) * scaleY - 1.5, 3, 3);
-                }
-            }
-
-            // Quantum Teleporters on Minimap
+            // Quantum Teleporters on Minimap (Cổng Dịch - chú thích màu vàng)
             minimapCtx.fillStyle = "#fbbf24";
             for (let i = 0; i < teleporters.length; i++) {
                 const tp = teleporters[i];
@@ -23768,17 +23875,54 @@
             minimapCtx.lineWidth = 1;
             minimapCtx.strokeRect(camera.x * scaleX, camera.y * scaleY, VIEW_W * scaleX, VIEW_H * scaleY);
 
-            minimapCtx.fillStyle = "#10b981";
-            minimapCtx.beginPath();
-            safeArc(minimapCtx, player.x * scaleX, player.y * scaleY, 3.2);
-            minimapCtx.fill();
+            // Player directional triangle/arrow icon on Minimap (hướng theo hướng di chuyển tương đối)
+            {
+                const px = player.x * scaleX;
+                const py = player.y * scaleY;
+                const dirAngle = (typeof player.moveAngle === "number") ? player.moveAngle : (player.angle || 0);
+                minimapCtx.save();
+                minimapCtx.translate(px, py);
+                minimapCtx.rotate(dirAngle);
 
-            // Online Co-Op Teammate Blip on Radar Minimap
-            if (window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active) {
-                minimapCtx.fillStyle = window.teammate.isDown ? "#f43f5e" : "#34d399";
+                // Hào quang nhẹ định vị bản thân
+                minimapCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
                 minimapCtx.beginPath();
-                safeArc(minimapCtx, window.teammate.x * scaleX, window.teammate.y * scaleY, 3.2);
+                safeArc(minimapCtx, 0, 0, 5.2);
                 minimapCtx.fill();
+
+                // Hình tam giác mũi tên chỉ hướng (chevron arrow)
+                minimapCtx.beginPath();
+                minimapCtx.moveTo(5.8, 0);      // Đỉnh mũi tên phía trước
+                minimapCtx.lineTo(-4.2, -3.8);  // Cánh trái
+                minimapCtx.lineTo(-2.0, 0);     // Khấc lõm đuôi mũi tên
+                minimapCtx.lineTo(-4.2, 3.8);   // Cánh phải
+                minimapCtx.closePath();
+
+                minimapCtx.fillStyle = "#34d399";
+                minimapCtx.fill();
+                minimapCtx.lineWidth = 1;
+                minimapCtx.strokeStyle = "#ecfdf5";
+                minimapCtx.stroke();
+                minimapCtx.restore();
+            }
+
+            // Online Co-Op Teammate Blip on Radar Minimap (Tam giác mũi tên xanh ngọc cho đồng đội)
+            if (window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active) {
+                const tx = window.teammate.x * scaleX;
+                const ty = window.teammate.y * scaleY;
+                const tAngle = (typeof window.teammate.angle === "number") ? window.teammate.angle : 0;
+                minimapCtx.save();
+                minimapCtx.translate(tx, ty);
+                minimapCtx.rotate(tAngle);
+                minimapCtx.beginPath();
+                minimapCtx.moveTo(5.0, 0);
+                minimapCtx.lineTo(-3.6, -3.2);
+                minimapCtx.lineTo(-1.8, 0);
+                minimapCtx.lineTo(-3.6, 3.2);
+                minimapCtx.closePath();
+                minimapCtx.fillStyle = window.teammate.isDown ? "#f43f5e" : "#2dd4bf";
+                minimapCtx.fill();
+                minimapCtx.restore();
             }
         }
 
@@ -27924,6 +28068,13 @@
                             name: `Kén Ngủ Đông #${idx + 1}`,
                             url: pod.src
                         });
+                    });
+                }
+                if (CUSTOM_ASSETS.particleAccelerator && CUSTOM_ASSETS.particleAccelerator.src) {
+                    imageList.push({
+                        type: "image",
+                        name: "Máy Gia Tốc Hạt (Photon Collider)",
+                        url: CUSTOM_ASSETS.particleAccelerator.src
                     });
                 }
                 // 1c. Tactical Shop Upgrades & In-game Drops
