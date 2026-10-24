@@ -281,6 +281,9 @@ export class GameEngine {
     this.MAX_SHELLS = 100;
     this.shells = [];
     this.floatingTexts = [];
+    this._cachedActiveEntities = [];
+    this._lastWeaponNotifyTime = 0;
+    this.initBulletGlowStamp();
 
     // Enemies & Bosses (Rule B: Managed via networkId & Map Registry)
     this.MAX_ENEMIES = 350;
@@ -355,6 +358,27 @@ export class GameEngine {
     this.pendingEnemyHits = [];
     this.pendingBossHits = [];
     this.pendingExplodedBarrels = [];
+
+    // Zero-allocation minimap cache (eliminates 7,200 objects/sec GC churn)
+    this._minimapEnemyBlips = [];
+    this._minimapBossBlips = [];
+    this._minimapTurrets = [];
+    this._minimapData = {
+      worldW: this.WORLD_W,
+      worldH: this.WORLD_H,
+      rooms: null,
+      walls: null,
+      doors: null,
+      generator: null,
+      nuclearVats: null,
+      turrets: this._minimapTurrets,
+      currentRoom: "TRẠM CHỈ HUY",
+      camera: { x: 0, y: 0, w: 0, h: 0 },
+      player: { x: 0, y: 0, angle: 0, isDown: false },
+      teammate: { active: false, x: 0, y: 0, angle: 0, isDown: false },
+      enemyBlips: this._minimapEnemyBlips,
+      bossBlips: this._minimapBossBlips
+    };
     this.pendingBrokenCrates = [];
     this.pendingBarrelExplodes = [];
     this.pendingCrateHits = [];
@@ -394,6 +418,7 @@ export class GameEngine {
 
       // Open / Toggle Armory Shop [KeyB]
       if (e.code === "KeyB") {
+        e.preventDefault();
         if (this.onToggleArmory) this.onToggleArmory();
       }
 
@@ -909,6 +934,25 @@ export class GameEngine {
     });
   }
 
+  initBulletGlowStamp() {
+    if (typeof document === "undefined") return;
+    try {
+      this.bulletGlowCanvas = document.createElement("canvas");
+      this.bulletGlowCanvas.width = 64;
+      this.bulletGlowCanvas.height = 64;
+      const bgCtx = this.bulletGlowCanvas.getContext("2d");
+      const gB = bgCtx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      gB.addColorStop(0, "rgba(0,0,0,0.72)");
+      gB.addColorStop(1, "rgba(0,0,0,0)");
+      bgCtx.fillStyle = gB;
+      bgCtx.beginPath();
+      bgCtx.arc(32, 32, 30, 0, Math.PI * 2);
+      bgCtx.fill();
+    } catch (e) {
+      this.bulletGlowCanvas = null;
+    }
+  }
+
   start() {
     this.running = true;
     this.lastTime = performance.now();
@@ -937,6 +981,31 @@ export class GameEngine {
       socketService.off("ENEMY_DIE", this._onEnemyDie);
       socketService.off("teammate_down", this._onTeammateDown);
       socketService.off("teammate_revived", this._onTeammateRevived);
+    }
+
+    // Clean up large GPU/RAM canvas backbuffers immediately
+    if (this.surfaceCanvas) {
+      this.surfaceCanvas.width = 0;
+      this.surfaceCanvas.height = 0;
+      this.surfaceCanvas = null;
+      this.surfaceCtx = null;
+    }
+    if (this.lightCanvas) {
+      this.lightCanvas.width = 0;
+      this.lightCanvas.height = 0;
+      this.lightCanvas = null;
+      this.lightCtx = null;
+    }
+    if (this.bulletGlowCanvas) {
+      this.bulletGlowCanvas.width = 0;
+      this.bulletGlowCanvas.height = 0;
+      this.bulletGlowCanvas = null;
+    }
+    if (this.world && typeof this.world.destroy === "function") {
+      this.world.destroy();
+    }
+    if (this.enemiesById) {
+      this.enemiesById.clear();
     }
   }
 
@@ -1954,14 +2023,17 @@ export class GameEngine {
       this.fireTeammateWeapon(now);
     }
 
-    // 4. Update World Mechanisms: Doors & Generator
-    const activeEntities = [this.player];
-    if (this.teammate.active) activeEntities.push(this.teammate);
+    // 4. Update World Mechanisms: Doors & Generator (Zero GC allocation entity list)
+    if (!this._cachedActiveEntities) this._cachedActiveEntities = [];
+    this._cachedActiveEntities.length = 0;
+    this._cachedActiveEntities.push(this.player);
+    if (this.teammate.active) this._cachedActiveEntities.push(this.teammate);
     for (let i = 0; i < this.MAX_ENEMIES; i++) {
-      if (this.enemies[i].active) activeEntities.push(this.enemies[i]);
+      const e = this.enemies[i];
+      if (e.active) this._cachedActiveEntities.push(e);
     }
 
-    this.world.updateAutoDoors(activeEntities, sfx);
+    this.world.updateAutoDoors(this._cachedActiveEntities, sfx);
     this.world.updateGenerator(this.player, !!this.keys["KeyE"], dt, this);
 
     // 5. Update Collectible Items (Individual Wallets)
@@ -2154,11 +2226,17 @@ export class GameEngine {
         continue;
       }
 
-      // Check Barrels
+      // Check Barrels (Fast AABB + Squared Distance)
       let hitProp = false;
       for (let brIdx = 0; brIdx < this.world.barrels.length; brIdx++) {
         const br = this.world.barrels[brIdx];
-        if (br.active && Math.hypot(b.x - br.x, b.y - br.y) < br.radius + b.size) {
+        if (!br.active) continue;
+        const maxR = br.radius + b.size;
+        const bdx = b.x - br.x;
+        if (bdx > maxR || bdx < -maxR) continue;
+        const bdy = b.y - br.y;
+        if (bdy > maxR || bdy < -maxR) continue;
+        if (bdx * bdx + bdy * bdy < maxR * maxR) {
           br.hp -= b.damage;
           if (br.hp <= 0) {
             if (!this.isHost && this.mode === "coop" && br.id !== undefined) {
@@ -2188,22 +2266,30 @@ export class GameEngine {
       }
       if (hitProp) continue;
 
-      // Hostile bullets hitting Player
+      // Hostile bullets hitting Player (Fast AABB + Squared Distance)
       if (b.isHostile) {
-        const pd = Math.hypot(b.x - this.player.x, b.y - this.player.y);
-        if (pd < this.player.radius + b.size) {
+        const maxR = this.player.radius + b.size;
+        const pdx = b.x - this.player.x;
+        const pdy = b.y - this.player.y;
+        if (pdx <= maxR && pdx >= -maxR && pdy <= maxR && pdy >= -maxR && (pdx * pdx + pdy * pdy < maxR * maxR)) {
           this.damagePlayer(b.damage);
           b.active = false;
           continue;
         }
       } else {
-        // Player/Teammate hitting Enemies
+        // Player/Teammate hitting Enemies (Fast AABB rejection + Squared Distance - Zero Math.hypot)
         let hit = false;
         for (let j = 0; j < this.MAX_ENEMIES; j++) {
           const e = this.enemies[j];
           if (!e.active) continue;
 
-          if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + b.size) {
+          const maxR = e.radius + b.size;
+          const edx = b.x - e.x;
+          if (edx > maxR || edx < -maxR) continue;
+          const edy = b.y - e.y;
+          if (edy > maxR || edy < -maxR) continue;
+
+          if (edx * edx + edy * edy < maxR * maxR) {
             if (b.isTeammate) {
               e.hitFlash = 3;
               this.spawnParticle(e.x, e.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#dc2626", 2.5, 10);
@@ -2220,12 +2306,18 @@ export class GameEngine {
         }
         if (hit) continue;
 
-        // Player/Teammate hitting Bosses
+        // Player/Teammate hitting Bosses (Fast AABB + Squared Distance)
         for (let j = 0; j < this.bosses.length; j++) {
           const boss = this.bosses[j];
           if (!boss.active || boss.hp <= 0) continue;
 
-          if (Math.hypot(b.x - boss.x, b.y - boss.y) < boss.radius + b.size) {
+          const maxR = boss.radius + b.size;
+          const bdx = b.x - boss.x;
+          if (bdx > maxR || bdx < -maxR) continue;
+          const bdy = b.y - boss.y;
+          if (bdy > maxR || bdy < -maxR) continue;
+
+          if (bdx * bdx + bdy * bdy < maxR * maxR) {
             this.damageBoss(boss, b.damage, b.type);
             b.pierce--;
             if (b.pierce <= 0) {
@@ -2304,7 +2396,11 @@ export class GameEngine {
     this.world.render(ctx, now);
 
     // 1.5. Render Persistent Decals (Blood splatters, Scorch marks & Alien Corpses)
-    ctx.drawImage(this.surfaceCanvas, 0, 0);
+    if (this.surfaceCanvas) {
+      const vCamX = Math.max(0, Math.min(this.WORLD_W - cw, Math.floor(this.camera.x)));
+      const vCamY = Math.max(0, Math.min(this.WORLD_H - ch, Math.floor(this.camera.y)));
+      ctx.drawImage(this.surfaceCanvas, vCamX, vCamY, cw, ch, vCamX, vCamY, cw, ch);
+    }
 
     // 1.6. Render Sci-Fi Ground Fire Patches (Flickering Flame Cores & Jumping Tongues)
     for (let i = this.firePatches.length - 1; i >= 0; i--) {
@@ -3293,54 +3389,79 @@ export class GameEngine {
       }
     }
 
-    const enemyBlips = [];
+    let eCount = 0;
     for (let i = 0; i < this.MAX_ENEMIES; i++) {
       const e = this.enemies[i];
       if (e && e.active && e.hp > 0) {
-        enemyBlips.push({ x: e.x, y: e.y, isElite: e.isElite });
+        if (!this._minimapEnemyBlips[eCount]) {
+          this._minimapEnemyBlips[eCount] = { x: 0, y: 0, isElite: false };
+        }
+        const blip = this._minimapEnemyBlips[eCount];
+        blip.x = e.x;
+        blip.y = e.y;
+        blip.isElite = e.isElite;
+        eCount++;
       }
     }
+    this._minimapEnemyBlips.length = eCount;
 
-    const bossBlips = [];
+    let bCount = 0;
     for (let i = 0; i < this.bosses.length; i++) {
       const b = this.bosses[i];
       if (b && b.active && b.hp > 0) {
-        bossBlips.push({ x: b.x, y: b.y, title: b.title });
+        if (!this._minimapBossBlips[bCount]) {
+          this._minimapBossBlips[bCount] = { x: 0, y: 0, title: "" };
+        }
+        const blip = this._minimapBossBlips[bCount];
+        blip.x = b.x;
+        blip.y = b.y;
+        blip.title = b.title;
+        bCount++;
       }
     }
+    this._minimapBossBlips.length = bCount;
 
-    return {
-      worldW: this.WORLD_W,
-      worldH: this.WORLD_H,
-      rooms: this.world.rooms || [],
-      walls: this.world.walls || [],
-      doors: this.world.doors || [],
-      generator: this.world.generator,
-      nuclearVats: this.world.nuclearVats || [],
-      turrets: this.turrets.filter(t => t.active),
-      currentRoom,
-      camera: {
-        x: this.camera.x,
-        y: this.camera.y,
-        w: this.canvas.width,
-        h: this.canvas.height
-      },
-      player: {
-        x: this.player.x,
-        y: this.player.y,
-        angle: this.player.angle,
-        isDown: this.player.isDown
-      },
-      teammate: this.teammate && this.teammate.active ? {
-        active: true,
-        x: this.teammate.x,
-        y: this.teammate.y,
-        angle: this.teammate.angle,
-        isDown: this.teammate.isDown
-      } : null,
-      enemyBlips,
-      bossBlips
-    };
+    let tCount = 0;
+    for (let i = 0; i < this.turrets.length; i++) {
+      const tr = this.turrets[i];
+      if (tr && tr.active) {
+        this._minimapTurrets[tCount++] = tr;
+      }
+    }
+    this._minimapTurrets.length = tCount;
+
+    const data = this._minimapData;
+    data.worldW = this.WORLD_W;
+    data.worldH = this.WORLD_H;
+    data.rooms = (this.world && this.world.rooms) || [];
+    data.walls = (this.world && this.world.walls) || [];
+    data.doors = (this.world && this.world.doors) || [];
+    data.generator = this.world ? this.world.generator : null;
+    data.nuclearVats = (this.world && this.world.nuclearVats) || [];
+    data.currentRoom = currentRoom;
+
+    data.camera.x = this.camera.x;
+    data.camera.y = this.camera.y;
+    data.camera.w = this.canvas.width;
+    data.camera.h = this.canvas.height;
+
+    data.player.x = this.player.x;
+    data.player.y = this.player.y;
+    data.player.angle = this.player.angle;
+    data.player.isDown = this.player.isDown;
+
+    if (this.teammate && this.teammate.active) {
+      if (!data.teammate) data.teammate = { active: true, x: 0, y: 0, angle: 0, isDown: false };
+      data.teammate.active = true;
+      data.teammate.x = this.teammate.x;
+      data.teammate.y = this.teammate.y;
+      data.teammate.angle = this.teammate.angle;
+      data.teammate.isDown = this.teammate.isDown;
+    } else {
+      data.teammate = null;
+    }
+
+    return data;
   }
 
   getArmoryData() {

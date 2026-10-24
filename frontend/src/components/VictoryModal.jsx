@@ -8,7 +8,7 @@ export default function VictoryModal({
   onRestartMap,
   onReturnLobby
 }) {
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(3);
 
   const isCoopClient = mode === "coop" && !isHost;
 

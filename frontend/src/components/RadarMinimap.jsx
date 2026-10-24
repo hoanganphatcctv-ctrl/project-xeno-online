@@ -21,8 +21,8 @@ export default function RadarMinimap({ engineRef }) {
         return;
       }
 
-      if (data.currentRoom && data.currentRoom !== currentRoomName) {
-        setCurrentRoomName(data.currentRoom);
+      if (data.currentRoom) {
+        setCurrentRoomName((prev) => (prev !== data.currentRoom ? data.currentRoom : prev));
       }
 
       const ctx = canvas.getContext("2d");
@@ -167,7 +167,7 @@ export default function RadarMinimap({ engineRef }) {
     return () => {
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [engineRef, currentRoomName]);
+  }, [engineRef]);
 
   return (
     <div className="pointer-events-none absolute top-2.5 right-2.5 z-40 flex flex-col items-end gap-1.5 w-[218px] select-none font-mono-tech">

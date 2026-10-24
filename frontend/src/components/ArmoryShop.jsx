@@ -8,10 +8,10 @@ export default function ArmoryShop({
 }) {
   const [feedback, setFeedback] = useState(null);
 
-  // Close on ESC or B hotkey
+  // Close on ESC hotkey (KeyB is toggled by engine.onToggleArmory)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === "Escape" || e.code === "KeyB") {
+      if (e.code === "Escape") {
         e.preventDefault();
         onClose();
       }

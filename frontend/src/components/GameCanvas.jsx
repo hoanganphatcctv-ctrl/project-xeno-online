@@ -144,8 +144,7 @@ export default function GameCanvas({ gameConfig, onReturnLobby }) {
     setGameOverStats(null);
     setVictoryStats(null);
     setIsArmoryOpen(false);
-    startEngine(nextMap);
-  }, [startEngine]);
+  }, []);
 
   const handleRestart = useCallback(() => {
     setGameOverStats(null);

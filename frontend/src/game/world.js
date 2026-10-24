@@ -265,8 +265,11 @@ export class WorldManager {
 
     this.generatorOnline = false;
 
+    this.obstacleProps = [];
+    this.floorCanvas = null;
     this.initMapArchitecture();
     this.initProps();
+    this.initFloorCanvas();
   }
 
   initMapArchitecture() {
@@ -500,6 +503,7 @@ export class WorldManager {
         hp: 40
       });
     });
+    this.obstacleProps = [...this.spaceProps, ...this.computerDesks];
   }
 
   updateAutoDoors(entities, sfx) {
@@ -777,8 +781,8 @@ export class WorldManager {
       }
     }
 
-    // Props sliding resolution (Supercomputers, Desks, Particle Accelerators)
-    const obstacleProps = [...this.spaceProps, ...this.computerDesks];
+    // Props sliding resolution (Cached obstacles to avoid GC churn)
+    const obstacleProps = this.obstacleProps || [...this.spaceProps, ...this.computerDesks];
     for (let i = 0; i < obstacleProps.length; i++) {
       const p = obstacleProps[i];
       const nearestX = Math.max(p.x, Math.min(entity.x, p.x + p.w));

@@ -7369,6 +7369,9 @@
         window.closeCoopModal = function() {
             const modal = byId("coopModal");
             if (modal) modal.classList.add("hidden");
+            if (window.XENO_COOP && !window.XENO_COOP.connected) {
+                window.XENO_COOP.cleanup();
+            }
         };
 
         window.switchCoopTab = function(tab) {
@@ -7686,13 +7689,15 @@
         const minimapCanvas = byId("minimapCanvas");
         const minimapCtx = minimapCanvas.getContext("2d", { alpha: false }) || minimapCanvas.getContext("2d");
 
+        const SURFACE_SCALE = 0.5;
         const surfaceCanvas = document.createElement("canvas");
-        surfaceCanvas.width = WORLD_W;
-        surfaceCanvas.height = WORLD_H;
+        surfaceCanvas.width = Math.floor(WORLD_W * SURFACE_SCALE);
+        surfaceCanvas.height = Math.floor(WORLD_H * SURFACE_SCALE);
         const surfaceCtx = surfaceCanvas.getContext("2d", {
             alpha: false,
             willReadFrequently: false
         }) || surfaceCanvas.getContext("2d");
+        surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
 
         const LIGHT_SCALE = 0.5;
         const lightCanvas = document.createElement("canvas");
@@ -7796,6 +7801,7 @@
                 this.alertVol = 1.0;
                 this.bgmVol = 0.70;
                 this.currentBgm = null;
+                this.sharedNoiseBuffer = null;
 
                 // Dedicated HTML5 Audio Elements for streaming high-quality background tracks
                 this.bgmLobby = new Audio("audio/nhac_nen.ogg");
@@ -8282,34 +8288,41 @@
 
             playNoise(duration, filterFreq, vol) {
                 if (this.muted || !this.ctx) return;
-                const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                try {
+                    if (!this.sharedNoiseBuffer) {
+                        const sr = this.ctx.sampleRate || 44100;
+                        const bufLen = sr * 1.0;
+                        this.sharedNoiseBuffer = this.ctx.createBuffer(1, bufLen, sr);
+                        const d = this.sharedNoiseBuffer.getChannelData(0);
+                        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+                    }
 
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = "lowpass";
-                filter.frequency.value = filterFreq;
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = this.sharedNoiseBuffer;
+                    noise.loop = true;
 
-                const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(this.getSfxGain(vol), this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.008, this.ctx.currentTime + duration);
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = "lowpass";
+                    filter.frequency.value = filterFreq;
 
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.ctx.destination);
-                const stopTime = this.ctx.currentTime + duration + 0.05;
-                noise.onended = () => {
-                    try {
-                        noise.disconnect();
-                        filter.disconnect();
-                        gain.disconnect();
-                    } catch (e) {}
-                };
-                noise.start();
-                noise.stop(stopTime);
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(this.getSfxGain(vol), this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.008, this.ctx.currentTime + duration);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    const stopTime = this.ctx.currentTime + duration + 0.05;
+                    noise.onended = () => {
+                        try {
+                            noise.disconnect();
+                            filter.disconnect();
+                            gain.disconnect();
+                        } catch (e) {}
+                    };
+                    noise.start();
+                    noise.stop(stopTime);
+                } catch (e) {}
             }
 
             playSplat() {
@@ -9296,6 +9309,7 @@
             const isTranslucentMap = mapCfg.isTranslucentFloor;
             ROOMS = mapCfg.rooms || ROOMS;
 
+            surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
             surfaceCtx.clearRect(0, 0, WORLD_W, WORLD_H);
             if (!isTranslucentMap) {
                 surfaceCtx.fillStyle = "#0b0f19";
@@ -9454,8 +9468,12 @@
             return greenBloodMode ? STATIC_BLOOD_COLORS_GREEN : STATIC_BLOOD_COLORS_RED;
         }
 
+        let lastBloodBakeAt = 0;
         function bakeBloodSplatter(x, y, radius, intensity = 1) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            const now = performance.now();
+            if (intensity < 1.2 && now - lastBloodBakeAt < 18) return;
+            lastBloodBakeAt = now;
             const safeR = Math.max(4, radius || 10);
             const stamps = (typeof XENO_RAM_CACHE !== "undefined" && XENO_RAM_CACHE.decalStamps && XENO_RAM_CACHE.decalStamps.blood)
                 ? (greenBloodMode ? XENO_RAM_CACHE.decalStamps.blood.green : XENO_RAM_CACHE.decalStamps.blood.red)
@@ -9612,6 +9630,7 @@
 
         function bakeAlienCorpse(e, frozenShatter = false) {
             if (!e || !Number.isFinite(e.x) || !Number.isFinite(e.y)) return;
+            if (!e.isBoss && bakedCorpsesCount > 450 && Math.random() > 0.35) return;
             const r = Math.max(8, e.radius || 14);
             bakeBloodSplatter(e.x, e.y, r * (e.isBoss ? 2.2 : 1.55), e.isBoss ? 3.2 : 1.5);
 
@@ -12704,7 +12723,7 @@
                     b.hit3 = -1;
                     b.hitCount = 0;
 
-                    if (isHostile && !fromNetwork && isCoopHost()) {
+                    if (isHostile && !fromNetwork && isCoopHost() && window.pendingHostileBullets.length < 64) {
                         window.pendingHostileBullets.push([
                             Math.round(x),
                             Math.round(y),
@@ -14392,6 +14411,9 @@
 
         function triggerMapVictory() {
             isMapWon = true;
+            isPaused = true;
+            mouse.down = false;
+            if (player) player.activeLaserBeam = null;
             clearVictoryAutoTimers();
             sfx.playExplosion();
             screenShake = 30;
@@ -14399,7 +14421,6 @@
 
             for (let i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].active) {
-                    bakeAlienCorpse(enemies[i], false);
                     enemies[i].active = false;
                 }
             }
@@ -14438,12 +14459,7 @@
                 );
             }
 
-            victoryModalDelayTimeout = setTimeout(() => {
-                try {
-                    victoryModalDelayTimeout = null;
-                    if (!isMapWon) return;
-                    isPaused = true;
-
+            try {
                 const rankBox = byId("winGrandRankBox");
                 const cdBanner = byId("winAutoCountdownBanner");
                 const nextBtn = byId("winNextMapBtn");
@@ -14551,11 +14567,11 @@
                 if (vicModal) {
                     vicModal.classList.remove("hidden");
                     vicModal.style.display = "flex";
+                    vicModal.style.pointerEvents = "auto";
                 }
             } catch (err) {
                 console.error("Lỗi hiển thị modal chiến thắng:", err);
             }
-        }, 1000);
         }
 
         function spawnFirePatch(x, y, radius = 48, durationFrames = 320, isOilFire = false) {
@@ -14970,7 +14986,7 @@
             showToast("CHIẾN BINH ĐÃ HY SINH!", "Tín hiệu sinh tồn đã mất — Nhiệm vụ thất bại!");
 
             if (deathModalTimeout) clearTimeout(deathModalTimeout);
-            deathModalTimeout = setTimeout(() => {
+            const showGameOverModalNow = () => {
                 deathModalTimeout = null;
                 if (!isGameOver) return;
                 isPaused = true;
@@ -14988,8 +15004,13 @@
                 setText("overTimeLabel", `${mm}:${ss}`);
 
                 const overModal = byId("gameOverModal");
-                if (overModal) overModal.classList.remove("hidden");
-            }, 800);
+                if (overModal) {
+                    overModal.classList.remove("hidden");
+                    overModal.style.display = "flex";
+                }
+            };
+            showGameOverModalNow();
+            deathModalTimeout = setTimeout(showGameOverModalNow, 200);
         }
 
         function damagePlayer(amount) {
@@ -15706,7 +15727,9 @@
                     for (let j = 0; j < MAX_ENEMIES; j++) {
                         const e = enemies[j];
                         if (!e.active) continue;
-                        if (Math.hypot(e.x - np.x, e.y - np.y) < np.radius + e.radius) {
+                        const npRSum = np.radius + e.radius;
+                        const npDx = e.x - np.x;
+                        if (Math.abs(npDx) <= npRSum && Math.abs(e.y - np.y) <= npRSum && (npDx * npDx + (e.y - np.y) * (e.y - np.y) < npRSum * npRSum)) {
                             e.nuclearSlowTimer = 45;
                             if (!isCoopClient()) {
                                 damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
@@ -15739,7 +15762,9 @@
                     for (let j = 0; j < MAX_ENEMIES; j++) {
                         const e = enemies[j];
                         if (!e.active) continue;
-                        if (Math.hypot(e.x - fp.x, e.y - fp.y) < fp.radius + e.radius) {
+                        const fpRSum = fp.radius + e.radius;
+                        const fpDx = e.x - fp.x;
+                        if (Math.abs(fpDx) <= fpRSum && Math.abs(e.y - fp.y) <= fpRSum && (fpDx * fpDx + (e.y - fp.y) * (e.y - fp.y) < fpRSum * fpRSum)) {
                             e.burnTimer = Math.max(e.burnTimer || 0, 75);
                             if (!isCoopClient()) {
                                 damageEnemy(e, e.isBoss ? 9 : 14, 0, 0, "flame");
@@ -16338,9 +16363,11 @@
                     continue;
                 }
 
-                // Hostile Projectiles
+                // Hostile Projectiles (Tối ưu Fast AABB rejection + squared distance)
                 if (b.isHostile) {
-                    if (Math.hypot(b.x - player.x, b.y - player.y) < player.radius + b.size * 0.75) {
+                    const pHitR = player.radius + b.size * 0.75;
+                    const pDx = b.x - player.x;
+                    if (Math.abs(pDx) <= pHitR && Math.abs(b.y - player.y) <= pHitR && (pDx * pDx + (b.y - player.y) * (b.y - player.y) < pHitR * pHitR)) {
                         if (b.type === "boss_meteor") {
                             detonateMagmaMeteor(b.x, b.y, b.damage, b.splashRadius || 92);
                             b.active = false;
@@ -16356,27 +16383,35 @@
                         isCoopActive() &&
                         window.teammate &&
                         window.teammate.active &&
-                        !window.teammate.isDown &&
-                        Math.hypot(b.x - window.teammate.x, b.y - window.teammate.y) < player.radius + b.size * 0.75
+                        !window.teammate.isDown
                     ) {
-                        if (b.type === "boss_meteor") {
-                            detonateMagmaMeteor(b.x, b.y, 0, b.splashRadius || 92);
-                            b.active = false;
-                        } else {
-                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#ef4444", 2.6, 12);
-                            if (b.type !== "boss_flame" && b.type !== "boss_magma_orb") {
+                        const tDx = b.x - window.teammate.x;
+                        if (Math.abs(tDx) <= pHitR && Math.abs(b.y - window.teammate.y) <= pHitR && (tDx * tDx + (b.y - window.teammate.y) * (b.y - window.teammate.y) < pHitR * pHitR)) {
+                            if (b.type === "boss_meteor") {
+                                detonateMagmaMeteor(b.x, b.y, 0, b.splashRadius || 92);
                                 b.active = false;
+                            } else {
+                                spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#ef4444", 2.6, 12);
+                                if (b.type !== "boss_flame" && b.type !== "boss_magma_orb") {
+                                    b.active = false;
+                                }
                             }
                         }
                     }
                     continue;
                 }
 
-                // Check Intact Green Nuclear Bio-Vats (Host-Authoritative sync)
+                // Check Intact Green Nuclear Bio-Vats (Fast AABB + squared dist)
                 let hitProp = false;
                 for (let v = 0; v < nuclearVats.length; v++) {
                     const vat = nuclearVats[v];
-                    if (vat.active && Math.hypot(b.x - vat.x, b.y - vat.y) < vat.radius + b.size) {
+                    if (!vat.active) continue;
+                    const vMaxR = vat.radius + b.size;
+                    const vDx = b.x - vat.x;
+                    if (vDx > vMaxR || vDx < -vMaxR) continue;
+                    const vDy = b.y - vat.y;
+                    if (vDy > vMaxR || vDy < -vMaxR) continue;
+                    if (vDx * vDx + vDy * vDy < vMaxR * vMaxR) {
                         spawnParticle(b.x, b.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#4ade80", 3, 12);
                         if (!b.isTeammate) {
                             if (isCoopClient()) {
@@ -16409,10 +16444,16 @@
                 }
                 if (hitProp) continue;
 
-                // Check Explosive Barrels (Host-Authoritative sync)
+                // Check Explosive Barrels (Fast AABB + squared dist)
                 for (let p = 0; p < barrels.length; p++) {
                     const br = barrels[p];
-                    if (br.active && Math.hypot(b.x - br.x, b.y - br.y) < br.radius + b.size) {
+                    if (!br.active) continue;
+                    const bMaxR = br.radius + b.size;
+                    const brDx = b.x - br.x;
+                    if (brDx > bMaxR || brDx < -bMaxR) continue;
+                    const brDy = b.y - br.y;
+                    if (brDy > bMaxR || brDy < -bMaxR) continue;
+                    if (brDx * brDx + brDy * brDy < bMaxR * bMaxR) {
                         if (b.isTeammate) {
                             br.hitWobble = 1.0;
                             spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#fbbf24", 2.5, 10);
@@ -16913,7 +16954,17 @@
                 renderOmegaGenesisBackground(camX, camY);
             }
 
-            ctx.drawImage(surfaceCanvas, camX, camY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
+            ctx.drawImage(
+                surfaceCanvas,
+                camX * SURFACE_SCALE,
+                camY * SURFACE_SCALE,
+                VIEW_W * SURFACE_SCALE,
+                VIEW_H * SURFACE_SCALE,
+                0,
+                0,
+                VIEW_W,
+                VIEW_H
+            );
 
             ctx.translate(-camX, -camY);
 
@@ -24063,7 +24114,13 @@
                 mouse.down = false;
                 player.activeLaserBeam = null;
             } else {
+                const wasPaused = isPaused;
                 isPaused = false;
+                if (wasPaused && typeof resetFramePacer === "function") {
+                    resetFramePacer();
+                } else if (typeof scheduleNextFrame === "function") {
+                    scheduleNextFrame();
+                }
             }
         }
 
@@ -24086,11 +24143,13 @@
             const mapDrawer = byId("lobbyMapDiffDrawer");
             if (mapDrawer && !mapDrawer.classList.contains("hidden")) {
                 mapDrawer.classList.add("hidden");
+                mapDrawer.style.display = "none";
                 return;
             }
             const intelDrawer = byId("lobbyIntelDrawer");
             if (intelDrawer && !intelDrawer.classList.contains("hidden")) {
                 intelDrawer.classList.add("hidden");
+                intelDrawer.style.display = "none";
                 return;
             }
             const fpsModal = byId("fpsConfirmModal");
@@ -24107,7 +24166,20 @@
                 closeArmoryModal();
                 return;
             }
-            if (isGameOver || isMapWon) {
+            if (isGameOver) {
+                const overModal = byId("gameOverModal");
+                if (overModal) {
+                    overModal.classList.remove("hidden");
+                    overModal.style.display = "flex";
+                }
+                return;
+            }
+            if (isMapWon) {
+                const vicModal = byId("victoryModal");
+                if (vicModal) {
+                    vicModal.classList.remove("hidden");
+                    vicModal.style.display = "flex";
+                }
                 return;
             }
 
@@ -24153,18 +24225,26 @@
             const settingsModal = byId("mainSettingsModal");
             const armoryModal = byId("armoryModal");
             const codexModal = byId("lobbyCodexModal");
+            const sysModal = byId("systemSettingsModal");
+            const fpsModal = byId("fpsConfirmModal");
             const victoryModal = byId("victoryModal");
             const gameOverModal = byId("gameOverModal");
             if (pauseModal) { pauseModal.classList.add("hidden"); pauseModal.style.display = "none"; }
             if (settingsModal) { settingsModal.classList.add("hidden"); settingsModal.style.display = "none"; }
             if (armoryModal) { armoryModal.classList.add("hidden"); armoryModal.style.display = "none"; }
             if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
+            if (sysModal) { sysModal.classList.add("hidden"); sysModal.style.display = "none"; }
+            if (fpsModal) { fpsModal.classList.add("hidden"); fpsModal.style.display = "none"; }
             if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
+            isPaused = false;
             if (typeof resetFramePacer === "function") {
                 resetFramePacer();
             }
-            isPaused = false;
+            if (typeof updateAim === "function" && typeof renderWorld === "function") {
+                updateAim();
+                renderWorld();
+            }
             if (typeof sfx !== "undefined" && sfx) {
                 sfx.playBgm("ingame");
             }
@@ -24262,7 +24342,10 @@
         function openArmoryFromPause() {
             window.armoryOpenedFromPause = true;
             const pauseModal = byId("pauseModal");
-            if (pauseModal) pauseModal.classList.add("hidden");
+            if (pauseModal) {
+                pauseModal.classList.add("hidden");
+                pauseModal.style.display = "none";
+            }
             openArmoryModal();
         }
         window.openArmoryFromPause = openArmoryFromPause;
@@ -24270,7 +24353,7 @@
         function openArmoryModal() {
             // If called while in Lobby, open the Lobby Codex page instead of jumping into the match!
             const settingsModal = byId("mainSettingsModal");
-            if (settingsModal && !settingsModal.classList.contains("hidden")) {
+            if (settingsModal && !settingsModal.classList.contains("hidden") && settingsModal.style.display !== "none") {
                 openArmoryFromLobby();
                 return;
             }
@@ -24280,13 +24363,19 @@
             player.activeLaserBeam = null;
             renderArmoryWeapons();
             const armoryModal = byId("armoryModal");
-            if (armoryModal) armoryModal.classList.remove("hidden");
+            if (armoryModal) {
+                armoryModal.classList.remove("hidden");
+                armoryModal.style.display = "flex";
+            }
         }
         window.openArmoryModal = openArmoryModal;
 
         function closeArmoryModal() {
             const armoryModal = byId("armoryModal");
-            if (armoryModal) armoryModal.classList.add("hidden");
+            if (armoryModal) {
+                armoryModal.classList.add("hidden");
+                armoryModal.style.display = "none";
+            }
             window.armoryOpenedFromPause = false;
             syncPauseState();
         }
@@ -26007,14 +26096,20 @@
             renderLobbyCodexContent();
             switchLobbyCodexTab(defaultTab);
             const codexModal = byId("lobbyCodexModal");
-            if (codexModal) codexModal.classList.remove("hidden");
+            if (codexModal) {
+                codexModal.classList.remove("hidden");
+                codexModal.style.display = "flex";
+            }
         }
         window.openArmoryFromLobby = openArmoryFromLobby;
 
         function closeLobbyCodexModal() {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             const codexModal = byId("lobbyCodexModal");
-            if (codexModal) codexModal.classList.add("hidden");
+            if (codexModal) {
+                codexModal.classList.add("hidden");
+                codexModal.style.display = "none";
+            }
             syncPauseState();
         }
         window.closeLobbyCodexModal = closeLobbyCodexModal;
@@ -26024,8 +26119,16 @@
             isPaused = true;
             mouse.down = false;
             player.activeLaserBeam = null;
+            const pauseModal = byId("pauseModal");
+            if (pauseModal && !pauseModal.classList.contains("hidden")) {
+                pauseModal.classList.add("hidden");
+                pauseModal.style.display = "none";
+            }
             const modal = byId("systemSettingsModal");
-            if (modal) modal.classList.remove("hidden");
+            if (modal) {
+                modal.classList.remove("hidden");
+                modal.style.display = "flex";
+            }
             if (typeof updateNvgUI === "function") updateNvgUI();
             if (typeof updateStationPowerUI === "function") updateStationPowerUI();
             if (typeof updateBloodColorUI === "function") updateBloodColorUI();
@@ -26037,7 +26140,10 @@
         function closeSystemSettingsModal() {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             const modal = byId("systemSettingsModal");
-            if (modal) modal.classList.add("hidden");
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
             syncPauseState();
         }
         window.closeSystemSettingsModal = closeSystemSettingsModal;
@@ -27176,15 +27282,22 @@
                 }
             }
 
+            camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W / 2));
+            camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H / 2));
+
             updateTopLeftHUD();
             updateWeaponDockHUD();
             renderRadarMinimap();
             updateNvgFilter();
             updateNvgUI();
+            updateAim();
+            renderWorld();
 
             if (!keepSettingsOpen) {
                 resumeGame();
                 showToast(mapCfg.toastTitle, mapCfg.toastMsg);
+            } else if (typeof scheduleNextFrame === "function") {
+                scheduleNextFrame();
             }
         }
         window.initCampaign = initCampaign;
@@ -27194,21 +27307,30 @@
             if (isGameOver || isMapWon) return;
             isPaused = true;
             const modal = byId("fpsConfirmModal");
-            if (modal) modal.classList.remove("hidden");
+            if (modal) {
+                modal.classList.remove("hidden");
+                modal.style.display = "flex";
+            }
         }
         window.openFpsTestModal = openFpsTestModal;
 
         function closeFpsTestModal() {
             const modal = byId("fpsConfirmModal");
-            if (modal) modal.classList.add("hidden");
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
             syncPauseState();
         }
         window.closeFpsTestModal = closeFpsTestModal;
 
         function confirmFpsTestSpawn() {
             const modal = byId("fpsConfirmModal");
-            if (modal) modal.classList.add("hidden");
-            isPaused = false;
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
+            syncPauseState();
             if (isCoopClient()) {
                 showToast("CHỈ CHỦ PHÒNG (HOST)", "Trong chế độ Co-Op, chỉ Chủ Phòng (Host) mới có quyền sinh quái!");
                 return;
@@ -27481,14 +27603,24 @@
                 return;
             }
             if (e.code === "KeyB") {
-                if (inLobby) {
+                e.preventDefault();
+                const settingsModal = byId("mainSettingsModal");
+                const inLobbyNow = settingsModal && !settingsModal.classList.contains("hidden") && settingsModal.style.display !== "none";
+                if (inLobbyNow) {
                     const codexModal = byId("lobbyCodexModal");
-                    if (codexModal && codexModal.classList.contains("hidden")) openArmoryFromLobby();
-                    else closeLobbyCodexModal();
+                    if (codexModal && (codexModal.classList.contains("hidden") || codexModal.style.display === "none")) {
+                        openArmoryFromLobby();
+                    } else {
+                        closeLobbyCodexModal();
+                    }
                 } else {
                     const armoryModal = byId("armoryModal");
-                    if (armoryModal && armoryModal.classList.contains("hidden")) openArmoryModal();
-                    else closeArmoryModal();
+                    const isArmoryHidden = !armoryModal || armoryModal.classList.contains("hidden") || armoryModal.style.display === "none";
+                    if (isArmoryHidden) {
+                        openArmoryModal();
+                    } else {
+                        closeArmoryModal();
+                    }
                 }
                 return;
             }
@@ -27524,34 +27656,57 @@
         let framePacerRafId = null;
         let idleBackgroundRenderedFrames = 0;
 
+        function cancelScheduledFramePacer() {
+            if (framePacerTimeoutId !== null) {
+                clearTimeout(framePacerTimeoutId);
+                framePacerTimeoutId = null;
+            }
+            if (framePacerRafId !== null && typeof cancelAnimationFrame === "function") {
+                cancelAnimationFrame(framePacerRafId);
+                framePacerRafId = null;
+            }
+            framePacerPending = false;
+        }
+
         function resetFramePacer() {
+            cancelScheduledFramePacer();
             const now = performance.now();
             nextFrameDeadline = now;
             loopLastTime = now;
+            loopAccumulator = 0;
             fpsFrames = 0;
             fpsLastCheck = now;
             idleBackgroundRenderedFrames = 0;
+            scheduleNextFrame();
         }
         window.resetFramePacer = resetFramePacer;
 
+        // Self-healing watchdog: đảm bảo vòng lặp gameLoop không bao giờ bị ngừng vì bất kỳ lý do gì
+        setInterval(function () {
+            if (!framePacerPending && framePacerTimeoutId === null && framePacerRafId === null) {
+                scheduleNextFrame();
+            }
+        }, 400);
+
         function onFramePacerTick(rafTimestamp) {
-            framePacerPending = false;
-            framePacerTimeoutId = null;
-            framePacerRafId = null;
+            cancelScheduledFramePacer();
 
             if (document.hidden) {
                 framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 200);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 250);
                 return;
             }
 
-            // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng), hạ nhịp xuống 10 FPS
-            // và không spin-lock CPU để mức sử dụng CPU về ~0-1% ngay khi vào web!
+            // Khi đang ở màn hình chờ (Preloader / Menu Chính / Tạm dừng / Bảng Chiến Thắng),
+            // TUYỆT ĐỐI KHÔNG tự lên lịch trùng với scheduleNextFrame() ở cuối gameLoop()!
             if (isPaused) {
-                const now = performance.now();
-                gameLoop(now);
-                framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
+                if (idleBackgroundRenderedFrames < 3) {
+                    gameLoop(performance.now());
+                } else {
+                    loopLastTime = performance.now();
+                    loopAccumulator = 0;
+                    scheduleNextFrame();
+                }
                 return;
             }
 
@@ -27565,13 +27720,9 @@
             }
 
             const remaining = nextFrameDeadline - now;
-            if (remaining > 1.5) {
+            if (remaining > 1.5 && targetFps < 60) {
                 framePacerPending = true;
-                if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
-                    framePacerRafId = requestAnimationFrame(onFramePacerTick);
-                } else {
-                    framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
-                }
+                framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
                 return;
             }
 
@@ -27585,20 +27736,21 @@
 
         function scheduleNextFrame() {
             if (framePacerPending) return;
+            cancelScheduledFramePacer();
             framePacerPending = true;
 
             if (document.hidden) {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 200);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 250);
                 return;
             }
 
             if (isPaused) {
-                framePacerTimeoutId = setTimeout(onFramePacerTick, 100);
+                framePacerTimeoutId = setTimeout(onFramePacerTick, 150);
                 return;
             }
 
             const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
-            if (targetFps <= 65 && typeof requestAnimationFrame === "function") {
+            if (typeof requestAnimationFrame === "function" && targetFps >= 55) {
                 framePacerRafId = requestAnimationFrame(onFramePacerTick);
                 return;
             }

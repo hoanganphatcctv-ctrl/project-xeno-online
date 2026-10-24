@@ -67,6 +67,7 @@ export class SoundSystem {
     this.bgmLobby = null;
     this.bgmIngame = null;
     this._initialized = false;
+    this.sharedNoiseBuffer = null;
   }
 
   init() {
@@ -132,7 +133,11 @@ export class SoundSystem {
   preloadCommonBuffers() {
     const keysToLoad = [
       "pistol", "shotgun", "minigun", "flamethrower", "plasma", "cryo",
-      "explosion", "monster_hit", "monster_death", "click", "ammo_pickup"
+      "explosion", "big_explosion", "monster_hit", "monster_hit2",
+      "monster_death", "monster_death2", "monster_death4", "monster_death5",
+      "armor_hit1", "armor_hit2", "broke_armor", "click", "hover",
+      "ammo_pickup", "pick_armor", "take_healh", "weapon_pickup", "drop_item",
+      "door", "barrel", "generator", "buy", "shell_drop", "shotgun_shell"
     ];
     keysToLoad.forEach(key => {
       if (SFX_MANIFEST[key]) {
@@ -484,13 +489,18 @@ export class SoundSystem {
   playNoise(duration, filterFreq, vol) {
     if (this.muted || !this.ctx) return;
     try {
-      const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      if (!this.sharedNoiseBuffer) {
+        const sr = this.ctx.sampleRate || 44100;
+        const bufLen = sr * 1.0; // 1 second shared noise buffer
+        this.sharedNoiseBuffer = this.ctx.createBuffer(1, bufLen, sr);
+        const d = this.sharedNoiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+      }
 
       const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this.sharedNoiseBuffer;
+      noise.loop = true;
+
       const filter = this.ctx.createBiquadFilter();
       filter.type = "lowpass";
       filter.frequency.value = filterFreq;
@@ -503,6 +513,7 @@ export class SoundSystem {
       filter.connect(gain);
       gain.connect(this.ctx.destination);
       noise.start();
+      noise.stop(this.ctx.currentTime + duration);
     } catch (e) {}
   }
 
