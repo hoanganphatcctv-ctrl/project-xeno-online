@@ -7746,7 +7746,7 @@
         surfaceCanvas.width = Math.floor(WORLD_W * SURFACE_SCALE);
         surfaceCanvas.height = Math.floor(WORLD_H * SURFACE_SCALE);
         const surfaceCtx = surfaceCanvas.getContext("2d", {
-            alpha: false,
+            alpha: true,
             willReadFrequently: false
         }) || surfaceCanvas.getContext("2d");
         surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
