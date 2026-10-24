@@ -3307,64 +3307,113 @@
     </div>
 
     <!-- ==========================================================================
-         8. MODAL 4: VICTORY MODAL (WIN MAP AFTER DEFEATING ALL BOSSES)
+         8. MODAL 4: VICTORY MODAL (MISSION COMPLETED — SCI-FI HEXAGON HUD BANNER)
          ========================================================================== -->
-    <div id="victoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
-        <div class="hud-modal rounded-none max-w-lg w-full p-6 flex flex-col gap-4 border-2 border-emerald-500/60 text-center shadow-[0_0_50px_rgba(16,185,129,0.25)] bg-[#070b13]/98">
-            <div class="mx-auto w-14 h-14 rounded-none bg-emerald-500/20 border-2 border-emerald-400/60 flex items-center justify-center text-sm font-mono-tech font-black text-emerald-300 shadow-lg">
-                WIN
-            </div>
-            <div>
-                <div id="winBadgeText" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono-tech font-extrabold uppercase">
-                    HOÀN THÀNH NHIỆM VỤ CHIẾN DỊCH
+    <div id="victoryModal" onclick="window.confirmVictoryContinue && window.confirmVictoryContinue()" class="hidden fixed inset-0 z-50 bg-slate-950/78 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none cursor-pointer">
+        <div class="relative w-full max-w-[680px] flex flex-col items-center justify-center py-10">
+            <!-- Large Background Outlined Sci-Fi Hexagon Frame -->
+            <svg viewBox="0 0 420 360" class="w-[330px] sm:w-[420px] h-[285px] sm:h-[360px] pointer-events-none select-none overflow-visible" aria-hidden="true">
+                <defs>
+                    <linearGradient id="winOuterHexStroke" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.78" />
+                        <stop offset="50%" stop-color="#10b981" stop-opacity="0.35" />
+                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.78" />
+                    </linearGradient>
+                    <linearGradient id="winOuterHexFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#071929" stop-opacity="0.65" />
+                        <stop offset="50%" stop-color="#042f2e" stop-opacity="0.35" />
+                        <stop offset="100%" stop-color="#071929" stop-opacity="0.72" />
+                    </linearGradient>
+                </defs>
+                <!-- Outer Hexagon -->
+                <polygon points="118,12 302,12 394,180 302,348 118,348 26,180" fill="url(#winOuterHexFill)" stroke="url(#winOuterHexStroke)" stroke-width="2" />
+                <!-- Inner Bevel Hexagon -->
+                <polygon points="124,22 296,22 382,180 296,338 124,338 38,180" fill="none" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1.2" />
+            </svg>
+
+            <!-- Center Horizontal Honeycomb Banner -->
+            <div class="absolute inset-x-0 top-1/2 -translate-y-[54%] mx-auto w-full max-w-[600px] flex flex-col items-center">
+                <!-- Top Secondary Accent Lines (Left & Right of Top Hexagon Emblem) -->
+                <div class="w-[74%] max-w-[420px] flex items-center justify-between mb-[5px] pointer-events-none">
+                    <div class="w-[34%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
+                    <div class="w-[34%] h-[2px] bg-gradient-to-l from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
                 </div>
-                <h2 id="winHeadlineText" class="text-2xl font-black tracking-tight text-white mt-1 uppercase font-mono-tech">
-                    ĐÃ TIÊU DIỆT QUÂN ĐOÀN TRÙM CUỐI!
-                </h2>
-                <p id="winSubText" class="text-xs text-slate-300 mt-1 font-mono-tech">
-                    Toàn bộ 25 khu vực trong Ma trận 5x5 đã được giải phóng khỏi bầy Xenomorph.
-                </p>
+
+                <!-- Main Horizontal Banner Box -->
+                <div class="relative w-full py-7 sm:py-8 px-6 flex flex-col items-center justify-center overflow-visible"
+                     style="background: radial-gradient(ellipse 68% 90% at 50% 50%, rgba(16, 185, 129, 0.36) 0%, rgba(13, 148, 136, 0.22) 48%, rgba(4, 18, 32, 0.05) 100%);">
+
+                    <!-- Honeycomb Hexagon Pattern Overlay -->
+                    <div class="absolute inset-0 pointer-events-none overflow-hidden"
+                         style="-webkit-mask-image: linear-gradient(90deg, transparent 2%, black 22%, black 78%, transparent 98%); mask-image: linear-gradient(90deg, transparent 2%, black 22%, black 78%, transparent 98%);">
+                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="winHexMeshPattern" width="34" height="30" patternUnits="userSpaceOnUse">
+                                    <polygon points="17,1 32,8.5 32,22.5 17,30 2,22.5 2,8.5" fill="none" stroke="#2dd4bf" stroke-width="0.9" stroke-opacity="0.22" />
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#winHexMeshPattern)" />
+                        </svg>
+                    </div>
+
+                    <!-- Top Full Horizontal Glowing Cyan Line -->
+                    <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.9)]"></div>
+
+                    <!-- Top Center Hexagonal Emblem Badge -->
+                    <div class="absolute -top-9 sm:-top-10 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+                        <svg viewBox="0 0 84 84" class="w-16 h-16 sm:w-[74px] sm:h-[74px] drop-shadow-[0_0_15px_rgba(34,211,238,0.65)]">
+                            <!-- Outer Dark Hexagon & Cyan Border -->
+                            <polygon points="42,3 76,22.5 76,61.5 42,81 8,61.5 8,22.5" fill="#061220" stroke="#38bdf8" stroke-width="2.4" />
+                            <!-- Inner Hexagon Border -->
+                            <polygon points="42,9 70.5,25.5 70.5,58.5 42,75 13.5,58.5 13.5,25.5" fill="#081a2c" stroke="#22d3ee" stroke-width="1.4" stroke-opacity="0.85" />
+                            <!-- Glowing Cyan/Aqua Twisted Energy Flame Icon (Matching Reference Image) -->
+                            <g transform="translate(42, 42)">
+                                <path d="M0,-21 C5,-12 11,-4 10,6 C9,14 3,20 -1,21 C2,15 3,9 -2,2 C-7,-4 -4,-13 0,-21 Z" fill="#38bdf8" />
+                                <path d="M-4,-14 C-1,-7 5,-1 5,7 C5,14 0,19 -5,19 C-1,14 -1,9 -6,3 C-10,-2 -8,-9 -4,-14 Z" fill="#67e8f9" />
+                                <path d="M-8,-5 C-5,0 0,5 0,11 C0,16 -4,19 -8,17 C-12,14 -12,6 -8,-5 Z" fill="#a5f3fc" />
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Center MISSION COMPLETED Typography -->
+                    <div class="relative z-10 flex flex-col items-center justify-center text-center pt-2 pb-1">
+                        <div id="winBadgeText" class="text-2xl sm:text-[38px] font-light tracking-[0.26em] uppercase text-[#5eead4] leading-tight font-mono-tech"
+                             style="text-shadow: 0 0 16px rgba(45, 212, 191, 0.55);">
+                            MISSION
+                        </div>
+                        <h2 id="winHeadlineText" class="text-4xl sm:text-[56px] font-black tracking-[0.11em] uppercase text-[#2dd4bf] leading-none mt-1 font-mono-tech"
+                            style="text-shadow: 0 0 22px rgba(16, 185, 129, 0.80), 0 0 44px rgba(20, 184, 166, 0.45);">
+                            COMPLETED
+                        </h2>
+                    </div>
+
+                    <!-- Bottom Tech Line with Center Trapezoid Step-Up Notch -->
+                    <svg viewBox="0 0 600 28" class="absolute -bottom-[14px] inset-x-0 w-full h-[28px] pointer-events-none overflow-visible" preserveAspectRatio="none">
+                        <!-- Main line with center step-up trapezoid bridge -->
+                        <path d="M 10,14 L 248,14 L 262,2 L 338,2 L 352,14 L 590,14" fill="none" stroke="#38bdf8" stroke-width="2" style="filter: drop-shadow(0 0 6px rgba(56,189,248,0.85));" />
+                        <!-- Secondary lower accent lines & inner notch bridge -->
+                        <path d="M 110,21 L 253,21 L 266,9 L 334,9 L 347,21 L 490,21" fill="none" stroke="#0ea5e9" stroke-width="1.6" stroke-opacity="0.85" />
+                    </svg>
+                </div>
+
+                <!-- Prompt Text inside Lower Hexagon: PRESS ANY KEY TO CONTINUE -->
+                <div class="mt-6 text-xs sm:text-[15px] font-mono-tech tracking-[0.22em] text-[#38bdf8] uppercase text-center drop-shadow-[0_0_8px_rgba(56,189,248,0.65)] animate-pulse">
+                    PRESS <span class="text-cyan-200 font-black">ANY KEY</span> TO CONTINUE
+                </div>
             </div>
 
-            <div id="winGrandRankBox" class="hidden bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 border border-amber-400/50 rounded-none p-2.5 text-center">
-                <div class="text-[9px] font-mono-tech uppercase tracking-widest text-amber-300 font-bold">DANH HIỆU CHIẾN BINH TOÀN CHIẾN DỊCH</div>
-                <div id="winRankTitle" class="text-sm font-black text-amber-200 mt-0.5 uppercase font-mono-tech">CHIẾN THẦN LÕI NHAM THẠCH</div>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-950/80 p-3 rounded-none border border-slate-800 text-xs font-mono-tech">
-                <div>
-                    <div id="winStat1Header" class="text-[9px] text-slate-400">ĐỘ KHÓ</div>
-                    <div id="winDiffLabel" class="font-extrabold text-sky-400 mt-0.5">TRUNG BÌNH</div>
-                </div>
-                <div>
-                    <div id="winStat2Header" class="text-[9px] text-slate-400">THỜI GIAN</div>
-                    <div id="winTimeLabel" class="font-extrabold text-amber-400 mt-0.5">02:45</div>
-                </div>
-                <div>
-                    <div id="winStat3Header" class="text-[9px] text-slate-400">QUÁI ĐÃ DIỆT</div>
-                    <div id="winKillsLabel" class="font-extrabold text-rose-400 mt-0.5">115</div>
-                </div>
-                <div>
-                    <div id="winStat4Header" class="text-[9px] text-slate-400">QUỸ TIỀN ($)</div>
-                    <div id="winCreditsLabel" class="font-extrabold text-emerald-400 mt-0.5">$1,450</div>
-                </div>
-            </div>
-
-            <div id="winAutoCountdownBanner" class="text-[11px] font-mono-tech font-bold text-emerald-300 bg-emerald-950/50 border border-emerald-500/40 rounded-none py-1.5 px-3">
-                Tự động chuyển sang chặng tiếp theo sau <span id="winCountdownSec" class="text-amber-300 font-black">3</span> giây...
-            </div>
-
-            <div class="flex flex-col gap-2 pt-1 font-mono-tech">
-                <button id="winNextMapBtn" onclick="window.transitionToNextMap()" class="w-full py-3 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-xl transition flex items-center justify-center gap-2 uppercase tracking-wider">
-                    <span>TIẾP BƯỚC CHIẾN DỊCH NGAY ➔ MAP 2 (GIỮ VŨ KHÍ &amp; NÂNG CẤP)</span>
-                </button>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button onclick="window.startFullCampaignFromMap1()" class="flex-1 py-2.5 px-4 rounded-none bg-slate-800 hover:bg-slate-700 border border-emerald-500/50 text-emerald-300 font-black text-xs transition uppercase tracking-wider">
-                        CHƠI LẠI MAP 1
-                    </button>
-                    <button onclick="window.openMainMenuSettings()" class="flex-1 py-2.5 px-4 rounded-none bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 transition uppercase tracking-wider">
-                        ĐỔI ĐỘ KHÓ KHÁC
-                    </button>
+            <!-- Green Circular Countdown (3, 2, 1) Below the Hexagon -->
+            <div id="winAutoCountdownBanner" class="mt-5 flex flex-col items-center justify-center gap-1.5 z-20">
+                <div class="relative w-16 h-16 sm:w-[68px] sm:h-[68px] flex items-center justify-center rounded-full bg-emerald-950/75 border border-emerald-400/40 shadow-[0_0_28px_rgba(16,185,129,0.55)]">
+                    <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(16, 185, 129, 0.20)" stroke-width="3.5" />
+                        <circle id="winCountdownCircleRing" cx="32" cy="32" r="28" fill="none" stroke="#34d399" stroke-width="3.5"
+                                stroke-linecap="round" stroke-dasharray="176" stroke-dashoffset="0"
+                                style="transition: stroke-dashoffset 0.95s linear; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9));" />
+                    </svg>
+                    <span id="winCountdownSec" class="relative z-10 text-2xl sm:text-[28px] font-black font-mono-tech text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.95)]">
+                        3
+                    </span>
                 </div>
             </div>
         </div>
@@ -14409,9 +14458,20 @@
             }
         }
 
+        function confirmVictoryContinue() {
+            if (!isMapWon || isTransitioningMap) return;
+            const vicModal = byId("victoryModal");
+            if (!vicModal || vicModal.classList.contains("hidden") || vicModal.style.display === "none") return;
+            if (window.victoryModalOpenedAt && performance.now() - window.victoryModalOpenedAt < 250) return;
+            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            clearVictoryAutoTimers();
+            transitionToNextMap();
+        }
+        window.confirmVictoryContinue = confirmVictoryContinue;
+
         function triggerMapVictory() {
+            if (isMapWon) return;
             isMapWon = true;
-            isPaused = true;
             mouse.down = false;
             if (player) player.activeLaserBeam = null;
             clearVictoryAutoTimers();
@@ -14436,142 +14496,64 @@
                 window.XenoAuth.recordScore(mapId === 10);
             }
 
-            if (mapId < 10) {
-                const nextNames = {
-                    1: "Tàu Không Gian Orion-IX (Map 2 - 2 Boss)",
-                    2: "Trạm Băng Giá Europa (Map 3 - 3 Boss)",
-                    3: "Lõi Nham Thạch Núi Lửa (Map 4 - 4 Boss)",
-                    4: "Thánh Địa Tổ Quỷ Hive Citadel (Map 5 - 5 Boss)",
-                    5: "Lõi Dị Điểm Singularity Nexus (Map 6 - 6 Boss)",
-                    6: "Xưởng Cơ Khí Quỹ Đạo Mecha-Prime (Map 7 - 7 Boss)",
-                    7: "Vực Thẳm Đại Dương Poseidon-X (Map 8 - 8 Boss)",
-                    8: "Đền Thờ Thời Gian Chronos (Map 9 - 9 Boss)",
-                    9: "Thánh Địa Thủy Tổ Omega Genesis (Map 10 - 10 Boss)"
-                };
-                showToast(
-                    `CHIẾN THẮNG MAP ${mapId}!`,
-                    `Đang chuẩn bị hành quân sang ${nextNames[mapId]} sau 3 giây ăn mừng!`
-                );
-            } else {
-                showToast(
-                    "ĐẠI THẮNG TOÀN DIỆN CHIẾN DỊCH 10 KHU VỰC BẤT ĐỐI XỨNG!",
-                    "Thập Đại Thủy Tổ Xenomorph tại Omega Genesis đã bị tiêu diệt — Toàn bộ 10 đại chiến trường đã được giải phóng!"
-                );
-            }
+            showToast(
+                `MISSION COMPLETED — MAP ${mapId}!`,
+                "Đã tiêu diệt hoàn toàn Trùm khu vực!"
+            );
 
-            try {
-                const rankBox = byId("winGrandRankBox");
-                const cdBanner = byId("winAutoCountdownBanner");
-                const nextBtn = byId("winNextMapBtn");
+            // Chờ 950ms để hiệu ứng nổ xác Boss, rung màn hình và âm thanh diễn ra trọn vẹn trước khi mở bảng MISSION COMPLETED
+            victoryModalDelayTimeout = setTimeout(() => {
+                victoryModalDelayTimeout = null;
+                if (!isMapWon) return;
+                isPaused = true;
+                window.victoryModalOpenedAt = performance.now();
 
-                if (mapId < 10) {
-                    const stageSec = Math.max(1, Math.floor((performance.now() - mapStageStartTime) / 1000));
-                    const mm = String(Math.floor(stageSec / 60)).padStart(2, "0");
-                    const ss = String(stageSec % 60).padStart(2, "0");
-
-                    if (rankBox) rankBox.classList.add("hidden");
-                    if (cdBanner) cdBanner.classList.remove("hidden");
-
-                    const winHeadlines = {
-                        1: "ĐÃ TIÊU DIỆT OMEGA BEHEMOTH!",
-                        2: "ĐÃ TIÊU DIỆT SONG TRÙM VOID EMPEROR!",
-                        3: "ĐÃ TIÊU DIỆT TAM TRÙM CRYO LEVIATHAN!",
-                        4: "ĐÃ TIÊU DIỆT TỨ ĐẠI BẠO CHÚA MAGMA!",
-                        5: "ĐÃ TIÊU DIỆT NGŨ ĐẠI BẠO CHÚA HIVE EMPRESS!",
-                        6: "ĐÃ TIÊU DIỆT LỤC ĐẠI HƯ KHÔNG THẦN!",
-                        7: "ĐÃ TIÊU DIỆT THẤT ĐẠI TITAN CƠ KHÍ!",
-                        8: "ĐÃ TIÊU DIỆT BÁT ĐẠI THỦY QUÁI LEVIATHAN!",
-                        9: "ĐÃ TIÊU DIỆT CỬU ĐẠI GIÁM NGỤC THỜI GIAN!"
-                    };
-                    const winSubs = {
-                        1: "Căn Cứ Alpha an toàn! Chuẩn bị đổ bộ lên Tàu Orion-IX đối đầu 2 Boss!",
-                        2: "Tàu Orion-IX đã giải cứu! Chuẩn bị tiến vào Trạm Băng Europa đối đầu 3 Boss!",
-                        3: "Trạm Băng Europa đã giải phóng! Chuẩn bị tiến sâu vào Lõi Nham Thạch đối đầu 4 Bạo Chúa!",
-                        4: "Lõi Nham Thạch đã giải phóng! Chuẩn bị tiến vào Tổ Quỷ Hive Citadel đối đầu 5 Boss!",
-                        5: "Tổ Quỷ Citadel đã sụp đổ! Chuẩn bị tiến vào Lõi Dị Điểm đối đầu 6 Hư Không Thần!",
-                        6: "Lõi Dị Điểm đã bình định! Chuẩn bị tiến vào Xưởng Cơ Khí Mecha-Prime đối đầu 7 Titan!",
-                        7: "Xưởng Mecha-Prime đã giải phóng! Chuẩn bị lặn xuống Vực Thẳm Poseidon-X đối đầu 8 Thủy Quái!",
-                        8: "Vực Poseidon-X đã an toàn! Chuẩn bị bước vào Đền Thờ Thời Gian Chronos đối đầu 9 Giám Ngục!",
-                        9: "Đền Thờ Chronos đã mở lối! Chuẩn bị tiến vào Thánh Địa Omega Genesis quyết chiến 10 Thủy Tổ!"
-                    };
-
-                    setText("winBadgeText", `HOÀN THÀNH CHẶNG ${mapId} / 10`);
-                    setText("winHeadlineText", winHeadlines[mapId] || "ĐÃ TIÊU DIỆT QUÂN ĐOÀN TRÙM!");
-                    setText("winSubText", winSubs[mapId] || "Khu vực đã an toàn! Chuẩn bị tiến sang chiến trường kế tiếp!");
-
-                    setText("winStat1Header", "ĐỘ KHÓ");
-                    setText("winDiffLabel", currentDifficulty.label);
-                    setText("winStat2Header", "THỜI GIAN MÀN");
-                    setText("winTimeLabel", `${mm}:${ss}`);
-                    setText("winStat3Header", "QUÁI DIỆT (MÀN)");
-                    setText("winKillsLabel", totalKillsCount);
-                    setText("winStat4Header", "QUỸ TIỀN ($)");
-                    setText("winCreditsLabel", `$${player.credits.toLocaleString("vi-VN")}`);
-
-                    if (nextBtn) {
-                        const nextMapTitle = MAP_REGISTRY[mapId + 1].shortTitle.toUpperCase();
-                        nextBtn.innerHTML = `<span>TIẾP BƯỚC CHIẾN DỊCH NGAY ➔ ${nextMapTitle}</span>`;
-                    }
+                try {
+                    setText("winBadgeText", "MISSION");
+                    setText("winHeadlineText", "COMPLETED");
 
                     let remain = 3;
                     setText("winCountdownSec", remain);
+                    const ringEl = byId("winCountdownCircleRing");
+                    if (ringEl) {
+                        ringEl.style.transition = "none";
+                        ringEl.style.strokeDashoffset = "0";
+                        void ringEl.getBoundingClientRect();
+                        ringEl.style.transition = "stroke-dashoffset 0.95s linear";
+                    }
+
+                    const vicModal = byId("victoryModal");
+                    if (vicModal) {
+                        vicModal.classList.remove("hidden");
+                        vicModal.style.display = "flex";
+                        vicModal.style.pointerEvents = "auto";
+                    }
+
+                    if (ringEl) {
+                        setTimeout(() => {
+                            if (ringEl && isMapWon) ringEl.style.strokeDashoffset = "58";
+                        }, 30);
+                    }
+
                     autoTransitionInterval = setInterval(() => {
-                        remain = Math.max(0, remain - 1);
+                        remain = Math.max(1, remain - 1);
                         setText("winCountdownSec", remain);
+                        if (ringEl) {
+                            const nextOffset = remain === 2 ? 117 : 176;
+                            ringEl.style.strokeDashoffset = String(nextOffset);
+                        }
                     }, 1000);
 
                     autoTransitionTimeout = setTimeout(() => {
                         clearVictoryAutoTimers();
-                        if (isMapWon && window.currentMapId < 10) {
+                        if (isMapWon) {
                             transitionToNextMap();
                         }
                     }, 3000);
-                } else {
-                    const totalCampaignSec = Math.max(1, Math.floor((performance.now() - campaignStartTime) / 1000));
-                    const mm = String(Math.floor(totalCampaignSec / 60)).padStart(2, "0");
-                    const ss = String(totalCampaignSec % 60).padStart(2, "0");
-
-                    if (rankBox) rankBox.classList.remove("hidden");
-                    if (cdBanner) cdBanner.classList.add("hidden");
-
-                    let rankTitle = "CHIẾN BINH TINH NHUỆ // DŨNG SĨ DIỆT XENOMORPH";
-                    if (currentDifficulty.id === "hard") {
-                        rankTitle = "CHIẾN THẦN OMEGA GENESIS // HUYỀN THOẠI ĐẠI CHIẾN DỊCH 10 MÀN";
-                    } else if (currentDifficulty.id === "normal") {
-                        rankTitle = "TƯ LỆNH TỐI CAO // NGƯỜI CHINH PHỤC HÀNH TINH MẸ XENO-PRIME";
-                    }
-                    setText("winRankTitle", rankTitle);
-
-                    setText("winBadgeText", "VINH DANH ĐẠI THẮNG TOÀN DIỆN (MAP 1 ➔ MAP 10)");
-                    setText("winHeadlineText", "ĐÃ HỦY DIỆT THẬP ĐẠI THỦY TỔ OMEGA GENESIS!");
-                    setText(
-                        "winSubText",
-                        "Toàn bộ 10 Đại Chiến Trường Bất Đối Xứng đã được giải phóng hoàn toàn khỏi bầy Xenomorph!"
-                    );
-
-                    setText("winStat1Header", "ĐỘ KHÓ CHIẾN DỊCH");
-                    setText("winDiffLabel", currentDifficulty.label);
-                    setText("winStat2Header", "TỔNG THỜI GIAN (10 MAP)");
-                    setText("winTimeLabel", `${mm}:${ss}`);
-                    setText("winStat3Header", "TỔNG KILLS (10 MAP)");
-                    setText("winKillsLabel", campaignKills);
-                    setText("winStat4Header", "TỔNG THƯỞNG KIẾM ĐƯỢC");
-                    setText("winCreditsLabel", `$${campaignTotalCreditsEarned.toLocaleString("vi-VN")}`);
-
-                    if (nextBtn) {
-                        nextBtn.innerHTML = "<span>BẮT ĐẦU VÒNG LẶP CHIẾN DỊCH MỚI (GIỮ VŨ KHÍ &amp; NÂNG CẤP)</span>";
-                    }
+                } catch (err) {
+                    console.error("Lỗi hiển thị modal chiến thắng:", err);
                 }
-
-                const vicModal = byId("victoryModal");
-                if (vicModal) {
-                    vicModal.classList.remove("hidden");
-                    vicModal.style.display = "flex";
-                    vicModal.style.pointerEvents = "auto";
-                }
-            } catch (err) {
-                console.error("Lỗi hiển thị modal chiến thắng:", err);
-            }
+            }, 950);
         }
 
         function spawnFirePatch(x, y, radius = 48, durationFrames = 320, isOilFire = false) {
@@ -24331,11 +24313,8 @@
                 settingsModal.style.display = "none";
             }
 
-            if (isGameOver || isMapWon || player.hp <= 0) {
-                initCampaign(false, false);
-                return;
-            }
-            syncPauseState();
+            // Khi từ Màn Hình Chính (Sảnh) bước vào trận: luôn khởi tạo mới 100% theo súng và tiền mặc định của Map đã chọn
+            initCampaign(false, false);
         }
         window.closeMainMenuSettings = closeMainMenuSettings;
 
@@ -25176,43 +25155,11 @@
 
             applyDataToGame(progress, settings) {
                 if (progress) {
+                    // Chỉ đồng bộ tiến độ mở khóa Map từ Cloud; Tiền, Súng và Nâng cấp trong trận chỉ giữ khi chơi liền mạch qua màn liên tục
                     if (Number.isFinite(progress.maxUnlockedMap)) {
                         window.maxUnlockedMap = Math.max(window.maxUnlockedMap || 1, progress.maxUnlockedMap);
                         if (typeof updateMapUIState === "function") updateMapUIState();
                     }
-                    if (Number.isFinite(progress.credits)) {
-                        player.credits = Math.max(player.credits || 0, progress.credits);
-                        setText("lobbyTopCredits", `$${player.credits.toLocaleString("vi-VN")}`);
-                        if (typeof updateTopLeftHUD === "function") updateTopLeftHUD();
-                    }
-                    if (Number.isFinite(progress.vitalLevel)) player.vitalLevel = Math.max(player.vitalLevel || 1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, Math.max(1, progress.vitalLevel)));
-                    if (Number.isFinite(progress.speedLevel)) player.speedLevel = Math.max(player.speedLevel || 1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, Math.max(1, progress.speedLevel)));
-                    if (Number.isFinite(progress.dmgLevel)) player.dmgLevel = Math.max(player.dmgLevel || 1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, Math.max(1, progress.dmgLevel)));
-                    if (Number.isFinite(progress.droneCount)) player.droneCount = Math.max(player.droneCount || 0, Math.min(3, Math.max(0, progress.droneCount)));
-                    syncWeaponsMaxAmmoWithDmgLevel(false);
-
-                    // Súng đã lưu trong tài khoản Cloud thì 100% mở khóa, không phụ thuộc vào map hiện tại!
-                    if (Array.isArray(progress.unlockedWeapons)) {
-                        progress.unlockedWeapons.forEach(idx => {
-                            const w = WEAPON_DATA[idx];
-                            if (w) {
-                                w.unlocked = true;
-                            }
-                        });
-                        if (typeof updateWeaponDockHUD === "function") updateWeaponDockHUD();
-                        if (typeof renderArmoryWeapons === "function") renderArmoryWeapons();
-                    }
-
-                    // Đồng bộ chỉ số máu, giáp, tốc độ và sát thương theo cấp nâng cấp đã nạp
-                    const baseHp = (typeof getCurrentMapConfig === "function" && getCurrentMapConfig().startHp) || 100;
-                    const bonusHp = (player.vitalLevel - 1) * 30;
-                    player.maxHp = baseHp + bonusHp;
-                    player.maxArmor = baseHp + bonusHp;
-                    player.hp = Math.min(player.maxHp, Math.max(player.hp, player.maxHp));
-                    player.armor = Math.min(player.maxArmor, Math.max(player.armor, player.maxArmor));
-                    player.baseSpeed = 4.40 * Math.pow(1.08, Math.max(0, player.speedLevel - 1));
-                    player.damageMultiplier = 1.0 + Math.max(0, player.dmgLevel - 1) * 0.20;
-                    if (typeof updateTopLeftHUD === "function") updateTopLeftHUD();
                 }
 
                 if (settings) {
@@ -25260,11 +25207,6 @@
                             if (Number.isFinite(res.progress.maxUnlockedMap) && res.progress.maxUnlockedMap > (window.maxUnlockedMap || 1)) {
                                 window.maxUnlockedMap = res.progress.maxUnlockedMap;
                                 if (typeof updateMapUIState === "function") updateMapUIState();
-                            }
-                            if (Array.isArray(res.progress.unlockedWeapons)) {
-                                res.progress.unlockedWeapons.forEach(id => {
-                                    if (WEAPON_DATA[id]) WEAPON_DATA[id].unlocked = true;
-                                });
                             }
                         }
                         if (showFeedback) {
@@ -26951,7 +26893,7 @@
         }
         window.startFullCampaignFromMap1 = startFullCampaignFromMap1;
 
-        function switchCampaignMap(mapId, carryOver = true) {
+        function switchCampaignMap(mapId, carryOver = false) {
             if (!isMapUnlocked(mapId)) {
                 if (typeof sfx !== "undefined" && sfx) sfx.playError();
                 showToast(`🔒 MAP ${mapId} ĐANG BỊ KHÓA!`, `Cần hoàn thành Map ${mapId - 1} trước!`);
@@ -27161,51 +27103,53 @@
                 campaignStartTime = performance.now();
                 campaignTotalCreditsEarned = mapCfg.startCredits;
 
-                // Bảo vệ nâng cấp RPG và tài sản tài khoản: Không ép lùi về cấp 1 nếu người chơi đã nâng cấp
-                player.vitalLevel = Math.max(player.vitalLevel || 1, 1);
-                player.speedLevel = Math.max(player.speedLevel || 1, 1);
-                player.dmgLevel = Math.max(player.dmgLevel || 1, 1);
+                // Làm mới 100% thông số nâng cấp và trang bị về mặc định của từng Map khi chơi lại hoặc vào từ Màn Hình Chính
+                player.vitalLevel = 1;
+                player.speedLevel = 1;
+                player.dmgLevel = 1;
                 player.healCount = 0;
-                player.droneCount = Math.max(player.droneCount || 0, mapCfg.startDrones || 0);
+                player.droneCount = mapCfg.startDrones || 0;
                 player.hasNvg = false;
                 player.nvgActive = false;
 
-                // Bảo vệ tiền: Không bao giờ ép tụt tiền tích lũy của người chơi về số tiền khởi đầu
-                player.credits = Math.max(player.credits || 0, mapCfg.startCredits);
+                // Chỉ cấp đúng số tiền mặc định được định sẵn cho Map hiện tại
+                player.credits = mapCfg.startCredits;
+                setText("lobbyTopCredits", `$${player.credits.toLocaleString("vi-VN")}`);
 
-                const bonusHp = (player.vitalLevel - 1) * 30;
-                player.maxHp = (mapCfg.startHp || 100) + bonusHp;
-                player.maxArmor = (mapCfg.startHp || 100) + bonusHp;
+                player.maxHp = mapCfg.startHp || 100;
+                player.maxArmor = mapCfg.startHp || 100;
                 player.hp = player.maxHp;
-                player.armor = player.maxArmor;
-                player.baseSpeed = 4.40 * Math.pow(1.08, Math.max(0, player.speedLevel - 1));
-                player.damageMultiplier = (mapCfg.startDmgMult || 1.0) + Math.max(0, player.dmgLevel - 1) * 0.20;
+                player.armor = mapCfg.startArmor !== undefined ? mapCfg.startArmor : player.maxArmor;
+                player.baseSpeed = 4.40;
+                player.damageMultiplier = mapCfg.startDmgMult || 1.0;
 
                 syncWeaponsMaxAmmoWithDmgLevel(false);
 
                 const maxHeals = typeof getMaxHealCount === "function" ? getMaxHealCount(window.currentMapId) : 5;
                 setText("upgHealLv", `0/${maxHeals}`);
                 setText("lblMaxHealTimes", maxHeals);
-                setText("upgVitalLv", `${Math.min(MAX_SHOP_UPGRADE_LEVELS, Math.max(0, player.vitalLevel - 1))}/${MAX_SHOP_UPGRADE_LEVELS}`);
-                setText("upgSpeedLv", `${Math.min(MAX_SHOP_UPGRADE_LEVELS, Math.max(0, player.speedLevel - 1))}/${MAX_SHOP_UPGRADE_LEVELS}`);
-                setText("upgDmgLv", `${Math.min(MAX_SHOP_UPGRADE_LEVELS, Math.max(0, player.dmgLevel - 1))}/${MAX_SHOP_UPGRADE_LEVELS}`);
+                setText("upgVitalLv", `0/${MAX_SHOP_UPGRADE_LEVELS}`);
+                setText("upgSpeedLv", `0/${MAX_SHOP_UPGRADE_LEVELS}`);
+                setText("upgDmgLv", `0/${MAX_SHOP_UPGRADE_LEVELS}`);
                 setText("upgDroneLv", player.droneCount);
 
                 WEAPON_DATA.forEach((w, idx) => {
-                    // Giữ nguyên trạng thái đã mở khóa nếu trước đó đã sở hữu, không khóa súng người chơi đã mua
-                    w.unlocked = Boolean(w.unlocked
-                        || idx === 0
+                    // Chỉ mở khóa súng mặc định được cấp sẵn cho từng Map đã định sẵn
+                    w.unlocked = Boolean(
+                        idx === 0
                         || (mapCfg.unlockShotgunOnStart && idx === 1)
                         || (mapCfg.unlockMinigunOnStart && idx === 2)
                         || (mapCfg.unlockFlameOnStart && idx === 3)
                         || (mapCfg.unlockCryoOnStart && idx === 4)
                         || (mapCfg.unlockGaussOnStart && idx === 5)
-                        || (mapCfg.unlockLaserOnStart && idx === 6));
+                        || (mapCfg.unlockLaserOnStart && idx === 6)
+                    );
                     // Starter heavy weapons begin with 50% magazine (or 100% on Map 10 Finale)
                     const ammoRatio = mapCfg.unlockFullAmmoOnStart ? 1.0 : 0.50;
-                    w.ammo = idx === 0 ? Infinity : Math.max(w.ammo || 0, Math.round(w.maxAmmo * ammoRatio));
+                    w.ammo = idx === 0 ? Infinity : Math.round(w.maxAmmo * ammoRatio);
                 });
                 player.currentWeapon = mapCfg.unlockLaserOnStart ? 6 : (mapCfg.unlockGaussOnStart ? 5 : (mapCfg.unlockCryoOnStart ? 4 : (mapCfg.unlockFlameOnStart ? 3 : (mapCfg.unlockMinigunOnStart ? 2 : (mapCfg.unlockShotgunOnStart ? 1 : 0)))));
+                if (typeof renderArmoryWeapons === "function") renderArmoryWeapons();
             } else {
                 const stageBonus = 260;
                 player.maxHp = Math.max(player.maxHp, mapCfg.startHp || 110);
@@ -27216,6 +27160,7 @@
                 player.droneCount = Math.max(player.droneCount, mapCfg.startDrones || 0);
                 player.credits += stageBonus;
                 campaignTotalCreditsEarned += stageBonus;
+                setText("lobbyTopCredits", `$${player.credits.toLocaleString("vi-VN")}`);
 
                 // Reset số lần hồi máu về 0 sau mỗi màn chơi chiến dịch để người chơi tiếp tục mua hồi máu
                 player.healCount = 0;
@@ -27243,6 +27188,7 @@
                         w.ammo = w.maxAmmo;
                     }
                 });
+                if (typeof renderArmoryWeapons === "function") renderArmoryWeapons();
             }
 
             DOORS.forEach(d => {
@@ -27584,6 +27530,14 @@
 
             if (isGameOver) {
                 if (e.code === "Escape") openMainMenuSettings();
+                return;
+            }
+
+            if (isMapWon) {
+                if (!e.repeat && typeof window.confirmVictoryContinue === "function") {
+                    e.preventDefault();
+                    window.confirmVictoryContinue();
+                }
                 return;
             }
 
