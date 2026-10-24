@@ -1833,10 +1833,10 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
                         <div class="text-left min-w-0">
                             <div class="text-xs font-black text-cyan-200 tracking-wider uppercase font-mono-tech truncate">
-                                TÁC CHIẾN ONLINE CO-OP (TEAM 2)
+                                TÁC CHIẾN ONLINE_(TEAM 2)
                             </div>
                             <div id="coopLobbySubtext" class="text-[9px] font-mono-tech text-slate-400 truncate">
-                                Ghép đội 2 người • Tick 30Hz • P2P Miễn phí
+                                Sát cánh cùng đồng đội
                             </div>
                         </div>
                     </div>
@@ -1849,7 +1849,7 @@
                 <button onclick="window.toggleMapDiffDrawer()"
                         class="w-full px-4 py-2.5 rounded-none bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/50 hover:border-emerald-400 flex items-center justify-between transition shadow-lg group">
                     <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="px-2 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 text-[10px] font-mono-tech font-black border border-emerald-500/30">TAC</span>
+                        <span class="px-2 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 text-[10px] font-mono-tech font-black border border-emerald-500/30">MAP</span>
                         <span id="lobbySelectedMapDiffBar" class="text-xs font-black text-white tracking-wide uppercase truncate font-mono-tech">
                             MAP 1: KHU ALPHA - TRUNG BÌNH
                         </span>
@@ -1871,8 +1871,8 @@
                     <button onclick="window.closeMainMenuSettings()"
                             class="tactical-start-btn flex-1 rounded-none px-5 py-2 flex flex-col justify-between text-slate-950 relative overflow-hidden">
                         <div class="flex items-center justify-between w-full text-[9px] font-mono-tech font-extrabold opacity-80 leading-none">
-                            <span>[XENO-DEPLOY]</span>
-                            <span>READY // 5200x3600</span>
+                            <span>[XENO-MODE]</span>
+                            <span>// READY // </span>
                         </div>
                         <div class="text-xl sm:text-2xl font-black tracking-widest uppercase text-center leading-none my-0.5">
                             VÀO TRẬN
@@ -2819,7 +2819,7 @@
 
                             <div>
                                 <div class="flex items-center justify-between text-xs mb-1">
-                                    <span class="font-bold text-white font-mono-tech">Độ Sáng Màn Hình (Brightness: Tối ➔ Sáng)</span>
+                                    <span class="font-bold text-white font-mono-tech">Độ Sáng</span>
                                     <span id="valBrightness" class="font-mono-tech font-bold text-amber-300">100%</span>
                                 </div>
                                 <input id="sliderBrightness" type="range" min="55" max="150" value="100"
@@ -2873,7 +2873,7 @@
 
                             <button id="sysModalMonsterCacheBtn" onclick="window.toggleMonsterRamCacheMode()" class="p-3 sm:p-3.5 rounded-none bg-slate-900/85 hover:bg-slate-800 border border-cyan-500/50 hover:border-cyan-400 flex items-center justify-between text-left transition">
                                 <div>
-                                    <div class="text-xs font-bold text-white font-mono-tech uppercase tracking-wide">Bộ Đệm Quái RAM</div>
+                                    <div class="text-xs font-bold text-white font-mono-tech uppercase tracking-wide">RAM CACHE</div>
                                     <div id="sysModalMonsterCacheText" class="text-[10px] font-mono-tech text-cyan-300 mt-0.5">Tách Bộ Phận RAM (Siêu Mượt)</div>
                                 </div>
                                 <span id="sysModalMonsterCacheBadge" class="px-2.5 py-1 rounded-none bg-slate-800 text-[11px] font-mono-tech text-cyan-300 font-bold border border-cyan-500/40">RAM</span>
@@ -3127,11 +3127,11 @@
                                         <!-- Placeholder when no URL or error -->
                                         <div id="sysDonatePlaceholder" class="w-full h-full flex flex-col items-center justify-center text-center p-2 text-slate-500 font-mono-tech">
                                             <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current text-slate-600 mb-1"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v5h-3v-5zm-5 0h2v2h-2v-2zm2 3h3v2h-3v-2zm-2 0h2v2h-2v-2z"/></svg>
-                                            <span class="text-[9px] font-bold text-amber-300">CHƯA CÓ LINK QR</span>
+                                            <span class="text-[9px] font-bold text-amber-300">CHƯA CÓ THÔNG TIN</span>
                                             <span id="sysDonateErrorNotice" class="text-[8px] text-slate-400 mt-0.5 leading-tight hidden"></span>
                                         </div>
                                     </div>
-                                    <span class="text-[9px] font-mono-tech text-slate-400 mt-1.5">Quét bằng ứng dụng Ngân hàng / Ví điện tử</span>
+                                    <span class="text-[9px] font-mono-tech text-slate-400 mt-1.5">Ngân hàng / Ví điện tử</span>
                                 </div>
                             </div>
 
@@ -3423,141 +3423,279 @@
          MODAL: TÁC CHIẾN ONLINE CO-OP 2 NGƯỜI (TEAM 2 // TICK RATE 30Hz)
          ========================================================================== -->
     <div id="coopModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4">
-        <div class="hud-modal rounded-none max-w-xl w-full p-5 sm:p-6 flex flex-col gap-4 border-2 border-cyan-400/70 shadow-[0_0_60px_rgba(6,182,212,0.25)] bg-[#070b13]/98 text-left font-mono-tech relative">
-            <!-- Header -->
-            <div class="flex items-center justify-between border-b border-cyan-500/30 pb-3">
+        <div class="hud-modal rounded-none max-w-2xl w-full p-4 sm:p-5 flex flex-col gap-3 border-2 border-cyan-400/70 shadow-[0_0_60px_rgba(6,182,212,0.25)] bg-[#070b13]/98 text-left font-mono-tech relative max-h-[94vh] overflow-y-auto">
+            <!-- Header gọn gàng -->
+            <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2.5">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></span>
-                    <div>
-                        <div class="text-sm sm:text-base font-black text-cyan-200 tracking-wider uppercase">
-                            LẬP ĐỘI CÙNG CHIẾN
-                        </div>
-                        <div class="text-[10px] text-slate-400">
-                            Cùng nhau chiến đấu bảo vệ nền văn minh cuối cùng.
-                        </div>
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                    <div class="text-sm sm:text-base font-black text-cyan-200 tracking-wider uppercase">
+                        ONLINE MODE
                     </div>
                 </div>
-                <button onclick="window.closeCoopModal()" class="w-8 h-8 rounded-none bg-slate-900 border border-slate-700 hover:border-rose-400 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition">
-                    ✕
+                <button onclick="window.closeCoopModal()" class="px-3 h-7 rounded-none bg-slate-900 border border-slate-700 hover:border-rose-400 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs uppercase transition cursor-pointer">
+                    ĐÓNG
                 </button>
             </div>
 
-            <!-- Tab Switcher: Host Room or Join Room -->
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950/80 border border-slate-800">
-                <button id="coopTabHostBtn" onclick="window.switchCoopTab('host')" class="py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-                    [1] TẠO PHÒNG (HOST)
-                </button>
-                <button id="coopTabJoinBtn" onclick="window.switchCoopTab('join')" class="py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200">
-                    [2] VÀO PHÒNG (JOIN)
-                </button>
-            </div>
-
-            <!-- Commercial Multi-Engine & Tick Rate Control Bar -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2 bg-slate-950/90 border border-slate-800 text-[10px]">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-slate-400 font-bold uppercase tracking-wider">HẠ TẦNG:</span>
-                    <button id="coopEngineP2PBtn" onclick="window.setCoopEngine('p2p')" class="px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-                        ⚡ P2P DIRECT (Vercel)
+            <!-- Thanh chuyển Tab + Hạ tầng mạng & Tần số đồng bộ -->
+            <div class="flex flex-col gap-2">
+                <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 border border-slate-800">
+                    <button id="coopTabJoinBtn" onclick="window.switchCoopTab('join')" class="py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 cursor-pointer">
+                        DANH SÁCH PHÒNG
                     </button>
-                    <button id="coopEngineSocketBtn" onclick="window.setCoopEngine('socket')" class="px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white">
-                        🚀 DEDICATED SERVER
+                    <button id="coopTabHostBtn" onclick="window.switchCoopTab('host')" class="py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200 cursor-pointer">
+                        TẠO PHÒNG (CHỦ PHÒNG)
                     </button>
                 </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-slate-400 font-bold uppercase tracking-wider">TICK:</span>
-                    <button id="coopTick30Btn" onclick="window.setCoopTickRate(30)" class="px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white">
-                        30Hz
-                    </button>
-                    <button id="coopTick60Btn" onclick="window.setCoopTickRate(60)" class="px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
-                        60Hz LERP
-                    </button>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 bg-slate-950/90 border border-slate-800/90 text-[10px] relative">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400 font-bold uppercase">MẠNG:</span>
+                        <button id="coopEngineP2PBtn" onclick="window.setCoopEngine('p2p')" class="px-2 py-0.5 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 uppercase cursor-pointer">
+                            P2P DIRECT
+                        </button>
+                        <button id="coopEngineSocketBtn" onclick="window.setCoopEngine('socket')" class="px-2 py-0.5 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white uppercase cursor-pointer">
+                            DEDICATED SERVER
+                        </button>
+                    </div>
+
+                    <!-- Hộp xổ ra / thu gọn chọn Tần số đồng bộ 30Hz / 60Hz -->
+                    <div id="coopTickDropdownWrapper" class="relative flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-400 font-bold uppercase">Server Tick Rate:</span>
+                        <button id="coopTickDropdownBtn" type="button" onclick="window.toggleCoopTickDropdown(event)" class="px-2 py-0.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 font-bold uppercase transition flex items-center gap-1.5 cursor-pointer">
+                            <span id="coopTickCurrentLabel">60Hz</span>
+                            <span id="coopTickDropdownArrow" class="text-[9px] text-emerald-400 font-mono-tech">[MỞ]</span>
+                        </button>
+
+                        <div id="coopTickDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-56 bg-slate-950 border border-cyan-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 p-1 flex flex-col gap-1">
+                            <button id="coopTick60Btn" type="button" onclick="window.setCoopTickRate(60)" class="w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer">
+                                <div class="flex items-center justify-between font-black text-[10px] uppercase">
+                                    <span>60Hz (MẶC ĐỊNH)</span>
+                                    <span id="coopTick60Check" class="text-[9px]">ĐANG CHỌN</span>
+                                </div>
+                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">60HZ-Max</span>
+                            </button>
+                            <button id="coopTick30Btn" type="button" onclick="window.setCoopTickRate(30)" class="w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer">
+                                <div class="flex items-center justify-between font-black text-[10px] uppercase">
+                                    <span>30Hz-(TIẾT KIỆM)</span>
+                                    <span id="coopTick30Check" class="text-[9px] hidden">ĐANG CHỌN</span>
+                                </div>
+                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">30HZ-(TIẾT KIỆM)</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Server URL Box (Hiển thị khi chọn Dedicated Server) -->
-            <div id="coopSocketServerBox" class="hidden flex flex-col gap-1.5 p-2.5 bg-slate-950 border border-amber-500/40">
-                <div class="flex items-center justify-between text-[9px] text-amber-300 font-bold uppercase">
-                    <span>MÁY CHỦ SOCKET.IO CHUYÊN DỤNG (XUYÊN TƯỜNG LỬA 100%):</span>
-                    <span class="text-slate-400">Node.js Dedicated Relay</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input id="coopSocketUrlInput" type="text" placeholder="https://project-xeno-server.onrender.com hoặc http://localhost:4000" class="flex-1 bg-slate-900 border border-slate-700 focus:border-cyan-400 px-2.5 py-1 text-xs text-cyan-200 outline-none font-mono-tech" />
-                    <button onclick="window.saveCoopSocketUrl()" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition">
-                        LƯU & KẾT NỐI
-                    </button>
-                </div>
-            </div>
-
-            <!-- PANEL 1: HOST VIEW -->
-            <div id="coopHostPanel" class="flex flex-col gap-3.5">
-                <div class="bg-slate-900/80 p-3.5 border border-cyan-500/30 rounded-none flex flex-col gap-2">
-                    <div class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">MÃ PHÒNG CHIẾN THUẬT (ROOM CODE):</div>
-                    <div class="flex items-center justify-between gap-3">
-                        <span id="coopHostRoomCode" class="text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all">
-                            XN-....
-                        </span>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="window.regenerateCoopRoomCode()" title="Tạo mã phòng mới" class="px-2.5 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold transition">
-                                🔄 ĐỔI MÃ
-                            </button>
-                            <button onclick="window.copyCoopRoomCode()" class="px-3 py-1.5 rounded-none bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-xs font-extrabold transition">
-                                📋 SAO CHÉP MÃ
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900/60 p-3 border border-slate-800 rounded-none flex items-center justify-between gap-2">
-                    <div class="min-w-0 flex-1 mr-2">
-                        <div class="text-[9px] text-slate-400 uppercase font-bold">LINK MỜI TRỰC TIẾP (BẤM LÀ VÀO):</div>
-                        <div id="coopHostDirectLink" class="text-[10px] text-slate-300 truncate mt-0.5 select-all">
-                            Đang tạo link...
-                        </div>
-                    </div>
-                    <button onclick="window.copyCoopDirectLink()" class="px-3 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-extrabold transition shrink-0">
-                        🔗 SAO CHÉP LINK
-                    </button>
-                </div>
-
-                <!-- Connection status box -->
-                <div id="coopHostStatusBox" class="p-3 bg-slate-950/90 border border-amber-500/40 rounded-none flex items-center gap-3">
-                    <div id="coopHostSpinner" class="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0"></div>
-                    <div class="min-w-0">
-                        <div id="coopHostStatusText" class="text-xs font-bold text-amber-300">
-                            Đang chờ đồng đội tham gia phòng...
-                        </div>
-                        <div id="coopHostStatusSub" class="text-[10px] text-slate-400">
-                            Gửi mã hoặc link cho bạn bè. Khi đồng đội vào, nút bắt đầu sẽ sáng.
-                        </div>
-                    </div>
-                </div>
-
-                <button id="coopHostStartBtn" onclick="window.startCoopMissionAsHost()" disabled class="w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700">
-                    BẮT ĐẦU CHIẾN DỊCH CO-OP (CHỜ ĐỒNG ĐỘI)
+            <div id="coopSocketServerBox" class="hidden flex items-center gap-2 p-2 bg-slate-950 border border-amber-500/40">
+                <span class="text-[10px] text-amber-300 font-bold uppercase shrink-0">SERVER URL:</span>
+                <input id="coopSocketUrlInput" type="text" placeholder="https://project-xeno-server.onrender.com" class="flex-1 bg-slate-900 border border-slate-700 focus:border-cyan-400 px-2.5 py-1 text-xs text-cyan-200 outline-none font-mono-tech" />
+                <button onclick="window.saveCoopSocketUrl()" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase transition shrink-0 cursor-pointer">
+                    LƯU
                 </button>
             </div>
 
-            <!-- PANEL 2: JOIN VIEW -->
-            <div id="coopJoinPanel" class="hidden flex flex-col gap-3.5">
-                <div class="bg-slate-900/80 p-3.5 border border-slate-700 rounded-none flex flex-col gap-2">
-                    <label class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">NHẬP MÃ PHÒNG CỦA ĐỒNG ĐỘI:</label>
-                    <div class="flex items-center gap-2">
-                        <input id="coopJoinInput" type="text" placeholder="Ví dụ: XN4821" maxlength="12" class="flex-1 bg-slate-950 border border-slate-700 focus:border-cyan-400 px-3.5 py-2.5 text-base sm:text-lg font-black tracking-widest uppercase text-cyan-200 outline-none font-mono-tech" />
-                        <button onclick="window.pasteCoopJoinCode()" class="px-3 py-2.5 rounded-none bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold transition">
+            <!-- PANEL 2 (DEFAULT): DANH SÁCH PHÒNG & GIAO DIỆN KHÁCH -->
+            <div id="coopJoinPanel" class="flex flex-col gap-2.5">
+                <div id="coopRoomBrowserSection" class="bg-slate-900/80 border border-slate-700/90 p-3 flex flex-col gap-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-cyan-200 uppercase">KÊNH PHÒNG (1–8)</span>
+                            <span class="text-slate-600">•</span>
+                            <span id="coopRoomScanSummary" class="text-[11px] font-bold text-slate-300">Đang kiểm tra...</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button id="coopRefreshRoomsBtn" onclick="window.refreshCoopRoomList()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[10px] font-bold uppercase transition cursor-pointer">
+                                LÀM MỚI
+                            </button>
+                            <button onclick="window.switchCoopTab('host')" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-[10px] font-black uppercase transition cursor-pointer">
+                                TẠO PHÒNG
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="coopRoomListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[250px] overflow-y-auto pr-0.5">
+                        <!-- Render tự động bằng JS -->
+                    </div>
+                </div>
+
+                <!-- Khung Phòng Chờ của Khách sau khi đã bấm VÀO PHÒNG -->
+                <div id="coopClientLobbyCard" class="hidden bg-slate-900/95 border-2 border-emerald-500/60 p-3 flex flex-col gap-2.5 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div>
+                            <div id="coopClientRoomTitle" class="text-xs sm:text-sm font-black text-emerald-300 uppercase tracking-wider">
+                                PHÒNG 1 [XNR01] • ĐỘI HÌNH 2/2
+                            </div>
+                            <div id="coopClientRoomMeta" class="text-[11px] text-cyan-200 font-bold mt-0.5">
+                                Map 1 • Độ khó: TRUNG BÌNH • 60Hz
+                            </div>
+                        </div>
+                        <button onclick="window.leaveCoopRoomAsClient()" class="px-2.5 py-1 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-200 text-[10px] font-bold uppercase transition cursor-pointer">
+                            RỜI PHÒNG
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                        <div class="p-2.5 bg-slate-950 border border-cyan-500/40 flex items-center justify-between">
+                            <div>
+                                <div class="text-slate-400 font-bold uppercase">P1 • CHỦ PHÒNG</div>
+                                <div class="text-xs font-black text-white mt-0.5">CHỈ HUY HOST</div>
+                            </div>
+                            <span class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-black uppercase">
+                                SẴN SÀNG
+                            </span>
+                        </div>
+                        <div class="p-2.5 bg-slate-950 border border-slate-700 flex items-center justify-between" id="coopClientSelfSlotBox">
+                            <div>
+                                <div class="text-slate-400 font-bold uppercase">P2 • ĐỒNG ĐỘI</div>
+                                <div class="text-xs font-black text-cyan-200 mt-0.5">BẠN</div>
+                            </div>
+                            <span id="coopClientSelfReadyBadge" class="px-2 py-0.5 bg-amber-500/20 border border-amber-400/50 text-amber-300 font-black uppercase">
+                                CHƯA SẴN SÀNG
+                            </span>
+                        </div>
+                    </div>
+
+                    <button id="coopClientReadyBtn" onclick="window.toggleCoopClientReady()" class="w-full py-2.5 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider transition shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer">
+                        XÁC NHẬN SẴN SÀNG
+                    </button>
+                </div>
+
+                <!-- Thanh trạng thái & Nhập mã nhanh trên cùng 1 hàng gọn gàng -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-stretch">
+                    <div id="coopJoinStatusBox" class="sm:col-span-6 px-2.5 py-2 bg-slate-950/90 border border-slate-800 flex items-center gap-2">
+                        <span id="coopJoinStatusDot" class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>
+                        <div id="coopJoinStatusText" class="text-[11px] font-bold text-slate-300 truncate">
+                            Chọn phòng đang chờ hoặc nhập mã phòng.
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-6 bg-slate-950/90 p-1.5 border border-slate-800 flex items-center gap-1.5">
+                        <input id="coopJoinInput" type="text" placeholder="MÃ PHÒNG (VD: XNR01)" maxlength="12" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 focus:border-cyan-400 px-2.5 py-1 text-xs font-black tracking-widest uppercase text-cyan-200 outline-none font-mono-tech" />
+                        <button onclick="window.pasteCoopJoinCode()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[10px] font-bold uppercase transition shrink-0 cursor-pointer">
                             DÁN
+                        </button>
+                        <button id="coopJoinConnectBtn" onclick="window.connectToCoopHost()" class="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition shrink-0 cursor-pointer">
+                            VÀO PHÒNG
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 1: GIAO DIỆN TẠO PHÒNG (CHỦ PHÒNG) -->
+            <div id="coopHostPanel" class="hidden flex flex-col gap-2.5">
+                <!-- Hàng 1: Mã Phòng & Cụm Nút Điều Khiển Nhanh -->
+                <div class="bg-slate-900/85 p-3 border border-cyan-500/35 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div>
+                            <div id="coopHostSlotLabel" class="text-[10px] text-cyan-400 uppercase tracking-wider font-black">
+                                PHÒNG 1 • KÊNH CÔNG KHAI (1/2)
+                            </div>
+                            <div class="flex items-baseline gap-2.5 mt-0.5">
+                                <span id="coopHostRoomCode" class="text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all leading-none">
+                                    XNR01
+                                </span>
+                                <span id="coopHostRoomMapLabel" class="text-[10px] text-emerald-400 font-bold uppercase">
+                                    MAP 1 • ĐỘ KHÓ: TRUNG BÌNH
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button onclick="window.regenerateCoopRoomCode()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[11px] font-bold uppercase transition cursor-pointer">
+                            ĐỔI PHÒNG
+                        </button>
+                        <button onclick="window.copyCoopRoomCode()" class="px-2.5 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-[11px] font-extrabold uppercase transition cursor-pointer">
+                            CHÉP MÃ
+                        </button>
+                        <button onclick="window.copyCoopDirectLink()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[11px] font-bold uppercase transition cursor-pointer">
+                            CHÉP LINK
+                        </button>
+                        <button id="coopHostCloseRoomBtn" onclick="window.toggleCoopHostRoomState()" class="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-[11px] font-extrabold uppercase transition cursor-pointer">
+                            ĐÓNG PHÒNG
                         </button>
                     </div>
                 </div>
 
-                <div id="coopJoinStatusBox" class="p-3 bg-slate-950/90 border border-slate-800 rounded-none flex items-center gap-3">
-                    <span id="coopJoinStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
-                    <div id="coopJoinStatusText" class="text-xs font-bold text-slate-300">
-                        Nhập mã phòng và bấm Kết Nối để tham gia cùng đồng đội.
+                <!-- Hàng 2: Chọn Bản Đồ & Chọn Độ Khó trực tiếp ngay trong phòng -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-slate-400 font-bold uppercase">BẢN ĐỒ CHIẾN DỊCH</span>
+                            <span class="text-cyan-400 font-bold">CHỦ PHÒNG CHỌN</span>
+                        </div>
+                        <select id="coopHostMapSelect" onchange="window.setCoopHostMap(this.value)" class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 px-2.5 py-1.5 text-xs font-black text-cyan-200 uppercase outline-none font-mono-tech cursor-pointer">
+                            <option value="1">MAP 1: KHU ALPHA - KHỞI ĐẦU</option>
+                            <option value="2">MAP 2: TRẠM LỌC ĐỘC TỐ</option>
+                            <option value="3">MAP 3: LÒ PHẢN ỨNG HẠT NHÂN</option>
+                            <option value="4">MAP 4: KHU GIAM GIỮ SINH HỌC</option>
+                            <option value="5">MAP 5: ĐẤU TRƯỜNG TRUNG TÂM</option>
+                            <option value="6">MAP 6: KHO VŨ KHÍ BỎ HOANG</option>
+                            <option value="7">MAP 7: HẦM NGẦM TỐI TĂM</option>
+                            <option value="8">MAP 8: TRUNG TÂM CHỈ HUY</option>
+                            <option value="9">MAP 9: CỔNG KHÔNG GIAN</option>
+                            <option value="10">MAP 10: THÁNH ĐỊA GENESIS</option>
+                        </select>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-slate-400 font-bold uppercase">MỨC ĐỘ KHÓ</span>
+                            <span id="coopHostDiffSummary" class="text-amber-300 font-bold uppercase">CHUẨN (100% MÁU/SÁT THƯƠNG)</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button id="coopDiffBtn_easy" type="button" onclick="window.setCoopHostDifficulty('easy')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
+                                DỄ
+                            </button>
+                            <button id="coopDiffBtn_normal" type="button" onclick="window.setCoopHostDifficulty('normal')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-amber-500/20 text-amber-300 border border-amber-400/60 cursor-pointer">
+                                TRUNG BÌNH
+                            </button>
+                            <button id="coopDiffBtn_hard" type="button" onclick="window.setCoopHostDifficulty('hard')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
+                                KHÓ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <button id="coopJoinConnectBtn" onclick="window.connectToCoopHost()" class="w-full py-3 px-4 rounded-none bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-lg">
-                    KẾT NỐI VÀO PHÒNG (JOIN)
+                <!-- Hàng 3: Đội hình 2 người chơi -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[10px]">
+                    <div class="p-2.5 bg-slate-950 border border-cyan-500/40 flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold uppercase">P1 • CHỦ PHÒNG</div>
+                            <div class="text-xs font-black text-white mt-0.5">BẠN (CHỈ HUY P1)</div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-black uppercase">
+                            SẴN SÀNG
+                        </span>
+                    </div>
+                    <div id="coopHostPeerSlotBox" class="p-2.5 bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold uppercase">P2 • ĐỒNG ĐỘI</div>
+                            <div id="coopHostPeerNameText" class="text-xs font-black text-slate-400 mt-0.5">ĐANG CHỜ NGƯỜI VÀO (1/2)</div>
+                        </div>
+                        <span id="coopHostPeerReadyBadge" class="px-2 py-0.5 bg-slate-800 border border-slate-700 text-slate-400 font-black uppercase">
+                            TRỐNG
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Hàng 4: Trạng thái phòng gọn 1 dòng + Nút Bắt Đầu Chiến Dịch -->
+                <div id="coopHostStatusBox" class="px-3 py-2.5 bg-slate-950/90 border border-amber-500/40 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div id="coopHostSpinner" class="w-3.5 h-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0"></div>
+                        <div id="coopHostStatusText" class="text-xs font-bold text-amber-300 truncate">
+                            Phòng đang mở công khai. Chờ đồng đội tham gia...
+                        </div>
+                    </div>
+                    <div id="coopHostStatusSub" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                        P2P DIRECT • 60Hz
+                    </div>
+                </div>
+
+                <button id="coopHostStartBtn" onclick="window.startCoopMissionAsHost()" disabled class="w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700">
+                    BẮT ĐẦU CHIẾN DỊCH (CHỜ ĐỒNG ĐỘI 1/2)
                 </button>
             </div>
         </div>
@@ -5905,9 +6043,22 @@
         const XENO_COOP = {
             active: false,
             isHost: false,
+            hostRoomClosed: false,
             roomCode: "",
+            currentSlot: 1,
+            _tryingSlot: 1,
+            inMission: false,
+            peerReady: false,
+            clientReady: false,
+            hostMapId: 1,
+            hostDifficulty: "normal",
             peer: null,
             conn: null,
+            scannerPeer: null,
+            scannerSocket: null,
+            _scanTimeout: null,
+            roomSlotsState: [],
+            PUBLIC_SLOT_COUNT: 8,
             socket: null,
             engineMode: "p2p", // "p2p" | "socket"
             socketUrl: localStorage.getItem("xeno_socket_url") || "https://project-xeno-server.onrender.com",
@@ -5920,6 +6071,17 @@
             lastPingSent: 0,
             seq: 0,
 
+            getSlotRoomCode(slot) {
+                const s = Math.max(1, Math.min(this.PUBLIC_SLOT_COUNT, Number(slot) || 1));
+                return "XNR" + String(s).padStart(2, "0");
+            },
+
+            getSlotFromRoomCode(code) {
+                if (!code) return null;
+                const m = String(code).trim().toUpperCase().match(/^XNR0([1-8])$/);
+                return m ? Number(m[1]) : null;
+            },
+
             generateRoomCode() {
                 const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
                 let code = "XN";
@@ -5931,6 +6093,400 @@
 
             getPeerIdForRoom(roomCode) {
                 return "px-xeno-" + roomCode.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+            },
+
+            getDifficultyId() {
+                if (typeof currentDifficulty === "object" && currentDifficulty && currentDifficulty.id) {
+                    return currentDifficulty.id;
+                }
+                if (typeof currentDifficulty === "string" && currentDifficulty) {
+                    return currentDifficulty;
+                }
+                return "normal";
+            },
+
+            getDifficultyLabel(diffId) {
+                const id = String(diffId || this.getDifficultyId() || "normal").toLowerCase();
+                if (id === "easy" || id === "dễ") return "DỄ";
+                if (id === "hard" || id === "khó") return "KHÓ";
+                return "TRUNG BÌNH";
+            },
+
+            syncHostSelectorsUI() {
+                const mapSel = byId("coopHostMapSelect");
+                if (mapSel) {
+                    mapSel.value = String(window.currentMapId || 1);
+                }
+                const curDiff = this.getDifficultyId();
+                const btnEasy = byId("coopDiffBtn_easy");
+                const btnNorm = byId("coopDiffBtn_normal");
+                const btnHard = byId("coopDiffBtn_hard");
+                const diffSum = byId("coopHostDiffSummary");
+                const baseCls = "py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer";
+                if (btnEasy) btnEasy.className = curDiff === "easy" ? "py-1.5 px-2 text-xs font-black uppercase transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/60 cursor-pointer" : baseCls;
+                if (btnNorm) btnNorm.className = curDiff === "normal" ? "py-1.5 px-2 text-xs font-black uppercase transition bg-amber-500/20 text-amber-300 border border-amber-400/60 cursor-pointer" : baseCls;
+                if (btnHard) btnHard.className = curDiff === "hard" ? "py-1.5 px-2 text-xs font-black uppercase transition bg-rose-500/20 text-rose-300 border border-rose-400/60 cursor-pointer" : baseCls;
+                if (diffSum) {
+                    if (curDiff === "easy") {
+                        diffSum.textContent = "QUÁI YẾU (-30% MÁU) • +20% TIỀN";
+                        diffSum.className = "text-emerald-300 font-bold uppercase";
+                    } else if (curDiff === "hard") {
+                        diffSum.textContent = "ÁC MỘNG (+45% MÁU) • +35% TIỀN";
+                        diffSum.className = "text-rose-300 font-bold uppercase";
+                    } else {
+                        diffSum.textContent = "CHUẨN (100% MÁU & SÁT THƯƠNG)";
+                        diffSum.className = "text-amber-300 font-bold uppercase";
+                    }
+                }
+            },
+
+            getRoomStatusPayload() {
+                return {
+                    t: "room_status",
+                    roomCode: this.roomCode,
+                    slot: this.currentSlot || this.getSlotFromRoomCode(this.roomCode) || 1,
+                    mapId: window.currentMapId || 1,
+                    difficulty: this.getDifficultyId(),
+                    players: this.connected ? 2 : 1,
+                    maxPlayers: 2,
+                    state: this.inMission ? "playing" : "waiting",
+                    peerReady: !!this.peerReady,
+                    hz: this.tickRate
+                };
+            },
+
+            stopScanner() {
+                if (this._scanTimeout) {
+                    clearTimeout(this._scanTimeout);
+                    this._scanTimeout = null;
+                }
+                if (this.scannerPeer) {
+                    try { this.scannerPeer.destroy(); } catch (e) {}
+                    this.scannerPeer = null;
+                }
+                if (this.scannerSocket) {
+                    try { this.scannerSocket.disconnect(); } catch (e) {}
+                    this.scannerSocket = null;
+                }
+            },
+
+            scanPublicRooms() {
+                this.stopScanner();
+
+                this.roomSlotsState = [];
+                for (let i = 1; i <= this.PUBLIC_SLOT_COUNT; i++) {
+                    const code = this.getSlotRoomCode(i);
+                    if (this.isHost && this.roomCode === code && ((this.peer && !this.peer.destroyed) || (this.socket && this.socket.connected))) {
+                        this.roomSlotsState.push({
+                            slot: i,
+                            roomCode: code,
+                            status: this.inMission ? "playing" : (this.connected ? "full" : "waiting"),
+                            players: this.connected ? 2 : 1,
+                            maxPlayers: 2,
+                            mapId: window.currentMapId || 1,
+                            difficulty: this.getDifficultyId(),
+                            peerReady: !!this.peerReady,
+                            hz: this.tickRate
+                        });
+                    } else {
+                        this.roomSlotsState.push({
+                            slot: i,
+                            roomCode: code,
+                            status: "scanning",
+                            players: 0,
+                            maxPlayers: 2,
+                            mapId: 1,
+                            difficulty: "normal",
+                            peerReady: false,
+                            hz: 60
+                        });
+                    }
+                }
+                this.renderRoomList();
+
+                const refreshBtn = byId("coopRefreshRoomsBtn");
+                if (refreshBtn) {
+                    refreshBtn.textContent = "ĐANG QUÉT...";
+                    refreshBtn.disabled = true;
+                }
+
+                const finishScan = () => {
+                    for (let i = 0; i < this.roomSlotsState.length; i++) {
+                        if (this.roomSlotsState[i].status === "scanning") {
+                            this.roomSlotsState[i].status = "empty";
+                            this.roomSlotsState[i].players = 0;
+                        }
+                    }
+                    this.stopScanner();
+                    if (refreshBtn) {
+                        refreshBtn.textContent = "LÀM MỚI";
+                        refreshBtn.disabled = false;
+                    }
+                    this.renderRoomList();
+                };
+
+                if (this.engineMode === "socket") {
+                    if (typeof io === "undefined") {
+                        finishScan();
+                        return;
+                    }
+                    try {
+                        this.scannerSocket = io(this.socketUrl, {
+                            transports: ["websocket", "polling"],
+                            timeout: 4000,
+                            reconnection: false
+                        });
+                        this._scanTimeout = setTimeout(finishScan, 3500);
+                        this.scannerSocket.on("connect", () => {
+                            this.scannerSocket.emit("list_rooms", (res) => {
+                                const rooms = (res && Array.isArray(res.rooms)) ? res.rooms : [];
+                                for (let i = 0; i < this.roomSlotsState.length; i++) {
+                                    const st = this.roomSlotsState[i];
+                                    const found = rooms.find(r => r.roomCode === st.roomCode || Number(r.slot) === st.slot);
+                                    if (found) {
+                                        st.players = found.players || 1;
+                                        st.mapId = found.mapId || 1;
+                                        st.difficulty = found.difficulty || "normal";
+                                        st.peerReady = !!found.peerReady;
+                                        st.status = found.state === "playing" ? "playing" : (st.players >= 2 ? "full" : "waiting");
+                                    } else {
+                                        st.status = "empty";
+                                        st.players = 0;
+                                    }
+                                }
+                                finishScan();
+                            });
+                        });
+                        this.scannerSocket.on("connect_error", () => {
+                            finishScan();
+                        });
+                    } catch (e) {
+                        finishScan();
+                    }
+                    return;
+                }
+
+                if (typeof Peer === "undefined") {
+                    finishScan();
+                    return;
+                }
+
+                let resolvedCount = this.roomSlotsState.filter(s => s.status !== "scanning").length;
+                const checkAllResolved = () => {
+                    if (resolvedCount >= this.PUBLIC_SLOT_COUNT) {
+                        finishScan();
+                    }
+                };
+
+                this._scanTimeout = setTimeout(finishScan, 3000);
+
+                try {
+                    this.scannerPeer = new Peer(this.getPeerOptions());
+
+                    this.scannerPeer.on("error", (err) => {
+                        const msg = String(err && (err.message || err.type) || "");
+                        const m = msg.match(/px-xeno-xnr0([1-8])/i);
+                        if (m) {
+                            const slotNum = Number(m[1]);
+                            const slotObj = this.roomSlotsState.find(s => s.slot === slotNum);
+                            if (slotObj && slotObj.status === "scanning") {
+                                slotObj.status = "empty";
+                                slotObj.players = 0;
+                                resolvedCount++;
+                                this.renderRoomList();
+                                checkAllResolved();
+                            }
+                        }
+                    });
+
+                    this.scannerPeer.on("open", () => {
+                        for (let i = 0; i < this.roomSlotsState.length; i++) {
+                            const slotObj = this.roomSlotsState[i];
+                            if (slotObj.status !== "scanning") continue;
+                            const targetPeerId = this.getPeerIdForRoom(slotObj.roomCode);
+                            try {
+                                const probeConn = this.scannerPeer.connect(targetPeerId, {
+                                    metadata: { mode: "probe" }
+                                });
+                                probeConn.on("open", () => {
+                                    try { probeConn.send({ t: "room_probe" }); } catch (e) {}
+                                });
+                                probeConn.on("data", (data) => {
+                                    if (data && data.t === "room_status") {
+                                        slotObj.players = data.players || 1;
+                                        slotObj.mapId = data.mapId || 1;
+                                        slotObj.difficulty = data.difficulty || "normal";
+                                        slotObj.peerReady = !!data.peerReady;
+                                        slotObj.hz = data.hz || 60;
+                                        slotObj.status = data.state === "playing"
+                                            ? "playing"
+                                            : (slotObj.players >= 2 ? "full" : "waiting");
+                                        resolvedCount++;
+                                        try { probeConn.close(); } catch (e) {}
+                                        this.renderRoomList();
+                                        checkAllResolved();
+                                    }
+                                });
+                            } catch (e) {
+                                slotObj.status = "empty";
+                                resolvedCount++;
+                            }
+                        }
+                        checkAllResolved();
+                    });
+                } catch (e) {
+                    finishScan();
+                }
+            },
+
+            renderRoomList() {
+                const container = byId("coopRoomListContainer");
+                const summaryEl = byId("coopRoomScanSummary");
+                if (!container) return;
+
+                const slots = this.roomSlotsState || [];
+                let waitingCount = 0;
+                let busyCount = 0;
+                let emptyCount = 0;
+                let scanningCount = 0;
+
+                for (let i = 0; i < slots.length; i++) {
+                    const st = slots[i].status;
+                    if (st === "waiting") waitingCount++;
+                    else if (st === "playing" || st === "full") busyCount++;
+                    else if (st === "empty") emptyCount++;
+                    else scanningCount++;
+                }
+
+                if (summaryEl) {
+                    if (scanningCount > 0) {
+                        summaryEl.textContent = `Đang quét ${this.PUBLIC_SLOT_COUNT - scanningCount}/${this.PUBLIC_SLOT_COUNT} kênh...`;
+                    } else {
+                        summaryEl.textContent = `${waitingCount} chờ • ${busyCount} đang chơi • ${emptyCount} trống`;
+                    }
+                }
+
+                const priorityOrder = { waiting: 1, playing: 2, full: 3, scanning: 4, empty: 5 };
+                const sorted = slots.slice().sort((a, b) => {
+                    const pa = priorityOrder[a.status] || 9;
+                    const pb = priorityOrder[b.status] || 9;
+                    if (pa !== pb) return pa - pb;
+                    return a.slot - b.slot;
+                });
+
+                let html = "";
+                for (let i = 0; i < sorted.length; i++) {
+                    const s = sorted[i];
+                    const diffLabel = this.getDifficultyLabel(s.difficulty);
+                    const isSelfJoined = this.connected && !this.isHost && this.roomCode === s.roomCode;
+
+                    if (s.status === "waiting") {
+                        html += `
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-emerald-950/25 border border-emerald-500/40 hover:border-emerald-400 transition">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-black text-white uppercase tracking-wider">PHÒNG ${s.slot}</span>
+                                    <span class="text-[10px] font-mono-tech px-1.5 py-0.5 bg-slate-900 text-cyan-300 border border-cyan-500/30">${s.roomCode}</span>
+                                    <span class="text-[10px] font-mono-tech font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">1/2 • ĐANG CHỜ</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300 font-mono-tech mt-0.5">Map ${s.mapId} • Độ khó: ${diffLabel} • ${s.hz || 60}Hz</div>
+                            </div>
+                            <button onclick="window.joinPublicRoomSlot(${s.slot})" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition shrink-0 cursor-pointer shadow">
+                                ${isSelfJoined ? "ĐÃ VÀO" : "VÀO PHÒNG"}
+                            </button>
+                        </div>`;
+                    } else if (s.status === "playing" || s.status === "full") {
+                        const stateLabel = s.status === "playing" ? "2/2 • ĐANG CHƠI" : "2/2 • ĐỦ NGƯỜI";
+                        html += `
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-amber-950/15 border border-amber-500/30 opacity-85">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-black text-slate-200 uppercase tracking-wider">PHÒNG ${s.slot}</span>
+                                    <span class="text-[10px] font-mono-tech px-1.5 py-0.5 bg-slate-900 text-slate-400 border border-slate-700">${s.roomCode}</span>
+                                    <span class="text-[10px] font-mono-tech font-bold px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-400/40">${stateLabel}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-400 font-mono-tech mt-0.5">Map ${s.mapId} • Độ khó: ${diffLabel} • Đã đủ 2/2</div>
+                            </div>
+                            <button disabled class="px-3 py-1.5 bg-slate-800 text-slate-500 border border-slate-700 font-black text-[10px] uppercase tracking-wider shrink-0 cursor-not-allowed">
+                                ĐẦY (2/2)
+                            </button>
+                        </div>`;
+                    } else if (s.status === "scanning") {
+                        html += `
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-slate-900/60 border border-slate-800">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">PHÒNG ${s.slot}</span>
+                                    <span class="text-[10px] font-mono-tech px-1.5 py-0.5 bg-slate-950 text-slate-500 border border-slate-800">${s.roomCode}</span>
+                                    <span class="text-[10px] font-mono-tech text-cyan-400">ĐANG QUÉT...</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono-tech mt-0.5">Kiểm tra tín hiệu phòng...</div>
+                            </div>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-slate-900/40 border border-slate-800/90 hover:border-slate-700 transition">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">PHÒNG ${s.slot}</span>
+                                    <span class="text-[10px] font-mono-tech px-1.5 py-0.5 bg-slate-950 text-slate-500 border border-slate-800">${s.roomCode}</span>
+                                    <span class="text-[10px] font-mono-tech px-2 py-0.5 bg-slate-800/80 text-slate-400 border border-slate-700">0/2 • TRỐNG</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono-tech mt-0.5">Kênh trống sẵn sàng mở phòng</div>
+                            </div>
+                            <button onclick="window.createRoomAtSlot(${s.slot})" class="px-2.5 py-1.5 bg-slate-800 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-[10px] uppercase tracking-wider transition shrink-0 cursor-pointer">
+                                TẠO PHÒNG
+                            </button>
+                        </div>`;
+                    }
+                }
+
+                container.innerHTML = html;
+            },
+
+            updateClientLobbyUI() {
+                const lobbyCard = byId("coopClientLobbyCard");
+                const browserSec = byId("coopRoomBrowserSection");
+                const titleEl = byId("coopClientRoomTitle");
+                const metaEl = byId("coopClientRoomMeta");
+                const badgeEl = byId("coopClientSelfReadyBadge");
+                const readyBtn = byId("coopClientReadyBtn");
+
+                if (!this.connected || this.isHost) {
+                    if (lobbyCard) lobbyCard.classList.add("hidden");
+                    if (browserSec) browserSec.classList.remove("hidden");
+                    return;
+                }
+
+                if (lobbyCard) lobbyCard.classList.remove("hidden");
+                const slotNum = this.getSlotFromRoomCode(this.roomCode);
+                const roomLabel = slotNum ? `PHÒNG ${slotNum} [${this.roomCode}]` : `PHÒNG [${this.roomCode}]`;
+
+                if (titleEl) titleEl.textContent = `${roomLabel} • ĐỘI HÌNH 2/2`;
+                if (metaEl) {
+                    const diffLabel = this.getDifficultyLabel(this.hostDifficulty || this.getDifficultyId());
+                    metaEl.textContent = `Map ${this.hostMapId || window.currentMapId || 1} • Độ khó: ${diffLabel} • Đồng bộ: ${this.tickRate}Hz`;
+                }
+
+                if (this.clientReady) {
+                    if (badgeEl) {
+                        badgeEl.textContent = "ĐÃ SẴN SÀNG";
+                        badgeEl.className = "text-[9px] font-mono-tech px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-bold";
+                    }
+                    if (readyBtn) {
+                        readyBtn.textContent = "ĐÃ SẴN SÀNG (BẤM ĐỂ HỦY)";
+                        readyBtn.className = "w-full py-2.5 px-4 rounded-none bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-400/50 font-black text-xs uppercase tracking-wider transition cursor-pointer";
+                    }
+                } else {
+                    if (badgeEl) {
+                        badgeEl.textContent = "CHƯA SẴN SÀNG";
+                        badgeEl.className = "text-[9px] font-mono-tech px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold";
+                    }
+                    if (readyBtn) {
+                        readyBtn.textContent = "XÁC NHẬN SẴN SÀNG";
+                        readyBtn.className = "w-full py-2.5 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer";
+                    }
+                }
             },
 
             getIceServers() {
@@ -5966,69 +6522,191 @@
             },
 
             updateHostUI(statusMsg, isReady = false, isError = false) {
+                const slotLabelEl = byId("coopHostSlotLabel");
+                const mapLabelEl = byId("coopHostRoomMapLabel");
                 const codeEl = byId("coopHostRoomCode");
-                const linkEl = byId("coopHostDirectLink");
+                const closeRoomBtn = byId("coopHostCloseRoomBtn");
+                const peerSlotBox = byId("coopHostPeerSlotBox");
+                const peerNameText = byId("coopHostPeerNameText");
+                const peerReadyBadge = byId("coopHostPeerReadyBadge");
+                const statusBox = byId("coopHostStatusBox");
                 const statusText = byId("coopHostStatusText");
                 const statusSub = byId("coopHostStatusSub");
                 const spinner = byId("coopHostSpinner");
                 const startBtn = byId("coopHostStartBtn");
 
-                if (codeEl && this.roomCode) codeEl.textContent = this.roomCode;
-                if (linkEl && this.roomCode) {
-                    linkEl.textContent = window.location.origin + window.location.pathname + "?room=" + this.roomCode;
+                this.syncHostSelectorsUI();
+
+                if (mapLabelEl) {
+                    const diffLabel = this.getDifficultyLabel(this.getDifficultyId());
+                    mapLabelEl.textContent = `MAP ${window.currentMapId || 1} • ĐỘ KHÓ: ${diffLabel}`;
                 }
-                if (statusText && statusMsg) statusText.textContent = statusMsg;
-                if (statusSub) {
-                    if (isReady) {
-                        statusSub.textContent = `Đồng đội đã sẵn sàng! Tick: ${this.tickRate}Hz • Bấm nút bên dưới để cùng xuất trận.`;
-                    } else if (isError) {
-                        statusSub.textContent = "Vui lòng bấm 'ĐỔI MÃ', chuyển chế độ mạng hoặc kiểm tra đường truyền Internet.";
-                    } else {
-                        statusSub.textContent = `Mã: ${this.roomCode || "..."} • Hạ tầng: ${this.engineMode === 'socket' ? 'Dedicated Server' : 'P2P Direct'} • Tick: ${this.tickRate}Hz`;
+
+                const netTag = `${this.engineMode === 'socket' ? 'SERVER' : 'P2P'} • ${this.tickRate}Hz`;
+
+                // Trạng thái khi Chủ phòng đã chủ động bấm ĐÓNG PHÒNG
+                if (this.hostRoomClosed) {
+                    if (slotLabelEl) {
+                        slotLabelEl.textContent = "TRẠNG THÁI // PHÒNG ĐÃ ĐÓNG";
+                        slotLabelEl.className = "text-[10px] text-rose-400 uppercase tracking-wider font-black";
                     }
-                }
-                if (spinner) {
-                    if (isReady) {
-                        spinner.className = "w-3.5 h-3.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.8)]";
-                    } else if (isError) {
-                        spinner.className = "w-3.5 h-3.5 rounded-full bg-rose-500 shrink-0";
-                    } else {
-                        spinner.className = "w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0";
+                    if (codeEl) {
+                        codeEl.textContent = "ĐÃ ĐÓNG";
+                        codeEl.className = "text-2xl sm:text-3xl font-black text-slate-500 tracking-widest font-mono-tech select-none leading-none";
                     }
-                }
-                if (startBtn) {
-                    if (isReady) {
-                        startBtn.disabled = false;
-                        startBtn.className = "w-full py-3 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-[0_0_25px_rgba(16,185,129,0.5)] cursor-pointer";
-                        startBtn.textContent = "⚔️ XUẤT TRẬN CO-OP NGAY!";
-                    } else {
+                    if (closeRoomBtn) {
+                        closeRoomBtn.textContent = "MỞ LẠI PHÒNG";
+                        closeRoomBtn.className = "px-2.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-300 text-[11px] font-extrabold uppercase transition cursor-pointer";
+                    }
+                    if (peerSlotBox) peerSlotBox.className = "p-2.5 bg-slate-950 border border-slate-800 flex items-center justify-between";
+                    if (peerNameText) {
+                        peerNameText.textContent = "PHÒNG ĐÃ ĐÓNG (0/2)";
+                        peerNameText.className = "text-xs font-black text-slate-500 mt-0.5";
+                    }
+                    if (peerReadyBadge) {
+                        peerReadyBadge.textContent = "ĐÃ NGẮT";
+                        peerReadyBadge.className = "px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-500 font-black uppercase";
+                    }
+                    if (statusBox) {
+                        statusBox.className = "px-3 py-2.5 bg-slate-950/90 border border-rose-500/40 flex flex-wrap items-center justify-between gap-2";
+                    }
+                    if (spinner) {
+                        spinner.className = "w-3 h-3 rounded-full bg-rose-500 shrink-0";
+                    }
+                    if (statusText) {
+                        statusText.textContent = "Phòng đã đóng hoàn toàn.";
+                        statusText.className = "text-xs font-bold text-rose-300";
+                    }
+                    if (statusSub) {
+                        statusSub.textContent = `NGẮT KẾT NỐI • ${netTag}`;
+                    }
+                    if (startBtn) {
                         startBtn.disabled = true;
-                        startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700";
-                        startBtn.textContent = "BẮT ĐẦU CHIẾN DỊCH CO-OP (CHỜ ĐỒNG ĐỘI)";
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-900 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-800";
+                        startBtn.textContent = "PHÒNG ĐÃ ĐÓNG (BẤM MỞ LẠI PHÒNG)";
                     }
-                }
-            },
-
-            initHost(forceNew = false) {
-                if (this.engineMode === "socket") {
-                    this.initHostSocket(forceNew);
-                } else {
-                    this.initHostP2P(forceNew);
-                }
-            },
-
-            initHostSocket(forceNew = false) {
-                if (!forceNew && this.isHost && this.socket && this.socket.connected && this.roomCode) {
-                    this.updateHostUI(this.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG! (Dedicated Server)" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", this.connected);
                     return;
                 }
 
+                const slotNum = this.getSlotFromRoomCode(this.roomCode) || this.currentSlot;
+                if (slotLabelEl) {
+                    slotLabelEl.textContent = slotNum
+                        ? `PHÒNG ${slotNum} • KÊNH CÔNG KHAI (${this.connected ? "2/2" : "1/2"})`
+                        : `PHÒNG RIÊNG (${this.connected ? "2/2" : "1/2"})`;
+                    slotLabelEl.className = "text-[10px] text-cyan-400 uppercase tracking-wider font-black";
+                }
+                if (codeEl && this.roomCode) {
+                    codeEl.textContent = this.roomCode;
+                    codeEl.className = "text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all leading-none";
+                }
+                if (closeRoomBtn) {
+                    closeRoomBtn.textContent = "ĐÓNG PHÒNG";
+                    closeRoomBtn.className = "px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-[11px] font-extrabold uppercase transition cursor-pointer";
+                }
+
+                // Cập nhật trạng thái ô Thành viên P2
+                if (this.connected) {
+                    if (peerNameText) {
+                        peerNameText.textContent = "ĐÃ KẾT NỐI (2/2)";
+                        peerNameText.className = "text-xs font-bold text-white mt-0.5";
+                    }
+                    if (this.peerReady) {
+                        if (peerSlotBox) peerSlotBox.className = "p-2.5 bg-emerald-950/25 border border-emerald-500/40 flex items-center justify-between";
+                        if (peerReadyBadge) {
+                            peerReadyBadge.textContent = "SẴN SÀNG";
+                            peerReadyBadge.className = "px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-black uppercase";
+                        }
+                    } else {
+                        if (peerSlotBox) peerSlotBox.className = "p-2.5 bg-amber-950/20 border border-amber-500/40 flex items-center justify-between";
+                        if (peerReadyBadge) {
+                            peerReadyBadge.textContent = "CHỜ SẴN SÀNG";
+                            peerReadyBadge.className = "px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-400/40 font-black uppercase";
+                        }
+                    }
+                } else {
+                    if (peerSlotBox) peerSlotBox.className = "p-2.5 bg-slate-950 border border-slate-800 flex items-center justify-between";
+                    if (peerNameText) {
+                        peerNameText.textContent = "ĐANG CHỜ NGƯỜI VÀO (1/2)";
+                        peerNameText.className = "text-xs font-bold text-slate-400 mt-0.5";
+                    }
+                    if (peerReadyBadge) {
+                        peerReadyBadge.textContent = "TRỐNG";
+                        peerReadyBadge.className = "px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 font-black uppercase";
+                    }
+                }
+
+                const canLaunch = Boolean(this.connected && this.peerReady);
+                if (statusBox) {
+                    statusBox.className = canLaunch
+                        ? "px-3 py-2.5 bg-slate-950/90 border border-emerald-500/50 flex flex-wrap items-center justify-between gap-2"
+                        : "px-3 py-2.5 bg-slate-950/90 border border-amber-500/40 flex flex-wrap items-center justify-between gap-2";
+                }
+                if (statusText) {
+                    statusText.className = canLaunch ? "text-xs font-bold text-emerald-300 truncate" : "text-xs font-bold text-amber-300 truncate";
+                    if (statusMsg) {
+                        statusText.textContent = statusMsg;
+                    } else if (canLaunch) {
+                        statusText.textContent = "Đội hình 2/2 đã sẵn sàng xuất trận.";
+                    } else if (this.connected) {
+                        statusText.textContent = "Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng...";
+                    } else {
+                        statusText.textContent = "Phòng đang mở công khai. Chờ đồng đội tham gia...";
+                    }
+                }
+
+                if (statusSub) {
+                    statusSub.textContent = `${this.roomCode || "--"} • ${netTag}`;
+                }
+                if (spinner) {
+                    if (canLaunch) {
+                        spinner.className = "w-3 h-3 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.8)]";
+                    } else if (isError) {
+                        spinner.className = "w-3 h-3 rounded-full bg-rose-500 shrink-0";
+                    } else {
+                        spinner.className = "w-3.5 h-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0";
+                    }
+                }
+                if (startBtn) {
+                    if (canLaunch) {
+                        startBtn.disabled = false;
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-[0_0_25px_rgba(16,185,129,0.5)] cursor-pointer";
+                        startBtn.textContent = "BẮT ĐẦU CHIẾN DỊCH";
+                    } else if (this.connected) {
+                        startBtn.disabled = true;
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-amber-300 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-amber-500/40";
+                        startBtn.textContent = "CHỜ ĐỒNG ĐỘI SẴN SÀNG (2/2)";
+                    } else {
+                        startBtn.disabled = true;
+                        startBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-slate-500 font-black text-sm uppercase tracking-wider transition cursor-not-allowed border border-slate-700";
+                        startBtn.textContent = "BẮT ĐẦU CHIẾN DỊCH (CHỜ ĐỒNG ĐỘI 1/2)";
+                    }
+                }
+            },
+
+            initHost(forceNew = false, preferredSlot = null) {
+                this.hostRoomClosed = false;
+                if (this.engineMode === "socket") {
+                    this.initHostSocket(forceNew, preferredSlot);
+                } else {
+                    this.initHostP2P(forceNew, preferredSlot);
+                }
+            },
+
+            initHostSocket(forceNew = false, preferredSlot = null) {
+                if (!forceNew && this.isHost && this.socket && this.socket.connected && this.roomCode) {
+                    this.updateHostUI(null, this.connected && this.peerReady);
+                    return;
+                }
+
+                const targetSlot = preferredSlot || (forceNew ? ((this.currentSlot % this.PUBLIC_SLOT_COUNT) + 1) : (this.currentSlot || 1));
                 this.cleanup();
                 this.isHost = true;
-                this.updateHostUI(`Đang kết nối tới máy chủ (${this.socketUrl})...`, false);
+                this.currentSlot = targetSlot;
+                this.peerReady = false;
+                this.updateHostUI(`Đang kết nối máy chủ...`, false);
 
                 if (typeof io === "undefined") {
-                    this.updateHostUI("Lỗi: Chưa tải được thư viện Socket.io (Kiểm tra Internet)!", false, true);
+                    this.updateHostUI("Lỗi: Không tải được thư viện Socket.io!", false, true);
                     return;
                 }
 
@@ -6041,20 +6719,31 @@
 
                     this.socket.on("connect", () => {
                         console.log("[CO-OP SOCKET] Host connected:", this.socket.id);
-                        this.socket.emit("create_room", { mapId: window.currentMapId || 1 }, (res) => {
+                        this.socket.emit("create_room", {
+                            mapId: window.currentMapId || 1,
+                            difficulty: this.getDifficultyId(),
+                            slot: this.currentSlot,
+                            roomCode: this.getSlotRoomCode(this.currentSlot)
+                        }, (res) => {
                             if (res && res.success) {
                                 this.roomCode = res.roomCode;
+                                this.currentSlot = res.slot || this.getSlotFromRoomCode(this.roomCode) || this.currentSlot;
                                 console.log("[CO-OP SOCKET] Room created:", this.roomCode);
-                                this.updateHostUI("Phòng đã sẵn sàng! Chờ đồng đội vào...", false);
+                                this.updateHostUI("Phòng đang mở công khai. Chờ đồng đội tham gia...", false);
                             } else {
-                                this.updateHostUI("Không thể tạo phòng trên server: " + (res?.message || ""), false, true);
+                                this.updateHostUI("Không thể tạo phòng: " + (res?.message || ""), false, true);
                             }
                         });
                     });
 
                     this.socket.on("peer_connected", (data) => {
                         console.log("[CO-OP SOCKET] Peer connected to room:", data);
+                        this.peerReady = false;
                         this.setupSocketConnection();
+                    });
+
+                    this.socket.on("peer_ready", (data) => {
+                        this.handleData({ t: "peer_ready", ready: !!(data && data.ready) });
                     });
 
                     this.socket.on("remote_tick", (packet) => {
@@ -6071,33 +6760,60 @@
 
                     this.socket.on("peer_disconnected", () => {
                         this.connected = false;
+                        this.peerReady = false;
                         teammate.active = false;
-                        showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng!");
-                        this.updateHostUI("Đồng đội đã rời phòng. Đang chờ kết nối lại...", false);
+                        showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng.");
+                        this.updateHostUI("Đồng đội đã rời phòng. Đang chờ người chơi mới...", false);
                         this.updateHUD();
                     });
 
                     this.socket.on("connect_error", (err) => {
                         console.warn("[CO-OP SOCKET] Connect error:", err);
-                        this.updateHostUI(`Không thể kết nối Server (${this.socketUrl}). Hãy bật server hoặc dùng P2P Direct!`, false, true);
+                        this.updateHostUI(`Không thể kết nối máy chủ (${this.socketUrl}). Hãy bật máy chủ hoặc chuyển sang P2P Direct.`, false, true);
                     });
                 } catch (e) {
                     this.updateHostUI("Lỗi kết nối Socket: " + e.message, false, true);
                 }
             },
 
-            initHostP2P(forceNew = false) {
-                if (!forceNew && this.isHost && this.peer && !this.peer.destroyed && this.roomCode) {
-                    this.updateHostUI(this.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", this.connected);
+            initHostP2P(forceNew = false, preferredSlot = null) {
+                if (!forceNew && !preferredSlot && this.isHost && this.peer && !this.peer.destroyed && this.roomCode) {
+                    this.updateHostUI(null, this.connected && this.peerReady);
                     return;
+                }
+
+                let startSlot = 1;
+                if (preferredSlot && preferredSlot >= 1 && preferredSlot <= this.PUBLIC_SLOT_COUNT) {
+                    startSlot = preferredSlot;
+                } else if (forceNew && this.currentSlot) {
+                    startSlot = (this.currentSlot % this.PUBLIC_SLOT_COUNT) + 1;
                 }
 
                 this.cleanup();
                 this.isHost = true;
-                this.roomCode = this.generateRoomCode();
-                const peerId = this.getPeerIdForRoom(this.roomCode);
+                this.peerReady = false;
+                this._tryingSlot = startSlot;
+                this._slotAttempts = 0;
 
-                this.updateHostUI("Đang kết nối tới trạm tín hiệu P2P...", false);
+                this._tryRegisterHostSlot(this._tryingSlot);
+            },
+
+            _tryRegisterHostSlot(slotNum) {
+                if (this.peer) {
+                    try { this.peer.destroy(); } catch (e) {}
+                    this.peer = null;
+                }
+
+                if (slotNum <= this.PUBLIC_SLOT_COUNT && this._slotAttempts < this.PUBLIC_SLOT_COUNT) {
+                    this.currentSlot = slotNum;
+                    this.roomCode = this.getSlotRoomCode(slotNum);
+                } else {
+                    this.currentSlot = 0;
+                    this.roomCode = this.generateRoomCode();
+                }
+
+                const peerId = this.getPeerIdForRoom(this.roomCode);
+                this.updateHostUI(`Đang khởi tạo Phòng ${this.currentSlot || ""} [${this.roomCode}]...`, false);
 
                 if (typeof Peer === "undefined") {
                     this.updateHostUI("Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet)!", false, true);
@@ -6108,19 +6824,51 @@
                     this.peer = new Peer(peerId, this.getPeerOptions());
 
                     this.peer.on("open", (id) => {
-                        console.log("[CO-OP] Host peer registered:", id);
-                        this.updateHostUI("Phòng đã sẵn sàng! Chờ đồng đội vào...", false);
+                        console.log("[CO-OP] Host peer registered:", id, "Slot:", this.currentSlot);
+                        this.updateHostUI("Phòng đang mở công khai. Chờ người chơi tham gia...", false);
                     });
 
-                    this.peer.on("connection", (conn) => {
-                        console.log("[CO-OP] Host accepted peer connection:", conn.peer);
-                        this.setupConnection(conn);
+                    this.peer.on("connection", (incomingConn) => {
+                        // Kiểm tra nếu đây là gói tin dò danh sách phòng (probe)
+                        if (incomingConn && incomingConn.metadata && incomingConn.metadata.mode === "probe") {
+                            incomingConn.on("open", () => {
+                                try {
+                                    incomingConn.send(this.getRoomStatusPayload());
+                                } catch (e) {}
+                                setTimeout(() => {
+                                    try { incomingConn.close(); } catch (e) {}
+                                }, 350);
+                            });
+                            return;
+                        }
+
+                        // Nếu phòng đã đủ 2/2 người hoặc đang trong trận đấu thì từ chối kết nối thứ 3
+                        if ((this.connected && this.conn && this.conn.open) || this.inMission) {
+                            incomingConn.on("open", () => {
+                                try {
+                                    incomingConn.send({
+                                        t: "room_full",
+                                        message: "Phòng đã đủ 2/2 người hoặc đang trong trận đấu."
+                                    });
+                                } catch (e) {}
+                                setTimeout(() => {
+                                    try { incomingConn.close(); } catch (e) {}
+                                }, 350);
+                            });
+                            return;
+                        }
+
+                        console.log("[CO-OP] Host accepted player connection:", incomingConn.peer);
+                        this.peerReady = false;
+                        this.setupConnection(incomingConn);
                     });
 
                     this.peer.on("error", (err) => {
                         console.warn("[CO-OP] Peer Host Error:", err);
                         if (err.type === "unavailable-id") {
-                            this.initHost(true);
+                            this._slotAttempts = (this._slotAttempts || 0) + 1;
+                            const nextSlot = (this.currentSlot % this.PUBLIC_SLOT_COUNT) + 1;
+                            this._tryRegisterHostSlot(nextSlot);
                         } else {
                             this.updateHostUI("Lỗi kết nối P2P: " + (err.message || err.type), false, true);
                         }
@@ -6131,12 +6879,12 @@
                 }
             },
 
-            resetJoinBtn(label = "KẾT NỐI VÀO PHÒNG (JOIN)") {
+            resetJoinBtn(label = "VÀO PHÒNG") {
                 const joinBtn = byId("coopJoinConnectBtn");
                 if (joinBtn) {
                     joinBtn.disabled = false;
                     joinBtn.textContent = label;
-                    joinBtn.className = "w-full py-3 px-4 rounded-none bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-lg cursor-pointer";
+                    joinBtn.className = "px-4 py-2 rounded-none bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow cursor-pointer shrink-0";
                 }
             },
 
@@ -6144,7 +6892,7 @@
                 if (!targetCode) return;
                 const cleanCode = targetCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
                 if (cleanCode.length < 4) {
-                    showToast("MÃ KHÔNG HỢP LỆ", "Mã phòng phải có ít nhất 4 ký tự!");
+                    showToast("MÃ KHÔNG HỢP LỆ", "Mã phòng phải có ít nhất 4 ký tự.");
                     return;
                 }
 
@@ -6153,20 +6901,28 @@
                     this._joinTimeout = null;
                 }
 
+                this.stopScanner();
                 this.cleanup();
                 this.isHost = false;
                 this.roomCode = cleanCode;
+                this.currentSlot = this.getSlotFromRoomCode(cleanCode) || 0;
+                this.clientReady = false;
+                this.peerReady = false;
+
+                const inp = byId("coopJoinInput");
+                if (inp) inp.value = cleanCode;
 
                 const statusText = byId("coopJoinStatusText");
                 const statusDot = byId("coopJoinStatusDot");
                 const joinBtn = byId("coopJoinConnectBtn");
 
-                if (statusText) statusText.textContent = `Đang kết nối tới Host [${this.roomCode}] (${this.engineMode === 'socket' ? 'Dedicated Server' : 'Tìm đường NAT/TURN'})...`;
+                const roomLabel = this.currentSlot ? `Phòng ${this.currentSlot} [${this.roomCode}]` : `Phòng [${this.roomCode}]`;
+                if (statusText) statusText.textContent = `Đang kết nối tới ${roomLabel}...`;
                 if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0";
                 if (joinBtn) {
                     joinBtn.disabled = true;
-                    joinBtn.textContent = "ĐANG KẾT NỐI HOST...";
-                    joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-amber-400 font-black text-sm uppercase tracking-wider transition cursor-wait border border-amber-500/40";
+                    joinBtn.textContent = "ĐANG KẾT NỐI...";
+                    joinBtn.className = "px-4 py-2 rounded-none bg-slate-800 text-amber-400 font-black text-xs uppercase tracking-wider transition cursor-wait border border-amber-500/40 shrink-0";
                 }
 
                 if (this.engineMode === "socket") {
@@ -6178,7 +6934,7 @@
 
             joinRoomSocket(cleanCode, statusText, statusDot) {
                 if (typeof io === "undefined") {
-                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện Socket.io!";
+                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện Socket.io.";
                     this.resetJoinBtn();
                     return;
                 }
@@ -6195,17 +6951,24 @@
                         this.socket.emit("join_room", { roomCode: cleanCode }, (res) => {
                             if (res && res.success) {
                                 console.log("[CO-OP SOCKET] Joined room successfully!");
+                                this.hostMapId = res.mapId || 1;
+                                this.hostDifficulty = res.difficulty || "normal";
                                 this.setupSocketConnection();
                             } else {
-                                if (statusText) statusText.textContent = "Lỗi: " + (res?.message || "Phòng không tồn tại!");
+                                if (statusText) statusText.textContent = "Lỗi: " + (res?.message || "Phòng không tồn tại hoặc đã đầy.");
                                 if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
-                                this.resetJoinBtn("THỬ KẾT NỐI LẠI");
+                                this.resetJoinBtn("THỬ LẠI");
                             }
                         });
                     });
 
                     this.socket.on("mission_started", (data) => {
-                        this.handleData({ t: "start", mapId: data?.mapId || 1 });
+                        this.handleData({
+                            t: "start",
+                            mapId: data?.mapId || 1,
+                            difficulty: data?.difficulty || this.hostDifficulty || "normal",
+                            hz: data?.hz || this.tickRate
+                        });
                     });
 
                     this.socket.on("remote_tick", (packet) => {
@@ -6226,11 +6989,14 @@
 
                     this.socket.on("peer_disconnected", () => {
                         this.connected = false;
+                        this.clientReady = false;
                         teammate.active = false;
-                        showToast("CO-OP NGẮT KẾT NỐI", "Host đã rời phòng!");
-                        if (statusText) statusText.textContent = "Host đã đóng phòng.";
-                        this.resetJoinBtn("KẾT NỐI LẠI");
+                        this.updateClientLobbyUI();
+                        showToast("CO-OP NGẮT KẾT NỐI", "Chủ phòng đã đóng phòng.");
+                        if (statusText) statusText.textContent = "Chủ phòng đã đóng phòng.";
+                        this.resetJoinBtn("VÀO PHÒNG");
                         this.updateHUD();
+                        this.scanPublicRooms();
                     });
 
                     this.socket.on("connect_error", (err) => {
@@ -6248,7 +7014,7 @@
                 const targetPeerId = this.getPeerIdForRoom(cleanCode);
 
                 if (typeof Peer === "undefined") {
-                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet)!";
+                    if (statusText) statusText.textContent = "Lỗi: Chưa tải được thư viện PeerJS (Kiểm tra Internet).";
                     if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
                     this.resetJoinBtn();
                     return;
@@ -6258,9 +7024,9 @@
                 this._joinTimeout = setTimeout(() => {
                     if (!this.connected) {
                         console.warn("[CO-OP] Join timeout to host:", targetPeerId);
-                        if (statusText) statusText.textContent = `Hết thời gian chờ! Không thể kết nối tới Host [${cleanCode}]. Hãy kiểm tra xem Host đã mở phòng chưa.`;
+                        if (statusText) statusText.textContent = `Hết thời gian chờ kết nối tới phòng [${cleanCode}]. Vui lòng làm mới danh sách phòng.`;
                         if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
-                        this.resetJoinBtn("THỬ KẾT NỐI LẠI");
+                        this.resetJoinBtn("THỬ LẠI");
                         if (this.conn) {
                             try { this.conn.close(); } catch (e) {}
                             this.conn = null;
@@ -6273,10 +7039,11 @@
 
                     this.peer.on("open", (myId) => {
                         console.log("[CO-OP] Client peer opened:", myId, "connecting to Host:", targetPeerId);
-                        if (statusText) statusText.textContent = `Đã tìm thấy máy chủ P2P. Đang bắt tay với Host [${cleanCode}]...`;
-                        
-                        // Connecting directly without deprecated { reliable: true }
-                        const conn = this.peer.connect(targetPeerId);
+                        if (statusText) statusText.textContent = `Đang thiết lập kết nối với Chủ phòng [${cleanCode}]...`;
+
+                        const conn = this.peer.connect(targetPeerId, {
+                            metadata: { mode: "join" }
+                        });
                         this.setupConnection(conn);
                     });
 
@@ -6288,13 +7055,14 @@
                         }
                         if (statusText) {
                             if (err.type === "peer-unavailable") {
-                                statusText.textContent = `Không tìm thấy phòng [${cleanCode}]! Host có thể chưa mở hoặc sai mã.`;
+                                statusText.textContent = `Phòng [${cleanCode}] hiện đang trống hoặc Chủ phòng đã rời đi.`;
                             } else {
                                 statusText.textContent = "Lỗi kết nối P2P: " + (err.message || err.type);
                             }
                         }
                         if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0";
-                        this.resetJoinBtn("THỬ KẾT NỐI LẠI");
+                        this.resetJoinBtn("VÀO PHÒNG");
+                        this.scanPublicRooms();
                     });
                 } catch (e) {
                     console.error("[CO-OP] Join Exception:", e);
@@ -6311,23 +7079,35 @@
             setupSocketConnection() {
                 this.connected = true;
                 this.active = true;
+                this.peerReady = false;
+                this.clientReady = false;
                 teammate.active = true;
                 teammate.snapshotBuffer = [];
 
-                showToast("CO-OP KẾT NỐI!", this.isHost ? "Đồng đội đã vào phòng qua Dedicated Server!" : "Đã kết nối với máy chủ Host!");
+                showToast("ĐÃ KẾT NỐI PHÒNG", this.isHost ? "Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng." : "Đã vào phòng. Hãy bấm Xác nhận Sẵn sàng.");
 
                 if (this.isHost) {
-                    this.updateHostUI("✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG! (Dedicated Server)", true);
+                    this.updateHostUI("Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng...", false);
+                    this.sendPacket({
+                        t: "room_joined",
+                        roomCode: this.roomCode,
+                        slot: this.currentSlot,
+                        mapId: window.currentMapId || 1,
+                        difficulty: this.getDifficultyId(),
+                        hz: this.tickRate
+                    });
                 } else {
                     const statusText = byId("coopJoinStatusText");
                     const statusDot = byId("coopJoinStatusDot");
                     const joinBtn = byId("coopJoinConnectBtn");
-                    if (statusText) statusText.textContent = "✅ ĐÃ KẾT NỐI! Đang chờ Host bắt đầu nhiệm vụ...";
-                    if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0";
+                    if (statusText) statusText.textContent = "Đã vào phòng. Hãy bấm XÁC NHẬN SẴN SÀNG bên trên.";
+                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 shrink-0";
                     if (joinBtn) {
-                        joinBtn.textContent = "ĐANG CHỜ HOST XUẤT TRẬN...";
-                        joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-emerald-400 font-black text-sm uppercase tracking-wider transition cursor-default border border-emerald-500/40";
+                        joinBtn.textContent = "ĐÃ VÀO";
+                        joinBtn.className = "px-3 py-1 bg-slate-800 text-emerald-400 font-black text-[11px] uppercase tracking-wider transition cursor-default border border-emerald-500/40 shrink-0";
                     }
+                    this.updateClientLobbyUI();
+                    this.renderRoomList();
                 }
 
                 this.startPingInterval();
@@ -6352,23 +7132,35 @@
                     }
                     this.connected = true;
                     this.active = true;
+                    this.peerReady = false;
+                    this.clientReady = false;
                     teammate.active = true;
                     teammate.snapshotBuffer = [];
 
-                    showToast("CO-OP KẾT NỐI!", this.isHost ? "Đồng đội đã vào phòng thành công!" : "Đã kết nối với máy chủ Host!");
+                    showToast("ĐÃ KẾT NỐI PHÒNG", this.isHost ? "Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng." : "Đã vào phòng. Hãy bấm Xác nhận Sẵn sàng.");
 
                     if (this.isHost) {
-                        this.updateHostUI("✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!", true);
+                        this.updateHostUI("Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng...", false);
+                        this.sendPacket({
+                            t: "room_joined",
+                            roomCode: this.roomCode,
+                            slot: this.currentSlot,
+                            mapId: window.currentMapId || 1,
+                            difficulty: this.getDifficultyId(),
+                            hz: this.tickRate
+                        });
                     } else {
                         const statusText = byId("coopJoinStatusText");
                         const statusDot = byId("coopJoinStatusDot");
                         const joinBtn = byId("coopJoinConnectBtn");
-                        if (statusText) statusText.textContent = "✅ ĐÃ KẾT NỐI! Đang chờ Host bắt đầu nhiệm vụ...";
-                        if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0";
+                        if (statusText) statusText.textContent = "Đã vào phòng. Hãy bấm XÁC NHẬN SẴN SÀNG bên trên.";
+                        if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 shrink-0";
                         if (joinBtn) {
-                            joinBtn.textContent = "ĐANG CHỜ HOST XUẤT TRẬN...";
-                            joinBtn.className = "w-full py-3 px-4 rounded-none bg-slate-800 text-emerald-400 font-black text-sm uppercase tracking-wider transition cursor-default border border-emerald-500/40";
+                            joinBtn.textContent = "ĐÃ VÀO";
+                            joinBtn.className = "px-3 py-1 bg-slate-800 text-emerald-400 font-black text-[11px] uppercase tracking-wider transition cursor-default border border-emerald-500/40 shrink-0";
                         }
+                        this.updateClientLobbyUI();
+                        this.renderRoomList();
                     }
 
                     this.startPingInterval();
@@ -6376,22 +7168,30 @@
                 });
 
                 conn.on("data", (data) => {
+                    if (data && data.t === "room_probe" && this.isHost) {
+                        try { conn.send(this.getRoomStatusPayload()); } catch (e) {}
+                        return;
+                    }
                     this.handleData(data);
                 });
 
                 conn.on("close", () => {
                     console.warn("[CO-OP] Connection closed by peer");
                     this.connected = false;
+                    this.peerReady = false;
+                    this.clientReady = false;
                     teammate.active = false;
-                    showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng!");
+                    showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng.");
                     if (this.isHost) {
-                        this.updateHostUI("Đồng đội đã rời phòng. Đang chờ kết nối lại...", false);
+                        this.updateHostUI("Đồng đội đã rời phòng. Chờ người chơi mới...", false);
                     } else {
+                        this.updateClientLobbyUI();
                         const statusText = byId("coopJoinStatusText");
                         const statusDot = byId("coopJoinStatusDot");
-                        if (statusText) statusText.textContent = "Đã ngắt kết nối với Host.";
-                        if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0";
-                        this.resetJoinBtn("KẾT NỐI LẠI");
+                        if (statusText) statusText.textContent = "Đã ngắt kết nối khỏi phòng.";
+                        if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-slate-500 shrink-0";
+                        this.resetJoinBtn("VÀO PHÒNG");
+                        this.scanPublicRooms();
                     }
                     this.updateHUD();
                 });
@@ -6406,8 +7206,26 @@
                     if (this.socket && this.socket.connected) {
                         try {
                             if (data.t === "start") {
-                                this.socket.emit("start_mission", { mapId: data.mapId, hz: this.tickRate });
-                                this.socket.emit("sync_tick", { t: "tick_rate_sync", hz: this.tickRate });
+                                this.socket.emit("start_mission", {
+                                    mapId: data.mapId,
+                                    difficulty: data.difficulty || this.getDifficultyId(),
+                                    hz: this.tickRate
+                                });
+                                this.socket.emit("sync_tick", {
+                                    t: "room_joined",
+                                    mapId: data.mapId,
+                                    difficulty: data.difficulty || this.getDifficultyId(),
+                                    hz: this.tickRate
+                                });
+                            } else if (data.t === "room_joined") {
+                                this.socket.emit("update_room_meta", {
+                                    mapId: data.mapId,
+                                    difficulty: data.difficulty,
+                                    hz: data.hz
+                                });
+                                this.socket.emit("sync_tick", data);
+                            } else if (data.t === "peer_ready") {
+                                this.socket.emit("peer_ready", { ready: !!data.ready });
                             } else if (data.t === "player_down") {
                                 this.socket.emit("player_down");
                             } else if (data.t === "revive_success") {
@@ -6445,11 +7263,56 @@
             handleData(data) {
                 if (!data || !data.t) return;
 
+                if (data.t === "room_full" && !this.isHost) {
+                    const statusText = byId("coopJoinStatusText");
+                    const statusDot = byId("coopJoinStatusDot");
+                    if (statusText) statusText.textContent = data.message || "Phòng đã đủ 2/2 người hoặc đang trong trận đấu.";
+                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-rose-500 shrink-0";
+                    this.connected = false;
+                    this.clientReady = false;
+                    this.updateClientLobbyUI();
+                    this.resetJoinBtn("VÀO PHÒNG");
+                    showToast("PHÒNG ĐÃ ĐẦY", data.message || "Phòng đã đủ 2/2 người chơi.");
+                    this.scanPublicRooms();
+                    return;
+                }
+
+                if (data.t === "room_joined" && !this.isHost) {
+                    this.hostMapId = data.mapId || 1;
+                    this.hostDifficulty = data.difficulty || "normal";
+                    if (typeof selectDifficulty === "function" && this.hostDifficulty) {
+                        selectDifficulty(this.hostDifficulty);
+                    }
+                    if (data.hz) {
+                        this.tickRate = data.hz === 60 ? 60 : 30;
+                        if (typeof window.syncCoopTickButtons === "function") {
+                            window.syncCoopTickButtons(this.tickRate);
+                        }
+                    }
+                    this.updateClientLobbyUI();
+                    return;
+                }
+
+                if (data.t === "peer_ready" && this.isHost) {
+                    this.peerReady = !!data.ready;
+                    this.updateHostUI(
+                        this.peerReady
+                            ? "Đội hình 2/2 đã sẵn sàng xuất trận."
+                            : "Đồng đội đã hủy Sẵn sàng. Chờ xác nhận lại...",
+                        this.connected && this.peerReady
+                    );
+                    if (this.peerReady) {
+                        showToast("ĐỒNG ĐỘI SẴN SÀNG", "Thành viên P2 đã sẵn sàng xuất trận.");
+                    }
+                    return;
+                }
+
                 if (data.t === "tick_rate_sync" && !this.isHost && data.hz) {
                     this.tickRate = data.hz === 60 ? 60 : 30;
                     if (typeof window.syncCoopTickButtons === "function") {
                         window.syncCoopTickButtons(this.tickRate);
                     }
+                    this.updateClientLobbyUI();
                     this.updateHUD();
                     return;
                 }
@@ -6494,11 +7357,16 @@
                             window.syncCoopTickButtons(this.tickRate);
                         }
                     }
-                    window.currentMapId = data.mapId || 1;
+                    if (data.difficulty && typeof selectDifficulty === "function") {
+                        selectDifficulty(data.difficulty);
+                    }
+                    this.inMission = true;
+                    window.currentMapId = data.mapId || this.hostMapId || 1;
                     window.closeCoopModal();
                     window.closeMainMenuSettings(true);
                     this.updateHUD();
-                    showToast("CO-OP XUẤT TRẬN", `Tiến vào Map ${window.currentMapId} cùng đồng đội! (Tick ${this.tickRate}Hz)`);
+                    const diffLabel = this.getDifficultyLabel(data.difficulty || this.hostDifficulty);
+                    showToast("CO-OP XUẤT TRẬN", `Map ${window.currentMapId} • Độ khó: ${diffLabel} (${this.tickRate}Hz).`);
                     if (typeof simulateMissionLoading === "function") {
                         simulateMissionLoading(window.currentMapId, () => {
                             initCampaign(false, false);
@@ -6929,6 +7797,7 @@
             },
 
             cleanup() {
+                this.stopScanner();
                 if (this._joinTimeout) {
                     clearTimeout(this._joinTimeout);
                     this._joinTimeout = null;
@@ -6951,8 +7820,12 @@
                 }
                 this.connected = false;
                 this.active = false;
+                this.inMission = false;
+                this.peerReady = false;
+                this.clientReady = false;
                 teammate.active = false;
                 teammate.snapshotBuffer = [];
+                this.updateClientLobbyUI();
                 this.updateHUD();
             }
         };
@@ -7494,16 +8367,24 @@
                 window.switchCoopTab("join");
                 const inp = byId("coopJoinInput");
                 if (inp) inp.value = roomParam.trim().toUpperCase();
-            } else {
+            } else if (XENO_COOP.isHost && ((XENO_COOP.peer && !XENO_COOP.peer.destroyed) || (XENO_COOP.socket && XENO_COOP.socket.connected))) {
                 window.switchCoopTab("host");
+            } else {
+                window.switchCoopTab("join");
             }
         };
 
         window.closeCoopModal = function() {
             const modal = byId("coopModal");
             if (modal) modal.classList.add("hidden");
-            if (window.XENO_COOP && !window.XENO_COOP.connected) {
-                window.XENO_COOP.cleanup();
+            if (typeof window.closeCoopTickDropdown === "function") {
+                window.closeCoopTickDropdown();
+            }
+            if (window.XENO_COOP) {
+                window.XENO_COOP.stopScanner();
+                if (!window.XENO_COOP.connected && !window.XENO_COOP.isHost) {
+                    window.XENO_COOP.cleanup();
+                }
             }
         };
 
@@ -7512,28 +8393,168 @@
             const joinBtn = byId("coopTabJoinBtn");
             const hostPanel = byId("coopHostPanel");
             const joinPanel = byId("coopJoinPanel");
+            if (typeof window.closeCoopTickDropdown === "function") {
+                window.closeCoopTickDropdown();
+            }
 
             if (tab === "host") {
+                XENO_COOP.stopScanner();
                 if (hostBtn) hostBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
                 if (joinBtn) joinBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200";
                 if (hostPanel) hostPanel.classList.remove("hidden");
                 if (joinPanel) joinPanel.classList.add("hidden");
-                if (!XENO_COOP.isHost || !XENO_COOP.peer || XENO_COOP.peer.destroyed) {
+                if (XENO_COOP.hostRoomClosed) {
+                    XENO_COOP.updateHostUI();
+                    return;
+                }
+                const hasActiveHost = XENO_COOP.isHost && (
+                    (XENO_COOP.engineMode === "socket" && XENO_COOP.socket && XENO_COOP.socket.connected) ||
+                    (XENO_COOP.engineMode !== "socket" && XENO_COOP.peer && !XENO_COOP.peer.destroyed)
+                );
+                if (!hasActiveHost) {
                     XENO_COOP.initHost(false);
                 } else {
-                    XENO_COOP.updateHostUI(XENO_COOP.connected ? "✅ ĐỒNG ĐỘI ĐÃ SẴN SÀNG!" : "Phòng đã sẵn sàng! Chờ đồng đội vào...", XENO_COOP.connected);
+                    XENO_COOP.updateHostUI(null, XENO_COOP.connected && XENO_COOP.peerReady);
                 }
             } else {
                 if (joinBtn) joinBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
                 if (hostBtn) hostBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200";
                 if (joinPanel) joinPanel.classList.remove("hidden");
                 if (hostPanel) hostPanel.classList.add("hidden");
+                XENO_COOP.updateClientLobbyUI();
+                XENO_COOP.scanPublicRooms();
             }
         };
 
+        window.refreshCoopRoomList = function() {
+            XENO_COOP.scanPublicRooms();
+        };
+
+        window.joinPublicRoomSlot = function(slot) {
+            const code = XENO_COOP.getSlotRoomCode(slot);
+            if (XENO_COOP.isHost && !XENO_COOP.hostRoomClosed && XENO_COOP.roomCode === code) {
+                window.switchCoopTab("host");
+                return;
+            }
+            XENO_COOP.joinRoom(code);
+        };
+
+        window.createRoomAtSlot = function(slot) {
+            const hostBtn = byId("coopTabHostBtn");
+            const joinBtn = byId("coopTabJoinBtn");
+            const hostPanel = byId("coopHostPanel");
+            const joinPanel = byId("coopJoinPanel");
+            XENO_COOP.stopScanner();
+            XENO_COOP.hostRoomClosed = false;
+            if (hostBtn) hostBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
+            if (joinBtn) joinBtn.className = "py-2 px-3 text-xs font-black uppercase text-center transition bg-slate-900/60 text-slate-400 border border-transparent hover:text-slate-200";
+            if (hostPanel) hostPanel.classList.remove("hidden");
+            if (joinPanel) joinPanel.classList.add("hidden");
+            XENO_COOP.initHost(true, Number(slot) || 1);
+            showToast("KHỞI TẠO PHÒNG", `Đang mở Phòng ${slot} [${XENO_COOP.getSlotRoomCode(slot)}].`);
+        };
+
+        window.toggleCoopHostRoomState = function() {
+            if (!XENO_COOP.hostRoomClosed) {
+                XENO_COOP.hostRoomClosed = true;
+                XENO_COOP.cleanup();
+                XENO_COOP.isHost = false;
+                XENO_COOP.roomCode = "";
+                XENO_COOP.updateHostUI();
+                showToast("ĐÃ ĐÓNG PHÒNG", "Phòng của bạn đã đóng hoàn toàn và ngắt kết nối khỏi hệ thống.");
+            } else {
+                XENO_COOP.hostRoomClosed = false;
+                XENO_COOP.initHost(true, XENO_COOP.currentSlot || 1);
+                showToast("MỞ LẠI PHÒNG", `Đang khởi tạo lại Phòng ${XENO_COOP.currentSlot || 1} [${XENO_COOP.roomCode}].`);
+            }
+        };
+
+        window.toggleCoopClientReady = function() {
+            if (!XENO_COOP.connected || XENO_COOP.isHost) return;
+            XENO_COOP.clientReady = !XENO_COOP.clientReady;
+            XENO_COOP.updateClientLobbyUI();
+            XENO_COOP.sendPacket({
+                t: "peer_ready",
+                ready: XENO_COOP.clientReady
+            });
+            const statusText = byId("coopJoinStatusText");
+            if (statusText) {
+                statusText.textContent = XENO_COOP.clientReady
+                    ? "Đã xác nhận Sẵn sàng. Đang chờ Chủ phòng bắt đầu chiến dịch..."
+                    : "Đã hủy trạng thái Sẵn sàng. Hãy bấm XÁC NHẬN SẴN SÀNG khi chuẩn bị xong.";
+            }
+        };
+
+        window.leaveCoopRoomAsClient = function() {
+            XENO_COOP.cleanup();
+            const statusText = byId("coopJoinStatusText");
+            const statusDot = byId("coopJoinStatusDot");
+            if (statusText) statusText.textContent = "Đã rời khỏi phòng. Chọn phòng trên danh sách để tham gia.";
+            if (statusDot) statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0";
+            XENO_COOP.resetJoinBtn("VÀO PHÒNG");
+            XENO_COOP.scanPublicRooms();
+        };
+
         window.regenerateCoopRoomCode = function() {
+            XENO_COOP.hostRoomClosed = false;
             XENO_COOP.initHost(true);
-            showToast("ĐỔI MÃ PHÒNG", `Mã phòng mới: ${XENO_COOP.roomCode}`);
+            showToast("ĐỔI PHÒNG", `Đã chuyển sang mã phòng mới: ${XENO_COOP.roomCode}`);
+        };
+
+        window.setCoopHostMap = function(mapId) {
+            const mId = Math.max(1, Math.min(10, Number(mapId) || 1));
+            window.currentMapId = mId;
+            if (typeof loadBossAssetForMap === "function") {
+                loadBossAssetForMap(mId);
+            }
+            if (typeof updateMapUIState === "function") {
+                updateMapUIState();
+            }
+            XENO_COOP.updateHostUI(null, XENO_COOP.connected && XENO_COOP.peerReady);
+            for (let i = 0; i < (XENO_COOP.roomSlotsState || []).length; i++) {
+                const st = XENO_COOP.roomSlotsState[i];
+                if (XENO_COOP.isHost && st.roomCode === XENO_COOP.roomCode) {
+                    st.mapId = mId;
+                }
+            }
+            XENO_COOP.renderRoomList();
+            if (XENO_COOP.isHost) {
+                XENO_COOP.sendPacket({
+                    t: "room_joined",
+                    roomCode: XENO_COOP.roomCode,
+                    slot: XENO_COOP.currentSlot,
+                    mapId: mId,
+                    difficulty: XENO_COOP.getDifficultyId(),
+                    hz: XENO_COOP.tickRate
+                });
+            }
+            showToast("BẢN ĐỒ CHIẾN DỊCH", `Đã chọn Bản đồ: Map ${mId}.`);
+        };
+
+        window.setCoopHostDifficulty = function(level) {
+            const cleanLevel = (level === "easy" || level === "hard") ? level : "normal";
+            if (typeof selectDifficulty === "function") {
+                selectDifficulty(cleanLevel);
+            }
+            XENO_COOP.updateHostUI(null, XENO_COOP.connected && XENO_COOP.peerReady);
+            for (let i = 0; i < (XENO_COOP.roomSlotsState || []).length; i++) {
+                const st = XENO_COOP.roomSlotsState[i];
+                if (XENO_COOP.isHost && st.roomCode === XENO_COOP.roomCode) {
+                    st.difficulty = cleanLevel;
+                }
+            }
+            XENO_COOP.renderRoomList();
+            if (XENO_COOP.isHost) {
+                XENO_COOP.sendPacket({
+                    t: "room_joined",
+                    roomCode: XENO_COOP.roomCode,
+                    slot: XENO_COOP.currentSlot,
+                    mapId: window.currentMapId || 1,
+                    difficulty: cleanLevel,
+                    hz: XENO_COOP.tickRate
+                });
+            }
+            showToast("ĐỘ KHÓ CHIẾN DỊCH", `Đã thiết lập độ khó: ${XENO_COOP.getDifficultyLabel(cleanLevel)}.`);
         };
 
         window.setCoopEngine = function(mode) {
@@ -7544,43 +8565,98 @@
             const serverInp = byId("coopSocketUrlInput");
 
             if (mode === "socket") {
-                if (socketBtn) socketBtn.className = "px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
-                if (p2pBtn) p2pBtn.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (socketBtn) socketBtn.className = "px-2 py-0.5 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 uppercase cursor-pointer";
+                if (p2pBtn) p2pBtn.className = "px-2 py-0.5 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white uppercase cursor-pointer";
                 if (serverBox) serverBox.classList.remove("hidden");
                 if (serverInp) serverInp.value = XENO_COOP.socketUrl;
-                showToast("CHẾ ĐỘ SOCKET SERVER", "Chuyển sang hạ tầng Dedicated Server (Xuyên tường lửa 100%)");
+                showToast("CHẾ ĐỘ SOCKET SERVER", "Chuyển sang hạ tầng Dedicated Server.");
             } else {
-                if (p2pBtn) p2pBtn.className = "px-2 py-1 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40";
-                if (socketBtn) socketBtn.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (p2pBtn) p2pBtn.className = "px-2 py-0.5 font-bold transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 uppercase cursor-pointer";
+                if (socketBtn) socketBtn.className = "px-2 py-0.5 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white uppercase cursor-pointer";
                 if (serverBox) serverBox.classList.add("hidden");
-                showToast("CHẾ ĐỘ P2P DIRECT", "Chuyển sang hạ tầng P2P WebRTC Direct");
+                showToast("CHẾ ĐỘ P2P DIRECT", "Chuyển sang hạ tầng P2P WebRTC Direct.");
             }
 
-            if (XENO_COOP.isHost) {
-                XENO_COOP.initHost(true);
+            const hostPanel = byId("coopHostPanel");
+            if (hostPanel && !hostPanel.classList.contains("hidden")) {
+                if (XENO_COOP.hostRoomClosed) {
+                    XENO_COOP.updateHostUI();
+                } else {
+                    XENO_COOP.initHost(true);
+                }
+            } else {
+                XENO_COOP.scanPublicRooms();
             }
         };
 
+        window.toggleCoopTickDropdown = function(ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            const menu = byId("coopTickDropdownMenu");
+            const arrow = byId("coopTickDropdownArrow");
+            if (!menu) return;
+            const isHidden = menu.classList.contains("hidden");
+            if (isHidden) {
+                menu.classList.remove("hidden");
+                if (arrow) arrow.textContent = "[THU GỌN]";
+            } else {
+                menu.classList.add("hidden");
+                if (arrow) arrow.textContent = "[MỞ]";
+            }
+        };
+
+        window.closeCoopTickDropdown = function() {
+            const menu = byId("coopTickDropdownMenu");
+            const arrow = byId("coopTickDropdownArrow");
+            if (menu) menu.classList.add("hidden");
+            if (arrow) arrow.textContent = "[MỞ]";
+        };
+
+        window.addEventListener("click", (ev) => {
+            const wrapper = byId("coopTickDropdownWrapper");
+            if (wrapper && !wrapper.contains(ev.target)) {
+                window.closeCoopTickDropdown();
+            }
+        });
+
         window.syncCoopTickButtons = function(rate) {
+            const currentLabel = byId("coopTickCurrentLabel");
             const btn30 = byId("coopTick30Btn");
             const btn60 = byId("coopTick60Btn");
+            const check30 = byId("coopTick30Check");
+            const check60 = byId("coopTick60Check");
             if (rate === 60) {
-                if (btn60) btn60.className = "px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
-                if (btn30) btn30.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (currentLabel) currentLabel.textContent = "60Hz LERP";
+                if (btn60) btn60.className = "w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer";
+                if (btn30) btn30.className = "w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer";
+                if (check60) check60.classList.remove("hidden");
+                if (check30) check30.classList.add("hidden");
             } else {
-                if (btn30) btn30.className = "px-2 py-1 font-bold transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
-                if (btn60) btn60.className = "px-2 py-1 font-bold transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white";
+                if (currentLabel) currentLabel.textContent = "30Hz LERP";
+                if (btn30) btn30.className = "w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer";
+                if (btn60) btn60.className = "w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer";
+                if (check30) check30.classList.remove("hidden");
+                if (check60) check60.classList.add("hidden");
             }
         };
 
         window.setCoopTickRate = function(rate) {
             XENO_COOP.tickRate = rate === 60 ? 60 : 30;
             window.syncCoopTickButtons(XENO_COOP.tickRate);
+            window.closeCoopTickDropdown();
             XENO_COOP.updateHUD();
+            XENO_COOP.updateHostUI(null, XENO_COOP.connected && XENO_COOP.peerReady);
+            XENO_COOP.updateClientLobbyUI();
+            for (let i = 0; i < (XENO_COOP.roomSlotsState || []).length; i++) {
+                const st = XENO_COOP.roomSlotsState[i];
+                if (XENO_COOP.isHost && st.roomCode === XENO_COOP.roomCode) {
+                    st.hz = XENO_COOP.tickRate;
+                }
+            }
+            XENO_COOP.renderRoomList();
             if (XENO_COOP.isHost && XENO_COOP.connected) {
                 XENO_COOP.sendPacket({ t: "tick_rate_sync", hz: XENO_COOP.tickRate });
             }
-            showToast("TICK RATE", `Đã thiết lập tần số đồng bộ mạng: ${XENO_COOP.tickRate}Hz (Nội suy LERP)`);
+            showToast("TẦN SỐ ĐỒNG BỘ", `Đã thiết lập tần số đồng bộ mạng: ${XENO_COOP.tickRate}Hz.`);
         };
 
         window.saveCoopSocketUrl = function() {
@@ -7588,9 +8664,11 @@
             if (inp && inp.value.trim()) {
                 XENO_COOP.socketUrl = inp.value.trim().replace(/\/$/, "");
                 localStorage.setItem("xeno_socket_url", XENO_COOP.socketUrl);
-                showToast("LƯU SERVER THÀNH CÔNG", `Đã lưu URL: ${XENO_COOP.socketUrl}`);
+                showToast("LƯU MÁY CHỦ THÀNH CÔNG", `Đã lưu địa chỉ: ${XENO_COOP.socketUrl}`);
                 if (XENO_COOP.isHost) {
                     XENO_COOP.initHost(true);
+                } else {
+                    XENO_COOP.scanPublicRooms();
                 }
             }
         };
@@ -7598,7 +8676,7 @@
         window.copyCoopRoomCode = function() {
             if (XENO_COOP.roomCode) {
                 navigator.clipboard.writeText(XENO_COOP.roomCode).then(() => {
-                    showToast("ĐÃ SAO CHÉP MÃ", `Mã phòng ${XENO_COOP.roomCode} đã được lưu vào khay nhớ tạm!`);
+                    showToast("ĐÃ SAO CHÉP MÃ", `Mã phòng ${XENO_COOP.roomCode} đã lưu vào bộ nhớ tạm.`);
                 });
             }
         };
@@ -7607,7 +8685,7 @@
             if (XENO_COOP.roomCode) {
                 const link = window.location.origin + window.location.pathname + "?room=" + XENO_COOP.roomCode;
                 navigator.clipboard.writeText(link).then(() => {
-                    showToast("ĐÃ SAO CHÉP LINK", "Link mời trực tiếp đã được lưu vào khay nhớ tạm!");
+                    showToast("ĐÃ SAO CHÉP LINK", "Đường dẫn mời vào phòng đã lưu vào bộ nhớ tạm.");
                 });
             }
         };
@@ -7625,19 +8703,27 @@
             if (inp && inp.value.trim()) {
                 XENO_COOP.joinRoom(inp.value.trim());
             } else {
-                showToast("LỖI", "Vui lòng nhập mã phòng trước khi kết nối!");
+                showToast("THIẾU MÃ PHÒNG", "Vui lòng nhập mã phòng hoặc chọn phòng trên danh sách.");
             }
         };
 
         window.startCoopMissionAsHost = function() {
             if (!XENO_COOP.isHost || !XENO_COOP.connected) return;
+            if (!XENO_COOP.peerReady) {
+                showToast("CHỜ ĐỒNG ĐỘI SẴN SÀNG", "Vui lòng chờ thành viên P2 bấm Xác nhận Sẵn sàng trước khi xuất trận.");
+                return;
+            }
+            const curDiff = XENO_COOP.getDifficultyId();
+            XENO_COOP.inMission = true;
             XENO_COOP.sendPacket({
                 t: "start",
-                mapId: window.currentMapId || 1
+                mapId: window.currentMapId || 1,
+                difficulty: curDiff,
+                hz: XENO_COOP.tickRate
             });
             window.closeCoopModal();
             window.closeMainMenuSettings(true);
-            showToast("BẮT ĐẦU CO-OP", `Tiến vào Map ${window.currentMapId || 1} cùng đồng đội!`);
+            showToast("BẮT ĐẦU CHIẾN DỊCH", `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`);
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
                     initCampaign(false, false);
@@ -24242,6 +25328,7 @@
         function selectDifficulty(level) {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             currentDifficulty = DIFFICULTY_CONFIG[level] || DIFFICULTY_CONFIG.normal;
+            window.currentDifficulty = currentDifficulty.id;
             const easyCard = byId("diffCardEasy");
             const normCard = byId("diffCardNormal");
             const hardCard = byId("diffCardHard");
@@ -24251,6 +25338,9 @@
             itemDropCooldownFrames = Math.min(itemDropCooldownFrames, currentDifficulty.itemCooldownSec * 60);
             updateMapUIState();
             updateTopLeftHUD();
+            if (window.XENO_COOP && typeof window.XENO_COOP.syncHostSelectorsUI === "function") {
+                window.XENO_COOP.syncHostSelectorsUI();
+            }
         }
         window.selectDifficulty = selectDifficulty;
 

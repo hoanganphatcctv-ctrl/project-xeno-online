@@ -54,17 +54,22 @@ io.on("connection", (socket) => {
 
   // 1. TẠO PHÒNG MỚI (HOST)
   socket.on("create_room", (data, callback) => {
-    let roomCode = generateRoomCode();
+    let requestedCode = (data?.roomCode || "").trim().toUpperCase();
+    let roomCode = requestedCode && !rooms.has(requestedCode) ? requestedCode : generateRoomCode();
     while (rooms.has(roomCode)) {
       roomCode = generateRoomCode();
     }
 
     const roomData = {
       code: roomCode,
+      slot: data?.slot || 0,
       hostId: socket.id,
+      hostName: data?.hostName || "CHỈ HUY P1",
       clientId: null,
+      peerReady: false,
       state: "waiting",
       mapId: data?.mapId || 1,
+      difficulty: data?.difficulty || "normal",
       createdAt: Date.now()
     };
 
@@ -79,6 +84,27 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 1B. LẤY DANH SÁCH PHÒNG ĐANG HOẠT ĐỘNG TRÊN HỆ THỐNG
+  socket.on("list_rooms", (callback) => {
+    const list = [];
+    for (const [code, r] of rooms.entries()) {
+      list.push({
+        roomCode: code,
+        slot: r.slot || 0,
+        hostName: r.hostName || "CHỈ HUY P1",
+        mapId: r.mapId || 1,
+        difficulty: r.difficulty || "normal",
+        players: r.clientId ? 2 : 1,
+        maxPlayers: 2,
+        state: r.state === "in_game" ? "playing" : "waiting",
+        peerReady: !!r.peerReady
+      });
+    }
+    if (typeof callback === "function") {
+      callback({ success: true, rooms: list });
+    }
+  });
+
   // 2. THAM GIA PHÒNG (CLIENT)
   socket.on("join_room", (data, callback) => {
     const targetCode = (data?.roomCode || "").trim().toUpperCase();
@@ -86,19 +112,20 @@ io.on("connection", (socket) => {
 
     if (!room) {
       if (typeof callback === "function") {
-        callback({ success: false, message: "Phòng không tồn tại hoặc đã đóng!" });
+        callback({ success: false, message: "Phòng không tồn tại hoặc đã đóng." });
       }
       return;
     }
 
-    if (room.clientId && room.clientId !== socket.id) {
+    if ((room.clientId && room.clientId !== socket.id) || room.state === "in_game") {
       if (typeof callback === "function") {
-        callback({ success: false, message: "Phòng đã đủ 2 người chơi!" });
+        callback({ success: false, message: "Phòng đã đủ 2/2 người hoặc đang trong trận đấu." });
       }
       return;
     }
 
     room.clientId = socket.id;
+    room.peerReady = false;
     currentRoomId = targetCode;
     socket.join(targetCode);
 
@@ -111,8 +138,33 @@ io.on("connection", (socket) => {
     });
 
     if (typeof callback === "function") {
-      callback({ success: true, roomCode: targetCode, isHost: false });
+      callback({
+        success: true,
+        roomCode: targetCode,
+        isHost: false,
+        mapId: room.mapId || 1,
+        difficulty: room.difficulty || "normal"
+      });
     }
+  });
+
+  // 2B. ĐỒNG ĐỘI XÁC NHẬN SẴN SÀNG (READY CHECK)
+  socket.on("peer_ready", (data) => {
+    if (!currentRoomId) return;
+    const room = rooms.get(currentRoomId);
+    if (!room) return;
+    room.peerReady = !!(data && data.ready);
+    socket.to(currentRoomId).emit("peer_ready", { ready: room.peerReady });
+  });
+
+  // 2C. HOST CẬP NHẬT BẢN ĐỒ / ĐỘ KHÓ / TẦN SỐ TRONG PHÒNG CHỜ
+  socket.on("update_room_meta", (data) => {
+    if (!currentRoomId) return;
+    const room = rooms.get(currentRoomId);
+    if (!room || room.hostId !== socket.id) return;
+    if (data?.mapId) room.mapId = Number(data.mapId) || 1;
+    if (data?.difficulty) room.difficulty = String(data.difficulty);
+    if (data?.hz) room.hz = data.hz === 60 ? 60 : 30;
   });
 
   // 3. HOST BẮT ĐẦU XUẤT TRẬN
@@ -122,13 +174,15 @@ io.on("connection", (socket) => {
     if (!room || room.hostId !== socket.id) return;
 
     room.state = "in_game";
-    room.mapId = data?.mapId || 1;
+    room.mapId = data?.mapId || room.mapId || 1;
+    room.difficulty = data?.difficulty || room.difficulty || "normal";
     room.hz = data?.hz === 60 ? 60 : 30;
 
-    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.hz}Hz)`);
+    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.difficulty}, ${room.hz}Hz)`);
 
     io.to(currentRoomId).emit("mission_started", {
       mapId: room.mapId,
+      difficulty: room.difficulty,
       hz: room.hz,
       startTime: Date.now()
     });
