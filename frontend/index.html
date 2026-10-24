@@ -5108,9 +5108,12 @@
                 altSrc: "assets/turret.png",
                 img: null,
                 loaded: false,
-                pivotX: 457,
-                pivotY: 458,
-                baseDiameter: 750
+                pivotX: 106.3,
+                pivotY: 106.5,
+                baseDiameter: 174.4,
+                pivotXRatio: 457 / 1376,
+                pivotYRatio: 458 / 916,
+                baseDiameterRatio: 750 / 1376
             },
             drone: {
                 src: "assets/drone.png",
@@ -7293,7 +7296,7 @@
                         ctx.stroke();
 
                         const targetLen = wId === 2 ? 42 : (wId === 5 ? 40 : (wId === 6 ? 42 : 36));
-                        if (customWp.crop) {
+                        if (customWp.crop && customWp.img.naturalWidth >= (customWp.crop.sx + customWp.crop.sw)) {
                             const c = customWp.crop;
                             const targetH = targetLen * (c.sh / c.sw);
                             ctx.drawImage(customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
@@ -12593,12 +12596,17 @@
                     const turretAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.turret : null;
                     if (turretAsset && turretAsset.loaded && turretAsset.img && turretAsset.img.naturalWidth > 0) {
                         ctx.rotate(pendingTurretDeploy.angle);
-                        const targetBaseDiameter = 38;
-                        const scale = targetBaseDiameter / turretAsset.baseDiameter;
-                        const dw = turretAsset.img.naturalWidth * scale;
-                        const dh = turretAsset.img.naturalHeight * scale;
-                        const dx = -turretAsset.pivotX * scale;
-                        const dy = -turretAsset.pivotY * scale;
+                        const imgW = turretAsset.img.naturalWidth;
+                        const imgH = turretAsset.img.naturalHeight;
+                        const baseDiam = imgW * (turretAsset.baseDiameterRatio || (750 / 1376));
+                        const pivX = imgW * (turretAsset.pivotXRatio || (457 / 1376));
+                        const pivY = imgH * (turretAsset.pivotYRatio || 0.5);
+                        const targetBaseDiameter = 42;
+                        const scale = targetBaseDiameter / baseDiam;
+                        const dw = imgW * scale;
+                        const dh = imgH * scale;
+                        const dx = -pivX * scale;
+                        const dy = -pivY * scale;
                         ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
                     } else {
                         ctx.strokeStyle = "#4ade80";
@@ -12685,12 +12693,17 @@
                     ctx.restore();
 
                     ctx.rotate(tr.angle);
-                    const targetBaseDiameter = 38;
-                    const scale = targetBaseDiameter / turretAsset.baseDiameter;
-                    const dw = turretAsset.img.naturalWidth * scale;
-                    const dh = turretAsset.img.naturalHeight * scale;
-                    const dx = -turretAsset.pivotX * scale;
-                    const dy = -turretAsset.pivotY * scale;
+                    const imgW = turretAsset.img.naturalWidth;
+                    const imgH = turretAsset.img.naturalHeight;
+                    const baseDiam = imgW * (turretAsset.baseDiameterRatio || (750 / 1376));
+                    const pivX = imgW * (turretAsset.pivotXRatio || (457 / 1376));
+                    const pivY = imgH * (turretAsset.pivotYRatio || 0.5);
+                    const targetBaseDiameter = 42;
+                    const scale = targetBaseDiameter / baseDiam;
+                    const dw = imgW * scale;
+                    const dh = imgH * scale;
+                    const dx = -pivX * scale;
+                    const dy = -pivY * scale;
 
                     ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
 
@@ -23148,7 +23161,7 @@
 
                     // Custom Weapon Sprite
                     const targetLen = wId === 2 ? 42 : (wId === 5 ? 40 : (wId === 6 ? 42 : 36));
-                    if (customWp.crop) {
+                    if (customWp.crop && customWp.img.naturalWidth >= (customWp.crop.sx + customWp.crop.sw)) {
                         const c = customWp.crop;
                         const targetH = targetLen * (c.sh / c.sw);
                         ctx.drawImage(customWp.img, c.sx, c.sy, c.sw, c.sh, 6, -targetH * 0.5, targetLen, targetH);
