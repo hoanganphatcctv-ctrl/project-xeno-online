@@ -6511,25 +6511,39 @@
             },
 
             getIceServers() {
-                return [
+                const servers = [
                     { urls: "stun:stun.l.google.com:19302" },
                     { urls: "stun:stun1.l.google.com:19302" },
                     { urls: "stun:stun2.l.google.com:19302" },
+                    { urls: "stun:stun3.l.google.com:19302" },
+                    { urls: "stun:stun4.l.google.com:19302" },
                     { urls: "stun:stun.cloudflare.com:3478" },
+                    { urls: "stun:global.stun.twilio.com:3478" },
                     { urls: "stun:stun.relay.metered.ca:80" },
                     {
                         urls: [
                             "turn:openrelay.metered.ca:80",
                             "turn:openrelay.metered.ca:443",
                             "turn:openrelay.metered.ca:443?transport=tcp",
-                            "turn:standard.relay.metered.ca:80",
-                            "turn:standard.relay.metered.ca:443",
-                            "turn:standard.relay.metered.ca:443?transport=tcp"
+                            "turns:openrelay.metered.ca:443",
+                            "turns:openrelay.metered.ca:443?transport=tcp"
                         ],
                         username: "openrelayproject",
                         credential: "openrelayproject"
                     }
                 ];
+
+                // Hỗ trợ TURN Server tùy chỉnh nếu người chơi cấu hình
+                try {
+                    const customTurn = localStorage.getItem("xeno_custom_turn_config");
+                    if (customTurn) {
+                        const parsed = JSON.parse(customTurn);
+                        if (Array.isArray(parsed)) servers.unshift(...parsed);
+                        else if (typeof parsed === "object") servers.unshift(parsed);
+                    }
+                } catch (e) {}
+
+                return servers;
             },
 
             getPeerOptions() {
