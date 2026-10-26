@@ -18,8 +18,10 @@ const io = new Server(server, {
     origin: "*", // Cho phép mọi origin hoặc cấu hình URL Vercel frontend
     methods: ["GET", "POST"]
   },
-  pingInterval: 10000,
-  pingTimeout: 5000
+  pingInterval: 8000,
+  pingTimeout: 4000,
+  perMessageDeflate: false,
+  httpCompression: false
 });
 
 // Quản lý danh sách phòng đang hoạt động trong RAM
@@ -206,11 +208,11 @@ io.on("connection", (socket) => {
     });
   });
 
-  // 4. CHUYỂN TIẾP GÓI TIN 30Hz TICK & SỰ KIỆN QUÁI VẬT HOST-AUTHORITATIVE (RELAY PACKETS)
+  // 4. CHUYỂN TIẾP GÓI TIN 60Hz/30Hz TICK & SỰ KIỆN QUÁI VẬT HOST-AUTHORITATIVE (RELAY PACKETS)
   socket.on("sync_tick", (packet) => {
     if (!currentRoomId) return;
-    // Gửi chuyển tiếp gói tin sang cho đồng đội trong phòng
-    socket.to(currentRoomId).emit("remote_tick", packet);
+    // Gửi chuyển tiếp gói tin sang cho đồng đội trong phòng (volatile giúp không bao giờ tồn đọng buffer khi lag)
+    socket.to(currentRoomId).volatile.emit("remote_tick", packet);
   });
 
   socket.on("SPAWN_ENEMY", (payload) => {

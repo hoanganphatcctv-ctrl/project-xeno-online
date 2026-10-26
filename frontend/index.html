@@ -7375,9 +7375,12 @@
 
                 if (data.t === "pong") {
                     const rawRtt = Math.max(0.1, performance.now() - (typeof data.time === "number" ? data.time : this.lastPingSent));
+                    // rawRtt là độ trễ khứ hồi 4 chặng qua máy chủ (Host -> Server -> Client -> Server -> Host).
+                    // Độ trễ 1 chiều thực tế giữa 2 người chơi = rawRtt / 2
+                    const oneWay = rawRtt * 0.5;
                     this.ping = this.ping > 0
-                        ? Number((this.ping * 0.6 + rawRtt * 0.4).toFixed(1))
-                        : Number(rawRtt.toFixed(1));
+                        ? Number((this.ping * 0.65 + oneWay * 0.35).toFixed(1))
+                        : Number(oneWay.toFixed(1));
                     if (!this.isHost && data.hz) {
                         const newHz = data.hz === 60 ? 60 : 30;
                         if (this.tickRate !== newHz) {
@@ -7691,22 +7694,9 @@
                         };
                     }
 
-                    const activeDrops = [];
-                    for (let i = 0; i < items.length; i++) {
-                        if (items[i].active) {
-                            activeDrops.push({
-                                act: 1,
-                                x: Math.round(items[i].x),
-                                y: Math.round(items[i].y),
-                                k: items[i].kind
-                            });
-                        }
-                    }
-                    if (activeDrops.length > 0) snapPacket.drops = activeDrops;
-
                     this.sendPacket(snapPacket);
 
-                    // Định kỳ 10-15 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống + trạng thái Cửa & Vật thể
+                    // Định kỳ 10-12 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống + trạng thái Cửa, Vật thể & Drops
                     if (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval) {
                         this.lastEnemySyncTime = now;
                         const syncedEnemies = [];
@@ -7743,7 +7733,7 @@
                             }
                         }
 
-                        // Đồng bộ danh sách vật thể đã bị phá hủy từ Host (đảm bảo không bao giờ sót 1 máu)
+                        // Đồng bộ danh sách vật thể đã bị phá hủy từ Host
                         const deadCrates = [];
                         for (let c = 0; c < crates.length; c++) {
                             if (!crates[c].active) deadCrates.push(c);
@@ -7757,6 +7747,19 @@
                             if (!nuclearVats[v].active) deadVats.push(v);
                         }
 
+                        // Đồng bộ danh sách vật phẩm rơi (được gom vào chu kỳ 80ms thay vì 60Hz để tiết kiệm băng thông)
+                        const activeDrops = [];
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].active) {
+                                activeDrops.push({
+                                    act: 1,
+                                    x: Math.round(items[i].x),
+                                    y: Math.round(items[i].y),
+                                    k: items[i].kind
+                                });
+                            }
+                        }
+
                         this.sendPacket({
                             t: "SYNC_ENEMIES",
                             wave: currentWave,
@@ -7765,6 +7768,7 @@
                             deadCrates: deadCrates,
                             deadBarrels: deadBarrels,
                             deadVats: deadVats,
+                            drops: activeDrops,
                             genX: mapGenerator ? Math.round(mapGenerator.x) : 0,
                             genY: mapGenerator ? Math.round(mapGenerator.y) : 0,
                             genRoom: mapGenerator ? (mapGenerator.roomName || "") : "",
@@ -7886,7 +7890,8 @@
             const buffer = teammate.snapshotBuffer;
             if (buffer && buffer.length >= 2) {
                 const tickInterval = 1000 / (XENO_COOP.tickRate || 60);
-                const renderDelay = Math.max(35, tickInterval * 1.35); // 35ms - 50ms buffer window
+                const estimatedOneWay = (XENO_COOP.ping > 0) ? (XENO_COOP.ping * 0.45) : 38;
+                const renderDelay = Math.max(40, Math.min(140, estimatedOneWay + tickInterval * 1.25));
                 const renderTime = now - renderDelay;
 
                 let s0 = null;
@@ -14661,6 +14666,17 @@
                     true
                 );
             }
+
+            // Đồng bộ trạng thái vật phẩm rơi trên sàn (được chuyển từ tick 60Hz sang gói 10Hz tiết kiệm băng thông)
+            if (Array.isArray(data.drops)) {
+                for (let d = 0; d < Math.min(items.length, data.drops.length); d++) {
+                    const dp = data.drops[d];
+                    items[d].active = dp.act;
+                    items[d].x = dp.x;
+                    items[d].y = dp.y;
+                    items[d].kind = dp.k;
+                }
+            }
         }
 
         function handleHostPropHit(data) {
@@ -17341,8 +17357,15 @@
             // Camera Follow & Mouse Aim
             const maxCamX = Math.max(0, WORLD_W - VIEW_W);
             const maxCamY = Math.max(0, WORLD_H - VIEW_H);
-            const targetCamX = Math.max(0, Math.min(maxCamX, player.x - VIEW_W / 2));
-            const targetCamY = Math.max(0, Math.min(maxCamY, player.y - VIEW_H / 2));
+            let camFocusX = player.x;
+            let camFocusY = player.y;
+            // Khi bị hạ gục trong chế độ Co-Op, camera bám theo góc nhìn của đồng đội còn sống (Spectator Mode)
+            if (window.XENO_COOP && window.XENO_COOP.active && player.isDown && window.teammate && window.teammate.active && !window.teammate.isDown) {
+                camFocusX = window.teammate.x;
+                camFocusY = window.teammate.y;
+            }
+            const targetCamX = Math.max(0, Math.min(maxCamX, camFocusX - VIEW_W / 2));
+            const targetCamY = Math.max(0, Math.min(maxCamY, camFocusY - VIEW_H / 2));
             camera.x += (targetCamX - camera.x) * 0.16;
             camera.y += (targetCamY - camera.y) * 0.16;
 
@@ -19156,6 +19179,41 @@
             }
 
             drawCrosshair();
+
+            // Spectator Mode Banner: Khi người chơi bị hạ gục trong Co-Op, camera bám theo đồng đội
+            if (player.isDown && window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active && !window.teammate.isDown) {
+                ctx.save();
+                const bannerW = Math.min(VIEW_W - 40, 500);
+                const bannerH = 46;
+                const bx = (VIEW_W - bannerW) / 2;
+                const by = VIEW_H - 105;
+
+                ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+                ctx.strokeStyle = "rgba(250, 204, 21, 0.85)";
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                safeRoundRect(ctx, bx, by, bannerW, bannerH, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                const teammateName = window.XENO_COOP.isHost ? "P2 • ĐỒNG ĐỘI" : "P1 • CHỦ PHÒNG";
+                ctx.font = "800 11.5px 'JetBrains Mono', monospace";
+                ctx.fillStyle = "#facc15";
+                ctx.textAlign = "center";
+                ctx.fillText(`👁️ BẠN ĐÃ BỊ HẠ GỤC • ĐANG THEO DÕI [${teammateName}]`, VIEW_W / 2, by + 18);
+
+                if (player.reviveProgress > 0) {
+                    const prog = Math.min(1.0, player.reviveProgress);
+                    ctx.font = "800 10px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#34d399";
+                    ctx.fillText(`⚡ ĐANG ĐƯỢC CỨU SỐNG: ${Math.round(prog * 100)}% (GIỮ GẦN 5 GIÂY)`, VIEW_W / 2, by + 34);
+                } else {
+                    ctx.font = "700 9.5px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#cbd5e1";
+                    ctx.fillText("Đồng đội cần tiếp cận gần vị trí bạn gục ngã và giữ 5s để cứu sống", VIEW_W / 2, by + 34);
+                }
+                ctx.restore();
+            }
 
             if (frameCounter % 6 === 0) renderRadarMinimap();
 
@@ -24082,6 +24140,45 @@
             ctx.beginPath();
             safeArc(ctx, 0, 2.5, 19);
             ctx.fill();
+
+            // ========================================================================
+            // VÒNG XANH DƯỚI CHÂN BẢN THÂN TRONG CHẾ ĐỘ ONLINE CO-OP (EMERALD IDENTIFICATION RING)
+            // ========================================================================
+            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected) {
+                const myRingPulse = 1.0 + Math.sin(now * 0.006) * 0.05;
+                const myRingRadius = 24.5 * myRingPulse;
+                const myRoundedRingR = Math.round(myRingRadius);
+                ctx.save();
+                // Hào quang xanh ngọc dịu dưới mặt đất
+                const greenGrad = getCachedRadialGradient(ctx, "player_green_ring_" + myRoundedRingR, 0, 1, 6, 0, 1, myRoundedRingR + 8, [
+                    [0, "rgba(16, 185, 129, 0.28)"],
+                    [0.7, "rgba(6, 182, 212, 0.16)"],
+                    [1, "rgba(6, 182, 212, 0)"]
+                ]);
+                if (greenGrad) {
+                    ctx.fillStyle = greenGrad;
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 1, myRingRadius + 8);
+                    ctx.fill();
+                }
+
+                // Vòng xanh lá/ngọc chính sắc nét dưới chân
+                ctx.strokeStyle = "#10b981";
+                ctx.lineWidth = 2.6;
+                ctx.beginPath();
+                safeArc(ctx, 0, 1, myRingRadius);
+                ctx.stroke();
+
+                // Vòng viền xanh cyan sáng bên trong nét đứt
+                ctx.strokeStyle = "rgba(110, 231, 183, 0.88)";
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 1, myRingRadius - 3.5);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
 
             // Station Generator Under-Foot Green Circular Loading Progress / Tactical Foot Arrow
             if (mapGenerator && !mapGenerator.active) {
@@ -29159,8 +29256,14 @@
                 if (ticks === 0 && !isGameOver) {
                     const maxCamX = Math.max(0, WORLD_W - VIEW_W);
                     const maxCamY = Math.max(0, WORLD_H - VIEW_H);
-                    const targetCamX = Math.max(0, Math.min(maxCamX, player.x - VIEW_W / 2));
-                    const targetCamY = Math.max(0, Math.min(maxCamY, player.y - VIEW_H / 2));
+                    let camFocusX = player.x;
+                    let camFocusY = player.y;
+                    if (window.XENO_COOP && window.XENO_COOP.active && player.isDown && window.teammate && window.teammate.active && !window.teammate.isDown) {
+                        camFocusX = window.teammate.x;
+                        camFocusY = window.teammate.y;
+                    }
+                    const targetCamX = Math.max(0, Math.min(maxCamX, camFocusX - VIEW_W / 2));
+                    const targetCamY = Math.max(0, Math.min(maxCamY, camFocusY - VIEW_H / 2));
                     const alpha = Math.min(1, elapsed / FIXED_PHYSICS_STEP) * 0.16;
                     camera.x += (targetCamX - camera.x) * alpha;
                     camera.y += (targetCamY - camera.y) * alpha;
