@@ -1,0 +1,10 @@
+================================================================================
+👉 ĐÂY LÀ THƯ MỤC DIST CỦA BẢN ONLINE CO-OP (VERCEL LIVE)
+================================================================================
+Đường dẫn: alien-shooter-fullstack/dist/ và alien-shooter-fullstack/frontend/dist/
+Domain chính thức: https://project-xeno-online.vercel.app
+Đặc điểm nhận diện:
+- ĐÃ TÁCH BIỆT MÃ NGUỒN: File index.html (~280 KB) chỉ chứa khung HTML/CSS giao diện.
+- LOGIC ĐÃ ĐƯỢC BẢO VỆ: File game.min.js (~535 KB) đã được làm rối mã, xóa chú thích tiếng Việt và nén gọn.
+- Thư mục dist này sẵn sàng 100% để kéo thả thẳng vào Vercel hoặc deploy tự động qua Git.
+================================================================================

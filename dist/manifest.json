@@ -1,0 +1,19 @@
+{
+  "name": "PROJECT XENO: RELOADED",
+  "short_name": "AlienShooter",
+  "description": "Chiến Dịch 4 Màn Liên Thông & Đa Trùm Cuối - Top-down Alien Shooter game",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#04070d",
+  "theme_color": "#04070d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

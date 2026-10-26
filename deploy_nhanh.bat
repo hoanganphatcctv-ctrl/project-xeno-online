@@ -9,10 +9,14 @@ echo ========================================================
 echo.
 
 echo [1/3] Packing distribution folders (dist)...
-call node build.cjs
-cd frontend
-call node build.cjs
-cd ..
+powershell -ExecutionPolicy Bypass -File "%~dp0..\build_minified.ps1"
+if errorlevel 1 (
+    echo [Fallback] Running node build.cjs...
+    call node build.cjs
+    cd frontend
+    call node build.cjs
+    cd ..
+)
 
 echo.
 echo [2/3] Staging changes and committing to Git...

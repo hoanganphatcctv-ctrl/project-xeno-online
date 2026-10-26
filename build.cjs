@@ -52,7 +52,16 @@ async function processHtmlAndMinifyJs() {
     try {
       let terser;
       try { terser = require('terser'); } catch (e) {
-        try { terser = require(path.join(ROOT_DIR, 'node_modules', 'terser')); } catch (e2) {}
+        try { terser = require(path.join(ROOT_DIR, 'node_modules', 'terser')); } catch (e2) {
+          try {
+            const bundlePath = path.join(ROOT_DIR, 'node_modules', 'terser', 'dist', 'bundle.min.js');
+            if (fs.existsSync(bundlePath)) {
+              const bundleCode = fs.readFileSync(bundlePath, 'utf8');
+              const fn = new Function(bundleCode + '; return Terser;');
+              terser = fn();
+            }
+          } catch (e3) {}
+        }
       }
 
       if (terser && typeof terser.minify === 'function') {
@@ -62,7 +71,8 @@ async function processHtmlAndMinifyJs() {
             dead_code: true
           },
           mangle: {
-            toplevel: false
+            toplevel: true,
+            reserved: ['sfx']
           },
           format: {
             comments: false,

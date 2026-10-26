@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.2"/>
+    </radialGradient>
+    <linearGradient id="alienGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#04070d"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="4 2"/>
+  <circle cx="32" cy="32" r="20" fill="url(#glow)" opacity="0.15"/>
+  <!-- Crosshairs -->
+  <line x1="32" y1="6" x2="32" y2="14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="50" x2="32" y2="58" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="6" y1="32" x2="14" y2="32" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="50" y1="32" x2="58" y2="32" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <!-- Alien/Cyber Skull Head -->
+  <path d="M22 22 C22 15, 42 15, 42 22 C42 28, 38 34, 38 42 L26 42 C26 34, 22 28, 22 22 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Eyes -->
+  <ellipse cx="27" cy="24" rx="3.5" ry="5.5" transform="rotate(-15 27 24)" fill="#38bdf8"/>
+  <ellipse cx="37" cy="24" rx="3.5" ry="5.5" transform="rotate(15 37 24)" fill="#38bdf8"/>
+  <circle cx="28" cy="23" r="1.2" fill="#ffffff"/>
+  <circle cx="36" cy="23" r="1.2" fill="#ffffff"/>
+  <!-- Center Tech Core -->
+  <circle cx="32" cy="36" r="2" fill="#f43f5e"/>
+</svg>
+
