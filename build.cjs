@@ -130,7 +130,12 @@ async function runBuild() {
   copyDirSync(apiSrc, path.join(DIST_DIR, 'api'));
 
   // 3. Copy metadata
-  for (const file of ['favicon.svg', 'manifest.json', 'robots.txt']) {
+  const metaFiles = [
+    'favicon.ico', 'favicon.png', 'favicon-32x32.png', 'favicon-48x48.png',
+    'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'favicon.svg',
+    'manifest.json', 'sw.js', 'robots.txt'
+  ];
+  for (const file of metaFiles) {
     let p = path.join(ROOT_DIR, 'frontend', file);
     if (!fs.existsSync(p)) p = path.join(ROOT_DIR, file);
     if (fs.existsSync(p)) fs.copyFileSync(p, path.join(DIST_DIR, file));
