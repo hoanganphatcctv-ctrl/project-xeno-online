@@ -6519,21 +6519,14 @@
                     { urls: "stun:stun4.l.google.com:19302" },
                     { urls: "stun:stun.cloudflare.com:3478" },
                     { urls: "stun:global.stun.twilio.com:3478" },
-                    { urls: "stun:stun.relay.metered.ca:80" },
-                    {
-                        urls: [
-                            "turn:openrelay.metered.ca:80",
-                            "turn:openrelay.metered.ca:443",
-                            "turn:openrelay.metered.ca:443?transport=tcp",
-                            "turns:openrelay.metered.ca:443",
-                            "turns:openrelay.metered.ca:443?transport=tcp"
-                        ],
-                        username: "openrelayproject",
-                        credential: "openrelayproject"
-                    }
+                    { urls: "stun:stun.services.mozilla.com:3478" },
+                    { urls: "stun:stun.nextcloud.com:443" },
+                    { urls: "stun:stun.syncthing.net:3478" },
+                    { urls: "stun:stun.1und1.de:3478" },
+                    { urls: "stun:stun.gmx.net:3478" }
                 ];
 
-                // Hỗ trợ TURN Server tùy chỉnh nếu người chơi cấu hình
+                // Hỗ trợ TURN Server tùy chỉnh nếu người chơi cấu hình (ví dụ: Metered, Xirsys, Twilio TURN)
                 try {
                     const customTurn = localStorage.getItem("xeno_custom_turn_config");
                     if (customTurn) {
@@ -6630,9 +6623,14 @@
                         : `PHÒNG RIÊNG (${this.connected ? "2/2" : "1/2"})`;
                     slotLabelEl.className = "text-[10px] text-cyan-400 uppercase tracking-wider font-black";
                 }
-                if (codeEl && this.roomCode) {
-                    codeEl.textContent = this.roomCode;
-                    codeEl.className = "text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all leading-none";
+                if (codeEl) {
+                    if (this.roomCode) {
+                        codeEl.textContent = this.roomCode;
+                        codeEl.className = "text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest font-mono-tech select-all leading-none";
+                    } else {
+                        codeEl.textContent = "ĐANG TẠO...";
+                        codeEl.className = "text-2xl sm:text-3xl font-black text-amber-300 tracking-widest font-mono-tech select-none leading-none";
+                    }
                 }
                 if (closeRoomBtn) {
                     closeRoomBtn.textContent = "ĐÓNG PHÒNG";
@@ -6737,8 +6735,9 @@
                 this.cleanup();
                 this.isHost = true;
                 this.currentSlot = targetSlot;
+                this.roomCode = this.getSlotRoomCode(targetSlot);
                 this.peerReady = false;
-                this.updateHostUI(`Đang kết nối máy chủ...`, false);
+                this.updateHostUI(`Đang kết nối máy chủ (${this.socketUrl})...`, false);
 
                 if (typeof io === "undefined") {
                     this.updateHostUI("Lỗi: Không tải được thư viện Socket.io!", false, true);
