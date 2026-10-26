@@ -37,7 +37,7 @@ Render cung cấp dịch vụ Web Service miễn phí có hỗ trợ đầy đ�
 3. Tại giao diện Render Dashboard, bấm **New +** ➔ Chọn **Web Service**.
 4. Chọn kho mã nguồn (Repository) của bạn.
 5. Điền các thông số cấu hình:
-   - **Name**: `project-xeno-server` *(hoặc tên tùy chọn)*
+   - **Name**: `project-xeno-online` *(hoặc tên tùy chọn)*
    - **Region**: `Singapore (Southeast Asia)` *(để có ping thấp nhất cho người chơi Việt Nam & Châu Á)*
    - **Branch**: `main`
    - **Root Directory**: `alien-shooter-fullstack/backend` *(hoặc `backend` nếu repo của bạn bắt đầu từ thư mục này)*
@@ -51,7 +51,7 @@ Render cung cấp dịch vụ Web Service miễn phí có hỗ trợ đầy đ�
    [SERVER] Project Xeno Dedicated Server running on port 4000
    ```
    Render sẽ cấp cho bạn một đường dẫn công khai, ví dụ:  
-   👉 `https://project-xeno-server.onrender.com`
+   👉 `https://project-xeno-online.onrender.com`
 8. **Kiểm tra**: Mở đường dẫn trên trên trình duyệt, nếu thấy phản hồi JSON:
    ```json
    { "status": "online", "name": "Project Xeno Co-Op Game Server", "activeRooms": 0 }
@@ -75,7 +75,7 @@ Vercel là nền tảng tốt nhất để host ứng dụng Vite + React.
    - Mở mục **Environment Variables**.
    - Thêm biến sau:
      - **Key**: `VITE_BACKEND_URL`
-     - **Value**: Dán URL backend Render bạn vừa tạo ở Bước 1 (Ví dụ: `https://project-xeno-server.onrender.com`).
+     - **Value**: Dán URL backend Render bạn vừa tạo ở Bước 1 (Ví dụ: `https://project-xeno-online.onrender.com`).
 6. Bấm **Deploy**.
 7. Vercel sẽ tự động build ứng dụng trong khoảng 30-45 giây và cấp một tên miền miễn phí, ví dụ:  
    👉 `https://project-xeno-reloaded.vercel.app`
@@ -110,7 +110,7 @@ Gói miễn phí của Render sẽ tạm dừng (sleep) dịch vụ sau 15 phút
 2. Bấm **Add New Monitor**.
    - **Monitor Type**: `HTTP(s)`
    - **Friendly Name**: `Xeno Backend Keepalive`
-   - **URL (or IP)**: `https://project-xeno-server.onrender.com/health`
+   - **URL (or IP)**: `https://project-xeno-online.onrender.com/health`
    - **Monitoring Interval**: `5 minutes`
 3. Bấm **Create Monitor**.  
 ➔ UptimeRobot sẽ tự động gửi tín hiệu "ping" nhẹ nhàng tới máy chủ mỗi 5 phút, giữ cho máy chủ Socket.io của bạn luôn luôn thức 24/7 với 0ms thời gian chờ!
