@@ -2719,18 +2719,18 @@
                         <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h3 class="text-xs font-black text-emerald-400 uppercase font-mono-tech">HÌNH NỀN SẢNH CHỈ HUY (LOBBY WALLPAPER)</h3>
+                                    <h3 class="text-xs font-black text-emerald-400 uppercase font-mono-tech">HÌNH NỀN SẢNH CHỈ HUY</h3>
                                     <p class="text-[11px] text-slate-400 mt-0.5">Hình nền mặc định: <b>Project Xeno Spaceport</b>. Bạn vẫn có thể tải ảnh từ máy hoặc nhập URL ảnh cá nhân.</p>
                                 </div>
-                                <span id="lobbyBgStatusBadge" class="px-2 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 font-mono-tech text-[10px] font-bold border border-emerald-500/30">Mặc định (Spaceport)</span>
+                                <span id="lobbyBgStatusBadge" class="px-2 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 font-mono-tech text-[10px] font-bold border border-emerald-500/30">Mặc định</span>
                             </div>
 
                             <div class="flex flex-wrap gap-2">
                                 <button onclick="window.triggerLobbyBgUpload()" class="px-3.5 py-2 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider font-mono-tech shadow-lg transition flex items-center gap-1.5">
-                                    <span>TẢI ẢNH NỀN TỪ THIẾT BỊ</span>
+                                    <span>ẢNH NỀN TỪ THIẾT BỊ</span>
                                 </button>
                                 <button onclick="window.resetLobbyBackground()" class="px-3 py-2 rounded-none bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase font-mono-tech border border-slate-600 transition">
-                                    Khôi Phục Nền Mặc Định (Spaceport)
+                                    Khôi Phục Mặc Định
                                 </button>
                             </div>
 
@@ -2836,7 +2836,7 @@
 
                             <div>
                                 <div class="flex items-center justify-between text-xs mb-1">
-                                    <span class="font-bold text-white font-mono-tech">Độ Tương Phản (Contrast)</span>
+                                    <span class="font-bold text-white font-mono-tech">Độ Tương Phản</span>
                                     <span id="valContrast" class="font-mono-tech font-bold text-emerald-300">100%</span>
                                 </div>
                                 <input id="sliderContrast" type="range" min="75" max="135" value="100"
@@ -2846,7 +2846,7 @@
 
                             <div>
                                 <div class="flex items-center justify-between text-xs mb-1">
-                                    <span class="font-bold text-white font-mono-tech">Cường Độ Rung Màn Hình Khi Nổ (Screen Shake)</span>
+                                    <span class="font-bold text-white font-mono-tech">Cường Độ Rung</span>
                                     <span id="valShake" class="font-mono-tech font-bold text-emerald-300">100%</span>
                                 </div>
                                 <input id="sliderShake" type="range" min="0" max="150" value="100"
@@ -2860,10 +2860,10 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-xs font-black text-cyan-400 uppercase font-mono-tech flex items-center gap-2">
-                                        <span>MÔ HÌNH LAI WEBGL POST-PROCESSING SHADER</span>
+                                        <span>WEBGL POST-PROCESSING SHADER</span>
                                         <span id="sysWebglProtocolBadge" class="px-1.5 py-0.5 text-[9px] bg-slate-800 border border-slate-700 rounded-none text-slate-400 font-mono">FILE: 2D MODE</span>
                                     </h3>
-                                    <p id="sysWebglDescText" class="text-[11px] text-slate-400 mt-0.5">Tán sắc quang học (Chromatic Aberration), Neon Bloom rực rỡ, Vignette góc tối &amp; CRT Scanlines qua GPU Shader.</p>
+                                    <p id="sysWebglDescText" class="text-[11px] text-slate-400 mt-0.5">RayTracing (Chromatic Aberration), Neon Bloom, Vignette &amp; CRT Scanlines with GPU Shader.</p>
                                 </div>
                                 <button id="sysWebglToggleBtn" onclick="window.toggleWebglPostProcessing()" class="px-3 py-1.5 rounded-none bg-slate-800 border border-slate-700 text-slate-400 font-mono-tech font-bold text-xs transition">
                                     SHADER: TẮT
