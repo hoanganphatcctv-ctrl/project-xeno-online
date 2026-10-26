@@ -968,6 +968,8 @@
 
     <!-- MAIN WORLD CANVAS -->
     <canvas id="gameCanvas" class="absolute inset-0 z-0"></canvas>
+    <!-- SMART HYBRID WEBGL POST-PROCESSING OVERLAY CANVAS (ACTIVE ON HTTP/VERCEL, AUTO-FALLBACK ON FILE:///) -->
+    <canvas id="webglCanvas" class="absolute inset-0 z-0 pointer-events-none" style="display: none;"></canvas>
 
     <!-- SCREEN FX OVERLAYS -->
     <div id="damageVignette" class="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300 opacity-0"
@@ -2850,6 +2852,25 @@
                                 <input id="sliderShake" type="range" min="0" max="150" value="100"
                                        oninput="window.updateScreenShakeMult(this.value)"
                                        class="w-full accent-emerald-400 cursor-pointer" />
+                            </div>
+                        </div>
+
+                        <!-- Smart WebGL Post-Processing Shader Card -->
+                        <div class="bg-slate-900/85 p-4 rounded-none border border-cyan-500/30 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-xs font-black text-cyan-400 uppercase font-mono-tech flex items-center gap-2">
+                                        <span>MÔ HÌNH LAI WEBGL POST-PROCESSING SHADER</span>
+                                        <span id="sysWebglProtocolBadge" class="px-1.5 py-0.5 text-[9px] bg-slate-800 border border-slate-700 rounded-none text-slate-400 font-mono">FILE: 2D MODE</span>
+                                    </h3>
+                                    <p id="sysWebglDescText" class="text-[11px] text-slate-400 mt-0.5">Tán sắc quang học (Chromatic Aberration), Neon Bloom rực rỡ, Vignette góc tối &amp; CRT Scanlines qua GPU Shader.</p>
+                                </div>
+                                <button id="sysWebglToggleBtn" onclick="window.toggleWebglPostProcessing()" class="px-3 py-1.5 rounded-none bg-slate-800 border border-slate-700 text-slate-400 font-mono-tech font-bold text-xs transition">
+                                    SHADER: TẮT
+                                </button>
+                            </div>
+                            <div id="sysWebglStatusNote" class="text-[10px] font-mono-tech text-amber-300/90 bg-amber-950/20 px-2.5 py-1.5 border border-amber-500/30">
+                                ℹ️ Đang chạy giao thức file:/// cục bộ. Để đảm bảo an toàn tuyệt đối và tránh lỗi đen màn hình do giới hạn bảo mật CORS trình duyệt, game kích hoạt Canvas 2D thuần túy tối ưu. Khi chạy trên Vercel hoặc Localhost HTTP, WebGL Post-Processing Shaders sẽ tự động kích hoạt!
                             </div>
                         </div>
 
@@ -11035,7 +11056,9 @@
                 }
             }
             flowGrid.dirty = true;
-            // syncFlowFieldWorkerWalls removed
+            if (typeof rebuildObstacleSpatialGrid === "function") {
+                rebuildObstacleSpatialGrid();
+            }
         }
 
         // ============================================================================
@@ -11307,115 +11330,205 @@
             return false;
         }
 
-        function pointHitsWall(x, y) {
-            for (let i = 0; i < WALLS.length; i++) {
-                const w = WALLS[i];
-                if (x >= w.x && x <= w.x + w.w && y >= w.y && y <= w.y + w.h) return true;
+        // ============================================================================
+        // 6b. HIGH-PERFORMANCE STATIC OBSTACLES SPATIAL HASH GRID (O(1) COLLISION & RAYCAST)
+        // Thay thế vòng lặp O(N) duyệt hàng trăm chướng ngại vật (WALLS, Consoles, Props,
+        // Barricades, Vats, Crates, Barrels, Reactors) bằng Spatial Grid O(1).
+        // Giúp 400+ quái vật và hàng ngàn viên đạn chạy mượt mà 60 FPS không tụt hiệu năng.
+        // ============================================================================
+        const OBS_GRID_CELL = 200;
+        const OBS_GRID_COLS = Math.ceil(WORLD_W / OBS_GRID_CELL); // 26
+        const OBS_GRID_ROWS = Math.ceil(WORLD_H / OBS_GRID_CELL); // 18
+        const obstacleGrid = new Array(OBS_GRID_COLS * OBS_GRID_ROWS);
+        for (let i = 0; i < obstacleGrid.length; i++) obstacleGrid[i] = [];
+        let obstacleSpatialGridReady = false;
+        let _obsQueryToken = 1;
+
+        function rebuildObstacleSpatialGrid() {
+            for (let i = 0; i < obstacleGrid.length; i++) {
+                obstacleGrid[i].length = 0;
             }
-            // Check Computer Consoles as cover against projectiles
-            for (let i = 0; i < computerDesks.length; i++) {
-                const cd = computerDesks[i];
-                if (x >= cd.x && x <= cd.x + cd.w && y >= cd.y && y <= cd.y + cd.h) return true;
-            }
-            // Check Spacecraft Interior Props (Cryo Pods, Particle Accelerators, Supercomputers)
-            for (let i = 0; i < spaceProps.length; i++) {
-                const sp = spaceProps[i];
-                if (x >= sp.x && x <= sp.x + sp.w && y >= sp.y && y <= sp.y + sp.h) return true;
-            }
-            // Check Titanium Barricades (cản đạn thật & tạo tia lửa phản xạ)
-            for (let i = 0; i < barricades.length; i++) {
-                const bar = barricades[i];
-                if (x >= bar.x && x <= bar.x + bar.w && y >= bar.y && y <= bar.y + bar.h) {
-                    bar.hitFlash = 5;
-                    return true;
+            let obsIdCounter = 1;
+
+            function addBox(box, isWall, isBulletCover, isBarricade, ref) {
+                const ob = {
+                    type: 0,
+                    id: obsIdCounter++,
+                    x: box.x,
+                    y: box.y,
+                    w: box.w,
+                    h: box.h,
+                    isWall: !!isWall,
+                    isBulletCover: !!isBulletCover,
+                    isBarricade: !!isBarricade,
+                    ref: ref || null,
+                    _qToken: 0
+                };
+                const cMin = Math.max(0, Math.floor(ob.x / OBS_GRID_CELL));
+                const cMax = Math.min(OBS_GRID_COLS - 1, Math.floor((ob.x + ob.w) / OBS_GRID_CELL));
+                const rMin = Math.max(0, Math.floor(ob.y / OBS_GRID_CELL));
+                const rMax = Math.min(OBS_GRID_ROWS - 1, Math.floor((ob.y + ob.h) / OBS_GRID_CELL));
+                for (let r = rMin; r <= rMax; r++) {
+                    const rowOff = r * OBS_GRID_COLS;
+                    for (let c = cMin; c <= cMax; c++) {
+                        obstacleGrid[rowOff + c].push(ob);
+                    }
                 }
             }
-            // Check Energy Core Station Central Reactor & Pylons
-            for (let i = 0; i < energyCoreStations.length; i++) {
-                const st = energyCoreStations[i];
-                if ((x - st.x) * (x - st.x) + (y - st.y) * (y - st.y) <= st.coreRadius * st.coreRadius) return true;
-                for (let p = 0; p < st.pylons.length; p++) {
-                    const py = st.pylons[p];
-                    if ((x - py.x) * (x - py.x) + (y - py.y) * (y - py.y) <= py.radius * py.radius) return true;
+
+            function addCircle(circle, isBulletCover, ref) {
+                const ob = {
+                    type: 1,
+                    id: obsIdCounter++,
+                    x: circle.x,
+                    y: circle.y,
+                    radius: circle.radius,
+                    isBulletCover: !!isBulletCover,
+                    ref: ref || null,
+                    _qToken: 0
+                };
+                const cMin = Math.max(0, Math.floor((ob.x - ob.radius) / OBS_GRID_CELL));
+                const cMax = Math.min(OBS_GRID_COLS - 1, Math.floor((ob.x + ob.radius) / OBS_GRID_CELL));
+                const rMin = Math.max(0, Math.floor((ob.y - ob.radius) / OBS_GRID_CELL));
+                const rMax = Math.min(OBS_GRID_ROWS - 1, Math.floor((ob.y + ob.radius) / OBS_GRID_CELL));
+                for (let r = rMin; r <= rMax; r++) {
+                    const rowOff = r * OBS_GRID_COLS;
+                    for (let c = cMin; c <= cMax; c++) {
+                        obstacleGrid[rowOff + c].push(ob);
+                    }
+                }
+            }
+
+            if (typeof WALLS !== "undefined" && Array.isArray(WALLS)) {
+                for (let i = 0; i < WALLS.length; i++) {
+                    const w = WALLS[i];
+                    addBox({ x: w.x, y: w.y, w: w.w, h: w.h }, true, true, false, null);
+                }
+            }
+            if (typeof computerDesks !== "undefined" && Array.isArray(computerDesks)) {
+                for (let i = 0; i < computerDesks.length; i++) {
+                    const cd = computerDesks[i];
+                    addBox({ x: cd.x, y: cd.y, w: cd.w, h: cd.h }, false, true, false, cd);
+                }
+            }
+            if (typeof spaceProps !== "undefined" && Array.isArray(spaceProps)) {
+                for (let i = 0; i < spaceProps.length; i++) {
+                    const sp = spaceProps[i];
+                    addBox({ x: sp.x, y: sp.y, w: sp.w, h: sp.h }, false, true, false, sp);
+                }
+            }
+            if (typeof barricades !== "undefined" && Array.isArray(barricades)) {
+                for (let i = 0; i < barricades.length; i++) {
+                    const bar = barricades[i];
+                    addBox({ x: bar.x, y: bar.y, w: bar.w, h: bar.h }, false, true, true, bar);
+                }
+            }
+            if (typeof crates !== "undefined" && Array.isArray(crates)) {
+                for (let i = 0; i < crates.length; i++) {
+                    const cr = crates[i];
+                    if (!cr.active) continue;
+                    const hw = (cr.w || 34) * 0.5;
+                    const hh = (cr.h || 34) * 0.5;
+                    addBox({ x: cr.x - hw, y: cr.y - hh, w: (cr.w || 34), h: (cr.h || 34) }, false, false, false, cr);
+                }
+            }
+            if (typeof energyCoreStations !== "undefined" && Array.isArray(energyCoreStations)) {
+                for (let i = 0; i < energyCoreStations.length; i++) {
+                    const st = energyCoreStations[i];
+                    addCircle({ x: st.x, y: st.y, radius: st.coreRadius }, true, null);
+                    if (st.pylons && st.pylons.length) {
+                        for (let p = 0; p < st.pylons.length; p++) {
+                            const py = st.pylons[p];
+                            addCircle({ x: py.x, y: py.y, radius: py.radius }, true, null);
+                        }
+                    }
+                }
+            }
+            if (typeof nuclearVats !== "undefined" && Array.isArray(nuclearVats)) {
+                for (let i = 0; i < nuclearVats.length; i++) {
+                    const vat = nuclearVats[i];
+                    if (!vat.active) continue;
+                    addCircle({ x: vat.x, y: vat.y, radius: vat.radius }, false, vat);
+                }
+            }
+            if (typeof barrels !== "undefined" && Array.isArray(barrels)) {
+                for (let i = 0; i < barrels.length; i++) {
+                    const br = barrels[i];
+                    if (!br.active) continue;
+                    addCircle({ x: br.x, y: br.y, radius: br.radius || 18 }, false, br);
+                }
+            }
+
+            obstacleSpatialGridReady = true;
+        }
+
+        function ensureObstacleSpatialGrid() {
+            if (!obstacleSpatialGridReady) {
+                rebuildObstacleSpatialGrid();
+            }
+        }
+
+        function pointHitsWall(x, y) {
+            if (!obstacleSpatialGridReady) ensureObstacleSpatialGrid();
+            const c = (x / OBS_GRID_CELL) | 0;
+            const r = (y / OBS_GRID_CELL) | 0;
+            if (c < 0 || c >= OBS_GRID_COLS || r < 0 || r >= OBS_GRID_ROWS) return false;
+            const cell = obstacleGrid[r * OBS_GRID_COLS + c];
+            for (let i = 0; i < cell.length; i++) {
+                const ob = cell[i];
+                if (!ob.isBulletCover) continue;
+                if (ob.ref && ob.ref.active === false) continue;
+                if (ob.type === 0) {
+                    if (x >= ob.x && x <= ob.x + ob.w && y >= ob.y && y <= ob.y + ob.h) {
+                        if (ob.isBarricade && ob.ref) {
+                            ob.ref.hitFlash = 5;
+                        }
+                        return true;
+                    }
+                } else {
+                    const dx = x - ob.x;
+                    const dy = y - ob.y;
+                    if (dx * dx + dy * dy <= ob.radius * ob.radius) return true;
                 }
             }
             return false;
         }
 
         function circleHitsStaticObstacle(x, y, pad = 0) {
-            for (let i = 0; i < WALLS.length; i++) {
-                const w = WALLS[i];
-                if (x + pad >= w.x && x - pad <= w.x + w.w && y + pad >= w.y && y - pad <= w.y + w.h) {
-                    const cx = Math.max(w.x, Math.min(x, w.x + w.w));
-                    const cy = Math.max(w.y, Math.min(y, w.y + w.h));
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= pad * pad + 0.1) return true;
-                }
-            }
-            for (let i = 0; i < computerDesks.length; i++) {
-                const cd = computerDesks[i];
-                if (x + pad >= cd.x && x - pad <= cd.x + cd.w && y + pad >= cd.y && y - pad <= cd.y + cd.h) {
-                    const cx = Math.max(cd.x, Math.min(x, cd.x + cd.w));
-                    const cy = Math.max(cd.y, Math.min(y, cd.y + cd.h));
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= pad * pad + 0.1) return true;
-                }
-            }
-            for (let i = 0; i < spaceProps.length; i++) {
-                const sp = spaceProps[i];
-                if (x + pad >= sp.x && x - pad <= sp.x + sp.w && y + pad >= sp.y && y - pad <= sp.y + sp.h) {
-                    const cx = Math.max(sp.x, Math.min(x, sp.x + sp.w));
-                    const cy = Math.max(sp.y, Math.min(y, sp.y + sp.h));
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= pad * pad + 0.1) return true;
-                }
-            }
-            for (let i = 0; i < energyCoreStations.length; i++) {
-                const st = energyCoreStations[i];
-                const cr = st.coreRadius + pad;
-                if (Math.abs(x - st.x) <= cr && Math.abs(y - st.y) <= cr) {
-                    if ((x - st.x) * (x - st.x) + (y - st.y) * (y - st.y) <= cr * cr) return true;
-                }
-                for (let p = 0; p < st.pylons.length; p++) {
-                    const py = st.pylons[p];
-                    const pr = py.radius + pad;
-                    if (Math.abs(x - py.x) <= pr && Math.abs(y - py.y) <= pr) {
-                        if ((x - py.x) * (x - py.x) + (y - py.y) * (y - py.y) <= pr * pr) return true;
+            if (!obstacleSpatialGridReady) ensureObstacleSpatialGrid();
+            _obsQueryToken++;
+            if (_obsQueryToken > 2000000000) _obsQueryToken = 1;
+            const curToken = _obsQueryToken;
+
+            const cMin = Math.max(0, Math.floor((x - pad) / OBS_GRID_CELL));
+            const cMax = Math.min(OBS_GRID_COLS - 1, Math.floor((x + pad) / OBS_GRID_CELL));
+            const rMin = Math.max(0, Math.floor((y - pad) / OBS_GRID_CELL));
+            const rMax = Math.min(OBS_GRID_ROWS - 1, Math.floor((y + pad) / OBS_GRID_CELL));
+            const padSq = pad * pad + 0.1;
+
+            for (let r = rMin; r <= rMax; r++) {
+                const rowOff = r * OBS_GRID_COLS;
+                for (let c = cMin; c <= cMax; c++) {
+                    const cell = obstacleGrid[rowOff + c];
+                    for (let i = 0; i < cell.length; i++) {
+                        const ob = cell[i];
+                        if (ob._qToken === curToken) continue;
+                        ob._qToken = curToken;
+                        if (ob.ref && ob.ref.active === false) continue;
+
+                        if (ob.type === 0) {
+                            if (x + pad >= ob.x && x - pad <= ob.x + ob.w && y + pad >= ob.y && y - pad <= ob.y + ob.h) {
+                                const cx = Math.max(ob.x, Math.min(x, ob.x + ob.w));
+                                const cy = Math.max(ob.y, Math.min(y, ob.y + ob.h));
+                                if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= padSq) return true;
+                            }
+                        } else {
+                            const rSum = ob.radius + pad;
+                            if (Math.abs(x - ob.x) <= rSum && Math.abs(y - ob.y) <= rSum) {
+                                if ((x - ob.x) * (x - ob.x) + (y - ob.y) * (y - ob.y) <= rSum * rSum) return true;
+                            }
+                        }
                     }
-                }
-            }
-            for (let i = 0; i < nuclearVats.length; i++) {
-                const vat = nuclearVats[i];
-                if (!vat.active) continue;
-                const rSum = vat.radius + pad;
-                if (Math.abs(x - vat.x) <= rSum && Math.abs(y - vat.y) <= rSum) {
-                    if ((x - vat.x) * (x - vat.x) + (y - vat.y) * (y - vat.y) <= rSum * rSum) return true;
-                }
-            }
-            for (let i = 0; i < barricades.length; i++) {
-                const bar = barricades[i];
-                if (x + pad >= bar.x && x - pad <= bar.x + bar.w && y + pad >= bar.y && y - pad <= bar.y + bar.h) {
-                    const cx = Math.max(bar.x, Math.min(x, bar.x + bar.w));
-                    const cy = Math.max(bar.y, Math.min(y, bar.y + bar.h));
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= pad * pad + 0.1) return true;
-                }
-            }
-            for (let i = 0; i < crates.length; i++) {
-                const cr = crates[i];
-                if (!cr.active) continue;
-                const hw = (cr.w || 34) * 0.5;
-                const hh = (cr.h || 34) * 0.5;
-                const bx1 = cr.x - hw, by1 = cr.y - hh;
-                const bx2 = cr.x + hw, by2 = cr.y + hh;
-                if (x + pad >= bx1 && x - pad <= bx2 && y + pad >= by1 && y - pad <= by2) {
-                    const cx = Math.max(bx1, Math.min(x, bx2));
-                    const cy = Math.max(by1, Math.min(y, by2));
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= pad * pad + 0.1) return true;
-                }
-            }
-            for (let i = 0; i < barrels.length; i++) {
-                const br = barrels[i];
-                if (!br.active) continue;
-                const rSum = (br.radius || 18) + pad;
-                if (Math.abs(x - br.x) <= rSum && Math.abs(y - br.y) <= rSum) {
-                    if ((x - br.x) * (x - br.x) + (y - br.y) * (y - br.y) <= rSum * rSum) return true;
                 }
             }
             return false;
@@ -11445,10 +11558,7 @@
             for (let i = 1; i < steps; i++) {
                 cx += sx;
                 cy += sy;
-                for (let k = 0; k < WALLS.length; k++) {
-                    const w = WALLS[k];
-                    if (cx >= w.x && cx <= w.x + w.w && cy >= w.y && cy <= w.y + w.h) return false;
-                }
+                if (pointHitsWall(cx, cy)) return false;
             }
             return true;
         }
@@ -11484,7 +11594,17 @@
             const bodyClearance = Math.min(28, Math.max(12, (e.radius || 14) + 3));
             const isStuck = (e.stuckFrames || 0) > 10;
 
-            if (isStuck || !hasPathClearance(e.x, e.y, targetX, targetY, e.radius)) {
+            // Clearance check caching across 3 frames per monster (interleaved by enemy id)
+            let hasClear = false;
+            if (!isStuck && dist <= 640) {
+                if (e._clrFrame === undefined || (frameCounter - e._clrFrame >= 3) || e._clrCached === undefined) {
+                    e._clrFrame = frameCounter + ((e.id || 0) % 3);
+                    e._clrCached = hasPathClearance(e.x, e.y, targetX, targetY, e.radius);
+                }
+                hasClear = e._clrCached;
+            }
+
+            if (isStuck || !hasClear) {
                 const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
                 const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
                 const gIdx = gr * FLOW_COLS + gc;
@@ -11609,150 +11729,55 @@
         }
 
         function resolveWallSliding(entity) {
+            if (!obstacleSpatialGridReady) ensureObstacleSpatialGrid();
+            _obsQueryToken++;
+            if (_obsQueryToken > 2000000000) _obsQueryToken = 1;
+            const curToken = _obsQueryToken;
+
             const r = Math.max(4, Math.min(48, entity.radius || 14));
-            // 1. Walls & Tactical Pillars
-            for (let i = 0; i < WALLS.length; i++) {
-                const w = WALLS[i];
-                if (entity.x + r < w.x || entity.x - r > w.x + w.w || entity.y + r < w.y || entity.y - r > w.y + w.h) continue;
-                const closestX = Math.max(w.x, Math.min(entity.x, w.x + w.w));
-                const closestY = Math.max(w.y, Math.min(entity.y, w.y + w.h));
-                const dx = entity.x - closestX;
-                const dy = entity.y - closestY;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < r * r) {
-                    const dist = Math.sqrt(distSq) || 0.0001;
-                    const overlap = r - dist;
-                    entity.x += (dx / dist) * overlap;
-                    entity.y += (dy / dist) * overlap;
-                }
-            }
-            // 2. Computer Consoles
-            for (let i = 0; i < computerDesks.length; i++) {
-                const cd = computerDesks[i];
-                if (entity.x + r < cd.x || entity.x - r > cd.x + cd.w || entity.y + r < cd.y || entity.y - r > cd.y + cd.h) continue;
-                const closestX = Math.max(cd.x, Math.min(entity.x, cd.x + cd.w));
-                const closestY = Math.max(cd.y, Math.min(entity.y, cd.y + cd.h));
-                const dx = entity.x - closestX;
-                const dy = entity.y - closestY;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < r * r) {
-                    const dist = Math.sqrt(distSq) || 0.0001;
-                    const overlap = r - dist;
-                    entity.x += (dx / dist) * overlap;
-                    entity.y += (dy / dist) * overlap;
-                }
-            }
-            // 2b. Spacecraft Interior Props (Cryo Pods, Particle Accelerators, Supercomputers)
-            for (let i = 0; i < spaceProps.length; i++) {
-                const sp = spaceProps[i];
-                if (entity.x + r < sp.x || entity.x - r > sp.x + sp.w || entity.y + r < sp.y || entity.y - r > sp.y + sp.h) continue;
-                const closestX = Math.max(sp.x, Math.min(entity.x, sp.x + sp.w));
-                const closestY = Math.max(sp.y, Math.min(entity.y, sp.y + sp.h));
-                const dx = entity.x - closestX;
-                const dy = entity.y - closestY;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < r * r) {
-                    const dist = Math.sqrt(distSq) || 0.0001;
-                    const overlap = r - dist;
-                    entity.x += (dx / dist) * overlap;
-                    entity.y += (dy / dist) * overlap;
-                }
-            }
-            // 2c. Colossal Energy Core Station & 4 Outer Tesla Pylons
-            for (let i = 0; i < energyCoreStations.length; i++) {
-                const st = energyCoreStations[i];
-                const minCoreDist = r + st.coreRadius;
-                if (Math.abs(entity.x - st.x) < minCoreDist && Math.abs(entity.y - st.y) < minCoreDist) {
-                    const dx = entity.x - st.x;
-                    const dy = entity.y - st.y;
-                    const d = Math.hypot(dx, dy) || 0.0001;
-                    if (d < minCoreDist) {
-                        const overlap = minCoreDist - d;
-                        entity.x += (dx / d) * overlap;
-                        entity.y += (dy / d) * overlap;
-                    }
-                }
-                for (let p = 0; p < st.pylons.length; p++) {
-                    const py = st.pylons[p];
-                    const minPyDist = r + py.radius;
-                    if (Math.abs(entity.x - py.x) < minPyDist && Math.abs(entity.y - py.y) < minPyDist) {
-                        const dx = entity.x - py.x;
-                        const dy = entity.y - py.y;
-                        const d = Math.hypot(dx, dy) || 0.0001;
-                        if (d < minPyDist) {
-                            const overlap = minPyDist - d;
-                            entity.x += (dx / d) * overlap;
-                            entity.y += (dy / d) * overlap;
+            const rSq = r * r;
+
+            const cMin = Math.max(0, Math.floor((entity.x - r) / OBS_GRID_CELL));
+            const cMax = Math.min(OBS_GRID_COLS - 1, Math.floor((entity.x + r) / OBS_GRID_CELL));
+            const rMin = Math.max(0, Math.floor((entity.y - r) / OBS_GRID_CELL));
+            const rMax = Math.min(OBS_GRID_ROWS - 1, Math.floor((entity.y + r) / OBS_GRID_CELL));
+
+            for (let row = rMin; row <= rMax; row++) {
+                const rowOff = row * OBS_GRID_COLS;
+                for (let col = cMin; col <= cMax; col++) {
+                    const cell = obstacleGrid[rowOff + col];
+                    for (let i = 0; i < cell.length; i++) {
+                        const ob = cell[i];
+                        if (ob._qToken === curToken) continue;
+                        ob._qToken = curToken;
+                        if (ob.ref && ob.ref.active === false) continue;
+
+                        if (ob.type === 0) { // Box (WALLS, computerDesks, spaceProps, barricades, crates)
+                            if (entity.x + r < ob.x || entity.x - r > ob.x + ob.w || entity.y + r < ob.y || entity.y - r > ob.y + ob.h) continue;
+                            const closestX = Math.max(ob.x, Math.min(entity.x, ob.x + ob.w));
+                            const closestY = Math.max(ob.y, Math.min(entity.y, ob.y + ob.h));
+                            const dx = entity.x - closestX;
+                            const dy = entity.y - closestY;
+                            const distSq = dx * dx + dy * dy;
+                            if (distSq < rSq) {
+                                const dist = Math.sqrt(distSq) || 0.0001;
+                                const overlap = r - dist;
+                                entity.x += (dx / dist) * overlap;
+                                entity.y += (dy / dist) * overlap;
+                            }
+                        } else { // Circle (Energy Core station & pylons, nuclearVats, barrels)
+                            const minDist = r + ob.radius;
+                            if (Math.abs(entity.x - ob.x) < minDist && Math.abs(entity.y - ob.y) < minDist) {
+                                const dx = entity.x - ob.x;
+                                const dy = entity.y - ob.y;
+                                const d = Math.hypot(dx, dy) || 0.0001;
+                                if (d < minDist) {
+                                    const overlap = minDist - d;
+                                    entity.x += (dx / d) * overlap;
+                                    entity.y += (dy / d) * overlap;
+                                }
+                            }
                         }
-                    }
-                }
-            }
-            // 3. Intact Green Nuclear Vats
-            for (let i = 0; i < nuclearVats.length; i++) {
-                const vat = nuclearVats[i];
-                if (!vat.active) continue;
-                const minDist = r + vat.radius;
-                if (Math.abs(entity.x - vat.x) < minDist && Math.abs(entity.y - vat.y) < minDist) {
-                    const dx = entity.x - vat.x;
-                    const dy = entity.y - vat.y;
-                    const d = Math.hypot(dx, dy) || 0.0001;
-                    if (d < minDist) {
-                        const overlap = minDist - d;
-                        entity.x += (dx / d) * overlap;
-                        entity.y += (dy / d) * overlap;
-                    }
-                }
-            }
-            // 4. Titanium Barricades (AABB & circle-slide)
-            for (let i = 0; i < barricades.length; i++) {
-                const bar = barricades[i];
-                if (entity.x + r < bar.x || entity.x - r > bar.x + bar.w || entity.y + r < bar.y || entity.y - r > bar.y + bar.h) continue;
-                const closestX = Math.max(bar.x, Math.min(entity.x, bar.x + bar.w));
-                const closestY = Math.max(bar.y, Math.min(entity.y, bar.y + bar.h));
-                const dx = entity.x - closestX;
-                const dy = entity.y - closestY;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < r * r) {
-                    const dist = Math.sqrt(distSq) || 0.0001;
-                    const overlap = r - dist;
-                    entity.x += (dx / dist) * overlap;
-                    entity.y += (dy / dist) * overlap;
-                }
-            }
-            // 5. Intact Military Supply Crates (AABB & circle-slide)
-            for (let i = 0; i < crates.length; i++) {
-                const cr = crates[i];
-                if (!cr.active) continue;
-                const hw = (cr.w || 34) * 0.5;
-                const hh = (cr.h || 34) * 0.5;
-                const bx1 = cr.x - hw, by1 = cr.y - hh;
-                const bx2 = cr.x + hw, by2 = cr.y + hh;
-                if (entity.x + r < bx1 || entity.x - r > bx2 || entity.y + r < by1 || entity.y - r > by2) continue;
-                const closestX = Math.max(bx1, Math.min(entity.x, bx2));
-                const closestY = Math.max(by1, Math.min(entity.y, by2));
-                const dx = entity.x - closestX;
-                const dy = entity.y - closestY;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < r * r) {
-                    const dist = Math.sqrt(distSq) || 0.0001;
-                    const overlap = r - dist;
-                    entity.x += (dx / dist) * overlap;
-                    entity.y += (dy / dist) * overlap;
-                }
-            }
-            // 6. Intact Multi-Purpose Fuel Barrels (circle-slide)
-            for (let i = 0; i < barrels.length; i++) {
-                const br = barrels[i];
-                if (!br.active) continue;
-                const minDist = r + (br.radius || 18);
-                if (Math.abs(entity.x - br.x) < minDist && Math.abs(entity.y - br.y) < minDist) {
-                    const dx = entity.x - br.x;
-                    const dy = entity.y - br.y;
-                    const d = Math.hypot(dx, dy) || 0.0001;
-                    if (d < minDist) {
-                        const overlap = minDist - d;
-                        entity.x += (dx / d) * overlap;
-                        entity.y += (dy / d) * overlap;
                     }
                 }
             }
@@ -17924,9 +17949,9 @@
                 const dy = targetPos.y - e.y;
                 const dist = Math.hypot(dx, dy) || 0.0001;
 
-                // AI LOD / Throttle: Quái ở ngoài màn hình xa (dist > 1400px) chỉ cập nhật tính toán góc lái phức tạp 3 frame/lần
+                // AI LOD / Throttle: Quái ở ngoài màn hình xa (dist > 1100px) chỉ cập nhật tính toán góc lái phức tạp 3 frame/lần
                 let dirX, dirY;
-                const isFar = !e.isBoss && dist > 1400;
+                const isFar = !e.isBoss && dist > 1100;
                 if (isFar && e.lastDirX !== undefined && ((frameCounter + i) % 3 !== 0)) {
                     dirX = e.lastDirX;
                     dirY = e.lastDirY;
@@ -19113,6 +19138,11 @@
             drawCrosshair();
 
             if (frameCounter % 6 === 0) renderRadarMinimap();
+
+            // Hybrid WebGL Post-Processing Hook
+            if (window.webglPostProcessor && window.webglPostProcessor.enabled && window.webglPostProcessor.isAvailable) {
+                window.webglPostProcessor.render(gameCanvas);
+            }
         }
 
         function drawBossGroundTelegraph(boss) {
@@ -24033,27 +24063,114 @@
             safeArc(ctx, 0, 2.5, 19);
             ctx.fill();
 
-            // Small Tactical Orange Foot Arrow pointing towards Generator when offline
+            // Station Generator Under-Foot Green Circular Loading Progress / Tactical Foot Arrow
             if (mapGenerator && !mapGenerator.active) {
-                const angleToGen = Math.atan2(mapGenerator.y - player.y, mapGenerator.x - player.x);
-                ctx.save();
-                ctx.rotate(angleToGen);
-                const pulse = 0.90 + Math.sin(now * 0.008) * 0.12;
-                ctx.fillStyle = "#f97316";
-                ctx.strokeStyle = "#ffedd5";
-                ctx.lineWidth = 1.2;
-                ctx.beginPath();
-                ctx.moveTo(32 * pulse, 0);
-                ctx.lineTo(23 * pulse, -6);
-                ctx.lineTo(25 * pulse, -2.2);
-                ctx.lineTo(17 * pulse, -2.2);
-                ctx.lineTo(17 * pulse, 2.2);
-                ctx.lineTo(25 * pulse, 2.2);
-                ctx.lineTo(23 * pulse, 6);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
+                const distToGen = Math.hypot(player.x - mapGenerator.x, player.y - mapGenerator.y);
+                const holdProgress = Math.min(1.0, Math.max(0, (mapGenerator.holdTimer || 0) / 5000));
+
+                if (distToGen <= 95 || holdProgress > 0) {
+                    // ====================================================================
+                    // VÒNG TRÒN TIẾN TRÌNH KHỞI ĐỘNG MÁY PHÁT ĐIỆN DƯỚI CHÂN (CIRCULAR LOAD)
+                    // ====================================================================
+                    const ringR = 34;
+                    ctx.save();
+
+                    if (holdProgress > 0) {
+                        // 1. Hào quang xanh lá dịu dưới mặt sàn (Cached RadialGradient)
+                        const glowGrad = getCachedRadialGradient(
+                            ctx,
+                            "gen_crank_glow_34",
+                            0, 0, 10,
+                            0, 0, 44,
+                            [
+                                [0, "rgba(34, 197, 94, 0.28)"],
+                                [0.65, "rgba(34, 197, 94, 0.12)"],
+                                [1, "rgba(34, 197, 94, 0)"]
+                            ]
+                        );
+                        if (glowGrad) {
+                            ctx.fillStyle = glowGrad;
+                            ctx.beginPath();
+                            safeArc(ctx, 0, 0, 44);
+                            ctx.fill();
+                        }
+
+                        // 2. Vòng track mờ hiển thị toàn bộ quỹ đạo hình tròn dưới chân
+                        ctx.strokeStyle = "rgba(34, 197, 94, 0.22)";
+                        ctx.lineWidth = 4.5;
+                        ctx.beginPath();
+                        safeArc(ctx, 0, 0, ringR);
+                        ctx.stroke();
+
+                        // 3. Vòng tròn tiến trình màu xanh lá nạp dần theo chiều kim đồng hồ (Load vòng tròn)
+                        const startAngle = -Math.PI / 2; // Vị trí 12h
+                        const endAngle = startAngle + holdProgress * Math.PI * 2;
+                        ctx.strokeStyle = "#22c55e";
+                        ctx.lineWidth = 4.5;
+                        ctx.lineCap = "round";
+                        ctx.beginPath();
+                        ctx.arc(0, 0, ringR, startAngle, endAngle);
+                        ctx.stroke();
+
+                        // 4. Điểm sáng đầu vòng (Glowing Head Tip)
+                        const tipX = Math.cos(endAngle) * ringR;
+                        const tipY = Math.sin(endAngle) * ringR;
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        safeArc(ctx, tipX, tipY, 2.5);
+                        ctx.fill();
+                        ctx.strokeStyle = "#86efac";
+                        ctx.lineWidth = 1.8;
+                        ctx.beginPath();
+                        safeArc(ctx, tipX, tipY, 4.2);
+                        ctx.stroke();
+
+                        // 5. Chỉ số phần trăm % điện tử sắc nét ngay dưới chân
+                        ctx.font = "800 11px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#4ade80";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(`${Math.round(holdProgress * 100)}%`, 0, ringR + 13);
+                    } else {
+                        // Vòng nhấp nháy báo hiệu sẵn sàng khởi động khi đứng trong phạm vi 95px
+                        const idlePulse = 0.95 + 0.05 * Math.sin(now * 0.008);
+                        ctx.strokeStyle = "rgba(34, 197, 94, 0.45)";
+                        ctx.lineWidth = 2.0;
+                        ctx.setLineDash([5, 4]);
+                        ctx.beginPath();
+                        safeArc(ctx, 0, 0, ringR * idlePulse);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        ctx.font = "800 9.5px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#86efac";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText("GIỮ [E]", 0, ringR + 12);
+                    }
+                    ctx.restore();
+                } else {
+                    // Khi ở xa > 95px: Mũi tên cam chỉ hướng về phòng đặt máy phát điện
+                    const angleToGen = Math.atan2(mapGenerator.y - player.y, mapGenerator.x - player.x);
+                    ctx.save();
+                    ctx.rotate(angleToGen);
+                    const pulse = 0.90 + Math.sin(now * 0.008) * 0.12;
+                    ctx.fillStyle = "#f97316";
+                    ctx.strokeStyle = "#ffedd5";
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(32 * pulse, 0);
+                    ctx.lineTo(23 * pulse, -6);
+                    ctx.lineTo(25 * pulse, -2.2);
+                    ctx.lineTo(17 * pulse, -2.2);
+                    ctx.lineTo(17 * pulse, 2.2);
+                    ctx.lineTo(25 * pulse, 2.2);
+                    ctx.lineTo(23 * pulse, 6);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                }
             }
 
             // Nano-Armor Energy Shield Ring / Overdrive Aura
@@ -27783,10 +27900,10 @@
                     // Prompt Card
                     const holdProgress = Math.min(1, Math.max(0, mapGenerator.holdTimer / 5000));
                     const promptW = 270;
-                    const promptH = holdProgress > 0 ? 44 : 26;
+                    const promptH = 26;
 
                     ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
-                    ctx.strokeStyle = holdProgress > 0 ? "#f97316" : "rgba(249, 115, 22, 0.8)";
+                    ctx.strokeStyle = holdProgress > 0 ? "#22c55e" : "rgba(249, 115, 22, 0.8)";
                     ctx.lineWidth = 1.5;
                     drawRoundRect(ctx, -promptW / 2, -promptH / 2, promptW, promptH, 6);
                     ctx.fill();
@@ -27795,23 +27912,12 @@
                     ctx.font = "bold 12px Rajdhani, sans-serif";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.fillStyle = "#ffedd5";
-                    ctx.fillText("Giữ E 5 giây để khởi động máy phát điện", 0, holdProgress > 0 ? -11 : 0);
-
-                    // Progress Bar when holding E
                     if (holdProgress > 0) {
-                        const barW = promptW - 24;
-                        const barH = 7;
-                        const barX = -barW / 2;
-                        const barY = 6;
-
-                        ctx.fillStyle = "#1e293b";
-                        drawRoundRect(ctx, barX, barY, barW, barH, 3);
-                        ctx.fill();
-
-                        ctx.fillStyle = "#22c55e";
-                        drawRoundRect(ctx, barX, barY, Math.max(4, barW * holdProgress), barH, 3);
-                        ctx.fill();
+                        ctx.fillStyle = "#86efac";
+                        ctx.fillText(`ĐANG KHỞI ĐỘNG: ${Math.round(holdProgress * 100)}%`, 0, 0);
+                    } else {
+                        ctx.fillStyle = "#ffedd5";
+                        ctx.fillText("Giữ E 5 giây để khởi động máy phát điện", 0, 0);
                     }
                 } else {
                     // Online Badge
@@ -28489,6 +28595,7 @@
 
             drawBaseFloor();
             spawnProps();
+            rebuildObstacleSpatialGrid();
             computeFlowField();
 
             // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn
@@ -28730,6 +28837,9 @@
             gameCanvas.height = VIEW_H;
             lightCanvas.width = Math.max(1, Math.floor(VIEW_W * LIGHT_SCALE));
             lightCanvas.height = Math.max(1, Math.floor(VIEW_H * LIGHT_SCALE));
+            if (window.webglPostProcessor) {
+                window.webglPostProcessor.onResize(VIEW_W, VIEW_H);
+            }
         }
         window.addEventListener("resize", resizeCanvas);
 
@@ -30263,6 +30373,404 @@
             }
         }, true);
 
+        /**
+         * ============================================================================
+         * 17. SMART HYBRID WEBGL POST-PROCESSING ENGINE (OPTIONAL GPU POST-EFFECTS)
+         * - Tự động nhận diện giao thức file:/// để hạ cấp Canvas 2D (chống lỗi CORS Tainted Canvas)
+         * - Tự động kích hoạt WebGL Post-Processing Shader trên HTTP/HTTPS (Vercel, Localhost)
+         * - Cơ chế Fail-Safe: Không bao giờ gây đen màn hình dù GPU có lỗi hay mất Context
+         * ============================================================================
+         */
+        const WebglPostProcessor = {
+            canvas: null,
+            gl: null,
+            program: null,
+            texture: null,
+            buffer: null,
+            enabled: false,
+            isAvailable: false,
+            isLocalFile: false,
+            locations: {},
+            lastRenderError: null,
+
+            init() {
+                try {
+                    this.canvas = document.getElementById("webglCanvas");
+                    if (!this.canvas) return false;
+
+                    // 1. Kiểm tra giao thức môi trường: file:/// cấm texImage2D do Chromium Tainted Canvas
+                    this.isLocalFile = (window.location.protocol === "file:");
+                    if (this.isLocalFile) {
+                        this.isAvailable = false;
+                        this.enabled = false;
+                        this.canvas.style.display = "none";
+                        this.updateUI();
+                        console.info("[WebGL PostProcessor] Đang chạy file:/// cục bộ. Canvas 2D thuần túy được kích hoạt để đảm bảo an toàn CORS.");
+                        return false;
+                    }
+
+                    // 2. Khởi tạo WebGL Context an toàn
+                    const gl = this.canvas.getContext("webgl", {
+                        alpha: false,
+                        antialias: false,
+                        depth: false,
+                        stencil: false,
+                        preserveDrawingBuffer: false,
+                        powerPreference: "high-performance"
+                    }) || this.canvas.getContext("experimental-webgl");
+
+                    if (!gl) {
+                        console.warn("[WebGL PostProcessor] Trình duyệt không hỗ trợ WebGL context.");
+                        this.isAvailable = false;
+                        this.enabled = false;
+                        this.canvas.style.display = "none";
+                        this.updateUI();
+                        return false;
+                    }
+                    this.gl = gl;
+
+                    // 3. Vertex Shader (Fullscreen Quad)
+                    const vsSource = `
+                        attribute vec2 a_position;
+                        varying vec2 v_uv;
+                        void main() {
+                            v_uv = (a_position + 1.0) * 0.5;
+                            gl_Position = vec4(a_position, 0.0, 1.0);
+                        }
+                    `;
+
+                    // 4. Fragment Shader (GLSL ES 1.0 Chuẩn Hóa: Bloom, Chroma, Vignette, Scanlines)
+                    const fsSource = `
+                        precision mediump float;
+                        uniform sampler2D u_tex;
+                        uniform vec2 u_resolution;
+                        uniform float u_time;
+                        uniform float u_chroma;
+                        uniform float u_bloom;
+                        uniform float u_vignette;
+                        uniform float u_scanlines;
+                        uniform float u_brightness;
+                        uniform float u_contrast;
+                        uniform float u_nvg;
+                        varying vec2 v_uv;
+
+                        void main() {
+                            vec2 uv = v_uv;
+                            vec2 texel = 1.0 / u_resolution;
+                            vec2 center = vec2(0.5, 0.5);
+                            vec2 toCenter = uv - center;
+                            float distToCenter = length(toCenter);
+
+                            float caOffset = (0.0016 + u_chroma * 0.010) * distToCenter;
+                            vec2 caDir = normalize(toCenter + vec2(0.00001, 0.00001));
+                            float r = texture2D(u_tex, uv + caDir * caOffset).r;
+                            float g = texture2D(u_tex, uv).g;
+                            float b = texture2D(u_tex, uv - caDir * caOffset).b;
+                            vec3 baseCol = vec3(r, g, b);
+
+                            vec3 bloomCol = vec3(0.0, 0.0, 0.0);
+                            if (u_bloom > 0.01) {
+                                float bDist = 2.4 * u_bloom;
+                                vec3 s1 = texture2D(u_tex, uv + vec2( texel.x,  texel.y) * bDist).rgb;
+                                vec3 s2 = texture2D(u_tex, uv + vec2(-texel.x, -texel.y) * bDist).rgb;
+                                vec3 b1 = max(s1 - vec3(0.55, 0.55, 0.55), vec3(0.0, 0.0, 0.0)) * 1.5;
+                                vec3 b2 = max(s2 - vec3(0.55, 0.55, 0.55), vec3(0.0, 0.0, 0.0)) * 1.5;
+                                bloomCol = (b1 + b2) * 0.35 * u_bloom;
+                            }
+                            vec3 col = baseCol + bloomCol;
+
+                            if (u_vignette > 0.01) {
+                                float vig = 1.0 - smoothstep(0.42, 1.25, distToCenter * (1.2 + u_vignette * 0.35));
+                                col *= mix(1.0, vig, u_vignette);
+                            }
+
+                            if (u_scanlines > 0.01) {
+                                float scanline = sin(uv.y * u_resolution.y * 1.5) * 0.035 * u_scanlines;
+                                col -= scanline;
+                            }
+
+                            if (u_nvg > 0.5) {
+                                float lum = dot(col, vec3(0.299, 0.587, 0.114));
+                                col = vec3(0.18, 1.0, 0.38) * lum * 1.35;
+                            }
+
+                            col *= u_brightness;
+                            col = (col - vec3(0.5, 0.5, 0.5)) * u_contrast + vec3(0.5, 0.5, 0.5);
+                            float gray = dot(col, vec3(0.299, 0.587, 0.114));
+                            col = mix(vec3(gray, gray, gray), col, 1.12);
+
+                            gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+                        }
+                    `;
+
+                    // Biên dịch shaders
+                    const vs = this.compileShader(gl.VERTEX_SHADER, vsSource);
+                    const fs = this.compileShader(gl.FRAGMENT_SHADER, fsSource);
+                    if (!vs || !fs) {
+                        this.isAvailable = false;
+                        this.enabled = false;
+                        this.canvas.style.display = "none";
+                        this.updateUI();
+                        return false;
+                    }
+
+                    const program = gl.createProgram();
+                    gl.attachShader(program, vs);
+                    gl.attachShader(program, fs);
+                    gl.linkProgram(program);
+                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                        console.error("[WebGL PostProcessor] Link error:", gl.getProgramInfoLog(program));
+                        this.isAvailable = false;
+                        this.enabled = false;
+                        this.canvas.style.display = "none";
+                        this.updateUI();
+                        return false;
+                    }
+                    this.program = program;
+
+                    // Buffer Quad 2 Triangle
+                    const buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                        -1, -1,
+                         1, -1,
+                        -1,  1,
+                        -1,  1,
+                         1, -1,
+                         1,  1
+                    ]), gl.STATIC_DRAW);
+                    this.buffer = buffer;
+
+                    // Setup Texture
+                    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                    const texture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D, texture);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    this.texture = texture;
+
+                    // Cache Uniform Locations
+                    this.locations = {
+                        position: gl.getAttribLocation(program, "a_position"),
+                        tex: gl.getUniformLocation(program, "u_tex"),
+                        resolution: gl.getUniformLocation(program, "u_resolution"),
+                        time: gl.getUniformLocation(program, "u_time"),
+                        chroma: gl.getUniformLocation(program, "u_chroma"),
+                        bloom: gl.getUniformLocation(program, "u_bloom"),
+                        vignette: gl.getUniformLocation(program, "u_vignette"),
+                        scanlines: gl.getUniformLocation(program, "u_scanlines"),
+                        brightness: gl.getUniformLocation(program, "u_brightness"),
+                        contrast: gl.getUniformLocation(program, "u_contrast"),
+                        nvg: gl.getUniformLocation(program, "u_nvg")
+                    };
+
+                    this.onResize(VIEW_W, VIEW_H);
+
+                    // Đọc cài đặt lưu trước đó từ localStorage (mặc định BẬT trên HTTP/Vercel)
+                    let savedPref = true;
+                    try {
+                        const stored = localStorage.getItem("xeno_webgl_postprocess");
+                        if (stored !== null) savedPref = (stored === "true" || stored === "1");
+                    } catch (e) {}
+
+                    this.isAvailable = true;
+                    this.enabled = savedPref;
+                    this.canvas.style.display = this.enabled ? "block" : "none";
+                    this.updateUI();
+                    console.info("[WebGL PostProcessor] Khởi tạo WebGL Post-Processing thành công. Trạng thái:", this.enabled ? "BẬT" : "TẮT");
+                    return true;
+                } catch (e) {
+                    console.error("[WebGL PostProcessor] Ngoại lệ khởi tạo:", e);
+                    this.isAvailable = false;
+                    this.enabled = false;
+                    if (this.canvas) this.canvas.style.display = "none";
+                    this.updateUI();
+                    return false;
+                }
+            },
+
+            compileShader(type, src) {
+                const gl = this.gl;
+                const s = gl.createShader(type);
+                gl.shaderSource(s, src);
+                gl.compileShader(s);
+                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+                    console.error("[WebGL PostProcessor] Lỗi compile shader:", gl.getShaderInfoLog(s));
+                    gl.deleteShader(s);
+                    return null;
+                }
+                return s;
+            },
+
+            onResize(w, h) {
+                if (!this.canvas) return;
+                this.canvas.width = Math.max(320, w || window.innerWidth);
+                this.canvas.height = Math.max(240, h || window.innerHeight);
+                if (this.gl) {
+                    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                }
+            },
+
+            render(sourceCanvas) {
+                if (!this.enabled || !this.isAvailable || !this.gl || !this.program) return;
+                const gl = this.gl;
+
+                try {
+                    // Upload pixel frame từ 2D canvas sang GPU WebGL texture
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+
+                    gl.useProgram(this.program);
+
+                    // Gán Attributes
+                    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+                    gl.enableVertexAttribArray(this.locations.position);
+                    gl.vertexAttribPointer(this.locations.position, 2, gl.FLOAT, false, 0, 0);
+
+                    // Gán Uniforms
+                    gl.uniform1i(this.locations.tex, 0);
+                    gl.uniform2f(this.locations.resolution, this.canvas.width, this.canvas.height);
+                    gl.uniform1f(this.locations.time, (performance.now() * 0.001) % 1000);
+                    gl.uniform1f(this.locations.chroma, 0.45);
+                    gl.uniform1f(this.locations.bloom, 0.40);
+                    gl.uniform1f(this.locations.vignette, 0.35);
+                    gl.uniform1f(this.locations.scanlines, 0.20);
+
+                    const br = (typeof window.gameBrightness === "number") ? (window.gameBrightness / 100) : 1.0;
+                    const ct = (typeof window.gameContrast === "number") ? (window.gameContrast / 100) : 1.0;
+                    gl.uniform1f(this.locations.brightness, br);
+                    gl.uniform1f(this.locations.contrast, ct);
+
+                    const isNvg = (typeof player !== "undefined" && player && player.hasNvg && player.nvgActive) ? 1.0 : 0.0;
+                    gl.uniform1f(this.locations.nvg, isNvg);
+
+                    // Vẽ Quad Fullscreen
+                    gl.drawArrays(gl.TRIANGLES, 0, 6);
+                } catch (err) {
+                    // CƠ CHẾ TỰ BẢO VỆ (FAIL-SAFE ZERO BLACK SCREEN):
+                    // Bất kỳ lỗi nào (như Tainted Canvas hay Mất Context) lập tức ẩn WebGL canvas
+                    // để lộ Canvas 2D bên dưới ngay tức khắc, người chơi không bao giờ bị đen màn hình!
+                    this.lastRenderError = err;
+                    if (this.canvas) this.canvas.style.display = "none";
+                    this.enabled = false;
+                    this.isAvailable = false;
+                    this.updateUI();
+                    console.warn("[WebGL PostProcessor] Tự động hạ cấp về Canvas 2D do phát hiện lỗi GPU/CORS:", err.message);
+                }
+            },
+
+            toggle() {
+                if (this.isLocalFile) {
+                    if (typeof showToast === "function") {
+                        showToast(
+                            "GIỚI HẠN BẢO MẬT TRÌNH DUYỆT (CORS)",
+                            "Chế độ WebGL Shader yêu cầu HTTP/HTTPS (Vercel hoặc Localhost) do bảo mật Chromium file://. Game đang chạy Canvas 2D siêu mượt!"
+                        );
+                    }
+                    return;
+                }
+                if (!this.isAvailable) {
+                    if (typeof showToast === "function") {
+                        showToast(
+                            "THÔNG BÁO WEBGL",
+                            "Thiết bị hoặc trình duyệt không hỗ trợ WebGL Shader Context. Game đang duy trì Canvas 2D chuẩn."
+                        );
+                    }
+                    return;
+                }
+
+                this.enabled = !this.enabled;
+                try {
+                    localStorage.setItem("xeno_webgl_postprocess", this.enabled ? "true" : "false");
+                } catch (e) {}
+
+                if (this.canvas) {
+                    this.canvas.style.display = this.enabled ? "block" : "none";
+                }
+                this.updateUI();
+
+                if (typeof showToast === "function") {
+                    showToast(
+                        "WEBGL POST-PROCESSING",
+                        this.enabled
+                            ? "ĐÃ BẬT: Neon Bloom + Chromatic Aberration + Vignette GPU Shader!"
+                            : "ĐÃ TẮT: Trở về chế độ Canvas 2D nguyên bản."
+                    );
+                }
+            },
+
+            updateUI() {
+                const btn = document.getElementById("sysWebglToggleBtn");
+                const badge = document.getElementById("sysWebglProtocolBadge");
+                const note = document.getElementById("sysWebglStatusNote");
+
+                if (this.isLocalFile) {
+                    if (badge) {
+                        badge.textContent = "FILE:/// (CANVAS 2D)";
+                        badge.className = "px-1.5 py-0.5 text-[9px] bg-amber-950/60 border border-amber-500/40 rounded-none text-amber-300 font-mono";
+                    }
+                    if (btn) {
+                        btn.textContent = "SHADER: FILE LOCKED";
+                        btn.className = "px-3 py-1.5 rounded-none bg-slate-800/80 border border-slate-700 text-slate-500 font-mono-tech font-bold text-xs cursor-not-allowed";
+                    }
+                    if (note) {
+                        note.innerHTML = "🔒 <b>Môi trường file:/// cục bộ:</b> Trình duyệt kích hoạt rào chắn bảo mật CORS Tainted Canvas. Game tự động bảo vệ bằng Canvas 2D thuần túy mượt mà 100%. Khi triển khai trên <b>Vercel</b> hoặc <b>Localhost HTTP</b>, WebGL Shader sẽ sẵn sàng bật!";
+                        note.className = "text-[10px] font-mono-tech text-amber-300/90 bg-amber-950/20 px-2.5 py-1.5 border border-amber-500/30";
+                    }
+                    return;
+                }
+
+                if (!this.isAvailable) {
+                    if (badge) {
+                        badge.textContent = "KHÔNG KHẢ DỤNG";
+                        badge.className = "px-1.5 py-0.5 text-[9px] bg-rose-950/60 border border-rose-500/40 rounded-none text-rose-300 font-mono";
+                    }
+                    if (btn) {
+                        btn.textContent = "SHADER: N/A";
+                        btn.className = "px-3 py-1.5 rounded-none bg-slate-800/80 border border-slate-700 text-slate-500 font-mono-tech font-bold text-xs cursor-not-allowed";
+                    }
+                    if (note) {
+                        note.innerHTML = "⚠️ Không thể kích hoạt WebGL Context trên trình duyệt này. Game tiếp tục vận hành trên Canvas 2D.";
+                        note.className = "text-[10px] font-mono-tech text-rose-300/90 bg-rose-950/20 px-2.5 py-1.5 border border-rose-500/30";
+                    }
+                    return;
+                }
+
+                // HTTP/HTTPS Available
+                if (badge) {
+                    badge.textContent = "HTTP ONLINE READY";
+                    badge.className = "px-1.5 py-0.5 text-[9px] bg-cyan-950/60 border border-cyan-500/40 rounded-none text-cyan-300 font-mono";
+                }
+                if (btn) {
+                    if (this.enabled) {
+                        btn.textContent = "SHADER: ĐANG BẬT";
+                        btn.className = "px-3 py-1.5 rounded-none bg-cyan-500/20 border border-cyan-400/60 text-cyan-300 font-mono-tech font-bold text-xs shadow-[0_0_12px_rgba(6,182,212,0.35)] transition hover:bg-cyan-500/30";
+                    } else {
+                        btn.textContent = "SHADER: ĐANG TẮT";
+                        btn.className = "px-3 py-1.5 rounded-none bg-slate-800 border border-slate-700 text-slate-400 font-mono-tech font-bold text-xs transition hover:bg-slate-700 hover:text-white";
+                    }
+                }
+                if (note) {
+                    if (this.enabled) {
+                        note.innerHTML = "✨ <b>Đang kích hoạt WebGL Post-Processing:</b> Tán sắc quang học Chromatic Aberration, Neon Bloom ánh sáng, Vignette điện ảnh &amp; CRT Scanlines.";
+                        note.className = "text-[10px] font-mono-tech text-cyan-300/90 bg-cyan-950/20 px-2.5 py-1.5 border border-cyan-500/30";
+                    } else {
+                        note.innerHTML = "⚡ Môi trường HTTP sẵn sàng. Bấm nút bên trên để kích hoạt hiệu ứng Shader GPU!";
+                        note.className = "text-[10px] font-mono-tech text-slate-400 bg-slate-900/60 px-2.5 py-1.5 border border-slate-800";
+                    }
+                }
+            }
+        };
+
+        window.webglPostProcessor = WebglPostProcessor;
+        window.toggleWebglPostProcessing = () => WebglPostProcessor.toggle();
+        function initWebglPostProcessor() {
+            return WebglPostProcessor.init();
+        }
+
         function bootGameEngine() {
             if (window._hasBootedEngine) return;
             window._hasBootedEngine = true;
@@ -30270,6 +30778,7 @@
             try { loadSavedUserPreferences(); } catch (e) { console.error("loadSavedUserPreferences error:", e); }
             try { initCustomAssets(); } catch (e) { console.error("initCustomAssets error:", e); }
             try { initMonsterRamCache(); } catch (e) { console.error("initMonsterRamCache error:", e); }
+            try { initWebglPostProcessor(); } catch (e) { console.error("initWebglPostProcessor error:", e); }
             try { initFlowFieldWalls(); } catch (e) { console.error("initFlowFieldWalls error:", e); }
             try { initCampaign(true); } catch (e) { console.error("initCampaign error:", e); }
             try { scheduleNextFrame(); } catch (e) { console.error("scheduleNextFrame error:", e); }

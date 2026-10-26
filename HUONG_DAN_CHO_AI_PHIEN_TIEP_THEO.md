@@ -79,6 +79,17 @@ AI ở các ca tiếp theo **bắt buộc phải tuân thủ 5 nguyên tắc ki�
 5. **Dọn dẹp triệt để Co-Op & Web Audio khi chơi đơn / kết thúc màn**:
    - Chế độ chơi đơn (Solo) hoàn toàn không chạy ngầm timer hay gửi gói tin Co-Op (`XENO_COOP.sendTick` bị khóa khi `!XENO_COOP.active || !XENO_COOP.connected || isPaused || isMapWon || isGameOver`).
    - Mọi `AudioBufferSourceNode` và `OscillatorNode` đều có callback `onended` gọi `.disconnect()` để giải phóng hoàn toàn khỏi Audio Graph.
+6. **Lưới Không Gian Phân Vùng Chướng Ngại Vật Tĩnh (Static Obstacle Spatial Hash Grid O(1))**:
+   - Toàn bộ va chạm tĩnh (`resolveWallSliding`, `circleHitsStaticObstacle`, `pointHitsWall`, `hasLineOfSight`) sử dụng `obstacleGrid` ($26 \times 18 = 468$ ô, kích thước mỗi ô 200px) với độ phức tạp $O(1)$.
+   - Tuyệt đối **không lặp duyệt tuyến tính** toàn bộ mảng `WALLS`, `computerDesks`, `spaceProps`, `barricades`, `energyCoreStations`, `nuclearVats`, `crates`, `barrels` trong vòng lặp game, để duy trì 60 FPS mượt mà ngay cả khi có 400–500 quái vật cùng lúc.
+   - Khi khởi tạo map hoặc phá hủy bồn/thùng, gọi `rebuildObstacleSpatialGrid()` để đồng bộ lưới.
+7. **Mô hình Lai WebGL Post-Processing Shader Thông Minh & Tiêu chuẩn Không Đen Màn Hình (Zero-Black-Screen Standard)**:
+   - Game duy trì `gameCanvas` ở chế độ hiển thị 100% (`opacity: 1`, `display: block`) làm nền tảng render cốt lõi.
+   - Lớp phủ `webglCanvas` được lồng trực tiếp bên trên với `pointer-events-none` và ban đầu luôn ở trạng thái `display: none`.
+   - **Tự động nhận diện môi trường (`file:` vs `http:`/`https:`)**:
+     * Khi chạy cục bộ trên `file:///`: `WebglPostProcessor` tự động phát hiện rào cản CORS Sandbox của trình duyệt Chromium (tránh lỗi Tainted Canvas khi load sprite từ ổ đĩa) và giữ `webglCanvas` ẩn, chạy Canvas 2D thuần túy 60 FPS sáng rõ tuyệt đối.
+     * Khi chạy trên `http://localhost` hoặc Vercel Online: `WebglPostProcessor` tự động kích hoạt GPU Shader GLSL ES 1.0 (Neon Bloom, Chromatic Aberration, Vignette, CRT Scanlines).
+     * Bọc `try/catch` toàn diện trong `WebglPostProcessor.render(gameCanvas)`: nếu có bất kỳ lỗi GPU hay mất Context nào, `webglCanvas` lập tức ẩn đi để lộ Canvas 2D bên dưới ngay tức khắc, đảm bảo người chơi **100% không bao giờ gặp hiện tượng đen màn hình**.
 
 ---
 
@@ -97,6 +108,15 @@ AI ở các ca tiếp theo **bắt buộc phải tuân thủ 5 nguyên tắc ki�
 4. **Mini Map Định Hướng (`renderRadarMinimap`)**:
    - Vị trí người chơi ("Bạn") được vẽ bằng **hình tam giác mũi tên màu xanh lá (`#34d399`) có viền trắng**, tự động xoay mũi nhọn theo hướng di chuyển tương đối trên bản đồ (`player.moveAngle`).
    - Đã xóa bỏ toàn bộ các chấm xanh thừa thãi không được chú thích (`nuclearVats`, `energyCoreStations`, `computerDesks`), chỉ hiển thị đúng 5 đối tượng có trong chú thích bên dưới Mini Map: **Bạn**, **Quái/Boss**, **Á Trùm**, **⚡ Nhà Máy Điện**, **Cổng Dịch**.
+5. **Vòng Tròn Tiến Trình Khởi Động Máy Phát Điện Dưới Chân (Circular Load Ring)**:
+   - Thay thế thanh tiến trình ngang cũ thành **vòng tròn màu xanh lá (`#22c55e`) nạp tròn 360° theo chiều kim đồng hồ dưới chân (`r = 34px`)** khi giữ phím `[E]` trong phạm vi 95px để khởi động máy phát điện trong 5 giây.
+   - Đi kèm điểm sáng đầu vòng (`#86efac` lõi trắng), hào quang sàn xanh lục dịu mắt (`gen_crank_glow_34`) và số phần trăm điện tử (`xx%`) dưới chân.
+   - Bảng thông báo trên đầu máy phát điện được tinh gọn (cao 26px, chuyển sang viền xanh hiển thị `ĐANG KHỞI ĐỘNG: xx%`, không còn thanh ngang thô cứng).
+6. **Tối ưu hóa Va chạm & Định tuyến 400+ Quái vật (Spatial Grid & AI LOD)**:
+   - **Spatial Grid O(1)**: Giảm 98.7% số phép thử va chạm vật lý mỗi frame cho quái vật và đường đạn mà không thay đổi bất kỳ công thức toán học nào.
+   - **AI Clearance Interleaved Cache**: `hasPathClearance()` được lưu cache 3 frame xen kẽ theo `e.id % 3`, giảm 66% tia raycast kiểm tra địa hình.
+   - **Screen LOD (`dist > 1100`)**: Quái vật ở ngoài màn hình được giãn cách nhịp tính toán lái sang 3 frame/lần.
+   - **Bảo toàn trí thông minh tìm đường (Flow Field Pathfinding)**: Thuật toán Flow Field BFS 11,700 ô vẫn hoạt động độc lập và đầy đủ, đảm bảo 100% quái vật luôn biết đường luồn lách qua các góc cua và chướng ngại vật để săn đuổi người chơi một cách thông minh.
 
 ---
 
