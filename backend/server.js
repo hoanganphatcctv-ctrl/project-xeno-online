@@ -211,8 +211,12 @@ io.on("connection", (socket) => {
   // 4. CHUYỂN TIẾP GÓI TIN 60Hz/30Hz TICK & SỰ KIỆN QUÁI VẬT HOST-AUTHORITATIVE (RELAY PACKETS)
   socket.on("sync_tick", (packet) => {
     if (!currentRoomId) return;
-    // Gửi chuyển tiếp gói tin sang cho đồng đội trong phòng (volatile giúp không bao giờ tồn đọng buffer khi lag)
-    socket.to(currentRoomId).volatile.emit("remote_tick", packet);
+    // Gói tin vị trí input/snap có thể dùng volatile để giảm trễ; các sự kiện chiến đấu (bắn, sát thương, chết) gửi tin cậy
+    if (packet && (packet.t === "input" || packet.t === "snap")) {
+      socket.to(currentRoomId).volatile.emit("remote_tick", packet);
+    } else {
+      socket.to(currentRoomId).emit("remote_tick", packet);
+    }
   });
 
   socket.on("SPAWN_ENEMY", (payload) => {

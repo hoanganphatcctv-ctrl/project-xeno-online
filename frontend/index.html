@@ -4084,6 +4084,9 @@
             c.arcTo(x, y, x + w, y, radius);
             c.closePath();
         }
+        function safeRoundRect(c, x, y, w, h, r) {
+            return drawRoundRect(c, x, y, w, h, r);
+        }
         function safeArc(c, x, y, r, sAng = 0, eAng = Math.PI * 2) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
             const rad = Number.isFinite(r) ? Math.max(0.5, r) : 1;
@@ -6050,6 +6053,12 @@
             teammate.targetX = snap.x;
             teammate.targetY = snap.y;
             teammate.targetAngle = snap.a;
+
+            // Đảm bảo vị trí x, y của đồng đội trên máy Host luôn hợp lệ ngay khi nhận bản tin đầu tiên
+            if (typeof teammate.x !== "number" || isNaN(teammate.x) || Math.hypot(snap.x - teammate.x, snap.y - teammate.y) > 450) {
+                teammate.x = snap.x;
+                teammate.y = snap.y;
+            }
         }
 
         /**
@@ -7445,6 +7454,14 @@
                     return;
                 }
 
+                // Nhận xác thực sát thương cận chiến từ Host sang Client
+                if (data.t === "PLAYER_MELEE_HIT" && !this.isHost) {
+                    if (typeof damagePlayer === "function" && !player.isDown && !isGameOver) {
+                        damagePlayer(data.dmg || 8);
+                    }
+                    return;
+                }
+
                 if (data.t === "ENEMY_HIT" && this.isHost) {
                     if (typeof enemiesById !== "undefined" && data.id !== undefined) {
                         const targetEnemy = enemiesById.get(data.id);
@@ -8818,14 +8835,23 @@
             return isCoopActive() && !window.XENO_COOP.isHost;
         }
 
-        function pickAuthoritativeTargetPlayerId(ex, ey) {
+        function pickAuthoritativeTargetPlayerId(ex, ey, currentTargetId = null) {
             if (!isCoopActive() || !window.teammate || !window.teammate.active) return "host";
             const hostAlive = !player.isDown;
             const clientAlive = !window.teammate.isDown;
             if (hostAlive && !clientAlive) return "host";
             if (!hostAlive && clientAlive) return "client";
+            if (!hostAlive && !clientAlive) return "host";
+
             const dHost = Math.hypot(player.x - ex, player.y - ey);
             const dClient = Math.hypot(window.teammate.x - ex, window.teammate.y - ey);
+
+            // Hysteresis (ngưỡng 140px): Giữ mục tiêu hiện tại trừ khi mục tiêu kia lại gần hơn hẳn
+            if (currentTargetId === "client") {
+                return (dHost < dClient - 140) ? "host" : "client";
+            } else if (currentTargetId === "host") {
+                return (dClient < dHost - 140) ? "client" : "host";
+            }
             return dClient < dHost ? "client" : "host";
         }
 
@@ -11132,6 +11158,8 @@
             const hasTeammate = isCoopActive() && window.teammate && window.teammate.active && !window.teammate.isDown;
             const tc = hasTeammate ? Math.max(1, Math.min(FLOW_COLS - 2, Math.floor(window.teammate.x / CELL))) : -1;
             const tr = hasTeammate ? Math.max(1, Math.min(FLOW_ROWS - 2, Math.floor(window.teammate.y / CELL))) : -1;
+            const isDown = Boolean(player.isDown);
+            const mateDown = Boolean(window.teammate && window.teammate.isDown);
 
             if (
                 !forceUpdate &&
@@ -11139,7 +11167,9 @@
                 pc === flowGrid.lastPc &&
                 pr === flowGrid.lastPr &&
                 tc === flowGrid.lastTc &&
-                tr === flowGrid.lastTr
+                tr === flowGrid.lastTr &&
+                isDown === flowGrid.lastPlayerDown &&
+                mateDown === flowGrid.lastTeammateDown
             ) {
                 return;
             }
@@ -11147,6 +11177,8 @@
             flowGrid.lastPr = pr;
             flowGrid.lastTc = tc;
             flowGrid.lastTr = tr;
+            flowGrid.lastPlayerDown = isDown;
+            flowGrid.lastTeammateDown = mateDown;
             flowGrid.dirty = false;
 
             flowGrid.dist.fill(-1);
@@ -15555,6 +15587,17 @@
                 return;
             }
 
+            // Host Aggro Switch: Quái bị ai bắn thì lập tức quay sang truy sát người đó
+            if (isCoopHost()) {
+                if (attackerId === "client" && window.teammate && !window.teammate.isDown) {
+                    e.targetPlayerId = "client";
+                    e.aggroLockTimer = 90; // Khóa truy sát Client 1.5 giây
+                } else if (attackerId === "host" && !player.isDown) {
+                    e.targetPlayerId = "host";
+                    e.aggroLockTimer = 90; // Khóa truy sát Host 1.5 giây
+                }
+            }
+
             // =========================================================================
             // HỆ THỐNG CÂN BẰNG TRÙM CHUYÊN SÂU (BOSS REBALANCING SYSTEM)
             // =========================================================================
@@ -16377,8 +16420,9 @@
             const chillMult = (isGlobalFrozen ? 0.45 : 1.0) * (boss.chillTimer > 0 ? 0.82 : 1.0) * (boss.nuclearSlowTimer > 0 ? 0.80 : 1.0);
             const enrageSpeedMult = boss.enraged ? 1.15 : 1.0;
             boss.speed = mapCfg.bossSpeed * currentDifficulty.bossSpeedMult * enrageSpeedMult;
-            if (!boss.targetPlayerId || (frameCounter + (boss.bossIndex || 1) * 7) % 20 === 0) {
-                boss.targetPlayerId = pickAuthoritativeTargetPlayerId(boss.x, boss.y);
+            if (boss.aggroLockTimer > 0) boss.aggroLockTimer--;
+            if (!boss.targetPlayerId || ((frameCounter + (boss.bossIndex || 1) * 7) % 20 === 0 && (!boss.aggroLockTimer || boss.aggroLockTimer <= 0))) {
+                boss.targetPlayerId = pickAuthoritativeTargetPlayerId(boss.x, boss.y, boss.targetPlayerId);
             }
             const targetPos = resolveEnemyTargetPosition(boss.targetPlayerId);
             if (!Number.isFinite(boss.x) || !Number.isFinite(boss.y)) {
@@ -17188,6 +17232,20 @@
                 }
             }
 
+            // Đồng bộ tọa độ thời gian thực của đồng đội trên máy Host phục vụ AI quái vật & va chạm
+            if (isCoopHost() && window.teammate && window.teammate.active) {
+                const tx = (typeof window.teammate.targetX === "number") ? window.teammate.targetX : window.teammate.x;
+                const ty = (typeof window.teammate.targetY === "number") ? window.teammate.targetY : window.teammate.y;
+                const errDist = Math.hypot(tx - window.teammate.x, ty - window.teammate.y);
+                if (errDist > 400) {
+                    window.teammate.x = tx;
+                    window.teammate.y = ty;
+                } else if (errDist > 0.5) {
+                    window.teammate.x += (tx - window.teammate.x) * 0.45;
+                    window.teammate.y += (ty - window.teammate.y) * 0.45;
+                }
+            }
+
             if (frameCounter % 14 === 0) {
                 computeFlowField();
             }
@@ -17984,8 +18042,9 @@
                 }
 
                 // Định kỳ cập nhật targetPlayerId ("host" hoặc "client") gần nhất trên máy Host
-                if (!e.targetPlayerId || ((frameCounter + i) % 20 === 0)) {
-                    e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y);
+                if (e.aggroLockTimer > 0) e.aggroLockTimer--;
+                if (!e.targetPlayerId || ((frameCounter + i) % 20 === 0 && (!e.aggroLockTimer || e.aggroLockTimer <= 0))) {
+                    e.targetPlayerId = pickAuthoritativeTargetPlayerId(e.x, e.y, e.targetPlayerId);
                 }
                 const targetPos = resolveEnemyTargetPosition(e.targetPlayerId);
                 const dx = targetPos.x - e.x;
@@ -18165,14 +18224,26 @@
                     window.teammate.active &&
                     !window.teammate.isDown
                 ) {
-                    // Melee bounce on Host when enemy collides with Client teammate (so enemy doesn't stack inside teammate's body)
+                    // Xử lý va chạm cận chiến giữa quái và Đồng đội (Client) từ phía Host
                     const tDx = window.teammate.x - e.x;
                     const tDy = window.teammate.y - e.y;
                     const tDist = Math.hypot(tDx, tDy) || 0.0001;
-                    if (tDist < e.radius + player.radius && !e.isBoss) {
-                        e.x -= (tDx / tDist) * 18;
-                        e.y -= (tDy / tDist) * 18;
-                        resolveWallSliding(e);
+                    const hitRadius = e.radius + (window.teammate.radius || 16);
+                    if (tDist < hitRadius) {
+                        if (!e._lastClientMelee || (frameCounter - e._lastClientMelee > 22)) {
+                            e._lastClientMelee = frameCounter;
+                            if (window.XENO_COOP && typeof window.XENO_COOP.sendPacket === "function") {
+                                window.XENO_COOP.sendPacket({
+                                    t: "PLAYER_MELEE_HIT",
+                                    dmg: Math.round(e.damage || 8)
+                                });
+                            }
+                        }
+                        if (!e.isBoss) {
+                            e.x -= (tDx / tDist) * 12;
+                            e.y -= (tDy / tDist) * 12;
+                            resolveWallSliding(e);
+                        }
                     }
                 }
             }
@@ -19192,7 +19263,7 @@
                 ctx.strokeStyle = "rgba(250, 204, 21, 0.85)";
                 ctx.lineWidth = 1.6;
                 ctx.beginPath();
-                safeRoundRect(ctx, bx, by, bannerW, bannerH, 6);
+                drawRoundRect(ctx, bx, by, bannerW, bannerH, 6);
                 ctx.fill();
                 ctx.stroke();
 
