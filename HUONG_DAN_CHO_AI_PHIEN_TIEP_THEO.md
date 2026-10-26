@@ -42,18 +42,21 @@ Mọi yêu cầu chỉnh sửa giao diện, tính năng, vũ khí, vật thể b
 | **Vòng lặp Game & Watchdog Chống Treo** | `gameLoop()`<br>`resetFramePacer()`<br>`scheduleNextFrame()` | Cố định 60Hz physics accumulator. `resetFramePacer()` tự động gọi `scheduleNextFrame()` và có **Self-Healing Watchdog 400ms** đảm bảo không bao giờ bị treo sau khi chuyển Map hoặc đóng/mở Modal. |
 | **Hệ thống Co-Op Logic** | `const XENO_COOP`<br>`pushTeammateSnapshot()`<br>`drawTeammatePlayer()` | Hybrid P2P (STUN + OpenRelay TURN 80/443 TCP/UDP) & Socket.io, Tick Rate 60Hz/30Hz, LERP + Dead Reckoning, Host-Authoritative Enemy & World Sync. |
 
-### 📌 Bước 3: Đóng gói bản phân phối (Build)
-Sau khi sửa `alien-shooter-fullstack/frontend/index.html`, **bắt buộc chạy script build** để nén `game.min.js` và đồng bộ song song ra cả 2 thư mục `alien-shooter-fullstack/dist/` và `alien-shooter-fullstack/frontend/dist/`:
+### 📌 Bước 3: Đóng gói bản phân phối & Làm rối mã (Build & Obfuscate)
+Sau khi sửa `alien-shooter-fullstack/frontend/index.html`, **bắt buộc chạy script build** để nén `game.min.js` (xóa 100% comment, làm rối toàn bộ định danh bằng Terser `toplevel: true`, nén từ 1.3 MB xuống ~533 KB) và tự động đồng bộ song song ra cả 2 thư mục `alien-shooter-fullstack/dist/` và `alien-shooter-fullstack/frontend/dist/`:
 ```powershell
-cd C:\Users\Lenovo\Desktop\Alien_Shooter\Project_Xeno_Reloaded_Full_Package\alien-shooter-fullstack; node build.cjs
+powershell -ExecutionPolicy Bypass -File .\build_minified.ps1
 ```
+*(Hoặc chạy `powershell -ExecutionPolicy Bypass -File .\sync_dist.ps1` — script đã được tích hợp gọi thẳng `build_minified.ps1`).*
 
 ### 📌 Bước 4: Commit và Push lên GitHub để Vercel tự động triển khai
+Do `dist/` và `frontend/dist/` đã được mở khóa tracking trong `.gitignore`, lệnh push sẽ đưa thẳng bản build đã làm rối mã lên Vercel:
 ```powershell
 git -C alien-shooter-fullstack add -A
 git -C alien-shooter-fullstack commit -m "mô tả thay đổi vừa thực hiện"
 git -C alien-shooter-fullstack push origin main
 ```
+Hoặc chỉ cần **Click đúp vào `deploy_nhanh.bat`** (ở thư mục `alien-shooter-fullstack/`) hoặc `DEPLOY_NHANH_BAN_ONLINE.bat` (ở thư mục gốc), toàn bộ các bước trên sẽ tự động hoàn tất 100%.
 > [!IMPORTANT]
 > **Quy tắc Git Author**: Local git config đã được đặt mặc định là:  
 > `user.name = hoanganphatcctv-ctrl`  
