@@ -10,11 +10,11 @@
 
 | Thành phần | Đường dẫn File chính | Vai trò & Cách hoạt động |
 | :--- | :--- | :--- |
-| **📋 KẾ HOẠCH & NHẬT KÝ TỐI ƯU** | `../KE_HOACH_TOI_UU_HIEU_NANG_VA_SUA_LOI.md` | **Nhật ký toàn bộ 3 Giai đoạn tối ưu**: Giai đoạn 1 (RAM/VRAM/Audio/Loop), Giai đoạn 2 (Bảo mật XSS/Proxy/SRI), Giai đoạn 3 (Gameplay Reset, Victory Modal, Asset Turret/Accelerator, Sàn kính trong suốt & Mini Map). |
-| **🌐 MÃ NGUỒN CHÍNH (Single Source of Truth)** | `frontend/index.html`<br>`build.cjs`<br>`frontend/build.cjs` | **Bản duy nhất đang chạy trực tiếp trên Internet** tại [https://project-xeno-online.vercel.app](https://project-xeno-online.vercel.app). Bao gồm đầy đủ Chiến dịch (Solo & Online Co-Op 2 người), 7 vũ khí, 10 bản đồ, 10 Boss, hệ thống mạng **Hybrid (P2P PeerJS + OpenRelay TURN TCP/UDP 80/443 & Dedicated Socket.io)**, nội suy **Snapshot Buffer 60Hz/30Hz LERP + Dead Reckoning**, và đồng bộ **Host-Authoritative** toàn diện. |
-| **🎨 KHO TÀI NGUYÊN ASSETS (5 Thư mục đồng bộ)** | `../assets/`<br>`frontend/assets/`<br>`frontend/public/assets/`<br>`frontend/dist/assets/`<br>`dist/assets/` | Chứa toàn bộ ảnh PNG trong suốt đã tối ưu độ phân giải (`01_gun.png`..`laze_gun07.png`, skin nhân vật, `phao_tu_dong.png`, `drone.png`, `ken_ngudong.png`, `ken_ngudong2.png`, `may_gia_toc.png`...). Khi thêm/sửa asset, chạy `node build.cjs` để tự động đồng bộ sang `dist/assets/` và `frontend/dist/assets/`. |
-| **☁️ SERVERLESS PROXY (Cloud DB Sync)** | `api/sync.js`<br>`frontend/api/sync.js`<br>`../google-sheets-backend/Code.gs` | Proxy bảo mật trên Vercel kết nối Google Sheets NoSQL Database (Đăng ký/Đăng nhập SHA-256, Lưu tiến trình tự động, Bảng xếp hạng Top 20 toàn cầu). |
-| **🚀 DEDICATED SERVER SOCKET.IO** | `backend/server.js` | Máy chủ Node.js + Socket.io (Port 4000 / Render.com) hỗ trợ tạo phòng mã PIN 6 ký tự, chuyển tiếp gói tin 60Hz/30Hz và các sự kiện `SPAWN_ENEMY`, `SYNC_ENEMIES`, `ENEMY_HIT`, `ENEMY_DIE`. |
+| **📋 KẾ HOẠCH & NHẬT KÝ TỐI ƯU** | `KE_HOACH_TOI_UU_HIEU_NANG_VA_SUA_LOI.md` | **Nhật ký toàn bộ 3 Giai đoạn tối ưu**: Giai đoạn 1 (RAM/VRAM/Audio/Loop), Giai đoạn 2 (Bảo mật XSS/Proxy/SRI), Giai đoạn 3 (Gameplay Reset, Victory Modal, Asset Turret/Accelerator, Sàn kính trong suốt & Mini Map). |
+| **🌐 MÃ NGUỒN CHÍNH (Single Source of Truth)** | `alien-shooter-fullstack/frontend/index.html`<br>`alien-shooter-fullstack/build.cjs`<br>`alien-shooter-fullstack/frontend/build.cjs` | **Bản duy nhất đang chạy trực tiếp trên Internet** tại [https://project-xeno-online.vercel.app](https://project-xeno-online.vercel.app). Bao gồm đầy đủ Chiến dịch (Solo & Online Co-Op 2 người), 7 vũ khí, 10 bản đồ, 10 Boss, hệ thống mạng **Hybrid (P2P PeerJS + OpenRelay TURN TCP/UDP 80/443 & Dedicated Socket.io)**, nội suy **Snapshot Buffer 60Hz/30Hz LERP + Dead Reckoning**, và đồng bộ **Host-Authoritative** toàn diện. |
+| **🎨 KHO TÀI NGUYÊN ASSETS (5 Thư mục đồng bộ)** | `assets/`<br>`alien-shooter-fullstack/frontend/assets/`<br>`alien-shooter-fullstack/frontend/public/assets/`<br>`alien-shooter-fullstack/frontend/dist/assets/`<br>`alien-shooter-fullstack/dist/assets/` | Chứa toàn bộ ảnh PNG trong suốt đã tối ưu độ phân giải (`01_gun.png`..`laze_gun07.png`, skin nhân vật, `phao_tu_dong.png`, `drone.png`, `ken_ngudong.png`, `ken_ngudong2.png`, `may_gia_toc.png`...). Khi thêm/sửa asset, chạy `node build.cjs` để tự động đồng bộ sang `dist/assets/` và `frontend/dist/assets/`. |
+| **☁️ SERVERLESS PROXY (Cloud DB Sync)** | `alien-shooter-fullstack/api/sync.js`<br>`alien-shooter-fullstack/frontend/api/sync.js`<br>`google-sheets-backend/Code.gs` | Proxy bảo mật trên Vercel kết nối Google Sheets NoSQL Database (Đăng ký/Đăng nhập SHA-256, Lưu tiến trình tự động, Bảng xếp hạng Top 20 toàn cầu). |
+| **🚀 DEDICATED SERVER SOCKET.IO** | `alien-shooter-fullstack/backend/server.js` | Máy chủ Node.js + Socket.io chạy chính thức tại `https://project-xeno-online.onrender.com` (Render.com Singapore). Hỗ trợ tạo phòng công khai 8 kênh, mã PIN 6 ký tự, chuyển tiếp gói tin 60Hz/30Hz và các sự kiện `SPAWN_ENEMY`, `SYNC_ENEMIES`, `ENEMY_HIT`, `ENEMY_DIE`. |
 
 ---
 
@@ -86,13 +86,9 @@ AI ở các ca tiếp theo **bắt buộc phải tuân thủ 5 nguyên tắc ki�
    - Toàn bộ va chạm tĩnh (`resolveWallSliding`, `circleHitsStaticObstacle`, `pointHitsWall`, `hasLineOfSight`) sử dụng `obstacleGrid` ($26 \times 18 = 468$ ô, kích thước mỗi ô 200px) với độ phức tạp $O(1)$.
    - Tuyệt đối **không lặp duyệt tuyến tính** toàn bộ mảng `WALLS`, `computerDesks`, `spaceProps`, `barricades`, `energyCoreStations`, `nuclearVats`, `crates`, `barrels` trong vòng lặp game, để duy trì 60 FPS mượt mà ngay cả khi có 400–500 quái vật cùng lúc.
    - Khi khởi tạo map hoặc phá hủy bồn/thùng, gọi `rebuildObstacleSpatialGrid()` để đồng bộ lưới.
-7. **Mô hình Lai WebGL Post-Processing Shader Thông Minh & Tiêu chuẩn Không Đen Màn Hình (Zero-Black-Screen Standard)**:
-   - Game duy trì `gameCanvas` ở chế độ hiển thị 100% (`opacity: 1`, `display: block`) làm nền tảng render cốt lõi.
-   - Lớp phủ `webglCanvas` được lồng trực tiếp bên trên với `pointer-events-none` và ban đầu luôn ở trạng thái `display: none`.
-   - **Tự động nhận diện môi trường (`file:` vs `http:`/`https:`)**:
-     * Khi chạy cục bộ trên `file:///`: `WebglPostProcessor` tự động phát hiện rào cản CORS Sandbox của trình duyệt Chromium (tránh lỗi Tainted Canvas khi load sprite từ ổ đĩa) và giữ `webglCanvas` ẩn, chạy Canvas 2D thuần túy 60 FPS sáng rõ tuyệt đối.
-     * Khi chạy trên `http://localhost` hoặc Vercel Online: `WebglPostProcessor` tự động kích hoạt GPU Shader GLSL ES 1.0 (Neon Bloom, Chromatic Aberration, Vignette, CRT Scanlines).
-     * Bọc `try/catch` toàn diện trong `WebglPostProcessor.render(gameCanvas)`: nếu có bất kỳ lỗi GPU hay mất Context nào, `webglCanvas` lập tức ẩn đi để lộ Canvas 2D bên dưới ngay tức khắc, đảm bảo người chơi **100% không bao giờ gặp hiện tượng đen màn hình**.
+7. **Bảo toàn hiển thị Canvas 2D Thuần Túy (Zero-Black-Screen Standard)**:
+   - Game chạy trực tiếp trên Canvas 2D (`gameCanvas`) ở chế độ hiển thị 100% (`opacity: 1`, `display: block`).
+   - Tuyệt đối không can thiệp độ mờ hoặc chèn thêm lớp phủ WebGL canvas đọc pixel từ Canvas 2D khi chạy trên giao thức `file://` để tránh vi phạm chính sách bảo mật CORS Sandbox của trình duyệt (gây lỗi Tainted Canvas và đen màn hình).
 
 ---
 
