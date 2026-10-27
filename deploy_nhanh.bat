@@ -25,6 +25,7 @@ git commit -m "feat(coop): dynamic remote server discovery from Google Sheets, m
 
 echo.
 echo [3/3] Pushing to GitHub (origin main)...
+git pull origin main --no-rebase --no-edit
 git push origin main
 
 echo.
