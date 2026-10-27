@@ -5417,9 +5417,29 @@
                 const r = ROOMS[i];
                 const cx = r.x + r.w * 0.5;
                 const cy = r.y + r.h * 0.5;
-                VENTS.push({ x: Math.round(cx - r.w * 0.28), y: Math.round(cy - r.h * 0.22), row: r.row || 0, col: r.col || 0, room: r.name });
+                VENTS.push({
+                    x: Math.round(cx - r.w * 0.28),
+                    y: Math.round(cy - r.h * 0.22),
+                    row: r.row || 0,
+                    col: r.col || 0,
+                    room: r.name,
+                    openProgress: 0.0,
+                    targetOpen: 0.0,
+                    openTimer: 0,
+                    hazardPhase: Math.random() * Math.PI * 2
+                });
                 if (r.w > 1600 || r.h > 1200) {
-                    VENTS.push({ x: Math.round(cx + r.w * 0.28), y: Math.round(cy + r.h * 0.22), row: r.row || 0, col: r.col || 0, room: r.name });
+                    VENTS.push({
+                        x: Math.round(cx + r.w * 0.28),
+                        y: Math.round(cy + r.h * 0.22),
+                        row: r.row || 0,
+                        col: r.col || 0,
+                        room: r.name,
+                        openProgress: 0.0,
+                        targetOpen: 0.0,
+                        openTimer: 0,
+                        hazardPhase: Math.random() * Math.PI * 2
+                    });
                 }
             }
 
@@ -11350,33 +11370,17 @@
                 surfaceCtx.restore();
             });
 
-            // Vents
+            // Vents Sub-Floor Cavity & Frame (Nắp cơ khí động được vẽ thời gian thực bằng drawAnimatedSpawnVents)
             VENTS.forEach((v, idx) => {
                 surfaceCtx.save();
                 surfaceCtx.translate(v.x, v.y);
                 const ventBorderCol = (mapId === 5) ? "#a855f7" : (mapId === 4 ? "#ea580c" : (mapId === 3 ? "#0284c7" : (mapId === 2 ? "#0369a1" : "#ca8a04")));
                 surfaceCtx.fillStyle = ventBorderCol;
                 surfaceCtx.fillRect(-34, -34, 68, 68);
-                surfaceCtx.fillStyle = "#090d16";
+                surfaceCtx.fillStyle = "#030712";
                 surfaceCtx.fillRect(-28, -28, 56, 56);
 
-                const g = safeRadialGradient(surfaceCtx, 0, 0, 4, 0, 0, 26);
-                g.addColorStop(0, (mapId === 5) ? "#581c87" : (mapId === 4 ? "#f97316" : (mapId === 3 ? "#0369a1" : (mapId === 2 ? "#3b0764" : "#000000"))));
-                g.addColorStop(1, (mapId === 5) ? "#1e052d" : (mapId === 4 ? "#450a0a" : (mapId === 3 ? "#082f49" : (mapId === 2 ? "#0f172a" : "#1e293b"))));
-                surfaceCtx.fillStyle = g;
-                surfaceCtx.beginPath();
-                safeArc(surfaceCtx, 0, 0, 24);
-                surfaceCtx.fill();
-
-                surfaceCtx.strokeStyle = (mapId === 5) ? "#d8b4fe" : (mapId === 4 ? "#fb923c" : (mapId === 3 ? "#7dd3fc" : (mapId === 2 ? "#38bdf8" : "#475569")));
-                surfaceCtx.lineWidth = 2.6;
-                for (let i = -16; i <= 16; i += 8) {
-                    surfaceCtx.beginPath();
-                    surfaceCtx.moveTo(i, -22); surfaceCtx.lineTo(i, -7);
-                    surfaceCtx.moveTo(i, 7);   surfaceCtx.lineTo(i, 22);
-                    surfaceCtx.stroke();
-                }
-                surfaceCtx.fillStyle = surfaceCtx.strokeStyle;
+                surfaceCtx.fillStyle = ventBorderCol;
                 surfaceCtx.font = "bold 9px 'JetBrains Mono', monospace";
                 surfaceCtx.textAlign = "center";
                 surfaceCtx.fillText(`${mapCfg.ventPrefix} #${idx + 1}`, 0, 45);
@@ -14375,38 +14379,82 @@
                 ctx.restore();
             }
 
-            // 2. Active Radioactive Green Pools on the floor (from shattered Nuclear Vats)
+            // 2. Active Radioactive Toxic Green Acid Pools on the floor (Dòng nước axit xanh chảy loang với gợn sóng & bọt khí sủi)
             for (let i = 0; i < nuclearPools.length; i++) {
                 const np = nuclearPools[i];
-                if (np.x + np.radius < camX || np.x - np.radius > camX + VIEW_W || np.y + np.radius < camY || np.y - np.radius > camY + VIEW_H) continue;
+                const curR = np.currentRadius || np.radius || 135;
+                if (np.x + curR < camX || np.x - curR > camX + VIEW_W || np.y + curR < camY || np.y - curR > camY + VIEW_H) continue;
 
-                const alpha = Math.min(0.85, np.life / 120);
+                const alpha = Math.min(0.92, np.life / 100);
+                const lobes = np.lobes || [0.92, 1.15, 0.88, 1.18, 0.90, 1.20, 0.86, 1.12];
                 ctx.save();
                 ctx.translate(np.x, np.y);
-
-                const rStep = Math.max(16, Math.round(np.radius / 4) * 4);
-                const gPool = getCachedRadialGradient(ctx, "nuclear_pool_" + rStep, 0, 0, 8, 0, 0, rStep, [
-                    [0, "rgba(74, 222, 128, 0.62)"],
-                    [0.6, "rgba(22, 163, 74, 0.42)"],
-                    [1, "rgba(0, 0, 0, 0)"]
-                ]);
                 ctx.globalAlpha = alpha;
-                ctx.fillStyle = gPool;
+
+                // A. Vùng loang chất lỏng dạng thùy tự nhiên hữu cơ (Organic Viscous Perimeter)
                 ctx.beginPath();
-                safeArc(ctx, 0, 0, np.radius);
+                const numPts = lobes.length;
+                for (let p = 0; p <= numPts; p++) {
+                    const idx = p % numPts;
+                    const ang = (idx / numPts) * Math.PI * 2 + Math.sin(now * 0.0025 + idx) * 0.06;
+                    const rDist = curR * lobes[idx] * (1.0 + 0.04 * Math.sin(now * 0.004 + idx * 2.1));
+                    const px = Math.cos(ang) * rDist;
+                    const py = Math.sin(ang) * rDist;
+                    if (p === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+
+                // Lõi hồ axit phát sáng Neon Green & viền ăn mòn màu đen đậm
+                const rStep = Math.max(16, Math.round(curR / 4) * 4);
+                const gPool = getCachedRadialGradient(ctx, "acid_fluid_pool_" + rStep, 0, 0, 6, 0, 0, rStep, [
+                    [0, "rgba(134, 239, 172, 0.90)"],
+                    [0.45, "rgba(34, 197, 94, 0.72)"],
+                    [0.82, "rgba(5, 46, 22, 0.85)"],
+                    [1, "rgba(5, 46, 22, 0)"]
+                ]);
+                ctx.fillStyle = gPool;
                 ctx.fill();
 
-                // Bubbling green toxic rings
-                ctx.globalAlpha = 0.65 * alpha;
-                ctx.strokeStyle = "#86efac";
-                ctx.lineWidth = 2;
-                for (let b = 0; b < 4; b++) {
-                    const bx = Math.cos(now * 0.003 + b * 1.7 + i) * (np.radius * 0.48);
-                    const by = Math.sin(now * 0.004 + b * 2.1 + i) * (np.radius * 0.48);
-                    const br = 3 + ((now * 0.015 + b * 4) % 7);
+                // B. Viền bọt axit phản quang ăn mòn sàn nhà
+                ctx.strokeStyle = "rgba(74, 222, 128, 0.55)";
+                ctx.lineWidth = 2.2;
+                ctx.stroke();
+
+                // C. Gợn sóng chất lỏng cuộn tròn tỏa ra xung quanh (Liquid Surface Caustic Waves)
+                for (let w = 0; w < 3; w++) {
+                    const waveR = ((now * 0.02 + w * (curR * 0.32)) % (curR * 0.85)) + 8;
+                    const waveAlpha = Math.max(0, 0.45 * (1.0 - waveR / (curR * 0.85)));
+                    ctx.save();
+                    ctx.strokeStyle = "#bef264";
+                    ctx.globalAlpha = alpha * waveAlpha;
+                    ctx.lineWidth = 1.8;
                     ctx.beginPath();
-                    safeArc(ctx, bx, by, br);
+                    safeArc(ctx, 0, 0, waveR);
                     ctx.stroke();
+                    ctx.restore();
+                }
+
+                // D. Bọt khí axit 3D nổi trên mặt hồ có chấm sáng phản quang
+                if (np.bubbles && np.bubbles.length > 0) {
+                    for (let b = 0; b < np.bubbles.length; b++) {
+                        const bub = np.bubbles[b];
+                        ctx.save();
+                        ctx.globalAlpha = alpha * 0.85;
+                        ctx.fillStyle = "rgba(187, 247, 208, 0.65)";
+                        ctx.beginPath();
+                        safeArc(ctx, bub.x, bub.y, bub.r);
+                        ctx.fill();
+                        ctx.strokeStyle = "#4ade80";
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
+                        // Chấm sáng Specular Reflection
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        safeArc(ctx, bub.x - bub.r * 0.35, bub.y - bub.r * 0.35, bub.r * 0.28);
+                        ctx.fill();
+                        ctx.restore();
+                    }
                 }
                 ctx.restore();
             }
@@ -14914,6 +14962,15 @@
                 if (activeBosses.includes(e)) continue;
                 if (!e.active) {
                     const vent = pickNearbyVent();
+                    if (vent) {
+                        vent.openTimer = 240; // Mở nắp cống cơ khí trong 4 giây khi quái chui ra
+                        vent.targetOpen = 1.0;
+                        for (let s = 0; s < 6; s++) {
+                            const ang = Math.random() * Math.PI * 2;
+                            const spd = 0.8 + Math.random() * 2.2;
+                            spawnParticle(vent.x, vent.y, Math.cos(ang) * spd, Math.sin(ang) * spd, "#a855f7", 4.5, 28);
+                        }
+                    }
                     const typeKey = forcedType || pickEnemyTypeForWave(currentWave);
                     const cfg = ENEMY_TYPES[typeKey] || ENEMY_TYPES.crawler;
                     const mapCfg = getCurrentMapConfig();
@@ -15185,6 +15242,18 @@
             e.lastDirX = undefined;
             e.lastDirY = undefined;
             e.spawnedAt = performance.now();
+
+            // Mở nắp cống tương ứng trên máy Client khi quái xuất hiện
+            if (!isBoss && typeof VENTS !== "undefined") {
+                for (let vi = 0; vi < VENTS.length; vi++) {
+                    const cv = VENTS[vi];
+                    if (Math.hypot(cv.x - e.x, cv.y - e.y) < 110) {
+                        cv.openTimer = 240;
+                        cv.targetOpen = 1.0;
+                        break;
+                    }
+                }
+            }
 
             if (isBoss) {
                 e.enraged = Boolean(data.enraged);
@@ -15666,6 +15735,9 @@
             screenShake = 26;
             setOpacity("nukeFlash", 0.85);
             setTimeout(() => setOpacity("nukeFlash", 0), 360);
+            if (window.webglPostProcessor) {
+                window.webglPostProcessor.addShockwave(player.x, player.y, 750, 1100, 1.35);
+            }
 
             let killedCount = 0;
             for (let i = 0; i < MAX_ENEMIES; i++) {
@@ -15874,9 +15946,18 @@
             nuclearPools.push({
                 x: vat.x,
                 y: vat.y,
-                radius: 125,
-                life: 10 * 60 // 10 seconds of radioactive hazard zone
+                radius: 135,
+                currentRadius: 18,
+                targetRadius: 135,
+                life: 10 * 60,
+                maxLife: 10 * 60,
+                seed: Math.random() * 100,
+                lobes: [0.88, 1.15, 0.92, 1.18, 0.85, 1.22, 0.90, 1.12],
+                bubbles: []
             });
+            if (window.webglPostProcessor) {
+                window.webglPostProcessor.addShockwave(vat.x, vat.y, 420, 750, 1.0);
+            }
 
             // Green nuclear splash particles
             for (let i = 0; i < 34; i++) {
@@ -16410,6 +16491,9 @@
 
             if (e.typeKey === "brute" || e.isElite || wasBoss || isPlasma) {
                 bakeScorchCrater(e.x, e.y, wasBoss ? 95 : 42);
+                if (wasBoss && window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(e.x, e.y, 500, 850, 1.15);
+                }
             }
 
             bakeAlienCorpse(e, isFrozen);
@@ -16651,9 +16735,18 @@
                 nuclearPools.push({
                     x: barrel.x,
                     y: barrel.y,
-                    radius: 130,
-                    life: 10 * 60 // 10 giây làm chậm & ăn mòn
+                    radius: 135,
+                    currentRadius: 18,
+                    targetRadius: 135,
+                    life: 10 * 60,
+                    maxLife: 10 * 60,
+                    seed: Math.random() * 100,
+                    lobes: [0.92, 1.18, 0.86, 1.24, 0.88, 1.14, 0.94, 1.10],
+                    bubbles: []
                 });
+                if (window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(barrel.x, barrel.y, 380, 680, 0.92);
+                }
                 shockwaveRings.push({
                     x: barrel.x, y: barrel.y, r: 12, maxR: 175,
                     color: "#4ade80", alpha: 0.92
@@ -16679,6 +16772,9 @@
             } else if (bType === "cryo") {
                 // THÙNG XANH LAM (Cryo Nitrogen): Nổ sóng băng đóng băng quái vật trong 4.5 giây
                 bakeScorchCrater(barrel.x, barrel.y, 82, false);
+                if (window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(barrel.x, barrel.y, 420, 750, 0.96);
+                }
                 shockwaveRings.push({
                     x: barrel.x, y: barrel.y, r: 14, maxR: 225,
                     color: "#38bdf8", alpha: 0.96
@@ -16704,6 +16800,9 @@
             } else if (bType === "oil") {
                 // THÙNG VÀNG/ĐEN (Hazard Oil): Nổ váng dầu bốc lửa dữ dội kèm khói đen cuồn cuộn
                 bakeScorchCrater(barrel.x, barrel.y, 105, false);
+                if (window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(barrel.x, barrel.y, 390, 700, 0.90);
+                }
                 shockwaveRings.push({
                     x: barrel.x, y: barrel.y, r: 14, maxR: 195,
                     color: "#f59e0b", alpha: 0.90
@@ -16744,6 +16843,9 @@
             } else {
                 // THÙNG ĐỎ (TNT Explosive): Nổ nhiệt lượng cực đại + bùng cháy 4–6 đám lửa trên sàn
                 bakeScorchCrater(barrel.x, barrel.y, 85, false);
+                if (window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(barrel.x, barrel.y, 410, 720, 0.98);
+                }
                 shockwaveRings.push({
                     x: barrel.x, y: barrel.y, r: 14, maxR: 205,
                     color: "#ef4444", alpha: 0.94
@@ -17721,7 +17823,7 @@
                 }
             }
 
-            // Update Radioactive Green Pools on Floor
+            // Update Radioactive Green Pools on Floor (Dòng nước axit xanh chảy loang dưới nền & bọt khí sủi tăm)
             for (let i = nuclearPools.length - 1; i >= 0; i--) {
                 const np = nuclearPools[i];
                 np.life--;
@@ -17729,14 +17831,50 @@
                     nuclearPools.splice(i, 1);
                     continue;
                 }
-                if (frameCounter % 15 === 0) {
+                // Hiệu ứng dòng chất lỏng từ từ chảy loang rộng ra mặt sàn
+                const targetR = np.targetRadius || np.radius || 135;
+                if (!np.currentRadius) np.currentRadius = 18;
+                np.currentRadius += (targetR - np.currentRadius) * 0.085;
+                np.radius = np.currentRadius;
+
+                // Cập nhật bọt khí axit độc hại sủi bọt và vỡ hạt
+                if (!np.bubbles) np.bubbles = [];
+                if (Math.random() < 0.26 && np.bubbles.length < 8) {
+                    const bAng = Math.random() * Math.PI * 2;
+                    const bDist = Math.random() * (np.currentRadius * 0.75);
+                    np.bubbles.push({
+                        x: Math.cos(bAng) * bDist,
+                        y: Math.sin(bAng) * bDist,
+                        r: 1.5,
+                        maxR: 3.5 + Math.random() * 4.5,
+                        growth: 0.12 + Math.random() * 0.15,
+                        life: 45
+                    });
+                }
+                for (let b = np.bubbles.length - 1; b >= 0; b--) {
+                    const bub = np.bubbles[b];
+                    bub.r += bub.growth;
+                    bub.life--;
+                    if (bub.r >= bub.maxR || bub.life <= 0) {
+                        if (Math.random() < 0.40) {
+                            spawnParticle(np.x + bub.x, np.y + bub.y, (Math.random() - 0.5) * 1.4, -0.8 - Math.random() * 1.2, "#86efac", 2.2, 18);
+                        }
+                        np.bubbles.splice(b, 1);
+                    }
+                }
+
+                if (frameCounter % 14 === 0) {
                     for (let j = 0; j < MAX_ENEMIES; j++) {
                         const e = enemies[j];
                         if (!e.active) continue;
-                        const npRSum = np.radius + e.radius;
+                        const npRSum = np.currentRadius + e.radius;
                         const npDx = e.x - np.x;
-                        if (Math.abs(npDx) <= npRSum && Math.abs(e.y - np.y) <= npRSum && (npDx * npDx + (e.y - np.y) * (e.y - np.y) < npRSum * npRSum)) {
+                        const npDy = e.y - np.y;
+                        if (Math.abs(npDx) <= npRSum && Math.abs(npDy) <= npRSum && (npDx * npDx + npDy * npDy < npRSum * npRSum)) {
                             e.nuclearSlowTimer = 45;
+                            if (Math.random() < 0.35) {
+                                spawnParticle(e.x + (Math.random() - 0.5) * 14, e.y + (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 1.2, -1.2, "#4ade80", 2.6, 20);
+                            }
                             if (!isCoopClient()) {
                                 damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
                             }
@@ -17935,13 +18073,16 @@
                 addPlayerTrail(player.x, player.y, player.angle, 14);
             } else {
                 let mx = 0, my = 0;
-                if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
-                if (keys["KeyS"] || keys["ArrowDown"]) my += 1;
-                if (keys["KeyA"] || keys["ArrowLeft"]) mx -= 1;
-                if (keys["KeyD"] || keys["ArrowRight"]) mx += 1;
-                if (window.touchMoveVector && window.touchMoveVector.active) {
-                    mx += window.touchMoveVector.x;
-                    my += window.touchMoveVector.y;
+                const isModalOpenNow = isAnyBlockingModalOpen();
+                if (!isModalOpenNow) {
+                    if (keys["KeyW"] || keys["ArrowUp"]) my -= 1;
+                    if (keys["KeyS"] || keys["ArrowDown"]) my += 1;
+                    if (keys["KeyA"] || keys["ArrowLeft"]) mx -= 1;
+                    if (keys["KeyD"] || keys["ArrowRight"]) mx += 1;
+                    if (window.touchMoveVector && window.touchMoveVector.active) {
+                        mx += window.touchMoveVector.x;
+                        my += window.touchMoveVector.y;
+                    }
                 }
 
                 const activeSpeed = player.baseSpeed * (player.speedBuffTimer > 0 ? 1.50 : 1.0);
@@ -18983,6 +19124,167 @@
          * 12. WORLD, ELITE PRAETORIAN, MULTI-BOSS & 5x5 RADAR MINIMAP RENDERERS
          * ============================================================================
          */
+        // ============================================================================
+        // ANIMATED SCI-FI SPAWN SEWER GRATES & HYDRAULIC HATCHES (ĐÓNG MỞ CƠ KHÍ THEO ĐỢT QUÁI)
+        // ============================================================================
+        function drawAnimatedSpawnVents(camX, camY) {
+            const now = performance.now();
+            const mapCfg = getCurrentMapConfig();
+            const mapId = window.currentMapId || 1;
+            const ventBorderCol = (mapId === 5) ? "#a855f7" : (mapId === 4 ? "#ea580c" : (mapId === 3 ? "#0284c7" : (mapId === 2 ? "#0369a1" : "#ca8a04")));
+            const hiveGlowCol = (mapId === 5) ? "#c084fc" : (mapId === 4 ? "#f87171" : "#38bdf8");
+
+            for (let i = 0; i < VENTS.length; i++) {
+                const v = VENTS[i];
+                if (v.x + 55 < camX || v.x - 55 > camX + VIEW_W || v.y + 55 < camY || v.y - 55 > camY + VIEW_H) continue;
+
+                // Cập nhật tiến trình mở nắp cống cơ khí
+                if (v.openTimer > 0) {
+                    v.openTimer--;
+                    v.targetOpen = 1.0;
+                } else {
+                    v.targetOpen = 0.0;
+                }
+                v.openProgress = (typeof v.openProgress === "number") ? v.openProgress : 0.0;
+                v.openProgress += (v.targetOpen - v.openProgress) * 0.12;
+
+                ctx.save();
+                ctx.translate(v.x, v.y);
+
+                // 1. Khung viền kim loại hợp kim chịu lực bên ngoài (68x68)
+                ctx.fillStyle = ventBorderCol;
+                ctx.fillRect(-34, -34, 68, 68);
+                ctx.fillStyle = "#0c121e";
+                ctx.fillRect(-30, -30, 60, 60);
+
+                // 2. Hố vực sâu tối thẳm bên dưới sàn (-26 đến +26)
+                ctx.fillStyle = "#02040a";
+                ctx.fillRect(-26, -26, 52, 52);
+
+                // 3. Ánh sáng tím/đỏ đe dọa từ Tổ quái bên dưới khi nắp cống mở
+                if (v.openProgress > 0.04) {
+                    const pitAlpha = Math.min(0.92, v.openProgress * 1.1);
+                    const pitGrad = getCachedRadialGradient(ctx, "vent_pit_" + mapId, 0, 0, 4, 0, 0, 24, [
+                        [0, hiveGlowCol],
+                        [0.6, "rgba(15, 23, 42, 0.8)"],
+                        [1, "rgba(2, 6, 23, 0)"]
+                    ]);
+                    ctx.save();
+                    ctx.globalAlpha = pitAlpha;
+                    ctx.fillStyle = pitGrad;
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 0, 22);
+                    ctx.fill();
+
+                    // Cặp mắt quái vật hung tợn lập lòe trong bóng tối
+                    const blink = Math.sin(now * 0.007 + i * 2.3);
+                    if (blink > -0.7) {
+                        ctx.fillStyle = (mapId === 5) ? "#f43f5e" : "#fbbf24";
+                        ctx.beginPath();
+                        safeArc(ctx, -7, -3, 1.6);
+                        safeArc(ctx, -2, -4, 1.6);
+                        safeArc(ctx, 5, 4, 1.5);
+                        safeArc(ctx, 9, 3, 1.5);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                // 4. Cặp cánh cửa nắp cống cơ khí trượt ngang thủy lực (Dual Sliding Heavy Hydraulic Shutters)
+                const slideDist = Math.round(v.openProgress * 23);
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(-26, -26, 52, 52);
+                ctx.clip();
+
+                // Cánh cửa trên (trượt lên trên theo slideDist)
+                const topY = -26 - slideDist;
+                const topH = 26;
+                const gDoorTop = getCachedLinearGradient(ctx, "vent_door_t", 0, topY, 0, topY + topH, [
+                    [0, "#334155"],
+                    [0.5, "#1e293b"],
+                    [1, "#0f172a"]
+                ]);
+                ctx.fillStyle = gDoorTop;
+                ctx.fillRect(-26, topY, 52, topH);
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 1.5;
+                for (let gy = topY + 4; gy < topY + topH - 3; gy += 7) {
+                    ctx.beginPath();
+                    ctx.moveTo(-24, gy);
+                    ctx.lineTo(24, gy);
+                    ctx.stroke();
+                }
+                // Răng thép khóa cài ở mép nối
+                ctx.fillStyle = "#64748b";
+                for (let tx = -24; tx < 24; tx += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(tx, topY + topH);
+                    ctx.lineTo(tx + 4, topY + topH + 3);
+                    ctx.lineTo(tx + 8, topY + topH);
+                    ctx.fill();
+                }
+
+                // Cánh cửa dưới (trượt xuống dưới theo slideDist)
+                const btmY = 0 + slideDist;
+                const btmH = 26;
+                const gDoorBtm = getCachedLinearGradient(ctx, "vent_door_b", 0, btmY, 0, btmY + btmH, [
+                    [0, "#0f172a"],
+                    [0.5, "#1e293b"],
+                    [1, "#334155"]
+                ]);
+                ctx.fillStyle = gDoorBtm;
+                ctx.fillRect(-26, btmY, 52, btmH);
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 1.5;
+                for (let gy = btmY + 5; gy < btmY + btmH - 3; gy += 7) {
+                    ctx.beginPath();
+                    ctx.moveTo(-24, gy);
+                    ctx.lineTo(24, gy);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = (v.openProgress < 0.1) ? "#ca8a04" : "#ef4444";
+                ctx.fillRect(-24, btmY, 48, 2.5);
+
+                ctx.restore();
+
+                // 5. 4 Bu lông lục giác gia cố 4 góc
+                ctx.fillStyle = "#94a3b8";
+                const boltCoords = [[-31, -31], [31, -31], [-31, 31], [31, 31]];
+                for (let b = 0; b < 4; b++) {
+                    ctx.beginPath();
+                    safeArc(ctx, boltCoords[b][0], boltCoords[b][1], 1.6);
+                    ctx.fill();
+                }
+
+                // 6. 4 Đèn LED cảnh báo trạng thái cống
+                const ledCoords = [[-28, -28], [28, -28], [-28, 28], [28, 28]];
+                if (v.openProgress >= 0.08) {
+                    // CẢNH BÁO QUÁI CHUI RA: Đèn chớp Strobe đỏ/cam cường độ cao
+                    const strobe = Math.sin(now * 0.022 + (v.hazardPhase || 0)) > 0.0;
+                    ctx.fillStyle = strobe ? "#ef4444" : "#f59e0b";
+                    ctx.shadowColor = strobe ? "rgba(239, 68, 68, 0.9)" : "rgba(245, 158, 11, 0.6)";
+                    ctx.shadowBlur = 8;
+                    for (let l = 0; l < 4; l++) {
+                        ctx.beginPath();
+                        safeArc(ctx, ledCoords[l][0], ledCoords[l][1], 2.4);
+                        ctx.fill();
+                    }
+                    ctx.shadowBlur = 0;
+                } else {
+                    // AN TOÀN: Đèn xanh tĩnh
+                    ctx.fillStyle = "#10b981";
+                    for (let l = 0; l < 4; l++) {
+                        ctx.beginPath();
+                        safeArc(ctx, ledCoords[l][0], ledCoords[l][1], 1.8);
+                        ctx.fill();
+                    }
+                }
+
+                ctx.restore();
+            }
+        }
+
         function renderWorld() {
             ctx.save();
 
@@ -19037,6 +19339,9 @@
 
             // Draw Radioactive Green Pools & Intact Green Nuclear Bio-Vats
             drawNuclearVatsAndPools(camX, camY);
+
+            // Draw Animated Sci-Fi Spawn Sewer Grates (Nắp cống cơ khí đóng mở theo đợt quái)
+            drawAnimatedSpawnVents(camX, camY);
 
             // Draw Colossal Energy Core Stations with Flashing Electromagnetic Arcs
             drawEnergyCoreStations(camX, camY);
@@ -19113,16 +19418,36 @@
                 ctx.restore();
             }
 
-            // 2. VẼ VÒNG SÓNG XUNG KÍCH NỔ (shockwaveRings) & MẢNH DĂM GỖ XOAY TRÒN (woodSplinters)
+            // 2. VẼ VÒNG SÓNG XUNG KÍCH NỔ ĐA LỚP PHẢN QUANG (shockwaveRings) & MẢNH DĂM GỖ XOAY TRÒN (woodSplinters)
             for (let i = 0; i < shockwaveRings.length; i++) {
                 const sr = shockwaveRings[i];
+                const baseAlpha = Math.max(0, sr.alpha);
                 ctx.save();
+
+                // Lớp 1: Quầng năng lượng tỏa nhiệt bên ngoài (Outer Heat Corona)
                 ctx.strokeStyle = sr.color;
-                ctx.globalAlpha = Math.max(0, sr.alpha);
-                ctx.lineWidth = 4.0;
+                ctx.globalAlpha = baseAlpha * 0.45;
+                ctx.lineWidth = 8.5;
+                ctx.beginPath();
+                safeArc(ctx, sr.x, sr.y, sr.r + 2);
+                ctx.stroke();
+
+                // Lớp 2: Vòng sóng xung kích áp suất chính rực sáng (Core Pressure Wave)
+                ctx.strokeStyle = sr.color;
+                ctx.globalAlpha = baseAlpha * 0.85;
+                ctx.lineWidth = 3.5;
                 ctx.beginPath();
                 safeArc(ctx, sr.x, sr.y, sr.r);
                 ctx.stroke();
+
+                // Lớp 3: Đỉnh sóng trắng chói lòa (Incandescent White Crest)
+                ctx.strokeStyle = "#ffffff";
+                ctx.globalAlpha = baseAlpha * 0.90;
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                safeArc(ctx, sr.x, sr.y, Math.max(1, sr.r - 2));
+                ctx.stroke();
+
                 ctx.restore();
             }
             for (let i = 0; i < woodSplinters.length; i++) {
@@ -26360,6 +26685,32 @@
         }
 
         function syncPauseState() {
+            const inCoop = isCoopActive();
+            const inLobby = (typeof isMissionLoadingSimulating !== "undefined" && isMissionLoadingSimulating) ||
+                            (typeof isMapTransitionLoading !== "undefined" && isMapTransitionLoading) ||
+                            (typeof isLobbyLoadingSimulating !== "undefined" && isLobbyLoadingSimulating) ||
+                            (byId("gamePreloaderScreen") && !byId("gamePreloaderScreen").classList.contains("hidden") && byId("gamePreloaderScreen").style.display !== "none") ||
+                            (byId("mainSettingsModal") && !byId("mainSettingsModal").classList.contains("hidden") && byId("mainSettingsModal").style.display !== "none");
+
+            // Trong chế độ Online Co-Op: Game TUYỆT ĐỐI KHÔNG DỪNG khi mở Kho súng [B], Cài đặt hay Menu Tạm dừng!
+            // Thế giới game, AI quái vật, đường truyền mạng 60Hz tiếp tục vận hành mượt mà thời gian thực.
+            if (inCoop && !inLobby && !isGameOver && !isMapWon) {
+                const wasPaused = isPaused;
+                isPaused = false;
+                // Ngắt chuột bắn khi đang tương tác modal để tránh bắn xuyên qua giao diện
+                if (isAnyBlockingModalOpen()) {
+                    mouse.down = false;
+                    player.activeLaserBeam = null;
+                }
+                if (wasPaused && typeof resetFramePacer === "function") {
+                    resetFramePacer();
+                } else if (typeof scheduleNextFrame === "function") {
+                    scheduleNextFrame();
+                }
+                return;
+            }
+
+            // Chế độ Chơi Đơn (Single Player): Giữ cơ chế pause khi mở modal
             if (isGameOver || isMapWon || isAnyBlockingModalOpen()) {
                 isPaused = true;
                 mouse.down = false;
@@ -26435,7 +26786,9 @@
             }
 
             if (pauseModal.classList.contains("hidden")) {
-                isPaused = true;
+                if (!isCoopActive()) {
+                    isPaused = true;
+                }
                 mouse.down = false;
                 player.activeLaserBeam = null;
                 const totalWaves = getTotalWavesForCurrentMap();
@@ -29916,7 +30269,7 @@
         window.addEventListener("dragstart", e => e.preventDefault());
 
         function handleGameMouseDown(e, fromCanvas = false) {
-            if (isGameOver || isPaused || isMapWon) return;
+            if (isGameOver || isPaused || isMapWon || isAnyBlockingModalOpen()) return;
             if (!fromCanvas && e.target && typeof e.target.closest === "function" && e.target.closest("button, input, select, textarea, a, #weaponDockContainer, .pointer-events-auto, [onclick], .cursor-pointer")) return;
             sfx.init();
             if (e.button === 0) {
@@ -32192,6 +32545,23 @@
             isLocalFile: false,
             locations: {},
             lastRenderError: null,
+            shockwaves: [],
+            shockwaveBuffer: new Float32Array(16),
+
+            addShockwave(worldX, worldY, maxRadius = 380, duration = 650, intensity = 0.85) {
+                if (!this.enabled || !this.isAvailable) return;
+                if (this.shockwaves.length >= 4) {
+                    this.shockwaves.shift();
+                }
+                this.shockwaves.push({
+                    worldX,
+                    worldY,
+                    maxRadius,
+                    duration,
+                    intensity,
+                    startTime: performance.now()
+                });
+            },
 
             init() {
                 try {
@@ -32239,7 +32609,7 @@
                         }
                     `;
 
-                    // 4. Fragment Shader (GLSL ES 1.0 Chuẩn Hóa: Bloom, Chroma, Vignette, Scanlines)
+                    // 4. Fragment Shader (GLSL ES 1.0: Sóng xung kích khói lửa, Khúc xạ quang học Blur nền, Bloom & Vignette)
                     const fsSource = `
                         precision mediump float;
                         uniform sampler2D u_tex;
@@ -32252,27 +32622,71 @@
                         uniform float u_brightness;
                         uniform float u_contrast;
                         uniform float u_nvg;
+                        // SÓNG XUNG KÍCH VẬT THỂ NỔ (x: uv_x, y: uv_y, z: bán kính, w: cường độ)
+                        uniform vec4 u_shockwaves[4];
                         varying vec2 v_uv;
 
                         void main() {
                             vec2 uv = v_uv;
                             vec2 texel = 1.0 / u_resolution;
+                            vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
+
+                            // Tính toán sóng xung kích quang học bẻ cong & mờ nhòe nền (Blockbuster Shockwave Refraction)
+                            vec2 totalDistort = vec2(0.0);
+                            float shockBlur = 0.0;
+                            float shockGlow = 0.0;
+
+                            for (int i = 0; i < 4; i++) {
+                                vec4 sw = u_shockwaves[i];
+                                if (sw.w > 0.002 && sw.z > 0.0) {
+                                    vec2 diff = (uv - sw.xy) * aspect;
+                                    float d = length(diff);
+                                    float ringWidth = 0.068;
+                                    float distDiff = d - sw.z;
+                                    if (abs(distDiff) < ringWidth) {
+                                        float factor = 1.0 - abs(distDiff) / ringWidth;
+                                        float wave = sin(factor * 3.14159265);
+                                        vec2 dir = normalize(diff + vec2(0.00001, 0.00001));
+                                        float disp = wave * sw.w * 0.046 * (1.0 - clamp(sw.z * 1.3, 0.0, 0.85));
+                                        totalDistort += (dir / aspect) * (distDiff < 0.0 ? disp : -disp * 0.45);
+                                        shockBlur += wave * sw.w * 2.6;
+                                        shockGlow += wave * sw.w * 0.38;
+                                    }
+                                }
+                            }
+
+                            vec2 distortedUv = clamp(uv + totalDistort, 0.001, 0.999);
                             vec2 center = vec2(0.5, 0.5);
-                            vec2 toCenter = uv - center;
+                            vec2 toCenter = distortedUv - center;
                             float distToCenter = length(toCenter);
 
-                            float caOffset = (0.0016 + u_chroma * 0.010) * distToCenter;
+                            float caOffset = (0.0016 + u_chroma * 0.010) * distToCenter + shockBlur * 0.0035;
                             vec2 caDir = normalize(toCenter + vec2(0.00001, 0.00001));
-                            float r = texture2D(u_tex, uv + caDir * caOffset).r;
-                            float g = texture2D(u_tex, uv).g;
-                            float b = texture2D(u_tex, uv - caDir * caOffset).b;
-                            vec3 baseCol = vec3(r, g, b);
+
+                            vec3 baseCol;
+                            if (shockBlur > 0.02) {
+                                // Mờ nhòe tốc độ cao theo hướng sóng xung kích nổ (Directional Blast Motion Blur)
+                                vec2 bDir = normalize(totalDistort + vec2(0.00001, 0.00001)) * texel * shockBlur * 3.0;
+                                vec3 s0 = texture2D(u_tex, distortedUv).rgb;
+                                vec3 s1 = texture2D(u_tex, clamp(distortedUv + bDir, 0.0, 1.0)).rgb;
+                                vec3 s2 = texture2D(u_tex, clamp(distortedUv - bDir, 0.0, 1.0)).rgb;
+                                vec3 s3 = texture2D(u_tex, clamp(distortedUv + bDir * 1.8, 0.0, 1.0)).rgb;
+                                baseCol = s0 * 0.42 + s1 * 0.24 + s2 * 0.24 + s3 * 0.10;
+                            } else {
+                                float r = texture2D(u_tex, clamp(distortedUv + caDir * caOffset, 0.0, 1.0)).r;
+                                float g = texture2D(u_tex, distortedUv).g;
+                                float b = texture2D(u_tex, clamp(distortedUv - caDir * caOffset, 0.0, 1.0)).b;
+                                baseCol = vec3(r, g, b);
+                            }
+
+                            // Ánh chớp nhiệt nổ bừng sáng theo đỉnh sóng xung kích
+                            baseCol += vec3(shockGlow * 1.25, shockGlow * 0.90, shockGlow * 0.58);
 
                             vec3 bloomCol = vec3(0.0, 0.0, 0.0);
                             if (u_bloom > 0.01) {
                                 float bDist = 2.4 * u_bloom;
-                                vec3 s1 = texture2D(u_tex, uv + vec2( texel.x,  texel.y) * bDist).rgb;
-                                vec3 s2 = texture2D(u_tex, uv + vec2(-texel.x, -texel.y) * bDist).rgb;
+                                vec3 s1 = texture2D(u_tex, clamp(distortedUv + vec2( texel.x,  texel.y) * bDist, 0.0, 1.0)).rgb;
+                                vec3 s2 = texture2D(u_tex, clamp(distortedUv + vec2(-texel.x, -texel.y) * bDist, 0.0, 1.0)).rgb;
                                 vec3 b1 = max(s1 - vec3(0.55, 0.55, 0.55), vec3(0.0, 0.0, 0.0)) * 1.5;
                                 vec3 b2 = max(s2 - vec3(0.55, 0.55, 0.55), vec3(0.0, 0.0, 0.0)) * 1.5;
                                 bloomCol = (b1 + b2) * 0.35 * u_bloom;
@@ -32363,7 +32777,8 @@
                         scanlines: gl.getUniformLocation(program, "u_scanlines"),
                         brightness: gl.getUniformLocation(program, "u_brightness"),
                         contrast: gl.getUniformLocation(program, "u_contrast"),
-                        nvg: gl.getUniformLocation(program, "u_nvg")
+                        nvg: gl.getUniformLocation(program, "u_nvg"),
+                        shockwaves: gl.getUniformLocation(program, "u_shockwaves")
                     };
 
                     this.onResize(VIEW_W, VIEW_H);
@@ -32446,6 +32861,39 @@
 
                     const isNvg = (typeof player !== "undefined" && player && player.hasNvg && player.nvgActive) ? 1.0 : 0.0;
                     gl.uniform1f(this.locations.nvg, isNvg);
+
+                    // Cập nhật mảng sóng xung kích quang học u_shockwaves
+                    const nowTime = performance.now();
+                    this.shockwaveBuffer.fill(0);
+                    let activeCount = 0;
+                    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+                        const sw = this.shockwaves[i];
+                        const elapsed = nowTime - sw.startTime;
+                        if (elapsed >= sw.duration) {
+                            this.shockwaves.splice(i, 1);
+                            continue;
+                        }
+                        if (activeCount < 4) {
+                            const t = Math.min(1.0, elapsed / sw.duration);
+                            const screenX = sw.worldX - camera.x;
+                            const screenY = sw.worldY - camera.y;
+                            const uvX = screenX / Math.max(1, VIEW_W);
+                            const uvY = 1.0 - (screenY / Math.max(1, VIEW_H));
+                            const easeRadius = Math.sin(t * (Math.PI / 2));
+                            const normRadius = (sw.maxRadius / Math.max(1, VIEW_H)) * easeRadius;
+                            const currentIntensity = sw.intensity * Math.pow(1.0 - t, 1.4);
+
+                            const offset = activeCount * 4;
+                            this.shockwaveBuffer[offset + 0] = uvX;
+                            this.shockwaveBuffer[offset + 1] = uvY;
+                            this.shockwaveBuffer[offset + 2] = normRadius;
+                            this.shockwaveBuffer[offset + 3] = currentIntensity;
+                            activeCount++;
+                        }
+                    }
+                    if (this.locations.shockwaves) {
+                        gl.uniform4fv(this.locations.shockwaves, this.shockwaveBuffer);
+                    }
 
                     // Vẽ Quad Fullscreen
                     gl.drawArrays(gl.TRIANGLES, 0, 6);
