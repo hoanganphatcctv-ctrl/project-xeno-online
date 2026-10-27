@@ -1,27 +1,30 @@
 # 🛸 Project Xeno: Reloaded — Fullstack Online Edition
 
-> **Website Live (Vercel)**: [https://project-xeno-online.vercel.app](https://project-xeno-online.vercel.app)  
-> **GitHub Repository**: [https://github.com/hoanganphatcctv-ctrl/project-xeno-online](https://github.com/hoanganphatcctv-ctrl/project-xeno-online)
+> 🌐 **Website Live (Vercel CDN)**: [https://project-xeno-online.vercel.app](https://project-xeno-online.vercel.app)  
+> 🚀 **Máy Chủ Socket.io Dedicated (Render)**: [https://project-xeno-online.onrender.com](https://project-xeno-online.onrender.com)  
+> 📦 **Kho GitHub Chính Thức**: [https://github.com/hoanganphatcctv-ctrl/project-xeno-online](https://github.com/hoanganphatcctv-ctrl/project-xeno-online)
 
 ---
 
-## 📚 TÀI LIỆU BÀN GIAO CHO TRỢ LÝ AI & NHÀ PHÁT TRIỂN
+## 📚 TRUNG TÂM TÀI LIỆU CHÍNH THỨC (DOCS)
 
-Khi bắt đầu phiên làm việc mới, vui lòng đọc theo thứ tự ưu tiên sau để nắm bắt toàn bộ kiến trúc và cơ cấu logic tối ưu hiện tại:
+Toàn bộ tài liệu kiến trúc, mạng Co-Op, quy tắc hiệu năng, logic gameplay và quy trình đóng gói đã được chuẩn hóa duy nhất tại thư mục:  
+👉 **[`docs/`](./docs/README.md)**
 
-1. **[`HUONG_DAN_CHO_AI_PHIEN_TIEP_THEO.md`](./HUONG_DAN_CHO_AI_PHIEN_TIEP_THEO.md)**: Cẩm nang bàn giao hệ thống, bảng tra cứu hàm/ID cốt lõi, quy tắc tối ưu VRAM/RAM, cơ chế `carryOver` khi chơi lại vs. qua màn, giao diện `MISSION COMPLETED`, Asset Máy Gia Tốc & Mini Map.
-2. **[`../KE_HOACH_TOI_UU_HIEU_NANG_VA_SUA_LOI.md`](../KE_HOACH_TOI_UU_HIEU_NANG_VA_SUA_LOI.md)**: Nhật ký hoàn thành 100% cả 3 Giai đoạn tối ưu hiệu năng, bảo mật và gameplay.
-3. **[`../PROJECT_ARCHITECTURE_GUIDE.md`](../PROJECT_ARCHITECTURE_GUIDE.md)**: Kiến trúc tổng thể hệ thống, mạng Hybrid Co-Op 60Hz/30Hz và Cloud Database.
-4. **[`../HUONG_DAN_DAT_TEN_ASSET.md`](../HUONG_DAN_DAT_TEN_ASSET.md)**: Quy chuẩn đặt tên và cơ chế nạp/pre-bake Asset tùy chỉnh.
+1. **[`docs/README.md`](./docs/README.md)**: Tổng quan hệ thống, tra cứu nhanh ID/Hàm cốt lõi và bảng mã Cheat.
+2. **[`docs/01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md`](./docs/01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md)**: Mạng Hybrid 60Hz/30Hz, LERP, Dead Reckoning, Host-Authoritative, Dynamic Discovery & Fallback đa tầng.
+3. **[`docs/02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md`](./docs/02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md)**: 7 Quy tắc vàng chống tụt FPS, VRAM ImageBitmap pre-baking, Spatial Hash Grid O(1), Sàn kính trong suốt.
+4. **[`docs/03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md`](./docs/03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md)**: 7 loại vũ khí, sửa lỗi bắn liên tục chuột PC, cân bằng Boss 1-4, vòng tròn máy phát điện 360°, carryOver.
+5. **[`docs/04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md`](./docs/04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md)**: Quy chuẩn đặt tên Asset, Google Sheets 5 tabs, Vercel Serverless Proxy và phòng thủ XSS.
+6. **[`docs/05_HUONG_DAN_DONG_GOI_BUILD_VA_DEPLOY.md`](./docs/05_HUONG_DAN_DONG_GOI_BUILD_VA_DEPLOY.md)**: Quy trình nén Terser, deploy Vercel/Render 1-click và UptimeRobot.
 
 ---
 
-## ⚡ LỆNH ĐÓNG GÓI NHANH (BUILD PRODUCTION)
+## ⚡ LỆNH ĐÓNG GÓI NHANH (BUILD & DEPLOY)
 
-Sau mọi chỉnh sửa tại `frontend/index.html`, chạy lệnh sau để nén `game.min.js` và đồng bộ cả `dist/` lẫn `frontend/dist/`:
-
+Mọi chỉnh sửa chỉ thực hiện tại file: **`alien-shooter-fullstack/frontend/index.html`**.  
+Sau đó chỉ cần chạy:
 ```powershell
-node build.cjs
+.\deploy_nhanh.bat
 ```
-
-<!-- deploy-trigger: vercel sync -->
+Script sẽ tự động nén làm rối mã, đồng bộ sang `dist/` và đẩy thẳng lên Vercel Production.
