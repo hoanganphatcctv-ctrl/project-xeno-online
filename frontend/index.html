@@ -1464,40 +1464,42 @@
     </div>
 
     <!-- ==========================================================================
-         2. TOP-CENTER MULTI-BOSS HEALTH BAR & TOAST BANNER
+         2. MULTI-BOSS HEALTH BAR (DODGES TOP STATS BAR - FIXED TOP-11 / SM:TOP-12)
          ========================================================================== -->
-    <div class="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 w-full max-w-lg px-3">
+    <div class="pointer-events-none fixed top-11 sm:top-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center w-full max-w-[280px] sm:max-w-[340px] px-2 select-none">
         <!-- MULTI-BOSS HP BAR (Appears in Final Boss Wave) -->
-        <div id="bossHudPanel" class="hidden w-full hud-panel rounded-none px-3.5 py-2 border border-rose-500/60 shadow-2xl">
-            <div class="flex items-center justify-between text-[10px] font-mono-tech">
-                <span class="font-black text-rose-400 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                    <span id="bossNameTitle">OMEGA BEHEMOTH // CHÚA TỂ KHU ALPHA</span>
+        <div id="bossHudPanel" class="hidden w-full hud-panel rounded-none px-2.5 py-1 sm:py-1.5 border border-rose-500/70 shadow-[0_4px_20px_rgba(244,63,94,0.35)] backdrop-blur-md">
+            <div class="flex items-center justify-between text-[9px] sm:text-[9.5px] font-mono-tech leading-tight">
+                <span class="font-black text-rose-400 flex items-center gap-1.5 truncate mr-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping shrink-0"></span>
+                    <span id="bossNameTitle" class="truncate uppercase">OMEGA BEHEMOTH</span>
                 </span>
-                <span id="bossCountBadge" class="px-1.5 py-0.5 rounded-none bg-rose-950 text-amber-300 border border-rose-500/40 font-black text-[9px]">
+                <span id="bossCountBadge" class="px-1.5 py-0.5 rounded-none bg-rose-950/90 text-amber-300 border border-rose-500/40 font-black text-[8px] sm:text-[8.5px] shrink-0">
                     TRÙM: 1/1
                 </span>
             </div>
-            <div class="w-full h-2.5 bg-slate-950 rounded-none overflow-hidden border border-rose-500/50 mt-1">
+            <div class="w-full h-2 bg-slate-950 rounded-none overflow-hidden border border-rose-500/50 mt-1">
                 <div id="bossHpBar" class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-none transition-all duration-100" style="width: 100%;"></div>
             </div>
-            <div class="flex items-center justify-between text-[9px] font-mono-tech mt-0.5">
-                <span id="bossSkillStatus" class="text-amber-300 font-bold truncate">Đang truy sát mục tiêu...</span>
-                <span id="bossHpText" class="font-extrabold text-rose-200 shrink-0 ml-2">4500 / 4500</span>
+            <div class="flex items-center justify-between text-[8px] sm:text-[8.5px] font-mono-tech mt-0.5 leading-tight">
+                <span id="bossSkillStatus" class="text-amber-300 font-bold truncate">Đang truy sát...</span>
+                <span id="bossHpText" class="font-extrabold text-rose-200 shrink-0 ml-1">4500 / 4500</span>
             </div>
         </div>
+    </div>
 
-        <!-- INTERACTION PROMPT BANNER (When near Terminal or Teleporter) -->
-        <div id="interactBanner" class="hidden hud-panel px-4 py-1.5 rounded-none border-2 border-emerald-400 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-xl bg-slate-950/95 uppercase tracking-wider">
+    <!-- INTERACTION PROMPT BANNER (LOWER-CENTER ABOVE WEAPON DOCK - NEVER TOUCHES TOP HUD) -->
+    <div class="pointer-events-none fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center select-none">
+        <div id="interactBanner" class="hidden hud-panel px-3 py-1 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase">
             Nhấn <span class="text-amber-300 font-black">[E]</span> để tương tác
         </div>
     </div>
 
-    <!-- GLOBAL HIGH-Z TOAST BANNER (Visible above Lobby, Drawers, Armory & Gameplay) -->
-    <div class="pointer-events-none fixed top-3 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center w-full max-w-lg px-3">
-        <div id="toastBanner" class="transition-all duration-300 transform -translate-y-24 opacity-0 hud-panel px-4 py-2 rounded-none text-center border border-amber-400/50 shadow-2xl">
-            <div id="toastTitle" class="text-[9px] font-mono-tech uppercase tracking-widest text-amber-400 font-extrabold">THÔNG BÁO HỆ THỐNG</div>
-            <div id="toastMessage" class="text-xs font-extrabold text-white mt-0.5">ĐÃ KÍCH HOẠT VẬT PHẨM!</div>
+    <!-- GLOBAL HIGH-Z TOAST BANNER (SHRUNK COMPACT BADGE - DODGES TOP STATS BAR) -->
+    <div class="pointer-events-none fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center w-full max-w-xs px-3 select-none">
+        <div id="toastBanner" class="transition-all duration-300 transform -translate-y-24 opacity-0 hud-panel px-3 py-1.5 rounded-none text-center border border-amber-400/60 shadow-xl bg-slate-950/95 backdrop-blur-md">
+            <div id="toastTitle" class="text-[8.5px] font-mono-tech uppercase tracking-wider text-amber-400 font-extrabold truncate">THÔNG BÁO HỆ THỐNG</div>
+            <div id="toastMessage" class="text-[10.5px] font-bold text-white mt-0.5 truncate max-w-[280px]">ĐÃ KÍCH HOẠT VẬT PHẨM!</div>
         </div>
     </div>
 
@@ -4806,7 +4808,7 @@
                 shortTitle: "Map 6: Lõi Dị Điểm",
                 toastTitle: "MAP 6: LÕI DỊ ĐIỂM // SINGULARITY NEXUS",
                 toastMsg: "Trang bị sẵn: Súng Băng M4-Cryo [5], Phun Lửa & $850! Đã mở khóa quyền mua Pháo Laze Hyperion [7] trong Kho Súng [B]!",
-                bossTitle: "TAM TRÙM HƯ KHÔNG THẦN // SINGULARITY OVERLORDS",
+                bossTitle: "TAM TRÙM HƯ KHÔNG THẦN",
                 bossSpawnMsg: "3 Hư Không Thần Dị Điểm đã giáng thế — Tử chiến cuối cùng của vũ trụ!",
                 baseWaves: 10,
                 bossCount: 3,
@@ -4842,7 +4844,7 @@
                 shortTitle: "Map 7: Xưởng Mecha-Prime",
                 toastTitle: "MAP 7: XƯỞNG CƠ KHÍ QUỸ ĐẠO MECHA-PRIME",
                 toastMsg: "Trang bị sẵn: Pháo Điện Từ Gauss [6], Súng Băng, Phun Lửa, 2 UAV & $1,050! Chuẩn bị nghênh chiến 4 Titan Cơ Khí!",
-                bossTitle: "TỨ ĐẠI TITAN CƠ KHÍ // CYBER-TITAN OVERLORDS",
+                bossTitle: "TỨ ĐẠI TITAN CƠ KHÍ",
                 bossSpawnMsg: "4 Titan Cơ Khí Hạng Nặng đã kích hoạt lò phản ứng — Cảnh giác pháo điện từ!",
                 baseWaves: 11,
                 bossCount: 4,
@@ -4878,7 +4880,7 @@
                 shortTitle: "Map 8: Vực Poseidon-X",
                 toastTitle: "MAP 8: VỰC THẲM ĐẠI DƯƠNG POSEIDON-X",
                 toastMsg: "Trang bị sẵn: Toàn bộ 7 Vũ Khí (kèm Pháo Gauss [6] & Laze [7]), 2 UAV & $1,250! Tử chiến 4 Thủy Quái Đáy Vực!",
-                bossTitle: "TỨ ĐẠI THỦY QUÁI ĐÁY VỰC // ABYSSAL KRAKEN LORDS",
+                bossTitle: "TỨ ĐẠI THỦY QUÁI ĐÁY VỰC",
                 bossSpawnMsg: "4 Thủy Quái Áp Suất Đại Dương đã phá vòm kính tràn vào trạm!",
                 baseWaves: 12,
                 bossCount: 4,
@@ -4914,7 +4916,7 @@
                 shortTitle: "Map 9: Đền Thờ Chronos",
                 toastTitle: "MAP 9: ĐỀN THỜ THỜI GIAN CHRONO-RUINS",
                 toastMsg: "Trang bị sẵn: Toàn bộ 7 Vũ Khí, 3 UAV Drone & $1,500! Chống lại 4 Giám Ngục Không-Thời Gian!",
-                bossTitle: "TỨ ĐẠI GIÁM NGỤC THỜI GIAN // CHRONO-WARDEN ARCHONS",
+                bossTitle: "TỨ ĐẠI GIÁM NGỤC THỜI GIAN",
                 bossSpawnMsg: "4 Giám Ngục Thời Gian đã bẻ cong chiều không gian giáng thế!",
                 baseWaves: 13,
                 bossCount: 4,
@@ -4950,7 +4952,7 @@
                 shortTitle: "Map 10: Thánh Địa Genesis",
                 toastTitle: "MAP 10: ĐẠI HÀNH TINH MẸ XENO-PRIME // TRẬN CHIẾN CUỐI CÙNG",
                 toastMsg: "Cấp sẵn: Toàn bộ 7 Vũ Khí (100% Đạn tối đa), 3 UAV & $1,850! Quyết chiến 4 Thủy Tổ Xenomorph Tối Thượng!",
-                bossTitle: "TỨ ĐẠI THỦY TỔ XENOMORPH // APEX PROGENITOR PANTHEON",
+                bossTitle: "TỨ ĐẠI THỦY TỔ XENOMORPH",
                 bossSpawnMsg: "4 Thủy Tổ Tối Thượng của hành tinh Xeno-Prime đã đồng loạt thức tỉnh!",
                 baseWaves: 15,
                 bossCount: 4,
@@ -15576,14 +15578,14 @@
             const pct = (sumHp / Math.max(1, sumMax)) * 100;
             setWidth("bossHpBar", pct);
             if (sumShield > 0) {
-                setText("bossHpText", `${Math.ceil(sumHp).toLocaleString("vi-VN")} (+${Math.ceil(sumShield).toLocaleString("vi-VN")} Khiên) / ${sumMax.toLocaleString("vi-VN")}`);
+                setText("bossHpText", `${Math.ceil(sumHp).toLocaleString("vi-VN")} (+${Math.ceil(sumShield).toLocaleString("vi-VN")}K) / ${sumMax.toLocaleString("vi-VN")}`);
             } else {
                 setText("bossHpText", `${Math.ceil(sumHp).toLocaleString("vi-VN")} / ${sumMax.toLocaleString("vi-VN")}`);
             }
             if (hasEnraged) {
-                setText("bossCountBadge", `CUỒNG NỘ // TRÙM: ${aliveBosses.length}/${activeBosses.length}`);
+                setText("bossCountBadge", `CUỒNG NỘ: ${aliveBosses.length}/${activeBosses.length}`);
             } else {
-                setText("bossCountBadge", `TRÙM CÒN: ${aliveBosses.length}/${activeBosses.length}`);
+                setText("bossCountBadge", `TRÙM: ${aliveBosses.length}/${activeBosses.length}`);
             }
         }
 
@@ -17122,9 +17124,9 @@
                 boss.skillTimer--;
                 if (boss.bossIndex === 1 && frameCounter % 10 === 0) {
                     if (boss.enraged) {
-                        setText("bossSkillStatus", `[CUỒNG NỘ] Tốc độ x${(mapCfg.bossSpeed * 1.15).toFixed(2)}, nạp skill thần tốc!`);
+                        setText("bossSkillStatus", `[CUỒNG NỘ] Tăng tốc x${(mapCfg.bossSpeed * 1.15).toFixed(2)}, nạp chiêu!`);
                     } else {
-                        setText("bossSkillStatus", `Đang truy sát tốc độ cao (x${mapCfg.bossSpeed.toFixed(2)}) & nạp Chùy Gai Hủy Diệt...`);
+                        setText("bossSkillStatus", `Truy sát (x${mapCfg.bossSpeed.toFixed(2)}) & nạp chiêu...`);
                     }
                 }
 
@@ -17142,43 +17144,43 @@
                         const curIdx = cycle.indexOf(boss.skillType);
                         boss.skillType = cycle[(curIdx + 1) % cycle.length];
                         if (boss.skillType === "genesis_apocalypse") {
-                            setText("bossSkillStatus", `CẢNH BÁO: THỦY TỔ #${boss.bossIndex} KÍCH HOẠT ĐẠI HỒNG THỦY HUYẾT TƯƠNG 360°!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Hồng Thủy Huyết Tương`);
                         } else if (boss.skillType === "genesis_void_barrage") {
-                            setText("bossSkillStatus", `CẢNH BÁO: THỦY TỔ #${boss.bossIndex} XẢ 11 LUỒNG PHÁO GENESIS HỦY DIỆT!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Pháo Genesis Hủy Diệt`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: THỦY TỔ #${boss.bossIndex} TRIỆU HỒI MƯA THIÊN THẠCH HÀNH TINH MẸ!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Mưa Thiên Thạch`);
                         }
                     } else if (isMap9Boss) {
                         boss.skillType = (boss.skillType === "chrono_star_burst") ? "chrono_meteor_rain" : "chrono_star_burst";
                         if (boss.skillType === "chrono_star_burst") {
-                            setText("bossSkillStatus", `CẢNH BÁO: GIÁM NGỤC #${boss.bossIndex} QUAY BÁNH RĂNG THỜI GIAN 360°!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Bánh Răng Thời Gian`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: GIÁM NGỤC #${boss.bossIndex} GIÃN NỞ KHÔNG GIAN OANH TẠC!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Oanh Tạc Không Gian`);
                         }
                     } else if (isMap8Boss) {
                         boss.skillType = (boss.skillType === "abyss_vortex") ? "abyss_torpedo_fan" : "abyss_vortex";
                         if (boss.skillType === "abyss_vortex") {
-                            setText("bossSkillStatus", `CẢNH BÁO: THỦY QUÁI #${boss.bossIndex} TẠO XOÁY NƯỚC ÁP SUẤT ĐÁY VỰC!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Xoáy Nước Áp Suất`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: THỦY QUÁI #${boss.bossIndex} PHÓNG LOẠT NGƯ LÔI SINH HỌC!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Loạt Ngư Lôi Sinh Học`);
                         }
                     } else if (isMap7Boss) {
                         boss.skillType = (boss.skillType === "cyber_rail_sweep") ? "cyber_emp_nova" : "cyber_rail_sweep";
                         if (boss.skillType === "cyber_rail_sweep") {
-                            setText("bossSkillStatus", `CẢNH BÁO: TITAN CƠ KHÍ #${boss.bossIndex} KHÓA NÒNG PHÁO ĐIỆN TỪ RAILGUN!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Pháo Điện Từ Railgun`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: TITAN CƠ KHÍ #${boss.bossIndex} PHÁT NỔ XUNG ĐIỆN TỪ EMP 360°!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Xung Điện Từ EMP`);
                         }
                     } else if (isMap6Boss) {
                         const cycle = ["void_nova", "void_laser_fan", "void_meteor_storm"];
                         const curIdx = cycle.indexOf(boss.skillType);
                         boss.skillType = cycle[(curIdx + 1) % cycle.length];
                         if (boss.skillType === "void_nova") {
-                            setText("bossSkillStatus", `CẢNH BÁO: HƯ KHÔNG THẦN #${boss.bossIndex} VUNG CHÙY DỊ ĐIỂM XOÁY KÉP 360°!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Chùy Dị Điểm Xoáy Kép`);
                         } else if (boss.skillType === "void_laser_fan") {
-                            setText("bossSkillStatus", `CẢNH BÁO: HƯ KHÔNG THẦN #${boss.bossIndex} KHÓA 9 LUỒNG PHÁO TACHYON HƯ KHÔNG!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Pháo Tachyon Hư Không`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: HƯ KHÔNG THẦN #${boss.bossIndex} TRIỆU HỒI MƯA HỐ ĐEN LƯỢNG TỬ!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Hố Đen Lượng Tử`);
                         }
                     } else if (isMap5Boss) {
                         if (boss.bossIndex === 1) {
@@ -17187,39 +17189,39 @@
                             boss.skillType = (boss.skillType === "hive_acid") ? "hive_plasma" : "hive_acid";
                         }
                         if (boss.skillType === "hive_quake") {
-                            setText("bossSkillStatus", `CẢNH BÁO: NỮ HOÀNG #${boss.bossIndex} QUẤT ĐUÔI CHÙY GAI CHITIN 360 ĐỘ!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Đuôi Chùy Gai Chitin`);
                         } else if (boss.skillType === "hive_acid") {
-                            setText("bossSkillStatus", `CẢNH BÁO: BẠO CHÚA #${boss.bossIndex} PHUN SÓNG THẦN ĐỘC TỐ AXIT!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Sóng Thần Axit`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: BẠO CHÚA #${boss.bossIndex} XẢ LIÊN HOÀN PHÁO TÂM LINH HIVE!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Pháo Tâm Linh Hive`);
                         }
                     } else if (isMap4Boss) {
                         boss.skillType = boss.skillType === "quake" ? "meteor" : "quake";
                         if (boss.skillType === "quake") {
-                            setText("bossSkillStatus", `CẢNH BÁO: BẠO CHÚA #${boss.bossIndex} ĐẬP ĐUÔI CHÙY ĐỊA CHẤN NHAM THẠCH!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Đập Đuôi Địa Chấn`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: BẠO CHÚA #${boss.bossIndex} KHÓA MỤC TIÊU MƯA THIÊN THẠCH DUNG NHAM!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Mưa Thiên Thạch Dung Nham`);
                         }
                     } else if (mapId === 3) {
                         boss.skillType = boss.skillType === "flame" ? "plasma" : "flame";
                         if (boss.skillType === "flame") {
-                            setText("bossSkillStatus", `CẢNH BÁO: LEVIATHAN #${boss.bossIndex} TỤ BÃO TUYẾT VĨNH CỬU & CHÙY BĂNG!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Bão Tuyết & Chùy Băng`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: LEVIATHAN #${boss.bossIndex} PHÓNG ĐẠI LIÊN THƯƠNG BĂNG EUROPA!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Đại Liên Thương Băng`);
                         }
                     } else if (mapId === 2) {
                         boss.skillType = boss.skillType === "flame" ? "plasma" : "flame";
                         if (boss.skillType === "flame") {
-                            setText("bossSkillStatus", `CẢNH BÁO: VOID EMPEROR #${boss.bossIndex} KÍCH HOẠT BÃO LỬA ION & CHÙY SAO!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Bão Lửa Ion & Chùy Sao`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: VOID EMPEROR #${boss.bossIndex} KHÓA MỤC TIÊU LƯỠI HÁI KHÔNG GIAN!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Lưỡi Hái Không Gian`);
                         }
                     } else {
                         boss.skillType = boss.skillType === "flame" ? "plasma" : "flame";
                         if (boss.skillType === "flame") {
-                            setText("bossSkillStatus", `CẢNH BÁO: OMEGA BEHEMOTH #${boss.bossIndex} NẠP BÃO LỬA & ĐUÔI CHÙY GAI!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Bão Lửa & Đuôi Chùy Gai`);
                         } else {
-                            setText("bossSkillStatus", `CẢNH BÁO: OMEGA BEHEMOTH #${boss.bossIndex} KHÓA PHÁO KÍCH PLASMA LIÊN HOÀN!`);
+                            setText("bossSkillStatus", `#${boss.bossIndex} Pháo Kích Plasma`);
                         }
                     }
                 }
@@ -17868,7 +17870,7 @@
                 for (let i = 0; i < computerDesks.length; i++) {
                     const cd = computerDesks[i];
                     if (cd.hackable && !cd.hacked && Math.hypot(player.x - (cd.x + cd.w * 0.5), player.y - (cd.y + cd.h * 0.5)) <= 105) {
-                        promptMsg = `Nhấn [E] Hack ${cd.label} (+Tiền & Giáp Nano)`;
+                        promptMsg = `[E] Hack ${cd.label}`;
                         break;
                     }
                 }
@@ -17876,7 +17878,7 @@
                     for (let i = 0; i < spaceProps.length; i++) {
                         const sp = spaceProps[i];
                         if (sp.type === "supercomputer" && sp.hackable && !sp.hacked && Math.hypot(player.x - (sp.x + sp.w * 0.5), player.y - (sp.y + sp.h * 0.5)) <= 118) {
-                            promptMsg = `Nhấn [E] Giải mã ${sp.label} (+Tiền Lớn & Giáp Nano)`;
+                            promptMsg = `[E] Giải mã ${sp.label}`;
                             break;
                         }
                     }
@@ -17885,7 +17887,7 @@
                     for (let i = 0; i < teleporters.length; i++) {
                         const tp = teleporters[i];
                         if (tp.cooldown <= 0 && Math.hypot(player.x - tp.x, player.y - tp.y) <= tp.radius + 32) {
-                            promptMsg = `Nhấn [E] Kích hoạt ${tp.label} (Dịch chuyển tức thì)`;
+                            promptMsg = `[E] Dịch chuyển [${tp.label}]`;
                             break;
                         }
                     }
@@ -29827,9 +29829,29 @@
         window.applyCheatInputBox = applyCheatInputBox;
 
         let toastTimer = null;
-        function showToast(title, msg) {
+        function showToast(title, msg, force = false) {
             const b = byId("toastBanner");
             if (!b) return;
+
+            // Kiểm tra trạng thái đang trong trận đấu thực tế (active combat gameplay)
+            const inActiveCombat = (typeof isPaused !== "undefined" && !isPaused &&
+                typeof isGameOver !== "undefined" && !isGameOver &&
+                typeof isMapWon !== "undefined" && !isMapWon &&
+                typeof isAnyBlockingModalOpen === "function" && !isAnyBlockingModalOpen());
+
+            // Trong lúc chiến đấu chủ động, ẩn toàn bộ thông báo linh tinh (lượt quái, cảnh báo quái, nhặt buff, v.v.)
+            // để né thanh thông tin (máu, lượt, tiền, FPS) và nhường sự tập trung duy nhất cho thanh máu Boss.
+            // Chỉ hiển thị nếu force = true hoặc các cảnh báo cứu sinh/lỗi mạng cực kỳ khẩn cấp.
+            if (inActiveCombat && !force) {
+                const titleUpper = String(title || "").toUpperCase();
+                const isUrgent = titleUpper.includes("CHEAT") ||
+                                 titleUpper.includes("LỖI") ||
+                                 titleUpper.includes("NGẮT KẾT NỐI") ||
+                                 titleUpper.includes("HẠ GỤC") ||
+                                 titleUpper.includes("CỨU SỐNG");
+                if (!isUrgent) return;
+            }
+
             setText("toastTitle", title);
             setText("toastMessage", msg);
             b.classList.remove("-translate-y-24", "opacity-0");
@@ -29838,7 +29860,7 @@
             toastTimer = setTimeout(() => {
                 b.classList.remove("translate-y-0", "opacity-100");
                 b.classList.add("-translate-y-24", "opacity-0");
-            }, 3200);
+            }, 2600);
         }
 
         /**

@@ -1464,40 +1464,42 @@
     </div>
 
     <!-- ==========================================================================
-         2. TOP-CENTER MULTI-BOSS HEALTH BAR & TOAST BANNER
+         2. MULTI-BOSS HEALTH BAR (DODGES TOP STATS BAR - FIXED TOP-11 / SM:TOP-12)
          ========================================================================== -->
-    <div class="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 w-full max-w-lg px-3">
+    <div class="pointer-events-none fixed top-11 sm:top-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center w-full max-w-[280px] sm:max-w-[340px] px-2 select-none">
         <!-- MULTI-BOSS HP BAR (Appears in Final Boss Wave) -->
-        <div id="bossHudPanel" class="hidden w-full hud-panel rounded-none px-3.5 py-2 border border-rose-500/60 shadow-2xl">
-            <div class="flex items-center justify-between text-[10px] font-mono-tech">
-                <span class="font-black text-rose-400 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                    <span id="bossNameTitle">OMEGA BEHEMOTH // CHÚA TỂ KHU ALPHA</span>
+        <div id="bossHudPanel" class="hidden w-full hud-panel rounded-none px-2.5 py-1 sm:py-1.5 border border-rose-500/70 shadow-[0_4px_20px_rgba(244,63,94,0.35)] backdrop-blur-md">
+            <div class="flex items-center justify-between text-[9px] sm:text-[9.5px] font-mono-tech leading-tight">
+                <span class="font-black text-rose-400 flex items-center gap-1.5 truncate mr-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping shrink-0"></span>
+                    <span id="bossNameTitle" class="truncate uppercase">OMEGA BEHEMOTH</span>
                 </span>
-                <span id="bossCountBadge" class="px-1.5 py-0.5 rounded-none bg-rose-950 text-amber-300 border border-rose-500/40 font-black text-[9px]">
+                <span id="bossCountBadge" class="px-1.5 py-0.5 rounded-none bg-rose-950/90 text-amber-300 border border-rose-500/40 font-black text-[8px] sm:text-[8.5px] shrink-0">
                     TRÙM: 1/1
                 </span>
             </div>
-            <div class="w-full h-2.5 bg-slate-950 rounded-none overflow-hidden border border-rose-500/50 mt-1">
+            <div class="w-full h-2 bg-slate-950 rounded-none overflow-hidden border border-rose-500/50 mt-1">
                 <div id="bossHpBar" class="h-full bg-gradient-to-r from-rose-700 via-red-500 to-amber-400 rounded-none transition-all duration-100" style="width: 100%;"></div>
             </div>
-            <div class="flex items-center justify-between text-[9px] font-mono-tech mt-0.5">
-                <span id="bossSkillStatus" class="text-amber-300 font-bold truncate">Đang truy sát mục tiêu...</span>
-                <span id="bossHpText" class="font-extrabold text-rose-200 shrink-0 ml-2">4500 / 4500</span>
+            <div class="flex items-center justify-between text-[8px] sm:text-[8.5px] font-mono-tech mt-0.5 leading-tight">
+                <span id="bossSkillStatus" class="text-amber-300 font-bold truncate">Đang truy sát...</span>
+                <span id="bossHpText" class="font-extrabold text-rose-200 shrink-0 ml-1">4500 / 4500</span>
             </div>
         </div>
+    </div>
 
-        <!-- INTERACTION PROMPT BANNER (When near Terminal or Teleporter) -->
-        <div id="interactBanner" class="hidden hud-panel px-4 py-1.5 rounded-none border-2 border-emerald-400 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-xl bg-slate-950/95 uppercase tracking-wider">
+    <!-- INTERACTION PROMPT BANNER (LOWER-CENTER ABOVE WEAPON DOCK - NEVER TOUCHES TOP HUD) -->
+    <div class="pointer-events-none fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center select-none">
+        <div id="interactBanner" class="hidden hud-panel px-3 py-1 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase">
             Nhấn <span class="text-amber-300 font-black">[E]</span> để tương tác
         </div>
     </div>
 
-    <!-- GLOBAL HIGH-Z TOAST BANNER (Visible above Lobby, Drawers, Armory & Gameplay) -->
-    <div class="pointer-events-none fixed top-3 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center w-full max-w-lg px-3">
-        <div id="toastBanner" class="transition-all duration-300 transform -translate-y-24 opacity-0 hud-panel px-4 py-2 rounded-none text-center border border-amber-400/50 shadow-2xl">
-            <div id="toastTitle" class="text-[9px] font-mono-tech uppercase tracking-widest text-amber-400 font-extrabold">THÔNG BÁO HỆ THỐNG</div>
-            <div id="toastMessage" class="text-xs font-extrabold text-white mt-0.5">ĐÃ KÍCH HOẠT VẬT PHẨM!</div>
+    <!-- GLOBAL HIGH-Z TOAST BANNER (SHRUNK COMPACT BADGE - DODGES TOP STATS BAR) -->
+    <div class="pointer-events-none fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center w-full max-w-xs px-3 select-none">
+        <div id="toastBanner" class="transition-all duration-300 transform -translate-y-24 opacity-0 hud-panel px-3 py-1.5 rounded-none text-center border border-amber-400/60 shadow-xl bg-slate-950/95 backdrop-blur-md">
+            <div id="toastTitle" class="text-[8.5px] font-mono-tech uppercase tracking-wider text-amber-400 font-extrabold truncate">THÔNG BÁO HỆ THỐNG</div>
+            <div id="toastMessage" class="text-[10.5px] font-bold text-white mt-0.5 truncate max-w-[280px]">ĐÃ KÍCH HOẠT VẬT PHẨM!</div>
         </div>
     </div>
 
