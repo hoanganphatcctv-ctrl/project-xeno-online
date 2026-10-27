@@ -286,9 +286,9 @@ io.on("connection", (socket) => {
 
 server.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(`🚀 XENO CO-OP DEDICATED SERVER RUNNING ON PORT ${PORT}`);
-  console.log(`📡 WebSocket Engine: Socket.io 4.7.5`);
-  console.log(`⚡ Ready for 30Hz Network Ticks & Matchmaking`);
+  console.log(`[SERVER] XENO CO-OP DEDICATED SERVER RUNNING ON PORT ${PORT}`);
+  console.log(`[NETWORK] WebSocket Engine: Socket.io 4.7.5`);
+  console.log(`[SYSTEM] Ready for 30Hz Network Ticks & Matchmaking`);
   console.log(`====================================================`);
 });
 

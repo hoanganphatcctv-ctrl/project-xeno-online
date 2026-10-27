@@ -1204,7 +1204,7 @@ export class GameEngine {
 
     sfx.playBossWarning();
     this.screenShake = 22;
-    this.addFloatingText(this.player.x, this.player.y - 60, `⚠️ CẢNH BÁO: ${cfg.title} XUẤT HIỆN!`, "#f43f5e");
+    this.addFloatingText(this.player.x, this.player.y - 60, `CẢNH BÁO: ${cfg.title} XUẤT HIỆN!`, "#f43f5e");
     this._notifyBossState();
   }
 
@@ -3743,7 +3743,7 @@ export class GameEngine {
     ctx.translate(arrowX, arrowY);
 
     if (this.teammate.isDown) {
-      // 🚨 CRITICAL DISTRESS ALERT MODE (DOWNED TEAMMATE)
+      // CRITICAL DISTRESS ALERT MODE (DOWNED TEAMMATE)
       const flash = Math.sin(now * 0.012) * 0.5 + 0.5;
       const pulseColor = `rgba(244, 63, 94, ${0.7 + flash * 0.3})`;
 
@@ -3781,15 +3781,15 @@ export class GameEngine {
       ctx.fill();
       ctx.stroke();
 
-      // Draw Cross ➕
+      // Draw Cross
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(-3, -9, 6, 18);
       ctx.fillRect(-9, -3, 18, 6);
 
-      // Warning Tag with Distance (e.g. ⚠️ CỨU ĐỒNG ĐỘI: 450m)
+      // Warning Tag with Distance (e.g. CỨU ĐỒNG ĐỘI: 450m)
       ctx.shadowBlur = 0;
       ctx.font = "800 11px 'JetBrains Mono', monospace";
-      const tagText = `⚠️ CỨU ĐỒNG ĐỘI: ${Math.round(dist)}px`;
+      const tagText = `CỨU ĐỒNG ĐỘI: ${Math.round(dist)}px`;
       const textW = ctx.measureText(tagText).width;
       
       const tagOffset = (arrowY > cy) ? -32 : 32;
@@ -3810,7 +3810,7 @@ export class GameEngine {
       ctx.textBaseline = "middle";
       ctx.fillText(tagText, 0, tagOffset);
     } else {
-      // 🎯 NORMAL TACTICAL TEAMMATE RADAR POINTER
+      // NORMAL TACTICAL TEAMMATE RADAR POINTER
       ctx.save();
       ctx.rotate(angle);
       ctx.fillStyle = "#38bdf8";

@@ -1,5 +1,5 @@
 ================================================================================
-👉 ĐÂY LÀ THƯ MỤC DIST CỦA BẢN ONLINE CO-OP (VERCEL LIVE)
+--> ĐÂY LÀ THƯ MỤC DIST CỦA BẢN ONLINE CO-OP (VERCEL LIVE)
 ================================================================================
 Đường dẫn: alien-shooter-fullstack/dist/
 Domain chính thức: https://project-xeno-online.vercel.app

@@ -557,7 +557,7 @@ export function drawBossEntity(ctx, boss, now = performance.now()) {
   ctx.fillStyle = boss.enraged ? "#f43f5e" : "#fde047";
   ctx.textAlign = "center";
   ctx.fillText(
-    boss.enraged ? `⚡ CUỒNG NỘ // BOSS #${boss.bossIndex}` : `BOSS #${boss.bossIndex}`,
+    boss.enraged ? `CUỒNG NỘ // BOSS #${boss.bossIndex}` : `BOSS #${boss.bossIndex}`,
     boss.x,
     boss.y - r - (boss.shield > 0 ? 32 : 26)
   );

@@ -28,9 +28,9 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then((reg) => {
-                    console.log('✅ [PWA] ServiceWorker registered with scope:', reg.scope);
+                    console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
                 }).catch((err) => {
-                    console.warn('⚠️ [PWA] ServiceWorker registration warning:', err);
+                    console.warn('[PWA] ServiceWorker registration warning:', err);
                 });
             });
         }
@@ -1367,7 +1367,7 @@
         <span id="coopHudRole" class="text-white font-bold">HOST</span>
         <span class="text-slate-600">|</span>
         <span id="coopHudPing" class="text-emerald-400 font-bold">PING: --ms</span>
-        <span id="coopHudRevive" class="text-amber-300 font-bold hidden ml-1 animate-pulse">⚠️ ĐỒNG ĐỘI GỤC!</span>
+        <span id="coopHudRevive" class="text-amber-300 font-bold hidden ml-1 animate-pulse">CẢNH BÁO: ĐỒNG ĐỘI GỤC!</span>
     </div>
 
     <!-- ==========================================================================
@@ -1387,11 +1387,11 @@
                     <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
                     <span class="text-[10px] font-black text-amber-300 uppercase font-mono-tech tracking-wider">HƯỚNG DẪN TÂN THỦ // MAP 1</span>
                 </div>
-                <button onclick="window.dismissGeneratorTip()" class="text-slate-400 hover:text-white text-xs px-1 font-mono-tech leading-none cursor-pointer" title="Đóng hướng dẫn">✕</button>
+                <button onclick="window.dismissGeneratorTip()" class="text-slate-400 hover:text-white text-xs px-1 font-mono-tech leading-none cursor-pointer" title="Đóng hướng dẫn">X</button>
             </div>
 
             <div class="text-[11.5px] sm:text-xs font-mono-tech text-amber-100 font-black leading-snug">
-                💡 <span class="text-amber-300">Tip:</span> Hãy nhớ tìm <span class="text-emerald-400 uppercase underline decoration-emerald-500/80 decoration-2">Máy Phát Điện</span> để khởi động đèn con tàu !
+                <span class="text-amber-300 font-bold">[GỢI Ý]</span> Hãy nhớ tìm <span class="text-emerald-400 uppercase underline decoration-emerald-500/80 decoration-2">Máy Phát Điện</span> để khởi động đèn con tàu !
             </div>
 
             <div class="text-[9.5px] font-mono-tech text-slate-300 flex items-center justify-between pt-0.5 border-t border-slate-800">
@@ -1465,7 +1465,7 @@
                 <span class="flex items-center gap-1 text-emerald-300 font-bold"><svg viewBox="0 0 12 12" class="w-2.5 h-2.5 fill-emerald-400 inline-block shrink-0"><polygon points="11,6 1,1.5 3.5,6 1,10.5"/></svg>Bạn</span>
                 <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0"></span>Quái/Boss</span>
                 <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block shrink-0"></span>Á Trùm</span>
-                <span class="flex items-center gap-1 text-orange-300 font-bold" title="Nhà máy điện / Máy phát điện trạm"><span class="text-orange-400 text-[10px] leading-none inline-block animate-pulse shrink-0">⚡</span>Nhà Máy Điện</span>
+                <span class="flex items-center gap-1 text-orange-300 font-bold" title="Nhà máy điện / Máy phát điện trạm"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block shrink-0 animate-pulse"></span>Nhà Máy Điện</span>
                 <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0"></span>Cổng Dịch</span>
             </div>
         </div>
@@ -1577,20 +1577,20 @@
                 <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping shrink-0"></span>
                 <div>
                     <h3 class="text-xs sm:text-sm font-black text-amber-300 uppercase font-mono-tech flex items-center gap-1.5">
-                        <span>🎮 TÙY CHỈNH BỐ CỤC PHÍM (PUBG MOBILE STYLE)</span>
+                        <span>TÙY CHỈNH BỐ CỤC PHÍM (PUBG MOBILE STYLE)</span>
                     </h3>
                     <p class="text-[10px] text-slate-400 font-mono-tech hidden sm:block">Chạm và kéo các nút/cần ảo đến vị trí phù hợp với ngón tay của bạn</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 font-mono-tech">
                 <button type="button" onclick="window.saveCustomTouchLayout()" class="px-3.5 py-1.5 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase flex items-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95 transition">
-                    <span>💾 LƯU BỐ CỤC</span>
+                    <span>LƯU BỐ CỤC</span>
                 </button>
                 <button type="button" onclick="window.resetCustomTouchLayout()" class="px-3 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs uppercase active:scale-95 transition">
-                    <span>↺ MẶC ĐỊNH</span>
+                    <span>MẶC ĐỊNH</span>
                 </button>
                 <button type="button" onclick="window.closeTouchLayoutEditor()" class="px-3 py-1.5 rounded-none bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/50 font-bold text-xs uppercase active:scale-95 transition">
-                    <span>✖ ĐÓNG</span>
+                    <span>ĐÓNG</span>
                 </button>
             </div>
         </div>
@@ -1598,7 +1598,7 @@
         <!-- Instruction Banner -->
         <div class="absolute inset-x-0 top-16 text-center pointer-events-none z-10 px-4">
             <span class="inline-block px-4 py-1.5 bg-slate-900/90 border border-amber-500/40 text-amber-300 text-xs font-mono-tech font-bold shadow-lg">
-                👆 Chạm &amp; Kéo các nút/cần ảo để đổi vị trí &bull; Bấm [LƯU BỐ CỤC] khi hoàn tất
+                Chạm &amp; Kéo các nút/cần ảo để đổi vị trí &bull; Bấm [LƯU BỐ CỤC] khi hoàn tất
             </span>
         </div>
 
@@ -1607,7 +1607,7 @@
             <!-- Edit: Move Joystick -->
             <div id="dragCtrl_moveJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
                 <div class="px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    🕹️ CẦN DI CHUYỂN
+                    CẦN DI CHUYỂN
                 </div>
                 <div class="w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/80 border border-emerald-300 flex items-center justify-center">
@@ -1619,7 +1619,7 @@
             <!-- Edit: Aim Joystick -->
             <div id="dragCtrl_aimJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
                 <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    🎯 CẦN NGẮM &amp; BẮN
+                    CẦN NGẮM &amp; BẮN
                 </div>
                 <div class="w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-rose-500/80 border border-rose-300 flex items-center justify-center">
@@ -1631,7 +1631,7 @@
             <!-- Edit: Dash Button -->
             <div id="dragCtrl_dash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
                 <div class="px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    ⚡ LƯỚT DASH
+                    LƯỚT DASH
                 </div>
                 <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
                     <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7 2v11h3v9l7-12h-4l3-8z"/></svg>
@@ -1642,7 +1642,7 @@
             <!-- Edit: Interact [E] Button -->
             <div id="dragCtrl_interact" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
                 <div class="px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    ⚙️ NÚT [E]
+                    NÚT [E]
                 </div>
                 <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
@@ -1653,7 +1653,7 @@
             <!-- Edit: Turret [T] Button -->
             <div id="dragCtrl_turret" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
                 <div class="px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    🛡️ THÁP [T]
+                    THÁP [T]
                 </div>
                 <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
@@ -2029,7 +2029,7 @@
                                 MAP 1 • 1 BOSS
                             </span>
                             <span class="text-[10px] font-mono-tech text-amber-300 font-bold group-hover:translate-x-0.5 transition">
-                                ĐỔI CHIẾN TRƯỜNG ➔
+                                ĐỔI CHIẾN TRƯỜNG →
                             </span>
                         </div>
                         <div>
@@ -2074,7 +2074,7 @@
                 <div class="flex flex-col items-end gap-2 py-2 pr-1 text-xs font-mono-tech">
                     <div class="flex items-center gap-2.5 text-slate-300" title="Máy phát điện ngẫu nhiên trong map: Giữ E 5s để khởi động'">
                         <span id="settingLightText" class="text-[11px] font-semibold">Nguồn điện: <b id="lobbyGeneratorStatusText" class="text-emerald-400 font-mono-tech">Máy phát điện</b></span>
-                        <span id="lobbyChkLight" class="w-4 h-4 rounded-none border border-emerald-400/50 bg-emerald-500/30 flex items-center justify-center text-[10px] text-emerald-300 font-black animate-pulse">⚡</span>
+                        <span id="lobbyChkLight" class="w-4 h-4 rounded-none border border-emerald-400/50 bg-emerald-500/30 flex items-center justify-center text-[9px] text-emerald-300 font-black animate-pulse">ON</span>
                     </div>
 
                     <button onclick="window.toggleBloodColor()" class="flex items-center gap-2.5 text-slate-200 hover:text-white transition">
@@ -2288,7 +2288,7 @@
                                     KHU ALPHA
                                 </div>
                                 <div id="mapLockBadge1" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-extrabold text-emerald-400 flex items-center gap-1">
-                                    🎯 ĐANG CHỌN
+                                    ĐANG CHỌN
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2300,15 +2300,15 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Căn cứ ngầm tiêu chuẩn. Quái gồm loại 1 &amp; 2. Bắn thùng gỗ, bình nguyên tử &amp; nạp đạn.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$80</span></div>
-                                        <div class="text-cyan-300">🔫 Súng Lục MK23</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">0 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">100/50</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$80</span></div>
+                                        <div class="text-cyan-300">Súng: MK23</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">0 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">100/50</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">OMEGA BEHEMOTH</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">OMEGA BEHEMOTH</span></div>
                                 </div>
                                 <div id="mapActionBadge1" class="py-1 px-2 rounded-none bg-emerald-500/25 border border-emerald-400 text-emerald-300 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(16,185,129,0.3)] transition">
-                                    🎯 ĐANG CHỌN (HIỆN TẠI)
+                                    ĐANG CHỌN (HIỆN TẠI)
                                 </div>
                             </div>
                         </div>
@@ -2342,7 +2342,7 @@
                                     TÀU ORION-IX
                                 </div>
                                 <div id="mapLockBadge2" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 1)
+                                    KHÓA (QUA MAP 1)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2354,12 +2354,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Trạm không gian không trọng lực. Khám phá kén ngủ đông, máy gia tốc &amp; trạm điện từ.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$180</span></div>
-                                        <div class="text-cyan-300">🔫 Shotgun M1014</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">0 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">115/70</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$180</span></div>
+                                        <div class="text-cyan-300">Súng: Shotgun M1014</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">0 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">115/70</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">VOID EMPEROR (x1)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">VOID EMPEROR (x1)</span></div>
                                 </div>
                                 <div id="mapActionBadge2" class="py-1 px-2 rounded-none bg-cyan-500/20 border border-cyan-400/60 text-cyan-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(56,189,248,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2396,7 +2396,7 @@
                                     TRẠM EUROPA
                                 </div>
                                 <div id="mapLockBadge3" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 2)
+                                    KHÓA (QUA MAP 2)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2408,12 +2408,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Căn cứ băng tuyết Europa. Quái trồi lên từ hố băng, yêu cầu quản lý đạn &amp; tiền chặt chẽ.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$320</span></div>
-                                        <div class="text-cyan-300">🔫 Shotgun M1014</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">0 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">125/85</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$320</span></div>
+                                        <div class="text-cyan-300">Súng: Shotgun M1014</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">0 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">125/85</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">CRYO LEVIATHAN (x2)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">CRYO LEVIATHAN (x2)</span></div>
                                 </div>
                                 <div id="mapActionBadge3" class="py-1 px-2 rounded-none bg-sky-500/20 border border-sky-400/60 text-sky-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(56,189,248,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2450,7 +2450,7 @@
                                     LÕI NHAM THẠCH
                                 </div>
                                 <div id="mapLockBadge4" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 3)
+                                    KHÓA (QUA MAP 3)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2462,12 +2462,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Tâm núi lửa nhiệt hạch. Quái tràn vào cực nhanh từ Đợt 1, hố dung nham nguy hiểm.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$450</span></div>
-                                        <div class="text-orange-300">🔫 Shotgun, Minigun</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">0 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">140/100</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$450</span></div>
+                                        <div class="text-orange-300">Súng: Shotgun, Minigun</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">0 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">140/100</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">MAGMA ABOMINATION (x2)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">MAGMA ABOMINATION (x2)</span></div>
                                 </div>
                                 <div id="mapActionBadge4" class="py-1 px-2 rounded-none bg-orange-500/20 border border-orange-400/60 text-orange-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(249,115,22,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2504,7 +2504,7 @@
                                     TỔ QUỶ CITADEL
                                 </div>
                                 <div id="mapLockBadge5" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 4)
+                                    KHÓA (QUA MAP 4)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2516,12 +2516,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Thánh địa ký sinh sinh vật lạ. Đột biến áp sát cực gắt, cẩn thận bầy bọ độc biến dị.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$600</span></div>
-                                        <div class="text-purple-300">🔫 Mini, Phun Lửa</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">1 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">150/120</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$600</span></div>
+                                        <div class="text-purple-300">Súng: Mini, Phun Lửa</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">1 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">150/120</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">HIVE EMPRESS (x3)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">HIVE EMPRESS (x3)</span></div>
                                 </div>
                                 <div id="mapActionBadge5" class="py-1 px-2 rounded-none bg-purple-500/20 border border-purple-400/60 text-purple-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(168,85,247,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2558,7 +2558,7 @@
                                     LÕI DỊ ĐIỂM
                                 </div>
                                 <div id="mapLockBadge6" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 5)
+                                    KHÓA (QUA MAP 5)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2570,12 +2570,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Chân trời sự kiện hố đen lượng tử. Cấp sẵn Súng Băng Cryo [5], Phun Lửa &amp; mở bán Laze [7].</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$850</span></div>
-                                        <div class="text-fuchsia-300">🔫 Cryo [5], Lửa</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">2 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">170/150</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$850</span></div>
+                                        <div class="text-fuchsia-300">Súng: Cryo [5], Lửa</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">2 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">170/150</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">HƯ KHÔNG THẦN (x3)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">HƯ KHÔNG THẦN (x3)</span></div>
                                 </div>
                                 <div id="mapActionBadge6" class="py-1 px-2 rounded-none bg-fuchsia-500/20 border border-fuchsia-400/60 text-fuchsia-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(217,70,239,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2612,7 +2612,7 @@
                                     XƯỞNG MECHA-PRIME
                                 </div>
                                 <div id="mapLockBadge7" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 6)
+                                    KHÓA (QUA MAP 6)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2624,12 +2624,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Đại xưởng vũ khí quỹ đạo Mecha. Cảnh giác pháo điện từ và 4 Titan cơ khí khổng lồ!</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$1,050</span></div>
-                                        <div class="text-amber-300">🔫 Gauss [6], Băng</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">2 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">185/165</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$1,050</span></div>
+                                        <div class="text-amber-300">Súng: Gauss [6], Băng</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">2 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">185/165</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">TITAN CƠ KHÍ (x4)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">TITAN CƠ KHÍ (x4)</span></div>
                                 </div>
                                 <div id="mapActionBadge7" class="py-1 px-2 rounded-none bg-amber-500/20 border border-amber-400/60 text-amber-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(245,158,11,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2666,7 +2666,7 @@
                                     VỰC POSEIDON-X
                                 </div>
                                 <div id="mapLockBadge8" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 7)
+                                    KHÓA (QUA MAP 7)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2678,12 +2678,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Đáy vực áp suất cực cao phát quang. Thủy quái phá vỡ vòm kính tràn vào, hỏa lực tối đa!</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$1,250</span></div>
-                                        <div class="text-teal-300">🔫 7 Súng + Gauss</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">2 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">200/180</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$1,250</span></div>
+                                        <div class="text-teal-300">Súng: 7 Súng + Gauss</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">2 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">200/180</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">THỦY QUÁI KRAKEN (x4)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">THỦY QUÁI KRAKEN (x4)</span></div>
                                 </div>
                                 <div id="mapActionBadge8" class="py-1 px-2 rounded-none bg-teal-500/20 border border-teal-400/60 text-teal-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(20,184,166,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2720,7 +2720,7 @@
                                     ĐỀN THỜ CHRONOS
                                 </div>
                                 <div id="mapLockBadge9" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 8)
+                                    KHÓA (QUA MAP 8)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2732,12 +2732,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Phế tích bẻ cong không-thời gian. Giám ngục bẻ cong đường đạn, nhịp độ dồn dập tột độ.</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$1,500</span></div>
-                                        <div class="text-yellow-300">🔫 7 Súng, 3 UAV</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">3 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">220/200</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$1,500</span></div>
+                                        <div class="text-yellow-300">Súng: 7 Súng, 3 UAV</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">3 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">220/200</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">GIÁM NGỤC THỜI GIAN (x4)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">GIÁM NGỤC THỜI GIAN (x4)</span></div>
                                 </div>
                                 <div id="mapActionBadge9" class="py-1 px-2 rounded-none bg-yellow-500/20 border border-yellow-400/60 text-yellow-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(234,179,8,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -2774,7 +2774,7 @@
                                     THÁNH ĐỊA GENESIS
                                 </div>
                                 <div id="mapLockBadge10" class="pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400">
-                                    🔒 KHÓA (QUA MAP 9)
+                                    KHÓA (QUA MAP 9)
                                 </div>
                             </div>
                             <!-- Hover Intel Overlay -->
@@ -2786,12 +2786,12 @@
                                 <div class="flex flex-col gap-1 my-auto text-[9px] font-mono-tech">
                                     <p class="text-slate-300 leading-tight line-clamp-2">Trận chiến cuối cùng bảo vệ nhân loại. 4 Thủy Tổ Xenomorph tối thượng thức tỉnh!</p>
                                     <div class="grid grid-cols-2 gap-1 py-1 px-1.5 bg-slate-900/80 border border-slate-800">
-                                        <div class="text-emerald-400">💰 Khởi đầu: <span class="font-bold text-white">$1,850</span></div>
-                                        <div class="text-rose-300">🔫 Full 7 Súng 100%</div>
-                                        <div class="text-slate-400">🤖 UAV: <span class="font-bold text-white">3 Drone</span></div>
-                                        <div class="text-amber-300">⚡ Máu: <span class="font-bold text-white">250/230</span></div>
+                                        <div class="text-emerald-400">Khởi đầu: <span class="font-bold text-white">$1,850</span></div>
+                                        <div class="text-rose-300">Súng: Full 7 Súng 100%</div>
+                                        <div class="text-slate-400">UAV: <span class="font-bold text-white">3 Drone</span></div>
+                                        <div class="text-amber-300">Máu: <span class="font-bold text-white">250/230</span></div>
                                     </div>
-                                    <div class="text-[8.5px] text-rose-300 truncate">👹 Trùm: <span class="font-bold text-rose-400">APEX PROGENITOR (x4)</span></div>
+                                    <div class="text-[8.5px] text-rose-300 truncate">Trùm: <span class="font-bold text-rose-400">APEX PROGENITOR (x4)</span></div>
                                 </div>
                                 <div id="mapActionBadge10" class="py-1 px-2 rounded-none bg-rose-500/20 border border-rose-500/60 text-rose-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(244,63,94,0.3)] transition">
                                     ▶ NHẤP ĐỂ CHỌN
@@ -3027,7 +3027,7 @@
                     <!-- Nút Dưới Cùng: Thoát Game -->
                     <div class="md:mt-auto pt-2 border-t border-slate-800/80">
                         <button onclick="window.handleExitGameModal()" class="w-full px-3 py-2.5 rounded-none bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/50 hover:border-rose-400 text-rose-300 font-bold text-left flex items-center gap-2 transition group shadow-sm">
-                            <span class="w-5 h-5 rounded-none bg-rose-900/60 border border-rose-500/50 flex items-center justify-center text-[10px] text-rose-300 font-bold group-hover:scale-110 transition-transform">✕</span>
+                            <span class="w-5 h-5 rounded-none bg-rose-900/60 border border-rose-500/50 flex items-center justify-center text-[10px] text-rose-300 font-bold group-hover:scale-110 transition-transform">X</span>
                             <span class="tracking-wider text-xs">THOÁT GAME</span>
                         </button>
                     </div>
@@ -3227,7 +3227,7 @@
                                 </button>
                             </div>
                             <div id="sysWebglStatusNote" class="text-[10px] font-mono-tech text-amber-300/90 bg-amber-950/20 px-2.5 py-1.5 border border-amber-500/30">
-                                ℹ️ Đang chạy giao thức file:/// cục bộ. Để đảm bảo an toàn tuyệt đối và tránh lỗi đen màn hình do giới hạn bảo mật CORS trình duyệt, game kích hoạt Canvas 2D thuần túy tối ưu. Khi chạy trên Vercel hoặc Localhost HTTP, WebGL Post-Processing Shaders sẽ tự động kích hoạt!
+                                [LƯU Ý] Đang chạy giao thức file:/// cục bộ. Để đảm bảo an toàn tuyệt đối và tránh lỗi đen màn hình do giới hạn bảo mật CORS trình duyệt, game kích hoạt Canvas 2D thuần túy tối ưu. Khi chạy trên Vercel hoặc Localhost HTTP, WebGL Post-Processing Shaders sẽ tự động kích hoạt!
                             </div>
                         </div>
 
@@ -3381,7 +3381,7 @@
                             </div>
 
                             <div class="text-[10px] text-slate-400 bg-slate-950 p-2.5 border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
-                                <span>📱 Thiết bị phát hiện: <b id="lblDetectedDevice" class="text-white">Đang nhận diện...</b></span>
+                                <span>Thiết bị phát hiện: <b id="lblDetectedDevice" class="text-white">Đang nhận diện...</b></span>
                                 <span>Trạng thái Virtual Joystick: <b id="lblEffectiveJoyState" class="text-emerald-400 font-extrabold">Đang đồng bộ...</b></span>
                             </div>
                         </div>
@@ -3402,10 +3402,10 @@
                             <div class="flex flex-wrap items-center gap-2 pt-1">
                                 <button type="button" onclick="window.openTouchLayoutEditor()" class="px-4 py-2.5 rounded-none bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs font-mono-tech uppercase tracking-wider flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.35)] transition active:scale-95">
                                     <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                                    <span>🎮 CHỈNH VỊ TRÍ PHÍM (LAYOUT EDITOR)</span>
+                                    <span>CHỈNH VỊ TRÍ PHÍM (LAYOUT EDITOR)</span>
                                 </button>
                                 <button type="button" onclick="window.resetCustomTouchLayout()" class="px-3 py-2.5 rounded-none bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 text-xs font-mono-tech font-bold uppercase transition">
-                                    <span>↺ ĐẶT LẠI MẶC ĐỊNH</span>
+                                    <span>ĐẶT LẠI MẶC ĐỊNH</span>
                                 </button>
                             </div>
                         </div>
@@ -3497,7 +3497,7 @@
                         <!-- Combat Pro Tips -->
                         <div class="p-3.5 rounded-none bg-slate-900/60 border border-slate-800/80 flex items-center justify-between text-xs font-mono-tech text-slate-400">
                             <div class="flex items-center gap-2">
-                                <span class="text-emerald-400 font-bold">💡 MẸO:</span>
+                                <span class="text-emerald-400 font-bold">MẸO:</span>
                                 <span>Dùng [SPACE] lướt qua bầy quái, nhấn [T] dựng tháp pháo chặn hẻm và [B] nạp đạn khẩn cấp!</span>
                             </div>
                         </div>
@@ -4234,7 +4234,7 @@
                     </div>
                 </div>
                 <button onclick="window.closeAuthModal()" class="w-7 h-7 rounded-none bg-slate-900 border border-slate-700 hover:bg-rose-600/90 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition">
-                    ✕
+                    &times;
                 </button>
             </div>
 
@@ -4323,7 +4323,7 @@
                 </div>
                 <div id="forgotStatusAlert" class="hidden text-xs p-2.5 rounded-none font-mono-tech"></div>
                 <button id="forgotSubmitBtn" onclick="window.submitForgotPassword()" class="w-full py-2.5 rounded-none bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg transition flex items-center justify-center gap-1.5 uppercase tracking-wider font-mono-tech">
-                    <span>📡 GỬI YÊU CẦU VỀ HÒM THƯ ADMIN</span>
+                    <span>GỬI YÊU CẦU VỀ HÒM THƯ ADMIN</span>
                 </button>
                 <div class="text-center pt-1 text-[11px] font-mono-tech">
                     <button type="button" onclick="window.switchAuthTab('login')" class="text-slate-400 hover:text-white">
@@ -4388,7 +4388,7 @@
                     </div>
                 </div>
                 <button onclick="window.closeLeaderboardModal()" class="w-7 h-7 rounded-none bg-slate-900 border border-slate-700 hover:bg-rose-600/90 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition">
-                    ✕
+                    &times;
                 </button>
             </div>
 
@@ -5547,7 +5547,7 @@
                 wStalker = Math.min(0.38, 0.24 + progress * 0.14);
                 wCrawler = Math.max(0.35, 1.0 - (wPraetorian + wBrute + wSpitter + wStalker));
             } else {
-                // MAP 3 ➔ MAP 10 (7 ➔ 15 LƯỢT): Tăng dần số lượt và mở khóa dần tỷ lệ quái to (Brute & VIP Praetorian)
+                // MAP 3 → MAP 10 (7 → 15 LƯỢT): Tăng dần số lượt và mở khóa dần tỷ lệ quái to (Brute & VIP Praetorian)
                 const tier = mapId - 2; // Map 3 -> tier 1 ... Map 10 -> tier 8
                 baseTotal = isBossWave
                     ? (16 + mapId * 3)
@@ -6267,8 +6267,8 @@
                 return {
                     canBuy: false,
                     reason: "MAP_LOCKED",
-                    dockText: `🔒 MAP ${reqMap}`,
-                    shopText: `🔒 Mở Ở Map ${reqMap}`,
+                    dockText: `MAP ${reqMap}`,
+                    shopText: `Mở Ở Map ${reqMap}`,
                     toastTitle: `VŨ KHÍ KHÓA THEO CHIẾN DỊCH (MAP ${reqMap})`,
                     toastMsg: `Bạn cần tiến tới Chiến Trường Map ${reqMap} mới có thể mở khóa ${w.name}!`
                 };
@@ -6278,8 +6278,8 @@
                 return {
                     canBuy: false,
                     reason: "TECH_TREE_LOCKED",
-                    dockText: `🔒 CẦN [${prevW.key}]`,
-                    shopText: `🔒 Cần Súng [${prevW.key}]`,
+                    dockText: `CẦN [${prevW.key}]`,
+                    shopText: `Cần Súng [${prevW.key}]`,
                     toastTitle: "YÊU CẦU MỞ KHÓA TUẦN TỰ",
                     toastMsg: `Hãy mở khóa ${prevW.shortName} [Phím ${prevW.key}] trước khi mua ${w.name}!`
                 };
@@ -15519,7 +15519,7 @@
                 setText("bossHpText", `${Math.ceil(sumHp).toLocaleString("vi-VN")} / ${sumMax.toLocaleString("vi-VN")}`);
             }
             if (hasEnraged) {
-                setText("bossCountBadge", `⚡ CUỒNG NỘ // TRÙM: ${aliveBosses.length}/${activeBosses.length}`);
+                setText("bossCountBadge", `CUỒNG NỘ // TRÙM: ${aliveBosses.length}/${activeBosses.length}`);
             } else {
                 setText("bossCountBadge", `TRÙM CÒN: ${aliveBosses.length}/${activeBosses.length}`);
             }
@@ -16288,7 +16288,7 @@
                     });
 
                     addFloatingText(e.x, e.y - 45, `TRÙM #${e.bossIndex || 1} CUỒNG NỘ: BẬT KHIÊN HUYẾT TƯƠNG!`, "#f43f5e");
-                    showToast(`⚠️ CẢNH BÁO: TRÙM #${e.bossIndex || 1} CUỒNG NỘ!`, "Kích hoạt Khiên Chitin Huyết Tương, tăng tốc độ truy sát và nạp chiêu!");
+                    showToast(`CẢNH BÁO: TRÙM #${e.bossIndex || 1} CUỒNG NỘ!`, "Kích hoạt Khiên Chitin Huyết Tương, tăng tốc độ truy sát và nạp chiêu!");
                 }
             }
 
@@ -17060,7 +17060,7 @@
                 boss.skillTimer--;
                 if (boss.bossIndex === 1 && frameCounter % 10 === 0) {
                     if (boss.enraged) {
-                        setText("bossSkillStatus", `⚡ [CUỒNG NỘ] Tốc độ x${(mapCfg.bossSpeed * 1.15).toFixed(2)}, nạp skill thần tốc!`);
+                        setText("bossSkillStatus", `[CUỒNG NỘ] Tốc độ x${(mapCfg.bossSpeed * 1.15).toFixed(2)}, nạp skill thần tốc!`);
                     } else {
                         setText("bossSkillStatus", `Đang truy sát tốc độ cao (x${mapCfg.bossSpeed.toFixed(2)}) & nạp Chùy Gai Hủy Diệt...`);
                     }
@@ -19540,7 +19540,7 @@
                     ctx.font = "800 9px 'JetBrains Mono', monospace";
                     ctx.fillStyle = e.enraged ? "#f43f5e" : "#fde047";
                     ctx.textAlign = "center";
-                    ctx.fillText(e.enraged ? `⚡ CUỒNG NỘ // BOSS #${e.bossIndex || 1}` : `BOSS #${e.bossIndex || 1}`, e.x, e.y - e.radius - (e.shield > 0 ? 27 : 22));
+                    ctx.fillText(e.enraged ? `CUỒNG NỘ // BOSS #${e.bossIndex || 1}` : `BOSS #${e.bossIndex || 1}`, e.x, e.y - e.radius - (e.shield > 0 ? 27 : 22));
                     ctx.restore();
                 } else {
                     drawXenomorphMonster(e, isGlobalFrozen, visibleMonstersCount);
@@ -19886,13 +19886,13 @@
                 ctx.font = "800 11.5px 'JetBrains Mono', monospace";
                 ctx.fillStyle = "#facc15";
                 ctx.textAlign = "center";
-                ctx.fillText(`👁️ BẠN ĐÃ BỊ HẠ GỤC • ĐANG THEO DÕI [${teammateName}]`, VIEW_W / 2, by + 18);
+                ctx.fillText(`BẠN ĐÃ BỊ HẠ GỤC • ĐANG THEO DÕI [${teammateName}]`, VIEW_W / 2, by + 18);
 
                 if (player.reviveProgress > 0) {
                     const prog = Math.min(1.0, player.reviveProgress);
                     ctx.font = "800 10px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#34d399";
-                    ctx.fillText(`⚡ ĐANG ĐƯỢC CỨU SỐNG: ${Math.round(prog * 100)}% (GIỮ GẦN 5 GIÂY)`, VIEW_W / 2, by + 34);
+                    ctx.fillText(`ĐANG ĐƯỢC CỨU SỐNG: ${Math.round(prog * 100)}% (GIỮ GẦN 5 GIÂY)`, VIEW_W / 2, by + 34);
                 } else {
                     ctx.font = "700 9.5px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#cbd5e1";
@@ -27858,7 +27858,7 @@
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = `<span>🛡️ TẠO TÀI KHOẢN CLOUD MỚI</span>`;
+                    btn.innerHTML = `<span>TẠO TÀI KHOẢN CLOUD MỚI</span>`;
                 }
             }
         }
@@ -27880,7 +27880,7 @@
 
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = `<span>📡 ĐANG GỬI EMAIL THÔNG BÁO CHO ADMIN...</span>`;
+                btn.innerHTML = `<span>ĐANG GỬI EMAIL THÔNG BÁO CHO ADMIN...</span>`;
             }
 
             try {
@@ -27907,7 +27907,7 @@
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = `<span>📡 GỬI YÊU CẦU VỀ HÒM THƯ ADMIN</span>`;
+                    btn.innerHTML = `<span>GỬI YÊU CẦU VỀ HÒM THƯ ADMIN</span>`;
                 }
             }
         }
@@ -27956,9 +27956,9 @@
                     let html = "";
                     res.leaderboard.forEach((item, idx) => {
                         let rankBadge = `<span class="px-2 py-0.5 rounded-none bg-slate-800 text-slate-300 font-black">#${idx + 1}</span>`;
-                        if (idx === 0) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-amber-500 text-slate-950 font-black shadow-lg">🥇 #1</span>`;
-                        else if (idx === 1) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-slate-300 text-slate-950 font-black">🥈 #2</span>`;
-                        else if (idx === 2) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-amber-700 text-amber-100 font-black">🥉 #3</span>`;
+                        if (idx === 0) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-amber-500 text-slate-950 font-black shadow-lg">TOP 1</span>`;
+                        else if (idx === 1) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-slate-300 text-slate-950 font-black">TOP 2</span>`;
+                        else if (idx === 2) rankBadge = `<span class="px-2 py-0.5 rounded-none bg-amber-700 text-amber-100 font-black">TOP 3</span>`;
 
                         const mm = String(Math.floor((item.bestTimeSec || 0) / 60)).padStart(2, "0");
                         const ss = String((item.bestTimeSec || 0) % 60).padStart(2, "0");
@@ -27980,7 +27980,7 @@
                                 <td class="py-2.5 px-2 text-center font-bold text-cyan-300">Map ${Number(item.maxMapReached) || 1}</td>
                                 <td class="py-2.5 px-2 text-center font-bold text-rose-400">${(Number(item.campaignKills) || 0).toLocaleString("vi-VN")}</td>
                                 <td class="py-2.5 px-2 text-center font-mono-tech text-emerald-400">${timeStr}</td>
-                                <td class="py-2.5 px-2 text-center font-black text-amber-300">${Number(item.totalVictories) || 0} ★</td>
+                                <td class="py-2.5 px-2 text-center font-black text-amber-300">${Number(item.totalVictories) || 0} WIN</td>
                             </tr>
                         `;
                     });
@@ -28191,7 +28191,7 @@
                     const isLaser = w.type === "laser";
                     const ratePerSec = (1000 / Math.max(1, w.fireRate)).toFixed(1);
                     const dmgText = isLaser
-                        ? `${w.damage} ➔ ${Math.round(w.damage * 1.85)} ST/nhịp (Xuyên thấu)`
+                        ? `${w.damage} → ${Math.round(w.damage * 1.85)} ST/nhịp (Xuyên thấu)`
                         : `${w.damage} ST${w.pellets > 1 ? ` × ${w.pellets} tia (${w.damage * w.pellets} ST)` : ""}`;
                     const ammoText = w.maxAmmo === Infinity ? "∞ Vô hạn" : `${w.maxAmmo} viên (Nạp lại: $${w.refillCost})`;
                     const costBadge = w.cost === 0 ? "MỞ SẴN MẶC ĐỊNH" : `GIÁ MỞ KHÓA: $${w.cost.toLocaleString("vi-VN")}`;
@@ -29098,26 +29098,26 @@
                 const lockBadge = byId(`mapLockBadge${id}`);
                 if (lockBadge) {
                     if (isSelected) {
-                        lockBadge.textContent = "🎯 ĐANG CHỌN";
+                        lockBadge.textContent = "ĐANG CHỌN";
                         lockBadge.className = "pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-extrabold text-emerald-400";
                     } else if (unlocked) {
-                        lockBadge.textContent = "🔓 ĐÃ MỞ KHÓA";
+                        lockBadge.textContent = "ĐÃ MỞ KHÓA";
                         lockBadge.className = "pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-cyan-400";
                     } else {
-                        lockBadge.textContent = `🔒 KHÓA (QUA MAP ${id - 1})`;
+                        lockBadge.textContent = `KHÓA (QUA MAP ${id - 1})`;
                         lockBadge.className = "pt-1 border-t border-slate-800/80 text-[9px] font-mono-tech font-bold text-rose-400";
                     }
                 }
                 const actBadge = byId(`mapActionBadge${id}`);
                 if (actBadge) {
                     if (isSelected) {
-                        actBadge.textContent = "🎯 ĐANG CHỌN (HIỆN TẠI)";
+                        actBadge.textContent = "ĐANG CHỌN (HIỆN TẠI)";
                         actBadge.className = "py-1 px-2 rounded-none bg-emerald-500/25 border border-emerald-400 text-emerald-300 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_10px_rgba(16,185,129,0.3)] transition";
                     } else if (unlocked) {
                         actBadge.textContent = "▶ NHẤP ĐỂ CHỌN CHIẾN TRƯỜNG";
                         actBadge.className = "py-1 px-2 rounded-none bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/70 text-cyan-200 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase shadow-[0_0_8px_rgba(56,189,248,0.25)] transition";
                     } else {
-                        actBadge.textContent = `🔒 CẦN QUA MAP ${id - 1}`;
+                        actBadge.textContent = `CẦN QUA MAP ${id - 1}`;
                         actBadge.className = "py-1 px-2 rounded-none bg-rose-500/20 border border-rose-500/50 text-rose-300 text-center text-[9px] font-black font-mono-tech tracking-wider uppercase";
                     }
                 }
@@ -29133,7 +29133,7 @@
                 const bTab = byId(`bottomTabMap${id}`);
                 if (bTab) {
                     const baseName = BOTTOM_TAB_NAMES[id] || `MAP ${id}`;
-                    bTab.textContent = unlocked ? baseName : `🔒 ${baseName}`;
+                    bTab.textContent = unlocked ? baseName : `[KHÓA] ${baseName}`;
                     bTab.className = `tactical-bottom-tab px-2 sm:px-2.5 py-1 shrink-0 ${
                         isSelected ? "active-tab" : (unlocked ? "" : "opacity-45 cursor-not-allowed")
                     } ${id === 6 && unlocked ? "text-fuchsia-300" : ""}`;
@@ -29147,7 +29147,7 @@
                     try { sfx.playError(); } catch (e) {}
                 }
                 showToast(
-                    `🔒 MAP ${mapId} ĐANG BỊ KHÓA!`,
+                    `MAP ${mapId} ĐANG BỊ KHÓA!`,
                     `Khi mới chơi chỉ mở Map 1. Hãy vượt qua Map ${mapId - 1} để mở khóa Map ${mapId}!`
                 );
                 return;
@@ -29184,7 +29184,7 @@
         function switchCampaignMap(mapId, carryOver = false) {
             if (!isMapUnlocked(mapId)) {
                 if (typeof sfx !== "undefined" && sfx) sfx.playError();
-                showToast(`🔒 MAP ${mapId} ĐANG BỊ KHÓA!`, `Cần hoàn thành Map ${mapId - 1} trước!`);
+                showToast(`MAP ${mapId} ĐANG BỊ KHÓA!`, `Cần hoàn thành Map ${mapId - 1} trước!`);
                 return;
             }
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
@@ -29692,7 +29692,7 @@
                 window.maxUnlockedMap = 10;
                 window.allMapsCheatUnlocked = true;
                 updateMapUIState();
-                showToast("CHEAT ACTIVATED: MỞ KHÓA FULL 10 MAP!", "Đã mở khóa toàn bộ 10 Chiến Trường (Map 1 ➔ Map 10)! Bạn có thể chọn bất kỳ Map nào.");
+                showToast("CHEAT ACTIVATED: MỞ KHÓA FULL 10 MAP!", "Đã mở khóa toàn bộ 10 Chiến Trường (Map 1 → Map 10)! Bạn có thể chọn bất kỳ Map nào.");
             } else if (code === "cheatm") {
                 player.credits += 50000;
                 showToast("CHEAT ACTIVATED", "+$50,000 vào tài khoản!");
@@ -29925,7 +29925,7 @@
 
             const lblDev = byId("lblDetectedDevice");
             if (lblDev) {
-                lblDev.textContent = isMobile ? "📱 Điện thoại / Tablet cảm ứng (Mobile)" : "💻 Máy tính cá nhân (PC / Laptop)";
+                lblDev.textContent = isMobile ? "Điện thoại / Tablet cảm ứng (Mobile)" : "Máy tính cá nhân (PC / Laptop)";
                 lblDev.className = isMobile ? "text-cyan-300 font-bold" : "text-white font-bold";
             }
             const lblState = byId("lblEffectiveJoyState");
@@ -29936,7 +29936,7 @@
 
             const hudBtn = byId("toggleTouchControlsBtn");
             if (hudBtn) {
-                hudBtn.innerHTML = `<span>🎮 Virtual Joystick: ${effective ? '<b class="text-emerald-400">BẬT</b>' : '<b class="text-slate-400">TẮT</b>'}</span>`;
+                hudBtn.innerHTML = `<span>Virtual Joystick: ${effective ? '<b class="text-emerald-400">BẬT</b>' : '<b class="text-slate-400">TẮT</b>'}</span>`;
             }
         }
         window.updateTouchSettingsUI = updateTouchSettingsUI;
@@ -32347,7 +32347,7 @@
                         btn.className = "px-3 py-1.5 rounded-none bg-slate-800/80 border border-slate-700 text-slate-500 font-mono-tech font-bold text-xs cursor-not-allowed";
                     }
                     if (note) {
-                        note.innerHTML = "🔒 <b>Môi trường file:/// cục bộ:</b> Trình duyệt kích hoạt rào chắn bảo mật CORS Tainted Canvas. Game tự động bảo vệ bằng Canvas 2D thuần túy mượt mà 100%. Khi triển khai trên <b>Vercel</b> hoặc <b>Localhost HTTP</b>, WebGL Shader sẽ sẵn sàng bật!";
+                        note.innerHTML = "<b>[LƯU Ý] Môi trường file:/// cục bộ:</b> Trình duyệt kích hoạt rào chắn bảo mật CORS Tainted Canvas. Game tự động bảo vệ bằng Canvas 2D thuần túy mượt mà 100%. Khi triển khai trên <b>Vercel</b> hoặc <b>Localhost HTTP</b>, WebGL Shader sẽ sẵn sàng bật!";
                         note.className = "text-[10px] font-mono-tech text-amber-300/90 bg-amber-950/20 px-2.5 py-1.5 border border-amber-500/30";
                     }
                     return;
@@ -32363,7 +32363,7 @@
                         btn.className = "px-3 py-1.5 rounded-none bg-slate-800/80 border border-slate-700 text-slate-500 font-mono-tech font-bold text-xs cursor-not-allowed";
                     }
                     if (note) {
-                        note.innerHTML = "⚠️ Không thể kích hoạt WebGL Context trên trình duyệt này. Game tiếp tục vận hành trên Canvas 2D.";
+                        note.innerHTML = "CẢNH BÁO: Không thể kích hoạt WebGL Context trên trình duyệt này. Game tiếp tục vận hành trên Canvas 2D.";
                         note.className = "text-[10px] font-mono-tech text-rose-300/90 bg-rose-950/20 px-2.5 py-1.5 border border-rose-500/30";
                     }
                     return;
@@ -32385,10 +32385,10 @@
                 }
                 if (note) {
                     if (this.enabled) {
-                        note.innerHTML = "✨ <b>Đang kích hoạt WebGL Post-Processing:</b> Tán sắc quang học Chromatic Aberration, Neon Bloom ánh sáng, Vignette điện ảnh &amp; CRT Scanlines.";
+                        note.innerHTML = "<b>Đang kích hoạt WebGL Post-Processing:</b> Tán sắc quang học Chromatic Aberration, Neon Bloom ánh sáng, Vignette điện ảnh &amp; CRT Scanlines.";
                         note.className = "text-[10px] font-mono-tech text-cyan-300/90 bg-cyan-950/20 px-2.5 py-1.5 border border-cyan-500/30";
                     } else {
-                        note.innerHTML = "⚡ Môi trường HTTP sẵn sàng. Bấm nút bên trên để kích hoạt hiệu ứng Shader GPU!";
+                        note.innerHTML = "Môi trường HTTP sẵn sàng. Bấm nút bên trên để kích hoạt hiệu ứng Shader GPU!";
                         note.className = "text-[10px] font-mono-tech text-slate-400 bg-slate-900/60 px-2.5 py-1.5 border border-slate-800";
                     }
                 }
