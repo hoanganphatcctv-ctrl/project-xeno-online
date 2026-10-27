@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
     <!-- Mobile Fullscreen & PWA Capabilities -->
     <meta name="theme-color" content="#04070d">
@@ -27,13 +27,33 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then((reg) => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((reg) => {
                     console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        if (installingWorker) {
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] New version ready.');
+                                }
+                            };
+                        }
+                    };
                 }).catch((err) => {
                     console.warn('[PWA] ServiceWorker registration warning:', err);
                 });
             });
         }
+
+        // PWA Install Event Handler
+        window.addEventListener('beforeinstallprompt', (e) => {
+            window.deferredPWAInstallPrompt = e;
+            console.log('[PWA] beforeinstallprompt captured.');
+        });
+        window.addEventListener('appinstalled', () => {
+            window.deferredPWAInstallPrompt = null;
+            console.log('[PWA] Project Xeno successfully installed.');
+        });
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
