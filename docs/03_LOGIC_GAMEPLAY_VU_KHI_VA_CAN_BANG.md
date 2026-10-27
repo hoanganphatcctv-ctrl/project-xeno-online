@@ -113,7 +113,12 @@ Hệ thống phân biệt rõ ràng 3 trạng thái chơi game:
 2. **Mini Map Định Hướng Tinh Gọn (`renderRadarMinimap`)**:
    * Vị trí của người chơi ("Bạn") được hiển thị bằng **hình tam giác mũi tên màu xanh lá viền trắng** xoay nhọn theo hướng di chuyển tương đối (`player.moveAngle`).
    * Đã lược bỏ toàn bộ các chấm xanh thừa thãi, chỉ vẽ đúng 5 đối tượng có trong chú thích: **Bạn**, **Quái/Boss**, **Á Trùm**, **⚡ Nhà Máy Điện**, **Cổng Dịch**.
-3. **Điều Khiển Cảm Ứng Mobile Touch**:
-   * Tích hợp cần điều khiển ảo Twin-Stick (Cần trái di chuyển $360^\circ$, Cần phải ngắm & tự động xả đạn, nút Dash, [E], [B], [T], [🔄]).
-   * Tự động nhận diện thiết bị (Điện thoại/Tablet -> BẬT; Máy tính PC -> ẨN), kèm công tắc 3 chế độ `TỰ ĐỘNG`, `LUÔN BẬT`, `LUÔN TẮT` trong tab Cài đặt Điều khiển.
+3. **Điều Khiển Cảm Ứng Mobile Touch & Tùy Biến Bố Cục Phím PUBG Mobile Style**:
+   * **Xóa bỏ các nút đè lên Mini Map**: Đã loại bỏ hoàn toàn nút `[🔄 ĐỔI SÚNG]` và `[🛒 KHO [B]]` ở góc trên bên phải (Kho vũ khí đã có sẵn trong 4 nút chức năng ngay dưới Mini Map).
+   * **Nút Tháp Pháo [T] Đặt Gọn Cạnh Nút [E]**: Chuyển nút Tháp Pháo `[T]` xuống cụm phím hành động góc dưới bên phải, nằm ngay sát cạnh nút `[E] BẬT` với kích thước tròn chuẩn hóa, giải phóng 100% không gian cho Radar Mini Map.
+   * **Đổi súng tức thì khi đang di chuyển**: Thanh vũ khí mép dưới màn hình (`#weaponDockContainer`) được nâng lên `z-index: 35` cao hơn lớp cảm ứng và tích hợp sự kiện `touchstart` (`e.stopPropagation()`). Người chơi có thể vừa dùng ngón cái trái di chuyển vừa dùng ngón tay khác chạm thẳng vào các ô súng ở mép dưới để đổi vũ khí tức thì mà không bị khựng bước chạy.
+   * **Tùy biến vị trí phím cảm ứng (PUBG Mobile Style)**:
+     * Trong Cài đặt Điều khiển (Tab 04), bổ sung nút **`🎮 CHỈNH VỊ TRÍ PHÍM (LAYOUT EDITOR)`**.
+     * Cho phép chạm và kéo thả tự do 5 phím điều khiển (Cần Di chuyển, Cần Ngắm & Bắn, Nút Dash, Nút [E], Tháp pháo [T]) đến bất kỳ tọa độ nào trên màn hình theo thói quen tay cầm của từng người chơi.
+     * Tự động lưu tọa độ tỉ lệ phần trăm màn hình vào `localStorage` (`xeno_touch_layout`), có nút `↺ MẶC ĐỊNH` để khôi phục nhanh.
 

@@ -1493,7 +1493,7 @@
     <!-- ==========================================================================
          4. BOTTOM-CENTER HUD: HORIZONTAL 6-WEAPON DOCK
          ========================================================================== -->
-    <div class="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 w-full max-w-4xl px-3 flex flex-col items-center gap-1">
+    <div class="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 w-full max-w-4xl px-3 flex flex-col items-center gap-1" style="z-index: 35;">
         <div class="hud-panel px-3 py-1 rounded-none border border-slate-700/80 text-[9px] font-mono-tech text-slate-300 hidden sm:flex items-center gap-2 shadow-lg">
             <span><b class="text-emerald-400">[WASD]</b> Di chuyển</span>
             <span>&bull;</span>
@@ -1517,7 +1517,7 @@
     <div id="touchControlsOverlay" class="hidden fixed inset-0 pointer-events-none z-30 select-none overflow-hidden">
         <!-- Left Virtual Joystick Zone (Di chuyển - Movement) -->
         <div id="touchMoveZone" class="pointer-events-auto absolute left-0 bottom-0 w-1/2 h-3/5 flex items-end justify-start p-6">
-            <div id="touchMoveBase" class="relative w-32 h-32 rounded-full border-2 border-emerald-400/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center transition-opacity duration-150">
+            <div id="touchMoveBase" class="fixed w-32 h-32 rounded-full border-2 border-emerald-400/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center transition-opacity duration-150" style="left: 6%; top: 70%;">
                 <div class="absolute inset-2 rounded-full border border-dashed border-emerald-500/30 pointer-events-none"></div>
                 <div id="touchMoveKnob" class="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.7)] flex items-center justify-center pointer-events-none">
                     <svg viewBox="0 0 24 24" class="w-6 h-6 text-slate-950 fill-current opacity-80">
@@ -1529,7 +1529,7 @@
 
         <!-- Right Virtual Joystick Zone (Ngắm & Tự động Bắn - Aim & Auto-Shoot) -->
         <div id="touchAimZone" class="pointer-events-auto absolute right-0 bottom-0 w-1/2 h-3/5 flex items-end justify-end p-6">
-            <div id="touchAimBase" class="relative w-32 h-32 rounded-full border-2 border-rose-500/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(244,63,94,0.3)] flex items-center justify-center transition-opacity duration-150">
+            <div id="touchAimBase" class="fixed w-32 h-32 rounded-full border-2 border-rose-500/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(244,63,94,0.3)] flex items-center justify-center transition-opacity duration-150" style="left: 80%; top: 70%;">
                 <div class="absolute inset-2 rounded-full border border-dashed border-rose-500/30 pointer-events-none"></div>
                 <div id="touchAimKnob" class="w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 border-2 border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.7)] flex items-center justify-center pointer-events-none">
                     <svg viewBox="0 0 24 24" class="w-6 h-6 text-slate-950 fill-current opacity-85">
@@ -1540,43 +1540,130 @@
             </div>
         </div>
 
-        <!-- Quick Action Buttons (Surrounding Right Thumb) -->
-        <div class="pointer-events-auto absolute right-6 bottom-40 flex flex-col items-end gap-3">
-            <!-- Dash / Jetpack Button -->
-            <button id="touchBtnDash" type="button" class="touch-btn relative w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-cyan-300 shadow-[0_0_20px_rgba(56,189,248,0.6)] flex flex-col items-center justify-center text-slate-950 active:scale-95 transition-all">
+        <!-- Quick Action Button: Dash -->
+        <div id="touchBtnDashWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 48%;">
+            <button id="touchBtnDash" type="button" class="touch-btn relative w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-cyan-300 shadow-[0_0_20px_rgba(56,189,248,0.6)] flex flex-col items-center justify-center text-slate-950 active:scale-95 transition-all" title="Lướt Phản Lực Dash [SPACE]">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current">
                     <path d="M7 2v11h3v9l7-12h-4l3-8z"/>
                 </svg>
                 <span class="text-[8px] font-mono-tech font-black tracking-tighter leading-none mt-0.5">DASH</span>
             </button>
+        </div>
 
-            <!-- Interact [E] Button (Hold for Generator, Tap for Computers) -->
-            <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all">
+        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers) -->
+        <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 62%;">
+            <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all" title="Giữ 5s Khởi động Máy Phát / Hack [Phím E]">
                 <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
             </button>
         </div>
 
-        <!-- Extra Action Buttons (Armory [B], Turret [T], Cycle Weapon) on upper-right -->
-        <div class="pointer-events-auto absolute right-4 top-16 flex items-center gap-2">
-            <!-- Weapon Switch Button -->
-            <button id="touchBtnCycleWeapon" type="button" class="touch-btn px-2.5 py-1.5 rounded-sm bg-slate-900/90 border border-sky-400/80 text-sky-300 shadow-md flex items-center gap-1 active:scale-95 text-xs font-mono-tech font-bold">
-                <span>🔄 ĐỔI SÚNG</span>
-            </button>
-
-            <!-- Armory [B] Button -->
-            <button id="touchBtnArmory" type="button" class="touch-btn px-2.5 py-1.5 rounded-sm bg-slate-900/90 border border-amber-400/80 text-amber-300 shadow-md flex items-center gap-1 active:scale-95 text-xs font-mono-tech font-bold">
-                <span>🛒 KHO [B]</span>
-            </button>
-
-            <!-- Turret [T] Button -->
-            <button id="touchBtnTurret" type="button" class="touch-btn px-2.5 py-1.5 rounded-sm bg-slate-900/90 border border-purple-400/80 text-purple-300 shadow-md flex items-center gap-1 active:scale-95 text-xs font-mono-tech font-bold">
-                <span>🛡️ THÁP [T]</span>
+        <!-- Quick Action Button: Turret [T] (Đặt Tháp Pháo cạnh nút E góc dưới) -->
+        <div id="touchBtnTurretWrapper" class="pointer-events-auto fixed" style="left: 81%; top: 62%;">
+            <button id="touchBtnTurret" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-purple-400 shadow-[0_0_15px_rgba(192,132,252,0.5)] flex flex-col items-center justify-center text-purple-300 active:scale-95 transition-all" title="Đặt Tháp Pháo Tự Động ($350) [Phím T]">
+                <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
+                <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">THÁP</span>
             </button>
         </div>
     </div>
 
     <!-- ==========================================================================
+         4C. MOBILE TOUCH CONTROLS LAYOUT EDITOR (PUBG MOBILE STYLE)
+         ========================================================================== -->
+    <div id="touchLayoutEditorModal" class="hidden fixed inset-0 z-50 select-none overflow-hidden bg-slate-950/85 backdrop-blur-md">
+        <!-- Top Navigation Toolbar -->
+        <div class="fixed top-0 inset-x-0 z-50 px-4 py-2.5 bg-slate-900/95 border-b border-amber-500/50 flex flex-wrap items-center justify-between gap-3 shadow-2xl backdrop-blur-md">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping shrink-0"></span>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-black text-amber-300 uppercase font-mono-tech flex items-center gap-1.5">
+                        <span>🎮 TÙY CHỈNH BỐ CỤC PHÍM (PUBG MOBILE STYLE)</span>
+                    </h3>
+                    <p class="text-[10px] text-slate-400 font-mono-tech hidden sm:block">Chạm và kéo các nút/cần ảo đến vị trí phù hợp với ngón tay của bạn</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 font-mono-tech">
+                <button type="button" onclick="window.saveCustomTouchLayout()" class="px-3.5 py-1.5 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase flex items-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95 transition">
+                    <span>💾 LƯU BỐ CỤC</span>
+                </button>
+                <button type="button" onclick="window.resetCustomTouchLayout()" class="px-3 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs uppercase active:scale-95 transition">
+                    <span>↺ MẶC ĐỊNH</span>
+                </button>
+                <button type="button" onclick="window.closeTouchLayoutEditor()" class="px-3 py-1.5 rounded-none bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/50 font-bold text-xs uppercase active:scale-95 transition">
+                    <span>✖ ĐÓNG</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Instruction Banner -->
+        <div class="absolute inset-x-0 top-16 text-center pointer-events-none z-10 px-4">
+            <span class="inline-block px-4 py-1.5 bg-slate-900/90 border border-amber-500/40 text-amber-300 text-xs font-mono-tech font-bold shadow-lg">
+                👆 Chạm &amp; Kéo các nút/cần ảo để đổi vị trí &bull; Bấm [LƯU BỐ CỤC] khi hoàn tất
+            </span>
+        </div>
+
+        <!-- Draggable Controls inside Layout Editor -->
+        <div id="editorTouchArea" class="absolute inset-0 pt-14">
+            <!-- Edit: Move Joystick -->
+            <div id="dragCtrl_moveJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
+                <div class="px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    🕹️ CẦN DI CHUYỂN
+                </div>
+                <div class="w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500/80 border border-emerald-300 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><path d="M12 2L8 6h3v4H7V7l-4 4 4 4v-3h4v4H8l4 4 4-4h-3v-4h4v3l4-4-4-4v3h-4V6h3l-4-4z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit: Aim Joystick -->
+            <div id="dragCtrl_aimJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
+                <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    🎯 CẦN NGẮM &amp; BẮN
+                </div>
+                <div class="w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+                    <div class="w-12 h-12 rounded-full bg-rose-500/80 border border-rose-300 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><circle cx="12" cy="12" r="3"/><path d="M11 2h2v3h-2zm0 17h2v3h-2zm-9-8h3v2H2zm17 0h3v2h-3z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit: Dash Button -->
+            <div id="dragCtrl_dash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
+                <div class="px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    ⚡ LƯỚT DASH
+                </div>
+                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7 2v11h3v9l7-12h-4l3-8z"/></svg>
+                    <span class="text-[7.5px] font-mono-tech font-black">DASH</span>
+                </div>
+            </div>
+
+            <!-- Edit: Interact [E] Button -->
+            <div id="dragCtrl_interact" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
+                <div class="px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    ⚙️ NÚT [E]
+                </div>
+                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                    <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
+                    <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">BẬT</span>
+                </div>
+            </div>
+
+            <!-- Edit: Turret [T] Button -->
+            <div id="dragCtrl_turret" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
+                <div class="px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    🛡️ THÁP [T]
+                </div>
+                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
+                    <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
+                    <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">THÁP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- ==========================================================================
          5. MODAL 1: PAUSE MENU ([P] / TẠM DỪNG)
          ========================================================================== -->
     <div id="pauseModal" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
@@ -3296,6 +3383,30 @@
                             <div class="text-[10px] text-slate-400 bg-slate-950 p-2.5 border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
                                 <span>📱 Thiết bị phát hiện: <b id="lblDetectedDevice" class="text-white">Đang nhận diện...</b></span>
                                 <span>Trạng thái Virtual Joystick: <b id="lblEffectiveJoyState" class="text-emerald-400 font-extrabold">Đang đồng bộ...</b></span>
+                            </div>
+                        </div>
+
+                        <!-- TÙY CHỈNH BỐ CỤC PHÍM PUBG MOBILE STYLE -->
+                        <div class="bg-slate-900/90 p-4 rounded-none border border-amber-500/40 shadow-lg space-y-3 font-mono-tech">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                        <h3 class="text-xs font-black text-amber-300 uppercase">TÙY CHỈNH BỐ CỤC PHÍM CẢM ỨNG (PUBG MOBILE STYLE)</h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút [E] Tương tác, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <button type="button" onclick="window.openTouchLayoutEditor()" class="px-4 py-2.5 rounded-none bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs font-mono-tech uppercase tracking-wider flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.35)] transition active:scale-95">
+                                    <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    <span>🎮 CHỈNH VỊ TRÍ PHÍM (LAYOUT EDITOR)</span>
+                                </button>
+                                <button type="button" onclick="window.resetCustomTouchLayout()" class="px-3 py-2.5 rounded-none bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 text-xs font-mono-tech font-bold uppercase transition">
+                                    <span>↺ ĐẶT LẠI MẶC ĐỊNH</span>
+                                </button>
                             </div>
                         </div>
 
@@ -26052,6 +26163,13 @@
                 WEAPON_DATA.forEach((w, idx) => {
                     const btn = document.createElement("button");
                     btn.onclick = () => selectWeaponSlot(idx);
+                    btn.addEventListener("touchstart", (e) => {
+                        e.stopPropagation();
+                        selectWeaponSlot(idx);
+                    }, { passive: true });
+                    btn.addEventListener("pointerdown", (e) => {
+                        e.stopPropagation();
+                    });
                     btn.innerHTML = `
                         <div class="flex items-center justify-between w-full">
                             <span class="px-1.5 py-0.5 rounded-none bg-slate-950 text-emerald-400 font-mono-tech font-extrabold text-[9px] border border-slate-700/80">[${w.key}]</span>
@@ -29877,8 +29995,292 @@
         }
         window.toggleTouchControlsManual = toggleTouchControlsManual;
 
+                // =========================================================================
+        // MOBILE TOUCH CONTROLS CUSTOM LAYOUT (PUBG MOBILE STYLE)
+        // =========================================================================
+        const DEFAULT_TOUCH_LAYOUT = {
+            moveJoy: { leftPct: 6, topPct: 70 },
+            aimJoy: { leftPct: 80, topPct: 70 },
+            dash: { leftPct: 90, topPct: 48 },
+            interact: { leftPct: 90, topPct: 62 },
+            turret: { leftPct: 81, topPct: 62 }
+        };
+
+        function getSavedTouchLayout() {
+            try {
+                const raw = localStorage.getItem("xeno_touch_layout");
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    return { ...DEFAULT_TOUCH_LAYOUT, ...parsed };
+                }
+            } catch (e) {}
+            return { ...DEFAULT_TOUCH_LAYOUT };
+        }
+        window.getSavedTouchLayout = getSavedTouchLayout;
+
+        function applyTouchLayout() {
+            const layout = getSavedTouchLayout();
+
+            // 1. Cần di chuyển trái
+            const moveBase = byId("touchMoveBase");
+            if (moveBase) {
+                moveBase.style.position = "fixed";
+                moveBase.style.left = `${layout.moveJoy.leftPct}%`;
+                moveBase.style.top = `${layout.moveJoy.topPct}%`;
+                moveBase.style.right = "auto";
+                moveBase.style.bottom = "auto";
+            }
+
+            // 2. Cần ngắm & bắn phải
+            const aimBase = byId("touchAimBase");
+            if (aimBase) {
+                aimBase.style.position = "fixed";
+                aimBase.style.left = `${layout.aimJoy.leftPct}%`;
+                aimBase.style.top = `${layout.aimJoy.topPct}%`;
+                aimBase.style.right = "auto";
+                aimBase.style.bottom = "auto";
+            }
+
+            // 3. Nút Lướt Dash
+            const btnDashWrapper = byId("touchBtnDashWrapper");
+            if (btnDashWrapper) {
+                btnDashWrapper.style.position = "fixed";
+                btnDashWrapper.style.left = `${layout.dash.leftPct}%`;
+                btnDashWrapper.style.top = `${layout.dash.topPct}%`;
+                btnDashWrapper.style.right = "auto";
+                btnDashWrapper.style.bottom = "auto";
+            }
+
+            // 4. Nút [E] Tương tác
+            const btnInteractWrapper = byId("touchBtnInteractWrapper");
+            if (btnInteractWrapper) {
+                btnInteractWrapper.style.position = "fixed";
+                btnInteractWrapper.style.left = `${layout.interact.leftPct}%`;
+                btnInteractWrapper.style.top = `${layout.interact.topPct}%`;
+                btnInteractWrapper.style.right = "auto";
+                btnInteractWrapper.style.bottom = "auto";
+            }
+
+            // 5. Nút Tháp Pháo [T]
+            const btnTurretWrapper = byId("touchBtnTurretWrapper");
+            if (btnTurretWrapper) {
+                btnTurretWrapper.style.position = "fixed";
+                btnTurretWrapper.style.left = `${layout.turret.leftPct}%`;
+                btnTurretWrapper.style.top = `${layout.turret.topPct}%`;
+                btnTurretWrapper.style.right = "auto";
+                btnTurretWrapper.style.bottom = "auto";
+            }
+        }
+        window.applyTouchLayout = applyTouchLayout;
+
+        function openTouchLayoutEditor() {
+            const layout = getSavedTouchLayout();
+            const modal = byId("touchLayoutEditorModal");
+            if (!modal) return;
+
+            // Đồng bộ vị trí hiện tại vào các control trong editor
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            itemIds.forEach(id => {
+                const el = byId(`dragCtrl_${id}`);
+                if (el && layout[id]) {
+                    el.style.left = `${layout[id].leftPct}%`;
+                    el.style.top = `${layout[id].topPct}%`;
+                    el.style.right = "auto";
+                    el.style.bottom = "auto";
+                }
+            });
+
+            // Tạm đóng các modal cài đặt khác
+            const sysModal = byId("systemSettingsModal");
+            if (sysModal) {
+                sysModal.classList.add("hidden");
+                sysModal.style.display = "none";
+            }
+            const mainModal = byId("mainSettingsModal");
+            if (mainModal) {
+                mainModal.classList.add("hidden");
+                mainModal.style.display = "none";
+            }
+
+            modal.classList.remove("hidden");
+            modal.style.display = "block";
+            initTouchLayoutEditorDragging();
+        }
+        window.openTouchLayoutEditor = openTouchLayoutEditor;
+
+        function saveCustomTouchLayout() {
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            const newLayout = {};
+            itemIds.forEach(id => {
+                const el = byId(`dragCtrl_${id}`);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    const leftPct = Number(((rect.left / window.innerWidth) * 100).toFixed(2));
+                    const topPct = Number(((rect.top / window.innerHeight) * 100).toFixed(2));
+                    newLayout[id] = { leftPct, topPct };
+                }
+            });
+
+            try {
+                localStorage.setItem("xeno_touch_layout", JSON.stringify(newLayout));
+            } catch (e) {}
+
+            applyTouchLayout();
+
+            if (typeof showToast === "function") {
+                showToast("BỐ CỤC PHÍM PUBGM", "Đã lưu vị trí phím cảm ứng thành công!");
+            }
+            if (typeof sfx !== "undefined" && sfx) sfx.playPickup();
+
+            closeTouchLayoutEditor();
+        }
+        window.saveCustomTouchLayout = saveCustomTouchLayout;
+
+        function resetCustomTouchLayout() {
+            try {
+                localStorage.removeItem("xeno_touch_layout");
+            } catch (e) {}
+
+            const layout = getSavedTouchLayout();
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            itemIds.forEach(id => {
+                const el = byId(`dragCtrl_${id}`);
+                if (el && layout[id]) {
+                    el.style.left = `${layout[id].leftPct}%`;
+                    el.style.top = `${layout[id].topPct}%`;
+                }
+            });
+
+            applyTouchLayout();
+
+            if (typeof showToast === "function") {
+                showToast("ĐẶT LẠI MẶC ĐỊNH", "Đã khôi phục bố cục phím chuẩn!");
+            }
+            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+        }
+        window.resetCustomTouchLayout = resetCustomTouchLayout;
+
+        function closeTouchLayoutEditor() {
+            const modal = byId("touchLayoutEditorModal");
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
+            const sysModal = byId("systemSettingsModal");
+            if (sysModal) {
+                sysModal.classList.remove("hidden");
+                sysModal.style.display = "flex";
+            }
+            updateTouchOverlayVisibility();
+        }
+        window.closeTouchLayoutEditor = closeTouchLayoutEditor;
+
+        let _touchEditorDraggingInitialized = false;
+        function initTouchLayoutEditorDragging() {
+            if (_touchEditorDraggingInitialized) return;
+            _touchEditorDraggingInitialized = true;
+
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            itemIds.forEach(id => {
+                const el = byId(`dragCtrl_${id}`);
+                if (!el) return;
+
+                let isDragging = false;
+                let startTouchId = null;
+                let grabX = 0;
+                let grabY = 0;
+
+                const onStart = (clientX, clientY) => {
+                    isDragging = true;
+                    const rect = el.getBoundingClientRect();
+                    grabX = clientX - rect.left;
+                    grabY = clientY - rect.top;
+                    el.style.zIndex = "100";
+                };
+
+                const onMove = (clientX, clientY) => {
+                    if (!isDragging) return;
+                    const rect = el.getBoundingClientRect();
+                    let newLeft = clientX - grabX;
+                    let newTop = clientY - grabY;
+
+                    // Giới hạn trong khung nhìn màn hình
+                    newLeft = Math.max(5, Math.min(window.innerWidth - rect.width - 5, newLeft));
+                    newTop = Math.max(55, Math.min(window.innerHeight - rect.height - 5, newTop));
+
+                    const leftPct = (newLeft / window.innerWidth) * 100;
+                    const topPct = (newTop / window.innerHeight) * 100;
+
+                    el.style.left = `${leftPct.toFixed(2)}%`;
+                    el.style.top = `${topPct.toFixed(2)}%`;
+                    el.style.right = "auto";
+                    el.style.bottom = "auto";
+                };
+
+                const onEnd = () => {
+                    isDragging = false;
+                    startTouchId = null;
+                    el.style.zIndex = "";
+                };
+
+                // Sự kiện chạm cảm ứng Mobile
+                el.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (startTouchId !== null) return;
+                    const t = e.changedTouches[0];
+                    startTouchId = t.identifier;
+                    onStart(t.clientX, t.clientY);
+                }, { passive: false });
+
+                window.addEventListener("touchmove", (e) => {
+                    if (!isDragging || startTouchId === null) return;
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (t.identifier === startTouchId) {
+                            e.preventDefault();
+                            onMove(t.clientX, t.clientY);
+                            break;
+                        }
+                    }
+                }, { passive: false });
+
+                const touchEndHandler = (e) => {
+                    if (!isDragging || startTouchId === null) return;
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === startTouchId) {
+                            onEnd();
+                            break;
+                        }
+                    }
+                };
+                window.addEventListener("touchend", touchEndHandler);
+                window.addEventListener("touchcancel", touchEndHandler);
+
+                // Sự kiện chuột PC để test
+                el.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onStart(e.clientX, e.clientY);
+
+                    const mouseMoveHandler = (ev) => {
+                        onMove(ev.clientX, ev.clientY);
+                    };
+                    const mouseUpHandler = () => {
+                        onEnd();
+                        window.removeEventListener("mousemove", mouseMoveHandler);
+                        window.removeEventListener("mouseup", mouseUpHandler);
+                    };
+                    window.addEventListener("mousemove", mouseMoveHandler);
+                    window.addEventListener("mouseup", mouseUpHandler);
+                });
+            });
+        }
+        window.initTouchLayoutEditorDragging = initTouchLayoutEditorDragging;
+
         function initTouchControls() {
             updateTouchSettingsUI();
+            applyTouchLayout();
             updateTouchOverlayVisibility();
 
             // 1. LEFT VIRTUAL JOYSTICK (Movement)
@@ -29943,9 +30345,11 @@
                         if (e.changedTouches[i].identifier === moveTouchId) {
                             moveTouchId = null;
                             moveKnob.style.transform = "translate(0px, 0px)";
-                            moveBase.style.position = "relative";
-                            moveBase.style.left = "auto";
-                            moveBase.style.top = "auto";
+                            const layout = getSavedTouchLayout();
+                            moveBase.style.position = "fixed";
+                            moveBase.style.left = `${layout.moveJoy.leftPct}%`;
+                            moveBase.style.top = `${layout.moveJoy.topPct}%`;
+                            moveBase.style.right = "auto";
                             moveBase.style.bottom = "auto";
                             window.touchMoveVector.x = 0;
                             window.touchMoveVector.y = 0;
@@ -30020,9 +30424,10 @@
                         if (e.changedTouches[i].identifier === aimTouchId) {
                             aimTouchId = null;
                             aimKnob.style.transform = "translate(0px, 0px)";
-                            aimBase.style.position = "relative";
-                            aimBase.style.left = "auto";
-                            aimBase.style.top = "auto";
+                            const layout = getSavedTouchLayout();
+                            aimBase.style.position = "fixed";
+                            aimBase.style.left = `${layout.aimJoy.leftPct}%`;
+                            aimBase.style.top = `${layout.aimJoy.topPct}%`;
                             aimBase.style.right = "auto";
                             aimBase.style.bottom = "auto";
                             mouse.down = false;
@@ -30070,8 +30475,14 @@
             if (btnTurret) {
                 btnTurret.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     deployAutoTurret(false);
                 }, { passive: false });
+                btnTurret.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deployAutoTurret(false);
+                });
             }
 
             const btnCycleWeapon = byId("touchBtnCycleWeapon");
