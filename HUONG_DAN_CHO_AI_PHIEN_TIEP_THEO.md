@@ -94,9 +94,10 @@ AI ở các ca tiếp theo **bắt buộc phải tuân thủ 5 nguyên tắc ki�
 
 ## 🎮 4. CƠ CHẾ GAMEPLAY, MODAL CHIẾN THẮNG, ASSET & MINI MAP HIỆN TẠI
 
-1. **Quy tắc Tiền tệ, Vũ khí & Nâng cấp khi Chơi lại vs. Qua màn liên tục (`carryOver`)**:
-   - **Chơi liền mạch qua màn (`carryOver === true` trong `transitionToNextMap`)**: Người chơi được **giữ nguyên toàn bộ tiền, súng đã mua và cấp độ nâng cấp** để chiến đấu ở Map tiếp theo.
-   - **Chơi lại khi chết (Retry) hoặc Thoát ra màn hình chính vào lại (`carryOver === false`)**: Hàm `resetPlayerProgressionToMapDefault(currentMapId)` được kích hoạt, **reset toàn bộ tiền, súng và nâng cấp** về đúng mức mặc định được cấp sẵn cho từng Map trong `MAP_CONFIGS[mapId]`. Đồng thời `applyCloudProgress()` bị chặn khi đang ở trong trận để không ghi đè lại tiền/súng cũ từ Cloud/LocalStorage.
+1. **Quy tắc Tiền tệ, Vũ khí & Nâng cấp khi Chơi lại vs. Qua màn liên tục vs. Tài khoản Cloud (`carryOver`)**:
+   - **Tài khoản Cloud đã Đăng nhập (`XenoAuth.user`)**: Hệ thống **bảo vệ và đồng bộ 100% Tiền (`credits`), Cấp độ nâng cấp (HP, Tốc chạy, Sát thương, UAV Drone) và Vũ khí đã mở khóa** từ Cloud xuống qua `applyDataToGame()`. Khi vào trận hoặc Chơi lại (`carryOver === false`), tiền và nâng cấp của tài khoản được bảo lưu (`Math.max(player.credits, mapCfg.startCredits)`), không bao giờ bị ép tụt về $80.
+   - **Chế độ Khách (Guest / Chưa đăng nhập)**: Khi Chơi lại hoặc vào từ Sảnh chính (`carryOver === false`), tiền, súng và nâng cấp được đưa về thông số mặc định của `MAP_CONFIGS[mapId]`.
+   - **Chơi liền mạch qua màn liên tục (`carryOver === true` trong `transitionToNextMap`)**: Giữ nguyên toàn bộ tiền, súng đã mua và cấp độ nâng cấp mang sang Map tiếp theo.
 2. **Luồng Hạ Boss & Modal Chiến Thắng (`#victoryModal`)**:
    - Khi hạ gục Boss cuối cùng của màn, game **chờ `950ms`** để diễn hoạt trọn vẹn hiệu ứng Boss nổ tung và rung chấn màn hình.
    - Sau `950ms`, hiển thị banner lục giác màu xanh lá **`MISSION COMPLETED`** ở chính giữa màn hình, bên dưới là dòng **`PRESS ANY KEY TO CONTINUE`** và **hình tròn màu xanh lá đếm ngược `3, 2, 1`**.
