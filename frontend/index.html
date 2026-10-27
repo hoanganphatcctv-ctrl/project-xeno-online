@@ -29527,22 +29527,42 @@
         // Chặn kéo rê ảnh hoặc text khi lia chuột chiến đấu
         window.addEventListener("dragstart", e => e.preventDefault());
 
-        gameCanvas.addEventListener("mousedown", e => {
+        function handleGameMouseDown(e, fromCanvas = false) {
             if (isGameOver || isPaused || isMapWon) return;
+            if (!fromCanvas && e.target && typeof e.target.closest === "function" && e.target.closest("button, input, select, textarea, a, #weaponDockContainer, .pointer-events-auto, [onclick], .cursor-pointer")) return;
             sfx.init();
             if (e.button === 0) {
-                // Chuột trái: Bắn súng
+                // Chuột trái: Bắn súng liên tục (Ấn giữ xả đạn mượt mà không bị ngắt)
+                e.preventDefault();
                 mouse.down = true;
+                if (!window.touchAimActive) {
+                    mouse.screenX = e.clientX;
+                    mouse.screenY = e.clientY;
+                    mouse.worldX = mouse.screenX + camera.x;
+                    mouse.worldY = mouse.screenY + camera.y;
+                    player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+                }
+                fireCurrentWeapon();
             } else if (e.button === 2) {
                 // Chuột phải: Lướt né phản lực (Jetpack Dash) cực mượt chuẩn game hành động!
                 e.preventDefault();
                 triggerPlayerDash();
             }
+        }
+        gameCanvas.addEventListener("mousedown", e => {
+            e.stopPropagation();
+            handleGameMouseDown(e, true);
+        });
+        window.addEventListener("mousedown", e => {
+            handleGameMouseDown(e, false);
         });
         window.addEventListener("mouseup", e => {
             if (e.button === 0) {
                 mouse.down = false;
             }
+        });
+        window.addEventListener("blur", () => {
+            mouse.down = false;
         });
 
         // Touch on Canvas (Direct Tap/Drag to Aim & Shoot)
@@ -29694,8 +29714,12 @@
                 window.touchMoveVector.x = 0;
                 window.touchMoveVector.y = 0;
                 window.touchMoveVector.active = false;
-                window.touchAimActive = false;
-                if (typeof mouse !== "undefined") mouse.down = false;
+                // SỬA LỖI ẤN GIỮ CHUỘT: Chỉ giải phóng trạng thái ngắm/bắn khi CẦN ẢO CẢM ỨNG đang kích hoạt,
+                // tuyệt đối KHÔNG can thiệp hoặc ghi đè mouse.down của chuột vật lý PC (tránh ngắt xả đạn mỗi 15 frame)!
+                if (window.touchAimActive) {
+                    window.touchAimActive = false;
+                    if (typeof mouse !== "undefined") mouse.down = false;
+                }
             }
         }
         window.updateTouchOverlayVisibility = updateTouchOverlayVisibility;

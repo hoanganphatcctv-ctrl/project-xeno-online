@@ -117,6 +117,14 @@ AI ở các ca tiếp theo **bắt buộc phải tuân thủ 5 nguyên tắc ki�
    - **AI Clearance Interleaved Cache**: `hasPathClearance()` được lưu cache 3 frame xen kẽ theo `e.id % 3`, giảm 66% tia raycast kiểm tra địa hình.
    - **Screen LOD (`dist > 1100`)**: Quái vật ở ngoài màn hình được giãn cách nhịp tính toán lái sang 3 frame/lần.
    - **Bảo toàn trí thông minh tìm đường (Flow Field Pathfinding)**: Thuật toán Flow Field BFS 11,700 ô vẫn hoạt động độc lập và đầy đủ, đảm bảo 100% quái vật luôn biết đường luồn lách qua các góc cua và chướng ngại vật để săn đuổi người chơi một cách thông minh.
+7. **Hệ thống PWA, Favicon HD & Virtual Twin-Stick Joystick Cảm ứng Mobile**:
+   - Bộ icon Favicon & PWA tạo từ `Icon_raw.png` (32x32, 48x48, 180x180, 192x192, 512x512) đồng bộ vào `dist/` và `frontend/dist/`.
+   - Cần điều khiển ảo (Left Joystick di chuyển 360°, Right Joystick ngắm & tự động xả đạn, nút Dash, [E] sạc máy phát, [B] Kho súng, [T] Tháp pháo, [🔄] Đổi súng).
+   - **Cơ chế Tự Nhận Diện Thông Minh**: Tự động nhận diện thiết bị (Điện thoại/Tablet -> BẬT; Máy tính cá nhân PC/Laptop -> ẨN cần ảo).
+   - **Công tắc tùy chọn trong CÀI ĐẶT / ĐIỀU KHIỂN (Tab 04)**: Cho phép chuyển đổi linh hoạt 3 chế độ `TỰ ĐỘNG`, `LUÔN BẬT`, `LUÔN TẮT` và lưu trạng thái vào LocalStorage.
+8. **Cơ Chế Bắn Liên Tục Khi Ấn Giữ Chuột (Automatic Continuous Fire)**:
+   - Tách biệt 100% giữa cờ chuột vật lý PC (`mouse.down`) và cờ cần ảo cảm ứng mobile (`window.touchAimActive`).
+   - Trong `updateTouchOverlayVisibility()`, chỉ giải phóng chuột khi `window.touchAimActive === true`. Tuyệt đối không ghi đè `mouse.down = false` khi người chơi đang đè chuột trái trên PC, đảm bảo toàn bộ 7 loại súng xả đạn liên thanh chuẩn xác theo đúng `fireRate`.
 
 ---
 
