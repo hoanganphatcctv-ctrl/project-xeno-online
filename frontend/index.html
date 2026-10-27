@@ -20,6 +20,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Project Xeno">
     <meta name="application-name" content="Project Xeno">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="x5-orientation" content="landscape">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="x5-page-mode" content="app">
     <meta name="msapplication-TileColor" content="#04070d">
     <meta name="msapplication-TileImage" content="icon-192.png">
 
@@ -68,9 +72,12 @@
         body, html {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
+            position: fixed;
+            inset: 0;
             background-color: #04070d;
             font-family: 'Inter', sans-serif;
             color: #f1f5f9;
@@ -1218,6 +1225,42 @@
     </style>
 </head>
 <body class="relative w-screen h-screen overflow-hidden select-none">
+
+    <!-- ======================================================================
+         PORTRAIT ORIENTATION DETECTOR & AUTO-ROTATE / FULLSCREEN PROMPT
+         ====================================================================== -->
+    <div id="portraitRotateOverlay" class="hidden fixed inset-0 z-[9999] bg-[#04070d] flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md">
+        <!-- Sci-Fi HUD Frame & Animated Phone Rotation Graphic -->
+        <div class="relative w-28 h-28 mb-5 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border border-cyan-500/20 animate-ping"></div>
+            <div class="absolute inset-2 rounded-full border border-amber-500/30"></div>
+            <svg viewBox="0 0 100 100" class="w-16 h-16 text-cyan-400 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)] animate-pulse">
+                <rect x="30" y="15" width="40" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="4"/>
+                <circle cx="50" cy="76" r="3" fill="currentColor"/>
+                <line x1="42" y1="23" x2="58" y2="23" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                <path d="M 78 40 A 32 32 0 0 1 55 84" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="4 2"/>
+                <polygon points="58,80 50,86 56,92" fill="#f59e0b"/>
+            </svg>
+        </div>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1 mb-2 bg-amber-500/10 border border-amber-400/40 text-amber-300 font-mono-tech text-xs tracking-widest font-black uppercase">
+            <span>[!] CẢNH BÁO CHIẾN TRƯỜNG</span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black text-white font-mono-tech tracking-wider uppercase mb-2">
+            VUI LÒNG XOAY NGANG THIẾT BỊ
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 font-mono-tech max-w-md leading-relaxed mb-6">
+            Hệ thống vũ khí và tầm nhìn tác chiến yêu cầu màn hình ngang để đảm bảo độ chính xác khi ngắm bắn và điều khiển.
+        </p>
+
+        <button onclick="window.forceLandscapeAndFullscreen()"
+                class="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-mono-tech font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95 transition">
+            CHẠM ĐỂ TỰ ĐỘNG XOAY &amp; TOÀN MÀN HÌNH
+        </button>
+        <div class="mt-4 text-[10px] font-mono-tech text-slate-500">
+            HOẶC BẬT TỰ ĐỘNG XOAY VÀ ĐẶT NẰM NGANG ĐIỆN THOẠI
+        </div>
+    </div>
 
     <!-- MAIN WORLD CANVAS -->
     <canvas id="gameCanvas" class="absolute inset-0 z-0"></canvas>
@@ -26931,6 +26974,7 @@
         window.openMainMenuSettings = openMainMenuSettings;
 
         function closeMainMenuSettings(bypassLoading = false) {
+            try { forceLandscapeAndFullscreen(); } catch (e) {}
             const codexModal = byId("lobbyCodexModal");
             if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             const mapDrawer = byId("lobbyMapDiffDrawer");
@@ -30254,6 +30298,67 @@
         }
         window.addEventListener("resize", resizeCanvas);
 
+        // HỆ THỐNG KIỂM TRA ĐỊNH HƯỚNG MÀN HÌNH & TỰ ĐỘNG KHÓA XOAY NGANG
+        function checkOrientationAndPrompt() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                || ('ontouchstart' in window) 
+                || (window.innerWidth <= 1024 && 'maxTouchPoints' in navigator && navigator.maxTouchPoints > 0);
+            
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const overlay = document.getElementById("portraitRotateOverlay");
+            if (overlay) {
+                if (isMobile && isPortrait) {
+                    overlay.classList.remove("hidden");
+                    overlay.style.display = "flex";
+                } else {
+                    overlay.classList.add("hidden");
+                    overlay.style.display = "none";
+                }
+            }
+        }
+        window.checkOrientationAndPrompt = checkOrientationAndPrompt;
+
+        async function forceLandscapeAndFullscreen() {
+            // 1. Yêu cầu khóa xoay màn hình sang ngang (Screen Orientation API)
+            try {
+                if (screen.orientation && typeof screen.orientation.lock === "function") {
+                    await screen.orientation.lock("landscape").catch(() => {});
+                } else if (screen.lockOrientation) {
+                    screen.lockOrientation("landscape");
+                } else if (screen.mozLockOrientation) {
+                    screen.mozLockOrientation("landscape");
+                } else if (screen.msLockOrientation) {
+                    screen.msLockOrientation("landscape");
+                }
+            } catch (e) {}
+
+            // 2. Kích hoạt toàn màn hình ẩn sạch thanh trạng thái & điều hướng (Fullscreen API)
+            try {
+                const docEl = document.documentElement;
+                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                if (!isFs) {
+                    const rfs = docEl.requestFullscreen || 
+                                docEl.webkitRequestFullscreen || 
+                                docEl.mozRequestFullScreen || 
+                                docEl.msRequestFullscreen;
+                    if (rfs) {
+                        await rfs.call(docEl, { navigationUI: "hide" }).catch(() => {});
+                    }
+                }
+            } catch (e) {}
+
+            // 3. Tự động cập nhật lại kích thước và ẩn thông báo xoay
+            setTimeout(() => {
+                if (typeof applyMobileViewportAutoFit === "function") {
+                    applyMobileViewportAutoFit();
+                }
+                checkOrientationAndPrompt();
+            }, 120);
+        }
+        window.forceLandscapeAndFullscreen = forceLandscapeAndFullscreen;
+        window.tryLockLandscape = forceLandscapeAndFullscreen;
+        window.requestGameFullscreen = forceLandscapeAndFullscreen;
+
         // HỆ THỐNG TỰ ĐỘNG CÂN CHỈNH MÀN HÌNH MOBILE & TABLET (AUTO-FIT VIEWPORT)
         function applyMobileViewportAutoFit() {
             const vh = window.innerHeight;
@@ -30268,9 +30373,13 @@
             if (typeof resizeCanvas === "function") {
                 resizeCanvas();
             }
+            checkOrientationAndPrompt();
         }
         window.addEventListener("resize", applyMobileViewportAutoFit);
-        window.addEventListener("orientationchange", () => setTimeout(applyMobileViewportAutoFit, 100));
+        window.addEventListener("orientationchange", () => {
+            setTimeout(applyMobileViewportAutoFit, 100);
+            setTimeout(checkOrientationAndPrompt, 150);
+        });
         applyMobileViewportAutoFit();
 
 
@@ -31397,9 +31506,10 @@
             // Thử phát ngay lập tức khi vừa mở trang
             tryPlayOpeningMusic();
 
-            // Mở khóa âm thanh khi người dùng có bất kỳ tương tác đầu tiên nào (không tự động fullscreen)
+            // Mở khóa âm thanh, tự động khóa xoay ngang và chuyển toàn màn hình khi người dùng có bất kỳ tương tác đầu tiên nào
             const onFirstUserGesture = () => {
                 tryPlayOpeningMusic();
+                try { forceLandscapeAndFullscreen(); } catch (e) {}
             };
             window.addEventListener("pointerdown", onFirstUserGesture, { once: true });
             window.addEventListener("keydown", onFirstUserGesture, { once: true });
@@ -31631,6 +31741,7 @@
         window.startAssetPreloader = startAssetPreloader;
 
         function enterGameFromPreloader() {
+            try { forceLandscapeAndFullscreen(); } catch (e) {}
             if (window.hasEnteredGame) return;
             window.hasEnteredGame = true;
 
@@ -32514,6 +32625,7 @@
         window.simulateLobbyLoading = simulateLobbyLoading;
 
         function startNewCampaignFromLobby() {
+            try { forceLandscapeAndFullscreen(); } catch (e) {}
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             const settingsModal = byId("mainSettingsModal");
             if (settingsModal) {
@@ -33042,6 +33154,8 @@
         function bootGameEngine() {
             if (window._hasBootedEngine) return;
             window._hasBootedEngine = true;
+            try { forceLandscapeAndFullscreen(); } catch (e) {}
+            try { checkOrientationAndPrompt(); } catch (e) {}
             try { resizeCanvas(); } catch (e) { console.error("resizeCanvas error:", e); }
             try { initTouchControls(); } catch (e) { console.error("initTouchControls error:", e); }
             try { loadSavedUserPreferences(); } catch (e) { console.error("loadSavedUserPreferences error:", e); }

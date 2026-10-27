@@ -20,6 +20,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Project Xeno">
     <meta name="application-name" content="Project Xeno">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="x5-orientation" content="landscape">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="x5-page-mode" content="app">
     <meta name="msapplication-TileColor" content="#04070d">
     <meta name="msapplication-TileImage" content="icon-192.png">
 
@@ -68,9 +72,12 @@
         body, html {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
+            position: fixed;
+            inset: 0;
             background-color: #04070d;
             font-family: 'Inter', sans-serif;
             color: #f1f5f9;
@@ -1218,6 +1225,42 @@
     </style>
 </head>
 <body class="relative w-screen h-screen overflow-hidden select-none">
+
+    <!-- ======================================================================
+         PORTRAIT ORIENTATION DETECTOR & AUTO-ROTATE / FULLSCREEN PROMPT
+         ====================================================================== -->
+    <div id="portraitRotateOverlay" class="hidden fixed inset-0 z-[9999] bg-[#04070d] flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md">
+        <!-- Sci-Fi HUD Frame & Animated Phone Rotation Graphic -->
+        <div class="relative w-28 h-28 mb-5 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border border-cyan-500/20 animate-ping"></div>
+            <div class="absolute inset-2 rounded-full border border-amber-500/30"></div>
+            <svg viewBox="0 0 100 100" class="w-16 h-16 text-cyan-400 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)] animate-pulse">
+                <rect x="30" y="15" width="40" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="4"/>
+                <circle cx="50" cy="76" r="3" fill="currentColor"/>
+                <line x1="42" y1="23" x2="58" y2="23" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                <path d="M 78 40 A 32 32 0 0 1 55 84" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="4 2"/>
+                <polygon points="58,80 50,86 56,92" fill="#f59e0b"/>
+            </svg>
+        </div>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1 mb-2 bg-amber-500/10 border border-amber-400/40 text-amber-300 font-mono-tech text-xs tracking-widest font-black uppercase">
+            <span>[!] CẢNH BÁO CHIẾN TRƯỜNG</span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black text-white font-mono-tech tracking-wider uppercase mb-2">
+            VUI LÒNG XOAY NGANG THIẾT BỊ
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 font-mono-tech max-w-md leading-relaxed mb-6">
+            Hệ thống vũ khí và tầm nhìn tác chiến yêu cầu màn hình ngang để đảm bảo độ chính xác khi ngắm bắn và điều khiển.
+        </p>
+
+        <button onclick="window.forceLandscapeAndFullscreen()"
+                class="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-mono-tech font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95 transition">
+            CHẠM ĐỂ TỰ ĐỘNG XOAY &amp; TOÀN MÀN HÌNH
+        </button>
+        <div class="mt-4 text-[10px] font-mono-tech text-slate-500">
+            HOẶC BẬT TỰ ĐỘNG XOAY VÀ ĐẶT NẰM NGANG ĐIỆN THOẠI
+        </div>
+    </div>
 
     <!-- MAIN WORLD CANVAS -->
     <canvas id="gameCanvas" class="absolute inset-0 z-0"></canvas>
