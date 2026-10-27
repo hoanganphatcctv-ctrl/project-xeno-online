@@ -21,7 +21,7 @@ if errorlevel 1 (
 echo.
 echo [2/3] Staging changes and committing to Git...
 git add -A
-git commit -m "fix(coop): sync doors, destructible props, enemy angles, hud tick/ping, teammate skin and fix client hp immortality"
+git commit -m "feat(coop): dynamic remote server discovery from Google Sheets, multi-tier fallback, and hidden server URL"
 
 echo.
 echo [3/3] Pushing to GitHub (origin main)...
