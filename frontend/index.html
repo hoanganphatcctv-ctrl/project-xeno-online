@@ -14190,7 +14190,7 @@
 
         // Hàm tạo đường bao chất lỏng hữu cơ uốn lượn liên tục qua Spline trung điểm (Triệt tiêu 100% cạnh thẳng & góc vuông)
         function traceOrganicFluidPath(targetCtx, lobes, baseR, scale = 1.0, timeOffset = 0) {
-            const numPts = 24;
+            const numPts = (lobes && lobes.length >= 28) ? Math.min(32, lobes.length) : 24;
             const lobeLen = (lobes && lobes.length > 0) ? lobes.length : 8;
             for (let p = 0; p < numPts; p++) {
                 const pNorm = p / numPts;
@@ -14484,7 +14484,7 @@
             for (let i = 0; i < nuclearPools.length; i++) {
                 const np = nuclearPools[i];
                 const curR = np.currentRadius || np.radius || 135;
-                if (np.x + curR * 1.45 < camX || np.x - curR * 1.45 > camX + VIEW_W || np.y + curR * 1.45 < camY || np.y - curR * 1.45 > camY + VIEW_H) continue;
+                if (np.x + curR * 1.55 < camX || np.x - curR * 1.55 > camX + VIEW_W || np.y + curR * 1.55 < camY || np.y - curR * 1.55 > camY + VIEW_H) continue;
 
                 const alpha = Math.min(0.95, np.life / 90);
                 const lobes = np.lobes || [1, 1.05, 0.95, 1.08, 0.98, 1.04, 0.96, 1.02];
@@ -14494,7 +14494,7 @@
 
                 // A. Vết ăn mòn sàn nhà & bóng tiếp xúc chất lỏng (Acid Floor Etch / Meniscus Base)
                 traceOrganicFluidPath(ctx, lobes, curR, 1.04, now);
-                const rRimStep = Math.max(24, Math.round((curR * 1.15) / 4) * 4);
+                const rRimStep = Math.max(24, Math.round((curR * 1.45) / 4) * 4);
                 const gRim = getCachedRadialGradient(ctx, "acid_rim_shadow_" + rRimStep, 0, 0, 4, 0, 0, rRimStep, [
                     [0, "rgba(4, 26, 12, 0.72)"],
                     [0.65, "rgba(5, 36, 18, 0.82)"],
@@ -14506,7 +14506,7 @@
 
                 // B. Thân dung dịch axit đậm đặc phát quang huỳnh quang (Glowing Toxic Body)
                 traceOrganicFluidPath(ctx, lobes, curR, 1.0, now);
-                const rBodyStep = Math.max(24, Math.round((curR * 1.1) / 4) * 4);
+                const rBodyStep = Math.max(24, Math.round((curR * 1.38) / 4) * 4);
                 const gFluid = getCachedRadialGradient(ctx, "acid_fluid_core_" + rBodyStep, 0, 0, 4, 0, 0, rBodyStep, [
                     [0, "rgba(187, 247, 208, 0.95)"],   // Neon glowing fluorescent uranium core
                     [0.22, "rgba(74, 222, 128, 0.90)"],  // Brilliant toxic emerald
@@ -16110,6 +16110,61 @@
             return pool;
         }
 
+        // Khởi tạo DUY NHẤT 1 BÃI DUNG DỊCH ĐẶC BIỆT DÀNH CHO CỤM 3 BÌNH (Hình thù 3 thùy hữu cơ phình rộng về 3 hướng)
+        function spawnTriClusterNuclearPool(cx, cy, clusterId, radius = 175, lifeFrames = 600) {
+            const seed = (clusterId * 19.3 + 42) % 100;
+            const count = 30; // 30 đỉnh cho đường cong Spline 3 thùy hữu cơ hoàn hảo
+            const lobes = [];
+            const p1 = (seed * 1.618) % (Math.PI * 2);
+            const p2 = (seed * 2.718) % (Math.PI * 2);
+
+            for (let k = 0; k < count; k++) {
+                const th = (k / count) * Math.PI * 2;
+                // 3 thùy chính phình to rõ rệt tại đúng góc 3 bình (-90°, +30°, +150°)
+                // sin(3 * th) đạt đỉnh +1 tại đúng 3 vị trí đặt bình!
+                const triLobe = 0.35 * Math.sin(3 * th);
+                // Biến thiên tự nhiên để đường viền chất lỏng uốn lượn sống động
+                const organicNoise = 0.08 * Math.cos(2 * th + p1)
+                                   + 0.05 * Math.sin(5 * th + p2)
+                                   + 0.03 * Math.cos(7 * th + seed);
+                const wave = 1.0 + triLobe + organicNoise;
+                lobes.push(wave);
+            }
+
+            // Các giọt axit vệ tinh văng bắn tự nhiên phân bổ quanh 3 thùy
+            const splatters = [];
+            const splatCount = 14;
+            for (let s = 0; s < splatCount; s++) {
+                const sAng = (s / splatCount) * Math.PI * 2 + (Math.sin(s * 2.1 + seed) * 0.22);
+                const triBoost = Math.max(0, Math.sin(3 * sAng)) * 0.20;
+                const sDistMult = 1.08 + triBoost + (((s * 5 + seed) % 8) / 8) * 0.14;
+                const sRadius = 3.5 + Math.random() * 8.5;
+                splatters.push({
+                    ang: sAng,
+                    distMult: sDistMult,
+                    r: sRadius
+                });
+            }
+
+            const pool = {
+                x: Math.round(cx),
+                y: Math.round(cy),
+                radius: radius,
+                currentRadius: 24,
+                targetRadius: radius,
+                life: lifeFrames,
+                maxLife: lifeFrames,
+                seed: seed,
+                clusterId: clusterId,
+                isTriCluster: true,
+                lobes: lobes,
+                splatters: splatters,
+                bubbles: []
+            };
+            nuclearPools.push(pool);
+            return pool;
+        }
+
         function shatterNuclearVat(vat, fromNetwork = false) {
             if (!vat || !vat.active) return;
             const vatIdx = nuclearVats.indexOf(vat);
@@ -16144,13 +16199,25 @@
             screenShake = Math.max(screenShake, 18);
 
             // Bake green radioactive scorch mark & create persistent 10-second radioactive pool
-            bakeScorchCrater(vat.x, vat.y, 92, true);
-            if (vat.clusterX && vat.clusterY) {
-                bakeScorchCrater(vat.clusterX, vat.clusterY, 80, true);
-            }
-            spawnNuclearAcidPool(vat.x, vat.y, 135, 10 * 60);
-            if (window.webglPostProcessor) {
-                window.webglPostProcessor.addShockwave(vat.x, vat.y, 420, 750, 1.0);
+            if (vat.clusterId !== undefined) {
+                // Kiểm tra xem Cụm 3 Bình đã có bãi dung dịch nào chưa (chỉ tạo DUY NHẤT 1 BÃI)
+                const existingPool = nuclearPools.find(p => p.clusterId === vat.clusterId);
+                if (!existingPool) {
+                    bakeScorchCrater(vat.clusterX || vat.x, vat.clusterY || vat.y, 115, true);
+                    spawnTriClusterNuclearPool(vat.clusterX || vat.x, vat.clusterY || vat.y, vat.clusterId, 175, 10 * 60);
+                    if (window.webglPostProcessor) {
+                        window.webglPostProcessor.addShockwave(vat.clusterX || vat.x, vat.clusterY || vat.y, 450, 800, 1.0);
+                    }
+                } else {
+                    // Nếu đã có bãi của cụm, gia hạn thời gian tồn tại thay vì sinh bãi mới đè lên nhau
+                    existingPool.life = Math.max(existingPool.life, 8 * 60);
+                }
+            } else {
+                bakeScorchCrater(vat.x, vat.y, 92, true);
+                spawnNuclearAcidPool(vat.x, vat.y, 135, 10 * 60);
+                if (window.webglPostProcessor) {
+                    window.webglPostProcessor.addShockwave(vat.x, vat.y, 420, 750, 1.0);
+                }
             }
 
             // Green nuclear splash particles
