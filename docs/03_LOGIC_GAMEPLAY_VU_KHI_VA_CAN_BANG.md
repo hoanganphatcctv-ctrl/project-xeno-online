@@ -9,15 +9,15 @@
 
 Trò chơi trang bị 7 loại vũ khí với cơ chế hỏa lực và phong cách chiến thuật riêng biệt:
 
-| Slot | Tên Vũ Khí | Tốc Bắn (`fireRate`) | Sát Thương Cơ Bản | Đặc Điểm Hỏa Lực & Hiệu Ứng |
-| :---: | :--- | :---: | :---: | :--- |
-| **1** | **Song Lục Tác Chiến MK23** | `145ms` | 24 | Đạn vô hạn (INF). Bắn luân phiên 2 tay, độ chính xác cao. |
-| **2** | **Shotgun Chiến Thuật M1014** | `450ms` | $8 \times 18$ | Bắn chùm 8 mảnh đạn tỏa góc rộng, đẩy lùi quái mạnh ở cự ly gần. |
-| **3** | **Minigun 6 Nòng M134** | `52ms` | 19 | Tốc độ xả đạn cực cao (19 phát/giây), độ giật lớn, rung màn hình liên thanh. |
-| **4** | **Súng Phun Lửa M9A2** | `34ms` | 14 / tick | Phun luồng lửa napalm diện rộng, đốt cháy quái và để lại vệt lửa trên sàn. |
-| **5** | **Súng Trường Băng M4-Cryo** | `170ms` | 38 | Đạn tinh thể băng làm chậm 60% tốc độ chạy của quái vật trong 3 giây. |
-| **6** | **Đại Bác Cao Tần Gauss M82** | `310ms` | 145 | Đạn xuyên thấu nhiều mục tiêu trên một đường thẳng, sát thương cực lớn. |
-| **7** | **Pháo Laze Tập Trung Hyperion X-7** | `50ms` | 22 / tick | Chùm laze 3 lớp hội tụ liên tục, tăng nhiệt lượng theo thời gian và xuyên phá mọi quái. |
+| Slot | Tên Vũ Khí | Tốc Bắn (`fireRate`) | Sát Thương Cơ Bản | Băng Đạn Tối Đa | Đặc Điểm Hỏa Lực & Cân Bằng Mới |
+| :---: | :--- | :---: | :---: | :---: | :--- |
+| **1** | **Song Lục Tác Chiến MK23** | `135ms` | $2 \times 22$ | $\infty$ Vô hạn | Bắn luân phiên 2 tay, sát thương tăng cường để dọn quái linh hoạt. |
+| **2** | **Shotgun Chiến Thuật M1014** | `450ms` | $8 \times 23$ | 200 viên | Gom chùm đạn (độ tỏa 0.22), knockback 9.2, cực mạnh ở cự ly gần và trung. |
+| **3** | **Minigun 6 Nòng M134** | `50ms` | 18 | 1,200 viên | Tốc xả 20 phát/giây, băng đạn tăng 1,200 viên sấy đạn uy lực 60s liên tục. |
+| **4** | **Súng Phun Lửa M9A2** | `34ms` | $3 \times 4.8$ / tick | 1,100 viên | Mở khóa từ Map 4 ($1,950). Sát thương quái nhỏ được cân bằng chống quá bá; bình napalm 1,100. |
+| **5** | **Súng Trường Băng M4-Cryo** | `170ms` | $3 \times 35$ | 360 viên | Làm chậm 60% quái thường (giảm nhẹ trên Boss), nạp đạn hạ còn $200. |
+| **6** | **Đại Bác Cao Tần Gauss M82** | `310ms` | 165 | 160 viên | Đạn xuyên thấu nhiều mục tiêu trên một đường thẳng, sát thương cực lớn, nạp $280. |
+| **7** | **Pháo Laze Tập Trung Hyperion X-7** | `50ms` | 42 / tick | 750 viên | Siêu vũ khí tích nhiệt, nâng max đạn 750 (xả tia 37.5 giây), giá nạp $350. |
 
 ---
 
@@ -70,18 +70,18 @@ Trò chơi trang bị 7 loại vũ khí với cơ chế hỏa lực và phong c�
 
 ## 👑 5. CÂN BẰNG SỐ LƯỢNG BOSS THEO MAP & XÓA BOSS TỐC BIẾN
 
-1. **Quy Tắc Phân Bổ Số Lượng Boss**:
-   * Tính từ Map 1, **cứ sau 2 map mới tăng 1 Boss, tối đa 4 Boss cho 10 map**:
-     * **Map 1**: 1 Boss (*OMEGA BEHEMOTH*)
-     * **Map 2**: 1 Boss (*VOID EMPEROR*)
-     * **Map 3**: 2 Boss (*CRYO LEVIATHAN x2*)
-     * **Map 4**: 2 Boss (*MAGMA ABOMINATION x2*)
-     * **Map 5**: 3 Boss (*HIVE EMPRESS x3*)
-     * **Map 6**: 3 Boss (*HƯ KHÔNG THẦN x3*)
-     * **Map 7**: 4 Boss (*TITAN CƠ KHÍ x4*)
-     * **Map 8**: 4 Boss (*THỦY QUÁI KRAKEN x4*)
-     * **Map 9**: 4 Boss (*GIÁM NGỤC THỜI GIAN x4*)
-     * **Map 10**: 4 Boss (*APEX PROGENITOR x4*)
+1. **Quy Tắc Phân Bổ Số Lượng Boss & Pacing Màn Chơi Cân Bằng Mới**:
+   * Cân bằng nhịp độ tinh gọn, giảm tải wave lặp lại và dành riêng danh hiệu 4 Boss cho Trận Chung Kết Map 10:
+     * **Map 1**: 5 Waves, 1 Boss (*OMEGA BEHEMOTH*)
+     * **Map 2**: 6 Waves, 1 Boss (*VOID EMPEROR*)
+     * **Map 3**: 7 Waves, 2 Boss (*CRYO LEVIATHAN x2*)
+     * **Map 4**: 7 Waves, 2 Boss (*MAGMA ABOMINATION x2*) — Mở quyền mua Phun Lửa M9A2
+     * **Map 5**: 8 Waves, 2 Boss (*SONG TRÙM HIVE EMPRESS x2*)
+     * **Map 6**: 9 Waves, 3 Boss (*TAM TRÙM HƯ KHÔNG THẦN x3*)
+     * **Map 7**: 10 Waves, 3 Boss (*TAM ĐẠI TITAN CƠ KHÍ x3*)
+     * **Map 8**: 10 Waves, 3 Boss (*TAM ĐẠI THỦY QUÁI ĐÁY VỰC x3*)
+     * **Map 9**: 11 Waves, 3 Boss (*TAM ĐẠI GIÁM NGỤC THỜI GIAN x3*)
+     * **Map 10**: 12 Waves, 4 Boss (*TỨ ĐẠI THỦY TỔ XENOMORPH x4 — Đỉnh Cao Duy Nhất*)
 2. **Xóa Sổ Vĩnh Viễn Cơ Chế Boss Tốc Biến (Anti-stuck Teleport Bug)**:
    * Đã loại bỏ hoàn toàn đoạn mã tự động dịch chuyển Boss sát cạnh người chơi khi cách xa > 1050px quá 4 giây (`boss.farTimer > 240`).
    * Boss giờ đây di chuyển tự nhiên theo thuật toán Flow Field và AI né vật cản, bảo toàn 100% tính công bằng cho chiến thuật thả diều (kiting) của người chơi.
@@ -122,3 +122,13 @@ Hệ thống phân biệt rõ ràng 3 trạng thái chơi game:
      * Cho phép chạm và kéo thả tự do 5 phím điều khiển (Cần Di chuyển, Cần Ngắm & Bắn, Nút Dash, Nút [E], Tháp pháo [T]) đến bất kỳ tọa độ nào trên màn hình theo thói quen tay cầm của từng người chơi.
      * Tự động lưu tọa độ tỉ lệ phần trăm màn hình vào `localStorage` (`xeno_touch_layout`), có nút `↺ MẶC ĐỊNH` để khôi phục nhanh.
 
+---
+
+## 📦 8. HỘP TIẾP TẾ ĐẠN DƯỢC & KINH TẾ CO-OP SHARED CREDIT
+
+1. **Hộp Tiếp Tế Đạn Dược Trên Sàn Đấu (`ammo_pack`)**:
+   * Tỉ lệ rơi 16% trong bảng rơi vật phẩm chiến trường `spawnItemDrop`.
+   * Nhặt hộp đạn lập tức cấp **+35% đạn** cho vũ khí chính đang cầm và **+20% đạn** cho toàn bộ kho vũ khí dự trữ, duy trì luồng xả đạn arcade liên tục không cần mở shop.
+2. **Cơ Chế Kinh Tế Co-Op Shared Credit & Revive**:
+   * **Chia sẻ tiền diệt quái**: Người kết liễu phát bắn cuối hưởng **70%** tiền thưởng; đồng đội yểm trợ/khống chế nhận **50%** tiền trợ công. Cả 2 cùng phát triển sức mạnh song hành, xóa bỏ hoàn toàn tình trạng cướp tiền Last-Hit.
+   * **Cứu đồng đội cấp cứu (Revive 3.5s)**: Rút ngắn thời gian cứu từ 5.0s xuống **3.5s**; khi hồi sinh thành công phát ra **sóng xung kích đẩy lùi quái** trong bán kính 160px kèm **Khiên Bất Tử 1.8 giây** bảo vệ người vừa đứng dậy.
