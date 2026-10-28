@@ -1,8 +1,9 @@
-// Project Xeno: Reloaded - PWA Service Worker v2.0.0
-const CACHE_NAME = 'project-xeno-v2';
+// Project Xeno: Reloaded - PWA Service Worker v2.1.0
+const CACHE_NAME = 'project-xeno-v2.1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/?source=pwa',
   '/game.min.js',
   '/manifest.json',
   '/favicon.ico',
@@ -88,6 +89,7 @@ self.addEventListener('fetch', (event) => {
           const cachedIndex =
             (await caches.match('/index.html', { ignoreSearch: true })) ||
             (await caches.match('/', { ignoreSearch: true })) ||
+            (await caches.match('/?source=pwa', { ignoreSearch: true })) ||
             (await caches.match('./index.html', { ignoreSearch: true }));
           if (cachedIndex) {
             return cachedIndex;

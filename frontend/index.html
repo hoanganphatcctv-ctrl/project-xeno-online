@@ -33701,7 +33701,6 @@
         function bootGameEngine() {
             if (window._hasBootedEngine) return;
             window._hasBootedEngine = true;
-            try { forceLandscapeAndFullscreen(); } catch (e) {}
             try { checkOrientationAndPrompt(); } catch (e) {}
             try { resizeCanvas(); } catch (e) { console.error("resizeCanvas error:", e); }
             try { initTouchControls(); } catch (e) { console.error("initTouchControls error:", e); }
