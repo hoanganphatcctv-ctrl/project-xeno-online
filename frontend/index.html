@@ -2272,6 +2272,7 @@
                     <span id="lobbyFooterPingText">PING: --ms</span>
                     <span>FPS CAP: <b id="lobbyFooterFpsText" class="text-emerald-400">120 FPS</b></span>
                     <span>ĐỘ SÁNG: <b id="lobbyFooterBrightText" class="text-sky-300">100%</b></span>
+                    <span>ZOOM: <b id="lobbyFooterZoomText" class="text-cyan-300">100%</b></span>
                     <span class="hidden sm:inline">XENO-UID: 184863464700618352523</span>
                 </div>
             </div>
@@ -3266,6 +3267,54 @@
                                     200 FPS
                                     <div class="text-[9px] font-normal text-slate-400 mt-0.5">Tối đa (Max)</div>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- TỈ LỆ ZOOM MÀN HÌNH CHỦ ĐỘNG (ACTIVE DISPLAY ZOOM SCALE) -->
+                        <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-xs font-black text-cyan-400 uppercase font-mono-tech flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 bg-cyan-400 inline-block"></span>
+                                        TỈ LỆ ZOOM MÀN HÌNH (DISPLAY ZOOM SCALE)
+                                    </h3>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Tùy biến góc nhìn &amp; kích thước hiển thị chiến trường (Bao quát rộng hoặc Cận cảnh chi tiết, tối ưu Mobile &amp; PC)</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span id="sysCurrentZoomBadge" class="px-2 py-0.5 rounded-none bg-cyan-500/20 text-cyan-300 font-mono-tech font-bold text-xs border border-cyan-500/30">100%</span>
+                                    <button onclick="window.resetScreenZoom()" class="px-2.5 py-1 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-[10px] font-mono-tech font-bold text-cyan-300 transition" title="Đặt lại về tỉ lệ mặc định 100%">
+                                        ĐẶT LẠI (100%)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Thẻ điều khiển Slider kèm nút [-] và [+] 2 đầu -->
+                            <div class="p-3 rounded-none bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 transition space-y-2.5">
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    <!-- Nút Giảm Zoom (-) -->
+                                    <button type="button" onclick="window.adjustScreenZoom(-5)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-slate-800/90 hover:bg-cyan-500/25 active:bg-cyan-500/40 border border-slate-700 hover:border-cyan-400 text-cyan-300 font-mono-tech font-black text-base sm:text-lg select-none transition cursor-pointer shrink-0" title="Thu nhỏ tầm nhìn (-5%)">
+                                        −
+                                    </button>
+                                    
+                                    <!-- Thanh kéo Range Slider -->
+                                    <div class="flex-1 relative flex items-center">
+                                        <input id="sliderScreenZoom" type="range" min="70" max="150" step="5" value="100"
+                                               style="--slider-pct: 37.5%;"
+                                               oninput="window.setScreenZoom(this.value)"
+                                               class="w-full tech-range-slider range-cyan cursor-pointer" />
+                                    </div>
+
+                                    <!-- Nút Tăng Zoom (+) -->
+                                    <button type="button" onclick="window.adjustScreenZoom(5)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-slate-800/90 hover:bg-cyan-500/25 active:bg-cyan-500/40 border border-slate-700 hover:border-cyan-400 text-cyan-300 font-mono-tech font-black text-base sm:text-lg select-none transition cursor-pointer shrink-0" title="Phóng to tầm nhìn (+5%)">
+                                        +
+                                    </button>
+                                </div>
+
+                                <div class="flex justify-between text-[9px] font-mono-tech text-slate-500 px-0.5">
+                                    <span>70% (Bao quát rộng)</span>
+                                    <span class="text-cyan-400 font-bold">100% (Chuẩn gốc)</span>
+                                    <span>150% (Phóng to di động)</span>
+                                </div>
                             </div>
                         </div>
 
@@ -9747,8 +9796,15 @@
             willReadFrequently: false
         }) || lightCanvas.getContext("2d");
 
-        let VIEW_W = Math.max(320, window.innerWidth);
-        let VIEW_H = Math.max(240, window.innerHeight);
+        let savedInitialZoom = 100;
+        try {
+            const sz = localStorage.getItem("xeno_screen_zoom");
+            if (sz !== null) savedInitialZoom = Math.max(70, Math.min(150, parseInt(sz, 10) || 100));
+        } catch (e) {}
+        window.screenZoomScale = savedInitialZoom / 100;
+
+        let VIEW_W = Math.max(320, Math.round(window.innerWidth / window.screenZoomScale));
+        let VIEW_H = Math.max(240, Math.round(window.innerHeight / window.screenZoomScale));
         const camera = { x: WORLD_W / 2 - VIEW_W / 2, y: WORLD_H / 2 - VIEW_H / 2 };
 
         const keys = {};
@@ -27569,6 +27625,7 @@
         function refreshAllTechSliders() {
             const ids = [
                 "sliderLobbyDim",
+                "sliderScreenZoom",
                 "sliderBrightness",
                 "sliderContrast",
                 "sliderShake",
@@ -27583,6 +27640,42 @@
             });
         }
         window.refreshAllTechSliders = refreshAllTechSliders;
+
+        function setScreenZoom(val, saveToStorage = true) {
+            let num = parseInt(val, 10);
+            if (isNaN(num)) num = 100;
+            num = Math.max(70, Math.min(150, num));
+            num = Math.round(num / 5) * 5;
+            window.screenZoomScale = num / 100;
+
+            const slider = byId("sliderScreenZoom");
+            if (slider) {
+                slider.value = num;
+                updateTechSliderProgress(slider);
+            }
+            setText("sysCurrentZoomBadge", `${num}%`);
+            setText("lobbyFooterZoomText", `${num}%`);
+            if (saveToStorage) {
+                try { localStorage.setItem("xeno_screen_zoom", String(num)); } catch (e) {}
+            }
+            if (typeof resizeCanvas === "function") {
+                resizeCanvas();
+            }
+        }
+        window.setScreenZoom = setScreenZoom;
+
+        function adjustScreenZoom(delta) {
+            if (typeof sfx !== "undefined" && sfx && typeof sfx.playClick === "function") sfx.playClick();
+            const current = Math.round((window.screenZoomScale || 1.0) * 100);
+            setScreenZoom(current + delta, true);
+        }
+        window.adjustScreenZoom = adjustScreenZoom;
+
+        function resetScreenZoom() {
+            if (typeof sfx !== "undefined" && sfx && typeof sfx.playClick === "function") sfx.playClick();
+            setScreenZoom(100, true);
+        }
+        window.resetScreenZoom = resetScreenZoom;
 
         function applyScreenDisplayFilters() {
             if (window.gameBrightness === 100 && window.gameContrast === 100) {
@@ -27921,6 +28014,13 @@
                     setFpsLimit(parseInt(savedFps, 10));
                 } else {
                     setFpsLimit(120);
+                }
+
+                const savedZoom = localStorage.getItem("xeno_screen_zoom");
+                if (savedZoom !== null) {
+                    setScreenZoom(parseInt(savedZoom, 10) || 100, false);
+                } else {
+                    setScreenZoom(100, false);
                 }
 
                 const savedMaster = localStorage.getItem("xeno_master_vol");
@@ -29118,6 +29218,9 @@
             });
             if (tabKey === "controls" && typeof updateTouchSettingsUI === "function") {
                 updateTouchSettingsUI();
+            }
+            if ((tabKey === "graphics" || tabKey === "interface" || tabKey === "audio") && typeof refreshAllTechSliders === "function") {
+                refreshAllTechSliders();
             }
             if (tabKey === "about" && typeof fetchDonateConfig === "function") {
                 fetchDonateConfig();
@@ -30505,8 +30608,11 @@
          * ============================================================================
          */
         function resizeCanvas() {
-            VIEW_W = Math.max(320, window.innerWidth);
-            VIEW_H = Math.max(240, window.innerHeight);
+            const rawW = Math.max(320, window.innerWidth);
+            const rawH = Math.max(240, window.innerHeight);
+            const zoom = (typeof window.screenZoomScale === "number" && window.screenZoomScale > 0) ? window.screenZoomScale : 1.0;
+            VIEW_W = Math.max(320, Math.round(rawW / zoom));
+            VIEW_H = Math.max(240, Math.round(rawH / zoom));
             gameCanvas.width = VIEW_W;
             gameCanvas.height = VIEW_H;
             lightCanvas.width = Math.max(1, Math.floor(VIEW_W * LIGHT_SCALE));
@@ -30603,8 +30709,10 @@
 
 
         window.addEventListener("mousemove", e => {
-            mouse.screenX = e.clientX;
-            mouse.screenY = e.clientY;
+            const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+            const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+            mouse.screenX = e.clientX * scaleX;
+            mouse.screenY = e.clientY * scaleY;
         });
 
         // CHUẨN WEB GAME QUỐC TẾ: Khóa hoàn toàn menu chuột phải trình duyệt
@@ -30625,8 +30733,10 @@
                 e.preventDefault();
                 mouse.down = true;
                 if (!window.touchAimActive) {
-                    mouse.screenX = e.clientX;
-                    mouse.screenY = e.clientY;
+                    const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+                    const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+                    mouse.screenX = e.clientX * scaleX;
+                    mouse.screenY = e.clientY * scaleY;
                     mouse.worldX = mouse.screenX + camera.x;
                     mouse.worldY = mouse.screenY + camera.y;
                     player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
@@ -30660,8 +30770,10 @@
             sfx.init();
             if (!window.touchAimActive && e.touches.length > 0) {
                 const touch = e.touches[0];
-                mouse.screenX = touch.clientX;
-                mouse.screenY = touch.clientY;
+                const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+                const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+                mouse.screenX = touch.clientX * scaleX;
+                mouse.screenY = touch.clientY * scaleY;
                 mouse.worldX = mouse.screenX + camera.x;
                 mouse.worldY = mouse.screenY + camera.y;
                 player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
@@ -30672,8 +30784,10 @@
         gameCanvas.addEventListener("touchmove", e => {
             if (!window.touchAimActive && mouse.down && e.touches.length > 0) {
                 const touch = e.touches[0];
-                mouse.screenX = touch.clientX;
-                mouse.screenY = touch.clientY;
+                const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+                const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+                mouse.screenX = touch.clientX * scaleX;
+                mouse.screenY = touch.clientY * scaleY;
                 mouse.worldX = mouse.screenX + camera.x;
                 mouse.worldY = mouse.screenY + camera.y;
                 player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
