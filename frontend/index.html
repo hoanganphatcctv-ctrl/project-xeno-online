@@ -8307,6 +8307,13 @@
                     return;
                 }
 
+                if (data.t === "GEN_CRANK") {
+                    if (mapGenerator && !mapGenerator.active && typeof data.prog === "number") {
+                        mapGenerator.holdTimer = Math.max(mapGenerator.holdTimer, data.prog);
+                    }
+                    return;
+                }
+
                 if (data.t === "PLAYER_SHOOT") {
                     if (typeof fireTeammateWeaponVisual === "function" && teammate.active && !teammate.isDown) {
                         if (typeof data.w === "number") teammate.currentWeapon = data.w;
@@ -8565,7 +8572,8 @@
                             genX: mapGenerator ? Math.round(mapGenerator.x) : 0,
                             genY: mapGenerator ? Math.round(mapGenerator.y) : 0,
                             genRoom: mapGenerator ? (mapGenerator.roomName || "") : "",
-                            genOn: (mapGenerator && mapGenerator.active) ? 1 : 0
+                            genOn: (mapGenerator && mapGenerator.active) ? 1 : 0,
+                            genHold: mapGenerator ? Math.round(mapGenerator.holdTimer || 0) : 0
                         });
                     }
                 } else {
@@ -9773,6 +9781,82 @@
             roomName: ""
         };
         let generatorOnline = false;
+        const generatorPowerState = {
+            flickerAlpha: 0,
+            ambientFlash: 0,
+            auraRadius: 0,
+            lastSparkSound: 0
+        };
+
+        function updateGeneratorPowerFlicker() {
+            if (!mapGenerator || mapGenerator.active || !mapGenerator.holdTimer || mapGenerator.holdTimer <= 0) {
+                generatorPowerState.flickerAlpha = 0;
+                generatorPowerState.ambientFlash = 0;
+                generatorPowerState.auraRadius = 0;
+                return;
+            }
+
+            const prog = Math.min(1.0, mapGenerator.holdTimer / 5000);
+            const now = performance.now();
+
+            // Sóng dao động điện áp đa tần số mô phỏng tụ điện nạp xả bất định và hồ quang chập chờn
+            const f1 = Math.sin(now * 0.048);
+            const f2 = Math.sin(now * 0.115 + 1.7);
+            const f3 = Math.sin(now * 0.012 + 0.5);
+            const noise = Math.sin(now * 0.37) * Math.cos(now * 0.23);
+
+            // Ngưỡng phát sáng hạ dần theo tiến độ: tiến độ càng cao thì đèn càng chớp sáng nhiều và dữ dội
+            const threshold = 0.88 - (prog * 0.55);
+            const waveSignal = (f1 * 0.45 + f2 * 0.35 + noise * 0.20);
+
+            let surge = 0;
+            if (waveSignal > threshold) {
+                const norm = (waveSignal - threshold) / (1.0 - threshold);
+                surge = Math.min(1.0, norm * (0.35 + prog * 0.65));
+            }
+
+            // Chớp giật điện cao áp toàn trạm bất ngờ khi đạt trên 45%
+            if (prog > 0.45 && Math.random() < (prog * 0.065)) {
+                surge = Math.max(surge, 0.70 + Math.random() * 0.30);
+            }
+
+            generatorPowerState.flickerAlpha = surge;
+            generatorPowerState.ambientFlash = surge * (0.07 + prog * 0.15);
+
+            // Quầng sáng điện từ trường mở rộng dần xung quanh máy phát điện
+            const baseAura = 130 + prog * 260;
+            generatorPowerState.auraRadius = baseAura + (surge * 160) + (Math.random() - 0.5) * 26;
+
+            // Âm thanh tia điện nẹt lửa rè rè sống động
+            if (surge > 0.45 && (now - generatorPowerState.lastSparkSound > 220)) {
+                generatorPowerState.lastSparkSound = now;
+                if (typeof sfx !== "undefined" && sfx && typeof sfx.playGeneratorCrankSpark === "function") {
+                    sfx.playGeneratorCrankSpark();
+                }
+            }
+
+            // Bắn các hạt tia điện xanh cyan/vàng li ti rực rỡ
+            if (Math.random() < (0.25 + prog * 0.70)) {
+                const sparkAng = Math.random() * Math.PI * 2;
+                const sparkDist = 14 + Math.random() * 32;
+                const sparkSpeed = 2 + Math.random() * (4 + prog * 6);
+                const col = Math.random() < 0.6 ? "#38bdf8" : (Math.random() < 0.5 ? "#facc15" : "#ffffff");
+                spawnParticle(
+                    mapGenerator.x + Math.cos(sparkAng) * sparkDist,
+                    mapGenerator.y + Math.sin(sparkAng) * sparkDist,
+                    Math.cos(sparkAng) * sparkSpeed,
+                    Math.sin(sparkAng) * sparkSpeed,
+                    col,
+                    1.8 + Math.random() * 2.2,
+                    10 + Math.floor(Math.random() * 12)
+                );
+            }
+
+            // Rung chấn động cơ tuabin khi tích lũy năng lượng lớn
+            if (prog > 0.3) {
+                screenShake = Math.max(screenShake, prog * 1.8 * surge);
+            }
+        }
         let fullbrightCheatActive = false;
         const MAX_FLOATING_TEXTS = 64;
         const floatingTexts = Array.from({ length: MAX_FLOATING_TEXTS }, () => ({ active: false, x: 0, y: 0, text: "", color: "#ffffff", life: 0 }));
@@ -10324,6 +10408,26 @@
                 this.init();
                 this.playSample("generator", 0.95);
                 setTimeout(() => this.playSample("energy_on", 0.85), 350);
+            }
+
+            playGeneratorCrankSpark() {
+                if (this.muted) return;
+                this.init();
+                if (this.playSample("energy_on", 0.28, 0.25)) return;
+                try {
+                    if (!this.ctx || typeof this.ctx.createOscillator !== "function") return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(65 + Math.random() * 110, now);
+                    gain.gain.setValueAtTime(0.06 * (this.sfxVol || 1), now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } catch (e) {}
             }
 
             playEnergyOn() {
@@ -10998,6 +11102,11 @@
 
         function spawnMapGenerator() {
             generatorOnline = false;
+            if (generatorPowerState) {
+                generatorPowerState.flickerAlpha = 0;
+                generatorPowerState.ambientFlash = 0;
+                generatorPowerState.auraRadius = 0;
+            }
             if (typeof updateStationPowerUI === "function") updateStationPowerUI();
             const nonCenterRooms = (ROOMS && ROOMS.length > 0) ? ROOMS.filter(r => !r.isCenter) : [];
 
@@ -15546,6 +15655,9 @@
                 mapGenerator.y = packet.genY;
                 if (packet.genRoom) mapGenerator.roomName = packet.genRoom;
             }
+            if (typeof packet.genHold === "number" && mapGenerator && !mapGenerator.active) {
+                mapGenerator.holdTimer = Math.max(mapGenerator.holdTimer, packet.genHold);
+            }
             if (packet.genOn && mapGenerator && !mapGenerator.active) {
                 mapGenerator.active = true;
                 mapGenerator.holdTimer = 5000;
@@ -18533,18 +18645,11 @@
             // Station Generator 5-Second Hold-E Cranking Logic
             if (mapGenerator && !mapGenerator.active) {
                 const distToGen = Math.hypot(player.x - mapGenerator.x, player.y - mapGenerator.y);
-                if (distToGen <= 95 && keys["KeyE"]) {
+                const isLocalCranking = distToGen <= 95 && keys["KeyE"] && !player.isDown;
+                if (isLocalCranking) {
                     mapGenerator.holdTimer += FIXED_PHYSICS_STEP;
-                    if (Math.random() < 0.35) {
-                        spawnParticle(
-                            mapGenerator.x + (Math.random() - 0.5) * 32,
-                            mapGenerator.y + (Math.random() - 0.5) * 32,
-                            (Math.random() - 0.5) * 4,
-                            (Math.random() - 0.5) * 4,
-                            "#f97316",
-                            3,
-                            14
-                        );
+                    if (isCoopActive() && window.XENO_COOP && (frameCounter % 6 === 0)) {
+                        window.XENO_COOP.sendPacket({ t: "GEN_CRANK", prog: Math.round(mapGenerator.holdTimer) });
                     }
                     if (mapGenerator.holdTimer >= 5000) {
                         mapGenerator.active = true;
@@ -18555,7 +18660,10 @@
                             else if (sfx.playEnergyOn) sfx.playEnergyOn();
                             else sfx.playPickup();
                         }
-                        screenShake = Math.max(screenShake, 16);
+                        screenShake = Math.max(screenShake, 18);
+                        if (window.webglPostProcessor) {
+                            window.webglPostProcessor.addShockwave(mapGenerator.x, mapGenerator.y, 550, 850, 1.2);
+                        }
                         addFloatingText(mapGenerator.x, mapGenerator.y - 45, "MÁY PHÁT ĐIỆN: ĐÃ KHỞI ĐỘNG", "#4ade80");
                         showToast("MÁY PHÁT ĐIỆN ĐÃ KHỞI ĐỘNG!", "Toàn bộ trạm đã được phục hồi năng lượng.");
                         updateTopLeftHUD();
@@ -18570,6 +18678,7 @@
                         mapGenerator.holdTimer = Math.max(0, mapGenerator.holdTimer - FIXED_PHYSICS_STEP * 2.2);
                     }
                 }
+                updateGeneratorPowerFlicker();
             }
 
             // Camera Follow & Mouse Aim
@@ -20591,6 +20700,12 @@
             if (shouldRenderDarkness) {
                 renderScreenLighting(camX, camY);
                 ctx.drawImage(lightCanvas, 0, 0, lightCanvas.width, lightCanvas.height, 0, 0, VIEW_W, VIEW_H);
+
+                // Hiệu ứng ánh sáng đèn huỳnh quang trạm chớp nháy khi đang khởi động máy phát điện
+                if (generatorPowerState && generatorPowerState.ambientFlash > 0.01) {
+                    ctx.fillStyle = `rgba(56, 189, 248, ${generatorPowerState.ambientFlash.toFixed(3)})`;
+                    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+                }
             }
 
             if (player.hasNvg && player.nvgActive) {
@@ -26399,32 +26514,116 @@
             if (!XENO_RAM_CACHE.initialized) initMonsterRamCache();
             const masks = XENO_RAM_CACHE.lightMasks;
 
+            // Đảm bảo trạng thái chớp nháy điện từ trường của Máy Phát Điện được cập nhật thời gian thực
+            if (typeof updateGeneratorPowerFlicker === "function") {
+                updateGeneratorPowerFlicker();
+            }
+
             lightCtx.save();
             lightCtx.setTransform(LIGHT_SCALE, 0, 0, LIGHT_SCALE, 0, 0);
 
             lightCtx.globalCompositeOperation = "source-over";
-            lightCtx.fillStyle = window.currentMapId >= 2 ? "rgba(3, 10, 26, 0.42)" : "rgba(3, 6, 14, 0.80)";
+            const baseDarkness = window.currentMapId >= 2 ? 0.42 : 0.80;
+            // Độ tối giảm giật mạnh khi tia điện cao áp bùng nổ trong lúc nạp máy phát điện
+            const flickerDrop = (generatorPowerState && generatorPowerState.flickerAlpha) ? generatorPowerState.flickerAlpha : 0;
+            const darknessAlpha = Math.max(0.12, baseDarkness * (1.0 - flickerDrop * 0.85));
+            lightCtx.fillStyle = window.currentMapId >= 2 
+                ? `rgba(3, 10, 26, ${darknessAlpha.toFixed(3)})` 
+                : `rgba(3, 6, 14, ${darknessAlpha.toFixed(3)})`;
             lightCtx.fillRect(0, 0, VIEW_W, VIEW_H);
 
             lightCtx.globalCompositeOperation = "destination-out";
 
-            const px = player.x - camX;
-            const py = player.y - camY;
+            // HÀM ĐỤC THỦNG MÀN ĐÊM BẰNG ÁNH SÁNG NHÂN VẬT (ÁP DỤNG ĐỒNG BỘ CHO CẢ NGƯỜI CHƠI VÀ ĐỒNG ĐỘI CO-OP)
+            function punchCharacterLight(cx, cy, angle, isDown, muzzleFlash, activeLaserBeam) {
+                // 1. Quầng sáng hào quang xung quanh cơ thể mecha
+                const auraR = isDown ? 90 : (muzzleFlash > 0 ? 220 : 155);
+                if (masks && masks.aura) {
+                    lightCtx.drawImage(masks.aura, cx - auraR, cy - auraR, auraR * 2, auraR * 2);
+                } else {
+                    lightCtx.save();
+                    lightCtx.translate(cx, cy);
+                    lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_aura_" + auraR, 0, 0, 16, 0, 0, auraR, [
+                        [0, "rgba(0,0,0,1)"],
+                        [1, "rgba(0,0,0,0)"]
+                    ]);
+                    lightCtx.beginPath();
+                    safeArc(lightCtx, 0, 0, auraR);
+                    lightCtx.fill();
+                    lightCtx.restore();
+                }
 
-            const auraR = player.muzzleFlash > 0 ? 220 : 155;
-            if (masks && masks.aura) {
-                lightCtx.drawImage(masks.aura, px - auraR, py - auraR, auraR * 2, auraR * 2);
-            } else {
-                lightCtx.save();
-                lightCtx.translate(px, py);
-                lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_aura_" + auraR, 0, 0, 16, 0, 0, auraR, [
-                    [0, "rgba(0,0,0,1)"],
-                    [1, "rgba(0,0,0,0)"]
-                ]);
-                lightCtx.beginPath();
-                safeArc(lightCtx, 0, 0, auraR);
-                lightCtx.fill();
-                lightCtx.restore();
+                // 2. Nón quét chùm đèn pin chiến thuật (Chỉ bật khi nhân vật còn sống, khi gục ngã chỉ còn đèn cấp cứu)
+                if (!isDown) {
+                    lightCtx.save();
+                    lightCtx.translate(cx, cy);
+                    lightCtx.rotate(angle);
+                    if (masks && masks.cone) {
+                        lightCtx.drawImage(masks.cone, 0, -masks.coneHalfY, masks.coneW, masks.coneH);
+                    } else {
+                        const coneLen = 580;
+                        lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_cone_580", 0, 0, 12, 0, 0, coneLen, [
+                            [0, "rgba(0,0,0,0.98)"],
+                            [0.75, "rgba(0,0,0,0.65)"],
+                            [1, "rgba(0,0,0,0)"]
+                        ]);
+                        lightCtx.beginPath();
+                        lightCtx.moveTo(0, 0);
+                        lightCtx.arc(0, 0, coneLen, -0.45, 0.45);
+                        lightCtx.closePath();
+                        lightCtx.fill();
+                    }
+                    lightCtx.restore();
+                }
+
+                // 3. Khe sáng xuyên thấu rực rỡ của súng Laze #7
+                if (activeLaserBeam && !isGameOver) {
+                    lightCtx.save();
+                    lightCtx.strokeStyle = "rgba(0,0,0,0.85)";
+                    lightCtx.lineWidth = 68;
+                    lightCtx.lineCap = "round";
+                    lightCtx.beginPath();
+                    lightCtx.moveTo(activeLaserBeam.x1 - camX, activeLaserBeam.y1 - camY);
+                    lightCtx.lineTo(activeLaserBeam.x2 - camX, activeLaserBeam.y2 - camY);
+                    lightCtx.stroke();
+                    lightCtx.restore();
+                }
+            }
+
+            // 1. Ánh sáng của Người chơi Bản địa (Local Player)
+            punchCharacterLight(player.x - camX, player.y - camY, player.angle, player.isDown, player.muzzleFlash, player.activeLaserBeam);
+
+            // 2. Ánh sáng của Đồng đội Co-Op (Cả khi chưa hạ lẫn khi đã bị hạ và chuyển sang góc nhìn đồng đội)
+            if (isCoopActive() && window.teammate && window.teammate.active) {
+                const tmAngle = (typeof window.teammate.angle === "number") ? window.teammate.angle : 0;
+                punchCharacterLight(
+                    window.teammate.x - camX,
+                    window.teammate.y - camY,
+                    tmAngle,
+                    window.teammate.isDown,
+                    window.teammate.muzzleFlash,
+                    window.teammate.activeLaserBeam
+                );
+            }
+
+            // 3. Quầng sáng điện từ trường khi Máy Phát Điện đang được nạp điện (Khởi động)
+            if (mapGenerator && generatorPowerState && generatorPowerState.auraRadius > 0) {
+                const gx = mapGenerator.x - camX;
+                const gy = mapGenerator.y - camY;
+                if (gx >= -400 && gx <= VIEW_W + 400 && gy >= -400 && gy <= VIEW_H + 400) {
+                    const r = generatorPowerState.auraRadius;
+                    lightCtx.save();
+                    lightCtx.translate(gx, gy);
+                    lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "gen_crank_aura_" + Math.round(r / 12), 0, 0, 16, 0, 0, r, [
+                        [0, "rgba(0,0,0,1)"],
+                        [0.55, "rgba(0,0,0,0.85)"],
+                        [1, "rgba(0,0,0,0)"]
+                    ]);
+                    lightCtx.beginPath();
+                    safeArc(lightCtx, 0, 0, r);
+                    lightCtx.fill();
+                    lightCtx.restore();
+                }
             }
 
             // Ambient glow punching through darkness for Fire Patches & Electric Sparks (1-Blit GPU Mask)
@@ -26488,20 +26687,6 @@
                 }
             }
 
-            // Dynamic Light Holes for Active Laser Beam, Turrets & High-Energy Projectiles
-            if (player.activeLaserBeam && !isGameOver) {
-                const lb = player.activeLaserBeam;
-                lightCtx.save();
-                lightCtx.strokeStyle = "rgba(0,0,0,0.85)";
-                lightCtx.lineWidth = 68;
-                lightCtx.lineCap = "round";
-                lightCtx.beginPath();
-                lightCtx.moveTo(lb.x1 - camX, lb.y1 - camY);
-                lightCtx.lineTo(lb.x2 - camX, lb.y2 - camY);
-                lightCtx.stroke();
-                lightCtx.restore();
-            }
-
             const projMask = masks && masks.proj;
             for (let i = 0; i < MAX_BULLETS; i += 2) {
                 const b = bullets[i];
@@ -26515,26 +26700,6 @@
                     }
                 }
             }
-
-            lightCtx.save();
-            lightCtx.translate(px, py);
-            lightCtx.rotate(player.angle);
-            if (masks && masks.cone) {
-                lightCtx.drawImage(masks.cone, 0, -masks.coneHalfY, masks.coneW, masks.coneH);
-            } else {
-                const coneLen = 580;
-                lightCtx.fillStyle = getCachedRadialGradient(lightCtx, "light_cone_580", 0, 0, 12, 0, 0, coneLen, [
-                    [0, "rgba(0,0,0,0.98)"],
-                    [0.75, "rgba(0,0,0,0.65)"],
-                    [1, "rgba(0,0,0,0)"]
-                ]);
-                lightCtx.beginPath();
-                lightCtx.moveTo(0, 0);
-                lightCtx.arc(0, 0, coneLen, -0.45, 0.45);
-                lightCtx.closePath();
-                lightCtx.fill();
-            }
-            lightCtx.restore();
 
             lightCtx.restore();
         }
@@ -29479,6 +29644,11 @@
                 mapGenerator.active = generatorOnline;
                 mapGenerator.holdTimer = generatorOnline ? 5000 : 0;
             }
+            if (generatorPowerState) {
+                generatorPowerState.flickerAlpha = 0;
+                generatorPowerState.ambientFlash = 0;
+                generatorPowerState.auraRadius = 0;
+            }
             updateStationPowerUI();
             if (typeof sfx !== "undefined" && sfx) {
                 if (generatorOnline) {
@@ -29579,22 +29749,51 @@
             }
 
             // High-Voltage Reactor Core Chamber (Center)
-            const corePulse = (Math.sin(now * (isOnline ? 0.012 : 0.005)) + 1) * 0.5;
+            const isCranking = !isOnline && mapGenerator.holdTimer > 0;
+            const holdProgress = isCranking ? Math.min(1, mapGenerator.holdTimer / 5000) : 0;
+            const corePulse = isCranking
+                ? (Math.sin(now * (0.025 + holdProgress * 0.05)) + 1) * 0.5
+                : ((Math.sin(now * (isOnline ? 0.012 : 0.005)) + 1) * 0.5);
+
             const coreGlow = isOnline
                 ? `rgba(34, 197, 94, ${0.45 + corePulse * 0.5})`
-                : `rgba(234, 88, 12, ${0.35 + corePulse * 0.45})`;
+                : (isCranking
+                    ? `rgba(56, 189, 248, ${0.5 + corePulse * 0.5})`
+                    : `rgba(234, 88, 12, ${0.35 + corePulse * 0.45})`);
 
             ctx.save();
             ctx.fillStyle = coreGlow;
             ctx.beginPath();
-            safeArc(ctx, 0, 0, 14);
+            safeArc(ctx, 0, 0, 14 + (isCranking ? holdProgress * 6 : 0));
             ctx.fill();
 
             // Inner Glowing Magnetic Coils
-            ctx.fillStyle = isOnline ? "#86efac" : "#fdba74";
+            ctx.fillStyle = isOnline
+                ? "#86efac"
+                : (isCranking ? (Math.random() < 0.5 ? "#67e8f9" : "#fef08a") : "#fdba74");
             ctx.beginPath();
             safeArc(ctx, 0, 0, 7 + corePulse * 2.5);
             ctx.fill();
+
+            // Phóng tia điện hồ quang quanh buồng lõi khi đang quay nạp điện
+            if (isCranking && (generatorPowerState.flickerAlpha > 0.15 || Math.random() < 0.45)) {
+                ctx.strokeStyle = Math.random() < 0.5 ? "#38bdf8" : "#ffffff";
+                ctx.lineWidth = 1.4;
+                const numArcs = 2 + Math.floor(holdProgress * 4);
+                for (let a = 0; a < numArcs; a++) {
+                    const arcAng = Math.random() * Math.PI * 2;
+                    const arcR = 18 + Math.random() * 22;
+                    const tx = Math.cos(arcAng) * arcR;
+                    const ty = Math.sin(arcAng) * arcR;
+                    const midX = tx * 0.5 + (Math.random() - 0.5) * 10;
+                    const midY = ty * 0.5 + (Math.random() - 0.5) * 10;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(midX, midY);
+                    ctx.lineTo(tx, ty);
+                    ctx.stroke();
+                }
+            }
 
             if (isOnline) {
                 // Spinning Turbine Dynamo Spokes
@@ -29612,12 +29811,14 @@
             ctx.restore();
 
             // Status Indicator Diodes
-            ctx.fillStyle = isOnline ? "#22c55e" : ((now % 800 < 400) ? "#ef4444" : "#7f1d1d");
+            ctx.fillStyle = isOnline 
+                ? "#22c55e" 
+                : (isCranking ? ((now % 200 < 100) ? "#38bdf8" : "#f59e0b") : ((now % 800 < 400) ? "#ef4444" : "#7f1d1d"));
             ctx.beginPath();
             safeArc(ctx, -22, -22, 2.8);
             ctx.fill();
 
-            ctx.fillStyle = isOnline ? "#38bdf8" : "#64748b";
+            ctx.fillStyle = isOnline ? "#38bdf8" : (isCranking ? "#22c55e" : "#64748b");
             ctx.beginPath();
             safeArc(ctx, 22, -22, 2.8);
             ctx.fill();
@@ -29631,12 +29832,11 @@
 
                 if (!isOnline) {
                     // Prompt Card
-                    const holdProgress = Math.min(1, Math.max(0, mapGenerator.holdTimer / 5000));
                     const promptW = 270;
                     const promptH = 26;
 
                     ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
-                    ctx.strokeStyle = holdProgress > 0 ? "#22c55e" : "rgba(249, 115, 22, 0.8)";
+                    ctx.strokeStyle = holdProgress > 0 ? "#38bdf8" : "rgba(249, 115, 22, 0.8)";
                     ctx.lineWidth = 1.5;
                     drawRoundRect(ctx, -promptW / 2, -promptH / 2, promptW, promptH, 6);
                     ctx.fill();
@@ -29646,8 +29846,10 @@
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     if (holdProgress > 0) {
-                        ctx.fillStyle = "#86efac";
-                        ctx.fillText(`ĐANG KHỞI ĐỘNG: ${Math.round(holdProgress * 100)}%`, 0, 0);
+                        ctx.fillStyle = "#38bdf8";
+                        const pct = Math.round(holdProgress * 100);
+                        const bolt = (Math.floor(now / 150) % 2 === 0) ? "⚡" : " ";
+                        ctx.fillText(`${bolt} ĐANG NẠP ĐIỆN TOÀN TRẠM: ${pct}% ${bolt}`, 0, 0);
                     } else {
                         ctx.fillStyle = "#ffedd5";
                         ctx.fillText("Giữ E 5 giây để khởi động máy phát điện", 0, 0);
