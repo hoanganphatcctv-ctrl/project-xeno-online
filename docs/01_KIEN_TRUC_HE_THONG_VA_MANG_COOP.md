@@ -125,28 +125,41 @@ Nhằm đảm bảo đồng đội di chuyển mượt mà 60 FPS mà không b�
 3. **Xử Lý Phía Client**:
    * Client nội suy mượt mà vị trí và góc xoay của quái vật theo tọa độ máy chủ (`serverX, serverY, serverAngle`).
    * Tự động xóa bỏ xác các quái vật không còn tồn tại trong bản tin của Host.
-4. **Xử Lý Sát Thương & Tiền Thưởng (Combat Resolution)**:
+4. **Xử Lý Sát Thương & Cơ Chế Co-Op Shared Credit (Combat Resolution)**:
    * Khi Client bắn trúng quái vật, Client gửi sự kiện `ENEMY_HIT` (`id, damage, kx, ky, bulletType, attackerId: "client"`).
    * Host nhận sự kiện, trừ máu quái và phát `ENEMY_DIE` khi quái chết.
-   * Nếu `killerId === "client"`, tiền thưởng rơi ra được cộng trực tiếp vào ví của Client (`player.credits`), tăng chỉ số hạ gục và tạo vật phẩm rơi (`dropItem`) khớp 100% với Host.
+   * **Cơ chế chia sẻ tiền thưởng công bằng (Co-Op Shared Credit)**:
+     * Người chơi kết liễu phát bắn cuối (`killerId`) nhận **70%** tiền thưởng và ghi nhận điểm hạ gục.
+     * Người đồng đội đóng vai trò yểm trợ/khống chế nhận **50%** tiền trợ công (`assistReward`).
+     * Tổng quỹ thưởng nhận được là 120% so với chế độ Solo, xóa bỏ hoàn toàn hiện tượng cướp tiền Last-Hit và giúp cả 2 tích lũy tài chính song hành để mua đạn, nâng cấp.
 5. **Tương Tác Vật Thể Môi Trường**:
    * Bắn phá thùng gỗ, thùng nổ, bồn axit: Client gửi `PROP_HIT`, Host phản hồi `PROP_STATE` hoặc `PROP_DESTROY`.
    * Khởi động Máy phát điện trạm (`[E]` 5 giây): Sự kiện `WORLD_INTERACT` phát đồng thời tới cả 2 máy để bật sáng toàn bộ hệ thống đèn trạm.
 
 ---
 
-## 💖 7. MÁU/GIÁP ĐỘC LẬP, CỨU ĐỒNG ĐỘI & VÍ TIỀN RIÊNG BIỆT
+## 💖 7. MÁU/GIÁP ĐỘC LẬP, CỨU ĐỒNG ĐỘI (REVIVE 3.5S) & TÀI CHÍNH SONG HÀNH
 
 1. **Tự Quyết Định Máu & Giáp (Local Damage Authority)**:
    * Mỗi người chơi tự chịu trách nhiệm tính toán sát thương nhận vào của bản thân.
    * Gói tin snapshot `snap` từ Host **tuyệt đối không ghi đè** `player.hp`, `player.armor`, hay `player.isDown` của Client (ngăn chặn triệt để lỗi Client bị bất tử do gói tin cũ đến trễ).
-2. **Cơ Chế Gục Ngã & Cứu Sống Vô Hạn Lần**:
+2. **Cơ Chế Cứu Sống Cải Tiến (Revive 3.5s & Sóng Đẩy Lùi)**:
    * Khi cạn máu, nhân vật gục ngã (`isDown = true`), màn hình hiển thị cảnh báo đỏ và icon cấp cứu.
-   * Người còn sống đứng trong phạm vi **75px** và nhấn giữ **5 giây** để cứu dậy:
-     * Hồi phục ngay **40% Máu tối đa**, **25 Giáp Nano** và **1.5 giây bất tử**.
+   * Người còn sống đứng trong phạm vi **85px** và nhấn giữ **3.5 giây** (thay vì 5s nguy hiểm trước đây):
+     * Khi hoàn tất: Phát ra **Sóng xung kích màu ngọc bích đẩy lùi toàn bộ quái vật** trong bán kính 160px.
+     * Đồng đội được cứu dậy với **40% Máu tối đa**, **25 Giáp Nano** và **1.8 giây Khiên Bất Tử (`invulnTimer = 110`)** để kịp thời lùi bước lấy khoảng cách an toàn.
      * **Số lần cứu là vô hạn** trong suốt trận đấu. Trò chơi chỉ kết thúc (Game Over) khi cả hai người chơi cùng bị gục ngã cùng một lúc.
 3. **Chế Độ Khán Giả Khi Bị Hạ (Spectator Camera)**:
    * Khi người chơi bị gục ngã hoàn toàn, camera sẽ tự động lia chuyển và bám theo góc nhìn của đồng đội đang chiến đấu.
-4. **Ví Tiền Độc Lập**:
-   * Tiền vàng tín dụng (`credits`) của ai người đó hưởng. Người chơi tự do dùng số tiền của mình để mua sắm vũ khí, đạn dược và nâng cấp trong Kho Vũ Khí (`[B]`) mà không ảnh hưởng đến số dư của đồng đội.
+4. **Hệ Thống Kinh Tế Hợp Tác Song Hành**:
+   * Nhờ cơ chế Co-Op Shared Credit (70%/50%), cả hai chiến binh đều có nguồn thu nhập ổn định để tự do mua sắm súng, nạp đạn và nâng cấp trong Kho Vũ Khí (`[B]`).
+
+---
+
+## 📱 8. CHUẨN HÓA CÀI ĐẶT ỨNG DỤNG PWA SHORTCUT & CHẠY ĐỘC LẬP (STANDALONE)
+
+* **Khắc phục lỗi PWA Shortcut Chrome không mở được**:
+  * Đặt `display: "standalone"`, `display_override: ["standalone", "minimal-ui"]` và `orientation: "any"` trong `manifest.json`.
+  * Service Worker (`sw.js` v2.1.0) pre-cache route gốc `/?source=pwa` để đảm bảo khởi động ứng dụng tức thì ngay cả khi ứng dụng Chrome đang đóng hoàn toàn.
+  * Loại bỏ lệnh gọi cưỡng bức toàn màn hình `forceLandscapeAndFullscreen()` trong quá trình khởi động tự động (`bootGameEngine()`), tuân thủ nghiêm ngặt chính sách bảo mật trình duyệt yêu cầu cử chỉ người dùng (User Gesture).
 

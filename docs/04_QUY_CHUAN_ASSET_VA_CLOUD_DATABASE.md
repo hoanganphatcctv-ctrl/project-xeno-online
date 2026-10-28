@@ -44,7 +44,7 @@ Toàn bộ file hình ảnh PNG trong suốt được lưu trữ đồng bộ t�
 | **Thùng Nhiên Liệu Nổ** | `barrel_tnt.png`<br>`barrel_acid.png`<br>`barrel_cryo.png`<br>`barrel_oil.png` | 4 loại thùng nổ (Thuốc nổ, Axit, Băng giá, Dầu loang) |
 
 ### D. Vật Phẩm Rơi Trong Trận (Drops) & UI
-* **Vật phẩm**: `hp.png` (Máu), `tang_mau_giap.png` (Giáp), `tang_toc_chay.png` (Tốc chạy), `tang_dame.png` (Đạn nhiệt hạch), `kinh_dem.png` (Kính nhìn đêm NVG), `item_cash.png` (Tiền), `item_freeze.png` (Đóng băng), `item_nuke.png` (Bom hạt nhân).
+* **Vật phẩm**: `hp.png` (Máu), `tang_mau_giap.png` (Giáp), `tang_toc_chay.png` (Tốc chạy), `tang_dame.png` (Đạn nhiệt hạch), `kinh_dem.png` (Kính nhìn đêm NVG), `item_cash.png` (Tiền), `item_freeze.png` (Đóng băng), `item_nuke.png` (Bom hạt nhân), `ammo` (Hộp tiếp tế đạn dược vàng hổ phách).
 * **Giao diện**: `load_game.png` (Ảnh nạp trận), `spaceport.png` (Hình nền sảnh chờ), `lobby_bg.png` (Nền căn cứ).
 * **Bản đồ**: `alien-shooter-fullstack/frontend/map/map_01.png` đến `map_10.png`.
 * **Âm thanh**: `alien-shooter-fullstack/frontend/audio/` (`nhac_nen.ogg`, `ingame.mp3`, thư mục `Wav/`).
@@ -66,6 +66,7 @@ Trò chơi sử dụng Google Sheets làm cơ sở dữ liệu đám mây NoSQL 
    * `starting_credits`: Quỹ tiền tân thủ mặc định ($120).
    * `Link server online`: Đường dẫn máy chủ Socket.io chính thức.
    * `Link server online backup` & `backup2`: Máy chủ dự phòng 1 và 2 cho cơ chế tự động Fallback.
+   * `google_client_id`: OAuth 2.0 Client ID xác thực đăng nhập nhanh bằng tài khoản Google.
 2. **`Users`**: Danh sách tài khoản:
    * Mật khẩu được mã hóa an toàn bằng thuật toán **SHA-256 kèm chuỗi Salt ngẫu nhiên**.
    * Quản lý `session_token`, thời điểm đăng nhập cuối và trạng thái reset mật khẩu.
@@ -112,4 +113,19 @@ flowchart LR
 5. **Subresource Integrity (SRI) Trên CDN**:
    * Thư viện PeerJS 1.5.4 và Socket.io 4.7.5 được bảo vệ bằng mã băm `sha384-...` và thuộc tính `crossorigin="anonymous"`.
    * **Lưu ý đặc biệt**: Tuyệt đối **không** gắn `crossorigin="anonymous"` vào `https://cdn.tailwindcss.com` vì CDN này redirect 302 không trả header CORS, sẽ làm trình duyệt chặn nạp CSS và làm vỡ toàn bộ giao diện.
+
+---
+
+## 🔐 4. HỆ THỐNG XÁC THỰC GOOGLE OAUTH 2.0 (GOOGLE IDENTITY SERVICES)
+
+Trò chơi hỗ trợ đăng nhập 1-chạm thông qua **Google Identity Services (GIS)** kết hợp cơ sở dữ liệu Google Sheet:
+
+1. **Luồng Xác Thực Kỹ Thuật (`LOGIN_GOOGLE`)**:
+   * **Frontend**: Tải thư viện chính chủ `<script src="https://accounts.google.com/gsi/client" async defer></script>`, khởi tạo với `client_id` (đọc động từ tab `Admin_Config` của Sheet hoặc fallback mặc định).
+   * **Xác minh bảo mật**: Token định danh JWT (Credential) được gửi về Apps Script (`Code.gs`) và xác thực trực tiếp qua Google TokenInfo API (`https://oauth2.googleapis.com/tokeninfo?id_token=...`).
+2. **Cơ Chế Liên Kết & Tạo Tài Khoản Tự Động (Smart Linking)**:
+   * **Tài khoản đã tồn tại**: Nhận diện theo Gmail trong tab `Users`, đăng nhập tức thì, cấp `session_token` mới, đồng bộ tiền tệ, map và súng đã mở khóa. Nếu tài khoản chưa có avatar, tự động lấy ảnh profile từ Google làm Avatar.
+   * **Người chơi mới**: Tự động tạo bản ghi trong 3 tab `Users`, `Progress`, `Settings` với `$120` khởi đầu, mở khóa Map 1, và dùng ảnh Google làm Avatar.
+3. **Cơ Chế Dự Phòng An Toàn (Graceful Fallback)**:
+   * Khi mở file trực tiếp từ ổ cứng (`file:///...`), hệ thống tự động ẩn nút Google để tuân thủ chính sách bảo mật của Google OAuth, đồng thời giữ nguyên 100% chức năng Đăng ký / Đăng nhập Username & Password truyền thống.
 

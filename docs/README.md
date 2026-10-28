@@ -20,10 +20,10 @@
 
 | Mã File | Tên Tài Liệu | Nội Dung Cốt Lõi |
 | :---: | :--- | :--- |
-| **01** | [`01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md`](./01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md) | Kiến trúc tổng thể, hạ tầng Hybrid Co-Op 60Hz/30Hz (P2P STUN/TURN & Dedicated Socket.io), cơ chế nội suy LERP + Dead Reckoning, đồng bộ Host-Authoritative, Dynamic Server Discovery & Fallback đa tầng, cơ chế Hồi sinh & Ví tiền riêng. |
-| **02** | [`02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md`](./02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md) | 7 Quy tắc vàng chống tụt FPS & rò rỉ RAM: Bảo toàn sàn kính trong suốt `surfaceCanvas` (`alpha: true`), GPU `ImageBitmap` Pre-baking (triệt tiêu `shadowBlur`), Spatial Hash Grid $O(1)$ cho 400+ quái, AI clearance caching, Frame Pacer & Watchdog 400ms, WebGL Shader Fail-Safe. |
-| **03** | [`03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md`](./03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md) | Bảng chỉ số 7 loại vũ khí, sửa lỗi bắn liên tục khi giữ chuột, Cân bằng Boss [1, 1, 2, 2, 3, 3, 4, 4, 4, 4] & xóa Boss tốc biến, vòng tròn máy phát 360° dưới chân, máy gia tốc 560x167, logic `carryOver` khi chơi lại vs. qua màn, Victory Modal 950ms. |
-| **04** | [`04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md`](./04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md) | Danh mục quy chuẩn đặt tên toàn bộ ảnh PNG trong suốt & âm thanh, cơ chế nạp an toàn Graceful Fallback, hệ thống Google Sheets NoSQL Database (5 Tabs), Vercel Serverless Proxy `/api/sync`, phòng thủ XSS và giới hạn LocalStorage. |
+| **01** | [`01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md`](./01_KIEN_TRUC_HE_THONG_VA_MANG_COOP.md) | Kiến trúc tổng thể, hạ tầng Hybrid Co-Op 60Hz/30Hz (P2P STUN/TURN & Dedicated Socket.io), nội suy LERP + Dead Reckoning, đồng bộ Host-Authoritative, Dynamic Server Discovery & Fallback, Co-Op Shared Credit (70%/50%), Revive 3.5s & Sóng đẩy lùi, PWA Shortcut Chrome Standalone. |
+| **02** | [`02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md`](./02_QUY_TAC_VANG_HIEU_NANG_VA_DO_HOA.md) | 8 Quy tắc vàng hiệu năng & VRAM: Bảo toàn sàn kính trong suốt `surfaceCanvas` (`alpha: true`), GPU `ImageBitmap` Pre-baking (triệt tiêu `shadowBlur`), Spatial Hash Grid $O(1)$ cho 400+ quái, AI clearance caching, Frame Pacer & Watchdog 400ms, WebGL Shader Fail-Safe, Chế độ Đồ họa EPIC Next-Gen Sci-Fi (3 mức cài đặt) & Khử triệt để lỗi ảo ảnh nòng súng/đạn. |
+| **03** | [`03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md`](./03_LOGIC_GAMEPLAY_VU_KHI_VA_CAN_BANG.md) | Bảng chỉ số 7 loại vũ khí cân bằng mới, cân bằng súng Phun Lửa M9A2 (minMap 4, giá $1,950, DoT 4.0), Hộp Tiếp Tế Đạn Dược (`ammo_pack` 16%), Pacing 10 Maps tinh gọn (12 waves Map 10 & 4 Boss tối thượng duy nhất), vòng tròn máy phát 360° dưới chân, máy gia tốc 560x167, logic `carryOver`, Victory Modal 950ms. |
+| **04** | [`04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md`](./04_QUY_CHUAN_ASSET_VA_CLOUD_DATABASE.md) | Danh mục quy chuẩn đặt tên toàn bộ ảnh PNG trong suốt & âm thanh, cơ chế nạp an toàn Graceful Fallback, hệ thống Google Sheets NoSQL Database (5 Tabs), Xác thực Google OAuth 2.0 (Google Identity Services 1-Click), Vercel Serverless Proxy `/api/sync`, phòng thủ XSS và giới hạn LocalStorage. |
 | **05** | [`05_HUONG_DAN_DONG_GOI_BUILD_VA_DEPLOY.md`](./05_HUONG_DAN_DONG_GOI_BUILD_VA_DEPLOY.md) | Quy trình đóng gói nén & làm rối mã Terser (`build_minified.ps1`), kịch bản 1-click `deploy_nhanh.bat`, cấu hình Vercel/Render, kỹ thuật UptimeRobot giữ máy chủ thức 24/7, và quy tắc Git Author. |
 
 ---
@@ -40,7 +40,10 @@
 | **Tiến trình Gameplay (`carryOver`)** | `initCampaign(keepSettingsOpen, carryOver)`<br>`resetPlayerProgressionToMapDefault(mapId)` | `carryOver === false` (Chơi lại/vào từ sảnh): Reset thông số về mặc định Map.<br>`carryOver === true` (Qua màn liên tục): Bảo lưu tiền, súng và nâng cấp. |
 | **Vòng Tiến Trình Máy Phát Điện** | `drawMarinePlayer()`<br>`drawGenerator()` | Khi giữ `[E]` trong 95px: Vòng tròn màu xanh lá (`#22c55e`) quét 360° quanh chân (`r = 34px`) kèm điểm sáng dẫn đường và số `%`. |
 | **Lưới Không Gian Vật Cản $O(1)$** | `rebuildObstacleSpatialGrid()`<br>`circleHitsStaticObstacle()`<br>`resolveWallSliding()` | 468 ô lưới (200px/ô). Giảm 98.7% số phép thử va chạm vật lý cho 400+ quái vật mỗi frame. |
-| **Mạng Co-Op Hybrid & Fallback** | `const XENO_COOP`<br>`pushTeammateSnapshot()`<br>`tryNextServer()` | Mạng 60Hz/30Hz LERP + Dead Reckoning. Tự động đọc Google Sheet và nhảy server backup khi server chính gặp sự cố kết nối. |
+| **Mạng Co-Op Hybrid & Fallback** | `const XENO_COOP`<br>`pushTeammateSnapshot()`<br>`tryNextServer()` | Mạng 60Hz/30Hz LERP + Dead Reckoning. Co-Op Shared Credit (70%/50%), Revive 3.5s + Sóng đẩy lùi 160px. |
+| **Đồ Họa EPIC (Next-Gen Sci-Fi)** | `webglPostProcessor`<br>`this.graphicsTier = 2` | 3 cấp độ (2D Chuẩn, Cao, EPIC). Volumetric God Rays, Glossy Floor Specular, Muzzle Heat Haze, Sci-Fi HDR Diffuse Halo. |
+| **Hộp Tiếp Tế Đạn Dược** | `spawnItemDrop()`<br>`activatePowerup("ammo")` | Tỉ lệ rơi 16% trên sàn đấu, nhặt nạp ngay +35% đạn súng chính và +20% đạn dự trữ. |
+| **Đăng Nhập Google (1-Click)** | `XenoAuth.loginGoogle()`<br>`initGoogleAuth()` | Google Identity Services (GIS). Xác thực TokenInfo chính chủ, tự động tạo tài khoản hoặc liên kết tài khoản cũ, cập nhật Avatar. |
 
 ---
 

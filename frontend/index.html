@@ -62,6 +62,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+    <!-- Google Identity Services (GIS) for Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -4488,6 +4490,15 @@
                 <button id="loginSubmitBtn" onclick="window.submitLogin()" class="w-full py-2.5 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg transition flex items-center justify-center gap-1.5 uppercase tracking-wider font-mono-tech">
                     <span>XÁC THỰC &amp; ĐĂNG NHẬP CLOUD</span>
                 </button>
+                <!-- GOOGLE 1-CLICK SIGN-IN -->
+                <div class="google-auth-section pt-1">
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-slate-800"></div>
+                        <span class="flex-shrink mx-3 text-[10px] text-slate-400 font-mono-tech uppercase tracking-wider">HOẶC ĐĂNG NHẬP NHANH VỚI</span>
+                        <div class="flex-grow border-t border-slate-800"></div>
+                    </div>
+                    <div id="googleSignInBtnLogin" class="flex justify-center w-full min-h-[44px] items-center"></div>
+                </div>
                 <div class="flex items-center justify-between pt-1 text-[11px] font-mono-tech">
                     <button type="button" onclick="window.switchAuthTab('forgot')" class="text-amber-400 hover:text-amber-300 underline">
                         Quên mật khẩu?
@@ -4527,6 +4538,15 @@
                 <button id="regSubmitBtn" onclick="window.submitRegister()" class="w-full py-2.5 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg transition flex items-center justify-center gap-1.5 uppercase tracking-wider font-mono-tech">
                     <span>TẠO TÀI KHOẢN CLOUD MỚI</span>
                 </button>
+                <!-- GOOGLE 1-CLICK REGISTER -->
+                <div class="google-auth-section pt-1">
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-slate-800"></div>
+                        <span class="flex-shrink mx-3 text-[10px] text-slate-400 font-mono-tech uppercase tracking-wider">HOẶC ĐĂNG KÝ NHANH VỚI</span>
+                        <div class="flex-grow border-t border-slate-800"></div>
+                    </div>
+                    <div id="googleSignInBtnRegister" class="flex justify-center w-full min-h-[44px] items-center"></div>
+                </div>
                 <div class="text-center pt-1 text-[11px] font-mono-tech">
                     <button type="button" onclick="window.switchAuthTab('login')" class="text-slate-400 hover:text-emerald-300">
                         Đã có tài khoản? <span class="text-emerald-400 font-bold underline">Đăng nhập</span>
@@ -6847,6 +6867,9 @@
                         data = await resp.json();
                     }
                     if (data && data.success) {
+                        if (data.google_client_id) {
+                            window.GOOGLE_CLIENT_ID = data.google_client_id;
+                        }
                         this.applyServerConfig(data);
                     }
                 } catch (err) {
@@ -28459,6 +28482,21 @@
                 return res;
             },
 
+            async loginGoogle(credential) {
+                const res = await this.callApi("LOGIN_GOOGLE", { credential });
+                if (res && res.success) {
+                    this.user = res.user;
+                    this.sessionToken = res.user.sessionToken;
+                    try {
+                        localStorage.setItem("xeno_user_data", JSON.stringify(this.user));
+                        localStorage.setItem("xeno_session_token", this.sessionToken);
+                    } catch (e) {}
+                    this.applyDataToGame(res.progress, res.settings);
+                    this.updateUI();
+                }
+                return res;
+            },
+
             async forgotPassword(identifier) {
                 return await this.callApi("FORGOT_PASSWORD", { identifier });
             },
@@ -28724,6 +28762,113 @@
         }
         window.resetToDefaultGuestState = resetToDefaultGuestState;
 
+        window.GOOGLE_CLIENT_ID = "1044781625624-q7oeqqv1u0pe53426atqkhhr5k6e0jm3.apps.googleusercontent.com";
+        let googleAuthInitialized = false;
+        let googleAuthRetryCount = 0;
+
+        function initGoogleAuth() {
+            // Nếu người dùng chạy file trực tiếp từ ổ cứng (file://) thì Google cấm theo chính sách OAuth
+            if (window.location.protocol === "file:") {
+                const sections = document.querySelectorAll(".google-auth-section");
+                sections.forEach(s => s.classList.add("hidden"));
+                return;
+            }
+
+            if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+                if (googleAuthRetryCount < 10) {
+                    googleAuthRetryCount++;
+                    setTimeout(initGoogleAuth, 350);
+                }
+                return;
+            }
+
+            try {
+                if (!googleAuthInitialized) {
+                    window.google.accounts.id.initialize({
+                        client_id: window.GOOGLE_CLIENT_ID,
+                        callback: handleGoogleCredentialResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+                    googleAuthInitialized = true;
+                }
+
+                // Render nút Google Sign-In vào tab Đăng Nhập
+                const btnLogin = byId("googleSignInBtnLogin");
+                if (btnLogin) {
+                    btnLogin.innerHTML = "";
+                    window.google.accounts.id.renderButton(btnLogin, {
+                        theme: "filled_blue",
+                        size: "large",
+                        text: "signin_with",
+                        shape: "rectangular",
+                        logo_alignment: "left",
+                        width: 280
+                    });
+                }
+
+                // Render nút Google Sign-In vào tab Đăng Ký
+                const btnReg = byId("googleSignInBtnRegister");
+                if (btnReg) {
+                    btnReg.innerHTML = "";
+                    window.google.accounts.id.renderButton(btnReg, {
+                        theme: "filled_blue",
+                        size: "large",
+                        text: "signup_with",
+                        shape: "rectangular",
+                        logo_alignment: "left",
+                        width: 280
+                    });
+                }
+            } catch (err) {
+                console.warn("[GOOGLE AUTH] Lỗi khởi tạo Google Identity Services:", err);
+            }
+        }
+        window.initGoogleAuth = initGoogleAuth;
+
+        async function handleGoogleCredentialResponse(response) {
+            if (!response || !response.credential) return;
+            if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+
+            showToast("XÁC THỰC GOOGLE", "Đang kết nối xác thực tài khoản từ Google...");
+            const loginAlert = byId("loginStatusAlert");
+            const regAlert = byId("regStatusAlert");
+            const isReg = byId("authViewRegister") && !byId("authViewRegister").classList.contains("hidden");
+            const activeAlert = isReg ? regAlert : loginAlert;
+
+            if (activeAlert) {
+                activeAlert.className = "text-xs p-2.5 rounded-none font-mono-tech bg-sky-500/20 text-sky-300 border border-sky-500/40";
+                activeAlert.textContent = "Đang đồng bộ hồ sơ chỉ huy từ Google Cloud...";
+                activeAlert.classList.remove("hidden");
+            }
+
+            try {
+                const res = await XenoAuth.loginGoogle(response.credential);
+                if (res && res.success) {
+                    if (activeAlert) activeAlert.classList.add("hidden");
+                    showToast("ĐĂNG NHẬP GOOGLE THÀNH CÔNG!", res.message || `Chào mừng Chỉ Huy ${XenoAuth.user.displayName}!`);
+                    closeAuthModal();
+                } else {
+                    const msg = (res && res.message) ? res.message : "Đăng nhập Google thất bại. Vui lòng thử lại!";
+                    if (activeAlert) {
+                        activeAlert.className = "text-xs p-2.5 rounded-none font-mono-tech bg-rose-500/20 text-rose-300 border border-rose-500/40";
+                        activeAlert.textContent = msg;
+                        activeAlert.classList.remove("hidden");
+                    }
+                    showToast("LỖI XÁC THỰC", msg);
+                }
+            } catch (err) {
+                const msg = "Lỗi kết nối máy chủ Cloud: " + (err.message || err);
+                if (activeAlert) {
+                    activeAlert.className = "text-xs p-2.5 rounded-none font-mono-tech bg-rose-500/20 text-rose-300 border border-rose-500/40";
+                    activeAlert.textContent = msg;
+                    activeAlert.classList.remove("hidden");
+                }
+                showToast("LỖI KẾT NỐI", msg);
+            }
+        }
+        window.handleGoogleCredentialResponse = handleGoogleCredentialResponse;
+
         function openAuthModal() {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             const modal = byId("authModal");
@@ -28733,6 +28878,7 @@
                 populateProfileView();
             } else {
                 switchAuthTab("login");
+                initGoogleAuth();
             }
             modal.classList.remove("hidden");
         }
@@ -28766,11 +28912,13 @@
                 if (viewLogin) viewLogin.classList.remove("hidden");
                 if (tabLoginBtn) tabLoginBtn.className = "flex-1 py-2.5 text-center text-emerald-300 border-b-2 border-emerald-400 bg-emerald-500/10 transition uppercase tracking-wider font-mono-tech";
                 if (tabRegBtn) tabRegBtn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition uppercase tracking-wider font-mono-tech";
+                initGoogleAuth();
             } else if (tab === "register") {
                 if (tabsNav) tabsNav.classList.remove("hidden");
                 if (viewReg) viewReg.classList.remove("hidden");
                 if (tabLoginBtn) tabLoginBtn.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition uppercase tracking-wider font-mono-tech";
                 if (tabRegBtn) tabRegBtn.className = "flex-1 py-2.5 text-center text-emerald-300 border-b-2 border-emerald-400 bg-emerald-500/10 transition uppercase tracking-wider font-mono-tech";
+                initGoogleAuth();
             } else if (tab === "forgot") {
                 if (tabsNav) tabsNav.classList.add("hidden");
                 if (viewForgot) viewForgot.classList.remove("hidden");
@@ -29554,6 +29702,9 @@
 
                 if (data && data.success) {
                     cachedDonateConfig = data;
+                    if (data.google_client_id) {
+                        window.GOOGLE_CLIENT_ID = data.google_client_id;
+                    }
                     updateDonateUI(data);
                     if (window.XENO_COOP && typeof window.XENO_COOP.applyServerConfig === "function") {
                         window.XENO_COOP.applyServerConfig(data);

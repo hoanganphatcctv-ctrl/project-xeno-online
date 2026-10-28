@@ -134,3 +134,18 @@ flowchart TD
 * **Mạng Co-Op**:
   * Khi người chơi trở về sảnh chờ hoặc chơi đơn (Solo), bắt buộc gọi `XENO_COOP.cleanup()` để ngắt toàn bộ timer ping, ngắt kết nối WebSocket/WebRTC và làm rỗng mảng `teammate.snapshotBuffer = []`.
 
+
+
+---
+
+## 🌌 QUY TẮC 8: CHẾ ĐỘ ĐỒ HỌA EPIC (NEXT-GEN SCI-FI) & KHỬ TRIỆT ĐỂ LỖI ẢO ẢNH NÒNG SÚNG / ĐẠN
+
+Trò chơi cung cấp 3 cấp độ đồ họa độc lập có thể tùy biến tự do trong Cài đặt (`Tab 01`):
+1. **2D CHUẨN (Tối đa FPS)**: Chạy hoàn toàn trên Canvas 2D gốc, tắt 100% WebGL canvas, duy trì 60-120 FPS trên mọi thiết bị cấu hình thấp.
+2. **CAO (Shader cơ bản)**: Bật WebGL Post-Processing với Bloom Neon, Chromatic Aberration, Vignette và CRT Scanlines.
+3. **EPIC (Next-Gen Sci-Fi)**: Nâng cấp trải nghiệm điện ảnh với 5 hiệu ứng đồ họa cao cấp:
+   * **Volumetric God Rays & Bụi Không Gian**: Tia sáng hình nón quét theo hướng đèn pin nhân vật với hạt bụi photon chớp nháy lơ lửng.
+   * **Glossy Screen-Space Floor Specular**: Phản xạ ánh sáng mặt sàn kim loại và kính. **Quy tắc an toàn chống bóng ma**: Sử dụng bộ lọc nhòe tán xạ 3 điểm (`Roughness Gloss Blur`) và ngưỡng bắt sáng cao `0.78` (chỉ bắt ánh sáng chớp lửa nổ, máy gia tốc, không in bóng sắc nét thân người và súng).
+   * **Thermal Air Distortion (Sóng nhiệt không khí)**: Gợn sóng nhiệt vi mô trước đầu nòng súng (`player.angle + cos*36, sin*36`) và trên các vệt lửa sàn Napalm.
+   * **Sci-Fi HDR Diffuse Halo**: Quầng sáng năng lượng mềm mại đa hướng. **Quy tắc triệt tiêu 100% ảo ảnh nhân bản**: Tuyệt đối không dùng offset bước nhảy lớn theo trục hoành (`texel.x * spread`), sử dụng Bilateral Smooth Blur 4 hướng đối xứng với ngưỡng cô lập độ sáng cao `0.82`, xóa sạch hoàn toàn hiện tượng tạo bản sao nòng súng và tia đạn song song.
+   * **Cinematic Film Grain**: Hạt nhiễu điện ảnh tinh tế kết hợp thanh trượt cường độ 50% - 150% và 3 nút gạt tính năng con, tự động lưu vào `localStorage`.
