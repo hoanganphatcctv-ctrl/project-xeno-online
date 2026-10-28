@@ -118,14 +118,49 @@ flowchart LR
 
 ## 🔐 4. HỆ THỐNG XÁC THỰC GOOGLE OAUTH 2.0 (GOOGLE IDENTITY SERVICES)
 
-Trò chơi hỗ trợ đăng nhập 1-chạm thông qua **Google Identity Services (GIS)** kết hợp cơ sở dữ liệu Google Sheet:
+Trò chơi hỗ trợ đăng nhập 1-chạm thông qua **Google Identity Services (GIS SDK)** kết hợp mô hình Kiến Trúc Dự Phòng Kép (Dual-Layer Verification):
 
-1. **Luồng Xác Thực Kỹ Thuật (`LOGIN_GOOGLE`)**:
-   * **Frontend**: Tải thư viện chính chủ `<script src="https://accounts.google.com/gsi/client" async defer></script>`, khởi tạo với `client_id` (đọc động từ tab `Admin_Config` của Sheet hoặc fallback mặc định).
-   * **Xác minh bảo mật**: Token định danh JWT (Credential) được gửi về Apps Script (`Code.gs`) và xác thực trực tiếp qua Google TokenInfo API (`https://oauth2.googleapis.com/tokeninfo?id_token=...`).
-2. **Cơ Chế Liên Kết & Tạo Tài Khoản Tự Động (Smart Linking)**:
-   * **Tài khoản đã tồn tại**: Nhận diện theo Gmail trong tab `Users`, đăng nhập tức thì, cấp `session_token` mới, đồng bộ tiền tệ, map và súng đã mở khóa. Nếu tài khoản chưa có avatar, tự động lấy ảnh profile từ Google làm Avatar.
-   * **Người chơi mới**: Tự động tạo bản ghi trong 3 tab `Users`, `Progress`, `Settings` với `$120` khởi đầu, mở khóa Map 1, và dùng ảnh Google làm Avatar.
-3. **Cơ Chế Dự Phòng An Toàn (Graceful Fallback)**:
-   * Khi mở file trực tiếp từ ổ cứng (`file:///...`), hệ thống tự động ẩn nút Google để tuân thủ chính sách bảo mật của Google OAuth, đồng thời giữ nguyên 100% chức năng Đăng ký / Đăng nhập Username & Password truyền thống.
+```mermaid
+flowchart TD
+    CLIENT["Người Chơi (Web / Mobile / PWA)"] -->|1. Bấm Đăng Nhập Google| GIS["Google Identity Services (GIS SDK)"]
+    GIS -->|2. Trả về ID Token (JWT)| CLIENT
+    CLIENT -->|3. POST action: LOGIN_GOOGLE| PROXY["Vercel Serverless Function (api/sync.js)"]
+    
+    subgraph DUAL_LAYER["KIẾN TRÚC XÁC THỰC DỰ PHÒNG KÉP"]
+        PROXY -->|Lớp 1: Node.js fetch ~80ms| GOOGLE_API["Google TokenInfo API (oauth2.googleapis.com)"]
+        GOOGLE_API -->|Gắn google_user verified: true| PROXY
+        PROXY -->|Chuyển tiếp payload an toàn| APPS_SCRIPT["Google Apps Script (Code.gs)"]
+        APPS_SCRIPT -.->|Lớp 2 (Dự phòng gọi trực tiếp): UrlFetchApp| GOOGLE_API
+    end
+    
+    APPS_SCRIPT -->|4. Tra cứu / Lưu trữ| DB[("Google Sheets (Users, Progress, Settings)")]
+    DB -->|5. Trả về Session, Credits & Map| CLIENT
+```
+
+1. **Kiến Trúc Xác Thực Dự Phòng Kép (Dual-Layer Verification)**:
+   * **Lớp 1 — Vercel Serverless Proxy (`api/sync.js`)**:
+     * Khi nhận yêu cầu `LOGIN_GOOGLE`, máy chủ Vercel (môi trường Node.js) tự động gọi Google TokenInfo API (`https://oauth2.googleapis.com/tokeninfo?id_token=...`) để giải mã email, tên, và ảnh đại diện.
+     * Đính kèm đối tượng `google_user: { email, name, picture, sub, verified: true }` vào gói tin chuyển tiếp sang Google Apps Script.
+     * **Lợi ích**: Giảm thiểu thời gian chờ xuống còn ~80ms và bảo vệ hạn ngạch mạng (Quota) của Google Sheet.
+   * **Lớp 2 — Google Apps Script Backend (`Code.gs`)**:
+     * Nếu nhận được `google_user` đã xác thực từ Vercel, script xử lý ghi dữ liệu ngay lập tức mà **không cần gọi thêm lệnh mạng**.
+     * Nếu người chơi gọi trực tiếp (chế độ offline/local direct), Apps Script sử dụng hàm `UrlFetchApp.fetch()` độc lập để tự xác thực dự phòng.
+2. **Quy Trình Cấp Quyền Kết Nối Internet (`script.external_request`)**:
+   * Khi thêm `UrlFetchApp` vào Apps Script, Google yêu cầu chủ sở hữu dự án cấp quyền kết nối mạng Internet đúng **1 lần duy nhất**.
+   * Trong `Code.gs` đã trang bị sẵn hàm công cụ:
+     ```javascript
+     function CAP_QUYEN_XAC_THUC_INTERNET() {
+       const resp = UrlFetchApp.fetch("https://www.google.com");
+       Logger.log("Đã cấp quyền kết nối Internet thành công! Mã phản hồi: " + resp.getResponseCode());
+     }
+     ```
+   * Chỉ cần chọn hàm trên và bấm **▶ Chạy (Run)** trong trình soạn thảo Apps Script, chọn **Xem lại quyền ➔ Nâng cao ➔ Đi tới Project_Xeno_Database ➔ Cho phép** để mở quyền vĩnh viễn cho Web App.
+3. **Cơ Chế Liên Kết & Tạo Tài Khoản Tự Động (Smart Linking)**:
+   * **Tài khoản đã tồn tại**: Nhận diện theo Gmail trong tab `Users`, đăng nhập tức thì, cấp `session_token` mới, đồng bộ 100% tiền tệ (`player.credits`), Map mở khóa và vũ khí đã nâng cấp. Nếu tài khoản chưa có ảnh đại diện riêng, tự động cập nhật Avatar từ Google vào tab `Settings`.
+   * **Người chơi mới**: Tự động sinh `userId` dạng `XN-XXXXXXXX`, username duy nhất không trùng lặp, cấp vốn khởi đầu \$120, mở khóa Map 1 và lưu ảnh đại diện Google.
+4. **Cấu Hình Google Cloud Console**:
+   * **Client ID**: `1044781625624-q7oeqqv1u0pe53426atqkhhr5k6e0jm3.apps.googleusercontent.com` (được lưu tại hàng 12 tab `Admin_Config` và có thể đổi trực tiếp trên Sheet mà không cần build lại code).
+   * **Trạng thái xuất bản (Publishing Status)**: Thiết lập **`In production`** và loại đối tượng **`External`** để mở quyền đăng nhập công khai cho toàn bộ người dùng sở hữu tài khoản Google trên thế giới mà không bị giới hạn danh sách Test users.
+5. **Cơ Chế Dự Phòng An Toàn (Graceful Fallback)**:
+   * Khi mở file trực tiếp từ ổ cứng (`file:///...`), hệ thống tự động phát hiện qua `window.location.protocol === "file:"` và ẩn nút Google để tuân thủ quy định bảo mật OAuth của Google, giữ nguyên 100% chức năng Đăng ký / Đăng nhập Username & Password truyền thống.
 

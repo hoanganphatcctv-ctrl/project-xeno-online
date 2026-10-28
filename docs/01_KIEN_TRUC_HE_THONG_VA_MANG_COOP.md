@@ -163,3 +163,14 @@ Nhằm đảm bảo đồng đội di chuyển mượt mà 60 FPS mà không b�
   * Service Worker (`sw.js` v2.1.0) pre-cache route gốc `/?source=pwa` để đảm bảo khởi động ứng dụng tức thì ngay cả khi ứng dụng Chrome đang đóng hoàn toàn.
   * Loại bỏ lệnh gọi cưỡng bức toàn màn hình `forceLandscapeAndFullscreen()` trong quá trình khởi động tự động (`bootGameEngine()`), tuân thủ nghiêm ngặt chính sách bảo mật trình duyệt yêu cầu cử chỉ người dùng (User Gesture).
 
+---
+
+## 🔐 9. HỆ THỐNG DANH TÍNH TÁC CHIẾN & ĐĂNG NHẬP GOOGLE OAUTH 2.0
+
+* **Mô hình định danh đa nguồn (Hybrid Identity System)**:
+  * **Chế độ Khách (Guest)**: Khởi đầu ngay lập tức không cần đăng nhập, lưu tiến trình tạm vào `localStorage`.
+  * **Tài khoản Truyền Thống (Username/Password)**: Đăng ký xác thực qua Gmail và mật khẩu mã hóa Salt SHA-256.
+  * **Đăng Nhập Google 1-Click (Google Identity Services)**: Xác thực trực tiếp qua tài khoản Google của người chơi bằng JWT ID Token, hỗ trợ đồng bộ xuyên suốt từ PC sang Mobile và PWA App.
+* **Đồng bộ danh tính trong phòng Co-Op**:
+  * Biệt danh tác chiến (`Callsign`) và hình ảnh đại diện (`avatar_url`) từ tài khoản Google được truyền đồng bộ qua gói tin bắt tay phòng `ROOM_JOIN` / `PLAYER_INFO`, hiển thị chính xác trên HUD thanh máu và bảng tổng kết trận đấu của cả hai chỉ huy.
+

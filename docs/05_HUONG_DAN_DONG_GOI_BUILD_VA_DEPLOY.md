@@ -109,3 +109,25 @@ Gói miễn phí của Render sẽ tạm dừng dịch vụ nếu sau 15 phút k
 3. Nhấn phím **`F12`** $\rightarrow$ chọn tab **Sources** $\rightarrow$ mở file `game.min.js`:
    * Mã nguồn đặc quánh trên 1 dòng duy nhất, các tên biến đều bị đổi thành ký tự viết tắt vô nghĩa, hoàn toàn chống dịch ngược và bảo vệ bản quyền tuyệt đối.
 
+---
+
+## 🔧 6. HƯỚNG DẪN CẬP NHẬT GOOGLE APPS SCRIPT BACKEND (`Code.gs`)
+
+Khi có cập nhật mới trong file `google-sheets-backend/Code.gs` (ví dụ API xác thực mới, sửa đổi database, hoặc bổ sung cấu hình):
+
+1. **Dán Mã Nguồn Mới**:
+   * Mở Google Sheet `Project_Xeno_Database` ➔ Vào **Tiện ích mở rộng (Extensions)** ➔ **Apps Script**.
+   * Mở file `Code.gs` trên máy tính, nhấn `Ctrl + A` copy toàn bộ và dán đè vào trình soạn thảo Apps Script trên trình duyệt.
+   * Nhấn biểu tượng 💾 **Lưu dự án (Save)**.
+2. **Cấp Quyền Truy Cập Mạng (Nếu Thêm Lệnh Gọi Ngoài)**:
+   * Nếu có cập nhật liên quan đến lệnh mạng `UrlFetchApp`, ở thanh công cụ trên cùng chọn hàm:
+     👉 **`CAP_QUYEN_XAC_THUC_INTERNET`**
+   * Nhấn nút **▶ Chạy (Run)**.
+   * Hộp thoại hiện ra: Chọn **Xem lại quyền** ➔ Chọn tài khoản Google của bạn ➔ Bấm **Nâng cao (Advanced)** ➔ Chọn **Đi tới Project_Xeno_Database (không an toàn)** ➔ Bấm **Cho phép (Allow)**.
+   * Quyền `https://www.googleapis.com/auth/script.external_request` sẽ được kích hoạt vĩnh viễn cho Web App.
+3. **Phát Hành Phiên Bản Mới (Deploy New Version)**:
+   * Nhấn nút xanh **Triển khai (Deploy)** ở góc trên bên phải ➔ Chọn **Quản lý bản triển khai (Manage deployments)**.
+   * Nhấp vào biểu tượng ✏️ **Chỉnh sửa (Edit)** cạnh bản triển khai hiện tại.
+   * Tại dòng **Phiên bản (Version)**, chọn **Phiên bản mới (New version)**.
+   * Nhấn nút **Triển khai (Deploy)** để áp dụng logic mới ngay lập tức cho toàn bộ người chơi.
+
