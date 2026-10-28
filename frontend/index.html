@@ -14184,6 +14184,44 @@
             }
         }
 
+        // Bộ nhớ đệm tĩnh 32 đỉnh phục vụ nội suy Spline chất lỏng hữu cơ (Zero GC Churn)
+        const _fluidSplineCache = [];
+        for (let _fsc = 0; _fsc < 32; _fsc++) _fluidSplineCache.push({ x: 0, y: 0 });
+
+        // Hàm tạo đường bao chất lỏng hữu cơ uốn lượn liên tục qua Spline trung điểm (Triệt tiêu 100% cạnh thẳng & góc vuông)
+        function traceOrganicFluidPath(targetCtx, lobes, baseR, scale = 1.0, timeOffset = 0) {
+            const numPts = 24;
+            const lobeLen = (lobes && lobes.length > 0) ? lobes.length : 8;
+            for (let p = 0; p < numPts; p++) {
+                const pNorm = p / numPts;
+                const ang = pNorm * Math.PI * 2;
+                const lobeIdxF = pNorm * lobeLen;
+                const i0 = Math.floor(lobeIdxF) % lobeLen;
+                const i1 = (i0 + 1) % lobeLen;
+                const frac = lobeIdxF - Math.floor(lobeIdxF);
+                const smoothFrac = frac * frac * (3 - 2 * frac); // Smoothstep Hermite
+                const lobeVal = lobes ? (lobes[i0] + (lobes[i1] - lobes[i0]) * smoothFrac) : 1.0;
+
+                const ripple = 1.0 + 0.022 * Math.sin(timeOffset * 0.003 + p * 1.6);
+                const r = baseR * lobeVal * scale * ripple;
+                _fluidSplineCache[p].x = Math.cos(ang) * r;
+                _fluidSplineCache[p].y = Math.sin(ang) * r;
+            }
+
+            targetCtx.beginPath();
+            const m0x = (_fluidSplineCache[0].x + _fluidSplineCache[1].x) * 0.5;
+            const m0y = (_fluidSplineCache[0].y + _fluidSplineCache[1].y) * 0.5;
+            targetCtx.moveTo(m0x, m0y);
+            for (let i = 0; i < numPts; i++) {
+                const pNext = _fluidSplineCache[(i + 1) % numPts];
+                const pAfter = _fluidSplineCache[(i + 2) % numPts];
+                const mNextX = (pNext.x + pAfter.x) * 0.5;
+                const mNextY = (pNext.y + pAfter.y) * 0.5;
+                targetCtx.quadraticCurveTo(pNext.x, pNext.y, mNextX, mNextY);
+            }
+            targetCtx.closePath();
+        }
+
         // TRỤ CHỨA DUNG DỊCH HẠT NHÂN MÀU XANH LÁ (Green Nuclear Bio-Vats & Radioactive Pools)
         function drawNuclearVatsAndPools(camX, camY) {
             const now = performance.now();
@@ -14442,79 +14480,133 @@
                 ctx.restore();
             }
 
-            // 2. Active Radioactive Toxic Green Acid Pools on the floor (Dòng nước axit xanh chảy loang với gợn sóng & bọt khí sủi)
+            // 2. Active Radioactive Toxic Green Acid Pools on the floor (Dòng nước axit xanh chảy loang hữu cơ đa tầng)
             for (let i = 0; i < nuclearPools.length; i++) {
                 const np = nuclearPools[i];
                 const curR = np.currentRadius || np.radius || 135;
-                if (np.x + curR < camX || np.x - curR > camX + VIEW_W || np.y + curR < camY || np.y - curR > camY + VIEW_H) continue;
+                if (np.x + curR * 1.45 < camX || np.x - curR * 1.45 > camX + VIEW_W || np.y + curR * 1.45 < camY || np.y - curR * 1.45 > camY + VIEW_H) continue;
 
-                const alpha = Math.min(0.92, np.life / 100);
-                const lobes = np.lobes || [0.92, 1.15, 0.88, 1.18, 0.90, 1.20, 0.86, 1.12];
+                const alpha = Math.min(0.95, np.life / 90);
+                const lobes = np.lobes || [1, 1.05, 0.95, 1.08, 0.98, 1.04, 0.96, 1.02];
                 ctx.save();
                 ctx.translate(np.x, np.y);
                 ctx.globalAlpha = alpha;
 
-                // A. Vùng loang chất lỏng dạng thùy tự nhiên hữu cơ (Organic Viscous Perimeter)
-                ctx.beginPath();
-                const numPts = lobes.length;
-                for (let p = 0; p <= numPts; p++) {
-                    const idx = p % numPts;
-                    const ang = (idx / numPts) * Math.PI * 2 + Math.sin(now * 0.0025 + idx) * 0.06;
-                    const rDist = curR * lobes[idx] * (1.0 + 0.04 * Math.sin(now * 0.004 + idx * 2.1));
-                    const px = Math.cos(ang) * rDist;
-                    const py = Math.sin(ang) * rDist;
-                    if (p === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                ctx.closePath();
-
-                // Lõi hồ axit phát sáng Neon Green & viền ăn mòn màu đen đậm
-                const rStep = Math.max(16, Math.round(curR / 4) * 4);
-                const gPool = getCachedRadialGradient(ctx, "acid_fluid_pool_" + rStep, 0, 0, 6, 0, 0, rStep, [
-                    [0, "rgba(134, 239, 172, 0.90)"],
-                    [0.45, "rgba(34, 197, 94, 0.72)"],
-                    [0.82, "rgba(5, 46, 22, 0.85)"],
-                    [1, "rgba(5, 46, 22, 0)"]
+                // A. Vết ăn mòn sàn nhà & bóng tiếp xúc chất lỏng (Acid Floor Etch / Meniscus Base)
+                traceOrganicFluidPath(ctx, lobes, curR, 1.04, now);
+                const rRimStep = Math.max(24, Math.round((curR * 1.15) / 4) * 4);
+                const gRim = getCachedRadialGradient(ctx, "acid_rim_shadow_" + rRimStep, 0, 0, 4, 0, 0, rRimStep, [
+                    [0, "rgba(4, 26, 12, 0.72)"],
+                    [0.65, "rgba(5, 36, 18, 0.82)"],
+                    [0.88, "rgba(4, 28, 12, 0.65)"],
+                    [1.0, "rgba(2, 16, 8, 0)"]
                 ]);
-                ctx.fillStyle = gPool;
+                ctx.fillStyle = gRim;
                 ctx.fill();
 
-                // B. Viền bọt axit phản quang ăn mòn sàn nhà
-                ctx.strokeStyle = "rgba(74, 222, 128, 0.55)";
-                ctx.lineWidth = 2.2;
+                // B. Thân dung dịch axit đậm đặc phát quang huỳnh quang (Glowing Toxic Body)
+                traceOrganicFluidPath(ctx, lobes, curR, 1.0, now);
+                const rBodyStep = Math.max(24, Math.round((curR * 1.1) / 4) * 4);
+                const gFluid = getCachedRadialGradient(ctx, "acid_fluid_core_" + rBodyStep, 0, 0, 4, 0, 0, rBodyStep, [
+                    [0, "rgba(187, 247, 208, 0.95)"],   // Neon glowing fluorescent uranium core
+                    [0.22, "rgba(74, 222, 128, 0.90)"],  // Brilliant toxic emerald
+                    [0.55, "rgba(34, 197, 94, 0.82)"],   // Dense bio-acid body
+                    [0.82, "rgba(21, 128, 61, 0.75)"],  // Viscous chemical green
+                    [0.95, "rgba(5, 46, 22, 0.70)"],    // Dark meniscus edge
+                    [1.0, "rgba(5, 46, 22, 0.0)"]       // Anti-aliased border
+                ]);
+                ctx.fillStyle = gFluid;
+                ctx.fill();
+
+                // C. Ánh căng bề mặt ướt tự nhiên (Delicate Viscous Meniscus Sheen - Soft & Non-intrusive)
+                ctx.strokeStyle = "rgba(187, 247, 208, 0.32)";
+                ctx.lineWidth = 1.4;
                 ctx.stroke();
 
-                // C. Gợn sóng chất lỏng cuộn tròn tỏa ra xung quanh (Liquid Surface Caustic Waves)
-                for (let w = 0; w < 3; w++) {
-                    const waveR = ((now * 0.02 + w * (curR * 0.32)) % (curR * 0.85)) + 8;
-                    const waveAlpha = Math.max(0, 0.45 * (1.0 - waveR / (curR * 0.85)));
-                    ctx.save();
-                    ctx.strokeStyle = "#bef264";
-                    ctx.globalAlpha = alpha * waveAlpha;
-                    ctx.lineWidth = 1.8;
-                    ctx.beginPath();
-                    safeArc(ctx, 0, 0, waveR);
-                    ctx.stroke();
-                    ctx.restore();
+                // D. Gợn sóng chất lỏng cuộn loang tự nhiên (thay thế hoàn toàn vòng tròn radar thô cứng)
+                for (let w = 0; w < 2; w++) {
+                    const wavePhase = ((now * 0.0018 + w * 0.5) % 1.0);
+                    const waveScale = 0.28 + wavePhase * 0.54;
+                    const waveAlpha = (1.0 - wavePhase) * 0.38;
+                    if (waveAlpha > 0.02) {
+                        ctx.save();
+                        ctx.globalAlpha = alpha * waveAlpha;
+                        ctx.strokeStyle = "rgba(190, 242, 100, 0.65)";
+                        ctx.lineWidth = 1.4;
+                        traceOrganicFluidPath(ctx, lobes, curR, waveScale, now + w * 1200);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
                 }
 
-                // D. Bọt khí axit 3D nổi trên mặt hồ có chấm sáng phản quang
+                // E. Các giọt axit vệ tinh văng bắn tự nhiên xung quanh vũng chính
+                if (!np.splatters || np.splatters.length === 0) {
+                    np.splatters = [];
+                    const sSeed = np.seed || 42;
+                    const splatCount = 8;
+                    for (let s = 0; s < splatCount; s++) {
+                        const sAng = (s / splatCount) * Math.PI * 2 + Math.sin(s * 2.3 + sSeed) * 0.45;
+                        const sDistMult = 1.08 + (((s * 7 + sSeed) % 10) / 10) * 0.28;
+                        const sRadius = 3.5 + (((s * 3 + sSeed) % 7) / 7) * 7.5;
+                        np.splatters.push({ ang: sAng, distMult: sDistMult, r: sRadius });
+                    }
+                }
+                for (let s = 0; s < np.splatters.length; s++) {
+                    const sp = np.splatters[s];
+                    const spDist = curR * sp.distMult;
+                    const spX = Math.cos(sp.ang) * spDist;
+                    const spY = Math.sin(sp.ang) * spDist;
+                    const spR = sp.r * Math.min(1.0, curR / 45); // Lớn dần theo vũng axit
+                    if (spR < 1.5) continue;
+
+                    // Viền bóng tiếp xúc
+                    ctx.beginPath();
+                    safeArc(ctx, spX, spY, spR * 1.15);
+                    ctx.fillStyle = "rgba(4, 26, 12, 0.70)";
+                    ctx.fill();
+
+                    // Thân giọt axit phát quang
+                    ctx.beginPath();
+                    safeArc(ctx, spX, spY, spR);
+                    const spStep = Math.max(8, Math.round(spR / 2) * 2);
+                    const gSplat = getCachedRadialGradient(ctx, "acid_splat_" + spStep, spX, spY, 1, spX, spY, spStep, [
+                        [0, "rgba(187, 247, 208, 0.92)"],
+                        [0.45, "rgba(34, 197, 94, 0.82)"],
+                        [0.85, "rgba(21, 128, 61, 0.75)"],
+                        [1.0, "rgba(5, 46, 22, 0.0)"]
+                    ]);
+                    ctx.fillStyle = gSplat;
+                    ctx.fill();
+
+                    // Chấm sáng bóng ướt nhỏ trên đỉnh giọt
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+                    ctx.beginPath();
+                    safeArc(ctx, spX - spR * 0.3, spY - spR * 0.3, spR * 0.28);
+                    ctx.fill();
+                }
+
+                // F. Bọt khí axit 3D nổi trên mặt hồ có chấm sáng phản quang
                 if (np.bubbles && np.bubbles.length > 0) {
                     for (let b = 0; b < np.bubbles.length; b++) {
                         const bub = np.bubbles[b];
                         ctx.save();
-                        ctx.globalAlpha = alpha * 0.85;
-                        ctx.fillStyle = "rgba(187, 247, 208, 0.65)";
+                        ctx.globalAlpha = alpha * 0.88;
+                        
+                        // Thân bọt khí 3D
+                        ctx.fillStyle = "rgba(187, 247, 208, 0.70)";
                         ctx.beginPath();
                         safeArc(ctx, bub.x, bub.y, bub.r);
                         ctx.fill();
-                        ctx.strokeStyle = "#4ade80";
+                        
+                        // Viền bọt khí
+                        ctx.strokeStyle = "rgba(74, 222, 128, 0.85)";
                         ctx.lineWidth = 1.2;
                         ctx.stroke();
-                        // Chấm sáng Specular Reflection
+
+                        // Chấm sáng Specular Reflection 3D
                         ctx.fillStyle = "#ffffff";
                         ctx.beginPath();
-                        safeArc(ctx, bub.x - bub.r * 0.35, bub.y - bub.r * 0.35, bub.r * 0.28);
+                        safeArc(ctx, bub.x - bub.r * 0.32, bub.y - bub.r * 0.32, bub.r * 0.28);
                         ctx.fill();
                         ctx.restore();
                     }
@@ -15968,6 +16060,56 @@
         }
         window.triggerInteractionKeyE = triggerInteractionKeyE;
 
+        // Khởi tạo vũng dung dịch phóng xạ/axit loang tự nhiên với 24 thùy sóng hữu cơ và các giọt vệ tinh
+        function spawnNuclearAcidPool(x, y, radius = 135, lifeFrames = 600) {
+            const seed = Math.random() * 100;
+            const count = 24;
+            const lobes = [];
+            const p1 = (seed * 1.618) % (Math.PI * 2);
+            const p2 = (seed * 2.718) % (Math.PI * 2);
+            const p3 = (seed * 3.141) % (Math.PI * 2);
+            for (let k = 0; k < count; k++) {
+                const th = (k / count) * Math.PI * 2;
+                // Kết hợp các sóng điều hòa tự nhiên của sức căng bề mặt chất lỏng (loại bỏ hoàn toàn góc vuông)
+                const wave = 1.0
+                    + 0.15 * Math.sin(th * 2 + p1)
+                    + 0.09 * Math.cos(th * 3 + p2)
+                    + 0.06 * Math.sin(th * 5 + p3)
+                    + 0.04 * Math.cos(th * 7 + p1 * 0.5);
+                lobes.push(wave);
+            }
+
+            // Các giọt axit vệ tinh văng bắn tự nhiên xung quanh
+            const splatters = [];
+            const splatCount = 8 + Math.floor(Math.random() * 5);
+            for (let s = 0; s < splatCount; s++) {
+                const sAng = (s / splatCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
+                const sDistMult = 1.08 + Math.random() * 0.32;
+                const sRadius = 4 + Math.random() * 8.5;
+                splatters.push({
+                    ang: sAng,
+                    distMult: sDistMult,
+                    r: sRadius
+                });
+            }
+
+            const pool = {
+                x: Math.round(x),
+                y: Math.round(y),
+                radius: radius,
+                currentRadius: 18,
+                targetRadius: radius,
+                life: lifeFrames,
+                maxLife: lifeFrames,
+                seed: seed,
+                lobes: lobes,
+                splatters: splatters,
+                bubbles: []
+            };
+            nuclearPools.push(pool);
+            return pool;
+        }
+
         function shatterNuclearVat(vat, fromNetwork = false) {
             if (!vat || !vat.active) return;
             const vatIdx = nuclearVats.indexOf(vat);
@@ -16006,18 +16148,7 @@
             if (vat.clusterX && vat.clusterY) {
                 bakeScorchCrater(vat.clusterX, vat.clusterY, 80, true);
             }
-            nuclearPools.push({
-                x: vat.x,
-                y: vat.y,
-                radius: 135,
-                currentRadius: 18,
-                targetRadius: 135,
-                life: 10 * 60,
-                maxLife: 10 * 60,
-                seed: Math.random() * 100,
-                lobes: [0.88, 1.15, 0.92, 1.18, 0.85, 1.22, 0.90, 1.12],
-                bubbles: []
-            });
+            spawnNuclearAcidPool(vat.x, vat.y, 135, 10 * 60);
             if (window.webglPostProcessor) {
                 window.webglPostProcessor.addShockwave(vat.x, vat.y, 420, 750, 1.0);
             }
@@ -16795,18 +16926,7 @@
             if (bType === "acid") {
                 // THÙNG XANH LỤC (Toxic Bio-Acid): Nổ vỡ tạo hồ axit ăn mòn làm chậm quái 10 giây
                 bakeScorchCrater(barrel.x, barrel.y, 88, true);
-                nuclearPools.push({
-                    x: barrel.x,
-                    y: barrel.y,
-                    radius: 135,
-                    currentRadius: 18,
-                    targetRadius: 135,
-                    life: 10 * 60,
-                    maxLife: 10 * 60,
-                    seed: Math.random() * 100,
-                    lobes: [0.92, 1.18, 0.86, 1.24, 0.88, 1.14, 0.94, 1.10],
-                    bubbles: []
-                });
+                spawnNuclearAcidPool(barrel.x, barrel.y, 135, 10 * 60);
                 if (window.webglPostProcessor) {
                     window.webglPostProcessor.addShockwave(barrel.x, barrel.y, 380, 680, 0.92);
                 }
@@ -17924,6 +18044,21 @@
                         }
                         np.bubbles.splice(b, 1);
                     }
+                }
+
+                // Làn khói axit hóa chất độc hại bốc hơi nhẹ lên không trung
+                if (frameCounter % 10 === (i % 10) && Math.random() < 0.45) {
+                    const vAng = Math.random() * Math.PI * 2;
+                    const vDist = Math.random() * (np.currentRadius * 0.72);
+                    spawnParticle(
+                        np.x + Math.cos(vAng) * vDist,
+                        np.y + Math.sin(vAng) * vDist,
+                        (Math.random() - 0.5) * 0.45,
+                        -0.6 - Math.random() * 0.75,
+                        Math.random() < 0.5 ? "#86efac" : "#4ade80",
+                        1.8 + Math.random() * 2.0,
+                        24
+                    );
                 }
 
                 if (frameCounter % 14 === 0) {
