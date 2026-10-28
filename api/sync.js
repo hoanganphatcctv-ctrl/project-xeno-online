@@ -21,9 +21,36 @@ export default async function handler(req, res) {
   const GOOGLE_SCRIPT_URL = process.env.XENO_CLOUD_API_URL || "https://script.google.com/macros/s/AKfycbw_7LwmAK4kH8JLY-KLEFXksnAn7EV6HgUfoHfBPFZa-xnoa5ylFXlMYHOWVAKkXzzp5A/exec";
 
   try {
-    const rawBody = typeof req.body === 'string' 
-      ? req.body 
-      : JSON.stringify(req.body || {});
+    let bodyObj = {};
+    if (typeof req.body === 'string') {
+      try { bodyObj = JSON.parse(req.body); } catch (e) { bodyObj = {}; }
+    } else if (req.body && typeof req.body === 'object') {
+      bodyObj = req.body;
+    }
+
+    // Tự động xác thực Google ID Token tại máy chủ Vercel nếu là LOGIN_GOOGLE
+    // Giúp loại bỏ hoàn toàn lỗi cấp quyền UrlFetchApp trong Google Apps Script
+    if (bodyObj.action === 'LOGIN_GOOGLE' && bodyObj.credential) {
+      try {
+        const verifyRes = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(bodyObj.credential));
+        if (verifyRes.ok) {
+          const tokenInfo = await verifyRes.json();
+          if (tokenInfo && tokenInfo.email) {
+            bodyObj.google_user = {
+              email: tokenInfo.email,
+              name: tokenInfo.name || tokenInfo.given_name || tokenInfo.email.split('@')[0],
+              picture: tokenInfo.picture || '',
+              sub: tokenInfo.sub || '',
+              verified: true
+            };
+          }
+        }
+      } catch (gErr) {
+        console.warn('[GOOGLE VERIFY IN VERCEL PROXY ERROR]:', gErr);
+      }
+    }
+
+    const rawBody = JSON.stringify(bodyObj);
 
     // Proxy ngầm từ máy chủ Vercel sang Google Apps Script
     const response = await fetch(GOOGLE_SCRIPT_URL, {
