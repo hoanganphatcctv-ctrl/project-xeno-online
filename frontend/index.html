@@ -1503,6 +1503,26 @@
         <span id="coopHudRevive" class="text-amber-300 font-bold hidden ml-1 animate-pulse">CẢNH BÁO: ĐỒNG ĐỘI GỤC!</span>
     </div>
 
+    <!-- TAC-OPS SOLO 1V1 PVP GUN GAME TOP HUD -->
+    <div id="pvpGunGameHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-slate-950/95 border-2 border-rose-500/80 text-[10px] font-mono-tech shadow-[0_0_25px_rgba(244,63,94,0.4)] pointer-events-none">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <div class="flex items-center gap-1.5">
+            <span class="text-rose-400 font-black uppercase tracking-wider">⚔️ 1V1 GUN GAME:</span>
+            <span id="pvpHudSelfWeapon" class="text-emerald-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <div id="pvpHudScore" class="px-2 py-0.5 bg-rose-950/80 border border-rose-500/50 text-white font-black text-xs tracking-widest">
+            0 - 0
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <div class="flex items-center gap-1.5">
+            <span class="text-slate-400 font-bold uppercase">ĐỐI THỦ:</span>
+            <span id="pvpHudOppWeapon" class="text-cyan-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <span class="text-amber-300 font-bold hidden sm:inline">[Q/E: LƯỚT NÉ]</span>
+    </div>
+
     <!-- ==========================================================================
          FIRST-TIME PLAYER GENERATOR TIP (MAP 1 ONLY - MIDDLE-LEFT HUD)
          ========================================================================== -->
@@ -1685,11 +1705,19 @@
             </button>
         </div>
 
-        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers) -->
+        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers / Strafe Right in PvP) -->
         <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 62%;">
             <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all" title="Giữ 5s Khởi động Máy Phát / Hack [Phím E]">
                 <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
+            </button>
+        </div>
+
+        <!-- Quick Action Button: Strafe Dash Left [Q] (Solo 1v1 PvP Gun Game Only) -->
+        <div id="touchBtnQWrapper" class="pointer-events-auto fixed hidden" style="left: 72%; top: 62%;">
+            <button id="touchBtnQ" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex flex-col items-center justify-center text-sky-300 active:scale-95 transition-all" title="Lướt Né Trái [Q]">
+                <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-sky-200">TRÁI</span>
             </button>
         </div>
 
@@ -1793,6 +1821,17 @@
                 <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">THÁP</span>
+                </div>
+            </div>
+
+            <!-- Edit: Strafe Dash Left [Q] Button (Solo 1v1 PvP) -->
+            <div id="dragCtrl_qDash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 72%; top: 62%;">
+                <div class="px-1.5 py-0.5 rounded-none bg-sky-950/90 border border-sky-400 text-sky-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    LƯỚT TRÁI [Q] (SOLO PVP)
+                </div>
+                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-sky-400 flex flex-col items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                    <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                    <span class="text-[7.5px] font-mono-tech font-bold uppercase text-sky-200">TRÁI</span>
                 </div>
             </div>
         </div>
@@ -3620,7 +3659,7 @@
                                         <h3 class="text-xs font-black text-amber-300 uppercase">TÙY CHỈNH BỐ CỤC PHÍM CẢM ỨNG (PUBG MOBILE STYLE)</h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400 mt-1">
-                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút [E] Tương tác, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
+                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút Lướt Trái [Q], Nút [E] Tương tác/Lướt Phải, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
                                     </p>
                                 </div>
                             </div>
@@ -4304,6 +4343,22 @@
                         </button>
                         <button id="coopHostCloseRoomBtn" onclick="window.toggleCoopHostRoomState()" class="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-[11px] font-extrabold uppercase transition cursor-pointer">
                             ĐÓNG PHÒNG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hàng 1.5: Chọn Chế Độ Tác Chiến (Co-Op Chiến Dịch vs Solo 1v1 Gun Game Đêm Tối) -->
+                <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-slate-400 font-bold uppercase">CHẾ ĐỘ TÁC CHIẾN</span>
+                        <span id="coopHostModeLabel" class="text-cyan-400 font-bold uppercase">🤝 CO-OP BẮN QUÁI</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button id="coopModeCoopBtn" type="button" onclick="window.setCoopGameMode('campaign')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 cursor-pointer">
+                            🤝 CO-OP BẮN QUÁI
+                        </button>
+                        <button id="coopModePvpBtn" type="button" onclick="window.setCoopGameMode('pvp_gungame')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
+                            ⚔️ 1V1 GUN GAME ĐÊM TỐI
                         </button>
                     </div>
                 </div>
@@ -6768,6 +6823,248 @@
             }
         }
 
+        // ============================================================================
+        // TAC-OPS SOLO 1V1 PVP GUN GAME STATE & LOGIC
+        // ============================================================================
+        window.gameMode = "campaign"; // "campaign" | "pvp_gungame"
+
+        const PVP_WEAPON_DAMAGE = {
+            0: 8.0,  // Song Lục MK23 (x2 viên = 16 dmg/loạt)
+            1: 8.2,  // Shotgun M1014 (x8 viên tỏa = 65.6 dmg cự ly gần)
+            2: 6.2,  // M134 Minigun (50ms liên thanh = ~124 DPS)
+            3: 2.2,  // Phun Lửa M9A2 (x3 tia = 6.6 dmg/loạt thiêu đốt)
+            4: 11.5, // M4-Cryo (x3 tia = 34.5 dmg + làm chậm)
+            5: 52.0, // Pháo Gauss M82-G (công phá cao)
+            6: 6.5   // Laze Hyperion X-7 (xuyên thấu liên tục theo tick)
+        };
+        window.PVP_WEAPON_DAMAGE = PVP_WEAPON_DAMAGE;
+
+        const PVP_AMMO_PER_LEVEL = {
+            0: Infinity,
+            1: 40,   // Shotgun
+            2: 240,  // Minigun
+            3: 300,  // Phun lửa
+            4: 60,   // M4-Cryo
+            5: 16,   // Pháo Gauss
+            6: 450   // Laser Hyperion
+        };
+        window.PVP_AMMO_PER_LEVEL = PVP_AMMO_PER_LEVEL;
+
+        const PVP_GUNGAME_STATE = {
+            active: false,
+            gunLevel: 0,
+            maxGunLevel: 6, // 0 to 6 = 7 cấp vũ khí
+            kills: 0,
+            deaths: 0,
+            opponentGunLevel: 0,
+            sonarPings: [], // { x, y, timer, maxTimer: 150 }
+            matchEnded: false,
+            matchWinner: null,
+            spawnPoints: [
+                { x: 380, y: 380 },
+                { x: 2220, y: 1420 }
+            ]
+        };
+        window.PVP_GUNGAME_STATE = PVP_GUNGAME_STATE;
+
+        function setCoopGameMode(mode) {
+            window.gameMode = (mode === "pvp_gungame") ? "pvp_gungame" : "campaign";
+            updateCoopLobbyGameModeUI();
+            if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
+            if (typeof XENO_COOP !== "undefined" && XENO_COOP.isHost && XENO_COOP.connected) {
+                XENO_COOP.sendPacket({
+                    t: "game_mode",
+                    mode: window.gameMode
+                });
+            }
+        }
+        window.setCoopGameMode = setCoopGameMode;
+
+        function updateCoopLobbyGameModeUI() {
+            const isPvP = (window.gameMode === "pvp_gungame");
+            const coopBtn = byId("coopModeCoopBtn");
+            const pvpBtn = byId("coopModePvpBtn");
+            const modeLabel = byId("coopHostModeLabel");
+            const startBtn = byId("coopHostStartBtn");
+
+            if (modeLabel) {
+                modeLabel.textContent = isPvP ? "⚔️ 1V1 GUN GAME ĐÊM TỐI" : "🤝 CO-OP BẮN QUÁI";
+                modeLabel.className = isPvP ? "text-rose-400 font-black uppercase" : "text-cyan-400 font-bold uppercase";
+            }
+            if (coopBtn) {
+                coopBtn.className = !isPvP
+                    ? "py-1.5 px-2 text-xs font-black uppercase transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 cursor-pointer shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+                    : "py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer";
+            }
+            if (pvpBtn) {
+                pvpBtn.className = isPvP
+                    ? "py-1.5 px-2 text-xs font-black uppercase transition bg-rose-500/25 text-rose-300 border border-rose-400/80 cursor-pointer shadow-[0_0_15px_rgba(244,63,94,0.4)]"
+                    : "py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer";
+            }
+            if (startBtn && typeof XENO_COOP !== "undefined" && XENO_COOP.isHost) {
+                if (XENO_COOP.peerReady) {
+                    startBtn.textContent = isPvP ? "BẮT ĐẦU ĐẤU TRƯỜNG 1V1 GUN GAME" : "BẮT ĐẦU CHIẾN DỊCH CO-OP";
+                }
+            }
+        }
+        window.updateCoopLobbyGameModeUI = updateCoopLobbyGameModeUI;
+
+        // KỸ NĂNG LƯỚT NÉ TƯƠNG ĐỐI THEO GÓC NHÌN (Q: TRÁI, E: PHẢI)
+        function triggerRelativeStrafeDash(direction = "left") {
+            if (isPaused || isGameOver || isMapWon || player.dashCooldown > 0 || player.isDown) return;
+            const sign = (direction === "left") ? -1 : 1;
+            const perpAngle = player.angle + sign * (Math.PI / 2);
+            const dx = Math.cos(perpAngle);
+            const dy = Math.sin(perpAngle);
+
+            player.dashActiveTimer = 11;
+            player.dashCooldown = 85; // ~1.4s cooldown nhanh cho PvP
+            player.dashVx = dx * 15.5;
+            player.dashVy = dy * 15.5;
+
+            if (typeof sfx !== "undefined" && sfx && sfx.playShoot) {
+                sfx.playShoot("cryo");
+            }
+            addFloatingText(player.x, player.y - 20, direction === "left" ? "LƯỚT TRÁI [Q]!" : "LƯỚT PHẢI [E]!", "#38bdf8");
+        }
+        window.triggerRelativeStrafeDash = triggerRelativeStrafeDash;
+
+        function updatePvPTopHUD() {
+            const isPvP = (window.gameMode === "pvp_gungame" && PVP_GUNGAME_STATE.active);
+            const hud = byId("pvpGunGameHUD");
+            const coopHud = byId("coopTopHUD");
+            if (!isPvP) {
+                if (hud) hud.classList.add("hidden");
+                return;
+            }
+            if (coopHud) coopHud.classList.add("hidden");
+            if (hud) hud.classList.remove("hidden");
+
+            const selfW = WEAPON_DATA[PVP_GUNGAME_STATE.gunLevel] || WEAPON_DATA[0];
+            const oppW = WEAPON_DATA[PVP_GUNGAME_STATE.opponentGunLevel] || WEAPON_DATA[0];
+
+            setText("pvpHudSelfWeapon", `CẤP ${PVP_GUNGAME_STATE.gunLevel + 1}/7 [${selfW.shortName.toUpperCase()}]`);
+            setText("pvpHudScore", `${PVP_GUNGAME_STATE.kills} - ${PVP_GUNGAME_STATE.deaths}`);
+            setText("pvpHudOppWeapon", `CẤP ${PVP_GUNGAME_STATE.opponentGunLevel + 1}/7 [${oppW.shortName.toUpperCase()}]`);
+        }
+        window.updatePvPTopHUD = updatePvPTopHUD;
+
+        function addSonarPing(x, y) {
+            PVP_GUNGAME_STATE.sonarPings.push({
+                x: x,
+                y: y,
+                timer: 150,
+                maxTimer: 150
+            });
+        }
+        window.addSonarPing = addSonarPing;
+
+        function triggerPvPSonarPing(x, y) {
+            if (window.gameMode !== "pvp_gungame") return;
+            if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                XENO_COOP.sendPacket({
+                    t: "SONAR_PING",
+                    x: Math.round(x),
+                    y: Math.round(y)
+                });
+            }
+        }
+        window.triggerPvPSonarPing = triggerPvPSonarPing;
+
+        function advancePvPGunLevel() {
+            if (PVP_GUNGAME_STATE.gunLevel < PVP_GUNGAME_STATE.maxGunLevel) {
+                PVP_GUNGAME_STATE.gunLevel++;
+                const newLvl = PVP_GUNGAME_STATE.gunLevel;
+                const newW = WEAPON_DATA[newLvl];
+                newW.unlocked = true;
+                newW.ammo = PVP_AMMO_PER_LEVEL[newLvl] || 80;
+                player.currentWeapon = newLvl;
+                updateWeaponDockHUD();
+
+                if (typeof sfx !== "undefined" && sfx && sfx.playUpgrade) sfx.playUpgrade();
+                addFloatingText(player.x, player.y - 32, `+1 CẤP SÚNG: ${newW.shortName.toUpperCase()}!`, "#10b981");
+                showToast("THĂNG CẤP VŨ KHÍ!", `Cấp ${newLvl + 1}/7: ${newW.name}`);
+
+                if (typeof XENO_COOP !== "undefined") {
+                    XENO_COOP.sendPacket({
+                        t: "PVP_GUN_LEVEL_SYNC",
+                        level: newLvl
+                    });
+                }
+            } else {
+                // Đã hạ gục bằng Laze Hyperion cấp 7 -> THẮNG TRẬN!
+                triggerPvPMatchEnd("BẠN (CHIẾN THẮNG!)");
+                if (typeof XENO_COOP !== "undefined") {
+                    XENO_COOP.sendPacket({
+                        t: "PVP_MATCH_WON",
+                        winnerName: "ĐỐI THỦ"
+                    });
+                }
+            }
+            updatePvPTopHUD();
+        }
+        window.advancePvPGunLevel = advancePvPGunLevel;
+
+        function respawnPlayerInPvP() {
+            if (!PVP_GUNGAME_STATE.active || PVP_GUNGAME_STATE.matchEnded) return;
+            player.isDown = false;
+            player.hp = player.maxHp;
+            player.armor = player.maxArmor;
+            player.invulnTimer = 110; // 1.8s bất tử
+
+            // Chọn điểm spawn xa đối thủ nhất
+            let oppX = (window.teammate && window.teammate.active) ? window.teammate.x : (WORLD_W / 2);
+            let oppY = (window.teammate && window.teammate.active) ? window.teammate.y : (WORLD_H / 2);
+
+            let bestSpawn = PVP_GUNGAME_STATE.spawnPoints[0];
+            let maxDist = -1;
+            for (let pt of PVP_GUNGAME_STATE.spawnPoints) {
+                let d = Math.hypot(pt.x - oppX, pt.y - oppY);
+                if (d > maxDist) {
+                    maxDist = d;
+                    bestSpawn = pt;
+                }
+            }
+
+            player.x = bestSpawn.x;
+            player.y = bestSpawn.y;
+            camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W / 2));
+            camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H / 2));
+
+            shockwaveRings.push({
+                x: player.x,
+                y: player.y,
+                r: 10,
+                maxR: 160,
+                color: "#38bdf8",
+                alpha: 0.95
+            });
+            updateTopLeftHUD();
+            showToast("HỒI SINH HOÀN TẤT!", "Khiên bất tử 1.8s kích hoạt. Săn lùng đối thủ!");
+        }
+        window.respawnPlayerInPvP = respawnPlayerInPvP;
+
+        function triggerPvPMatchEnd(winnerLabel) {
+            PVP_GUNGAME_STATE.matchEnded = true;
+            isPaused = true;
+            if (typeof sfx !== "undefined" && sfx && sfx.playVictory) {
+                sfx.playVictory();
+            }
+            showToast("KẾT THÚC ĐẤU TRƯỜNG!", `Chiến thắng thuộc về: ${winnerLabel}`);
+            setTimeout(() => {
+                const vicModal = byId("victoryModal");
+                if (vicModal) {
+                    vicModal.classList.remove("hidden");
+                    vicModal.style.display = "flex";
+                    const title = byId("victoryTitle");
+                    if (title) title.textContent = `QUÁN QUÂN GUN GAME: ${winnerLabel.toUpperCase()}`;
+                    const desc = byId("victoryDesc");
+                    if (desc) desc.textContent = `Trận chiến solo 1v1 bóng tối đã khép lại với tỉ số: ${PVP_GUNGAME_STATE.kills} - ${PVP_GUNGAME_STATE.deaths}.`;
+                }
+            }, 600);
+        }
+        window.triggerPvPMatchEnd = triggerPvPMatchEnd;
+
         /**
          * ============================================================================
          * PROJECT XENO: CO-OP ONLINE MULTIPLAYER ENGINE (TICK RATE 30Hz - P2P PEERJS)
@@ -7318,7 +7615,8 @@
                 if (titleEl) titleEl.textContent = `${roomLabel} • ĐỘI HÌNH 2/2`;
                 if (metaEl) {
                     const diffLabel = this.getDifficultyLabel(this.hostDifficulty || this.getDifficultyId());
-                    metaEl.textContent = `Map ${this.hostMapId || window.currentMapId || 1} • Độ khó: ${diffLabel} • Đồng bộ: ${this.tickRate}Hz`;
+                    const modeStr = (window.gameMode === "pvp_gungame") ? "⚔️ 1V1 GUN GAME ĐÊM TỐI" : "🤝 CO-OP BẮN QUÁI";
+                    metaEl.textContent = `Chế độ: ${modeStr} • Map ${this.hostMapId || window.currentMapId || 1} • ${diffLabel} • ${this.tickRate}Hz`;
                 }
 
                 if (this.clientReady) {
@@ -8245,6 +8543,9 @@
                 }
 
                 if (data.t === "start") {
+                    if (data.gameMode) {
+                        window.gameMode = data.gameMode;
+                    }
                     if (data.hz) {
                         this.tickRate = data.hz === 60 ? 60 : 30;
                         if (typeof window.syncCoopTickButtons === "function") {
@@ -8260,7 +8561,11 @@
                     window.closeMainMenuSettings(true);
                     this.updateHUD();
                     const diffLabel = this.getDifficultyLabel(data.difficulty || this.hostDifficulty);
-                    showToast("CO-OP XUẤT TRẬN", `Map ${window.currentMapId} • Độ khó: ${diffLabel} (${this.tickRate}Hz).`);
+                    const isPvP = (window.gameMode === "pvp_gungame");
+                    showToast(
+                        isPvP ? "ĐẤU TRƯỜNG 1V1 GUN GAME" : "CO-OP XUẤT TRẬN",
+                        isPvP ? "Màn đêm bóng tối • Lướt Q/E né đạn • Thăng cấp 7 vũ khí!" : `Map ${window.currentMapId} • Độ khó: ${diffLabel} (${this.tickRate}Hz).`
+                    );
                     if (typeof simulateMissionLoading === "function") {
                         simulateMissionLoading(window.currentMapId, () => {
                             initCampaign(false, false);
@@ -8268,6 +8573,67 @@
                     } else {
                         initCampaign(false, false);
                     }
+                    return;
+                }
+
+                // =========================================================================
+                // TAC-OPS SOLO 1V1 PVP GUN GAME NETWORK EVENTS
+                // =========================================================================
+                if (data.t === "game_mode") {
+                    window.gameMode = data.mode || "campaign";
+                    if (typeof updateCoopLobbyGameModeUI === "function") {
+                        updateCoopLobbyGameModeUI();
+                    }
+                    const isPvP = (window.gameMode === "pvp_gungame");
+                    showToast(
+                        "CHẾ ĐỘ PHÒNG ĐÃ ĐỔI!",
+                        isPvP ? "Chủ phòng đã chuyển sang: SOLO 1V1 GUN GAME ĐÊM TỐI!" : "Chủ phòng đã chuyển sang: CO-OP BẮN QUÁI!"
+                    );
+                    return;
+                }
+
+                if (data.t === "PVP_HIT") {
+                    if (player.isDown || isGameOver || player.invulnTimer > 0) return;
+                    damagePlayer(data.dmg || 8);
+                    if (player.hp <= 0) {
+                        player.isDown = true;
+                        PVP_GUNGAME_STATE.deaths++;
+                        showToast("BẠN BỊ HẠ GỤC!", "Hồi sinh sau 2.5 giây...");
+                        if (typeof XENO_COOP !== "undefined") {
+                            XENO_COOP.sendPacket({
+                                t: "PVP_DOWN",
+                                killerGunLevel: data.fromGunLevel
+                            });
+                        }
+                        updatePvPTopHUD();
+                        setTimeout(() => {
+                            respawnPlayerInPvP();
+                        }, 2500);
+                    }
+                    return;
+                }
+
+                if (data.t === "PVP_DOWN") {
+                    PVP_GUNGAME_STATE.kills++;
+                    advancePvPGunLevel();
+                    return;
+                }
+
+                if (data.t === "PVP_GUN_LEVEL_SYNC") {
+                    if (typeof data.level === "number") {
+                        PVP_GUNGAME_STATE.opponentGunLevel = data.level;
+                        updatePvPTopHUD();
+                    }
+                    return;
+                }
+
+                if (data.t === "PVP_MATCH_WON") {
+                    triggerPvPMatchEnd(data.winnerName || "ĐỐI THỦ");
+                    return;
+                }
+
+                if (data.t === "SONAR_PING") {
+                    addSonarPing(data.x, data.y);
                     return;
                 }
 
@@ -8935,32 +9301,37 @@
             }
 
             // ========================================================================
-            // VÒNG VÀNG DƯỚI CHÂN ĐỒNG ĐỘI (GOLDEN IDENTIFICATION RING UNDER FEET)
+            // VÒNG ĐỊNH DANH DƯỚI CHÂN (VÀNG: CO-OP ĐỒNG ĐỘI / ĐỎ CRIMSON: ĐỐI THỦ PVP)
             // ========================================================================
+            const isPvP = (window.gameMode === "pvp_gungame");
             const ringPulse = 1.0 + Math.sin(now * 0.006) * 0.05;
             const ringRadius = 24.5 * ringPulse;
             const roundedRingR = Math.round(ringRadius);
             ctx.save();
-            // Hào quang vàng dịu dưới mặt đất (Cached RadialGradient)
-            const goldGrad = getCachedRadialGradient(ctx, "gold_ring_" + roundedRingR, 0, 1, 6, 0, 1, roundedRingR + 8, [
+            const ringGradKey = (isPvP ? "pvp_red_ring_" : "gold_ring_") + roundedRingR;
+            const ringGrad = getCachedRadialGradient(ctx, ringGradKey, 0, 1, 6, 0, 1, roundedRingR + 8, isPvP ? [
+                [0, "rgba(244, 63, 94, 0.32)"],
+                [0.7, "rgba(225, 29, 72, 0.18)"],
+                [1, "rgba(225, 29, 72, 0)"]
+            ] : [
                 [0, "rgba(250, 204, 21, 0.24)"],
                 [0.7, "rgba(245, 158, 11, 0.14)"],
                 [1, "rgba(245, 158, 11, 0)"]
             ]);
-            ctx.fillStyle = goldGrad;
+            ctx.fillStyle = ringGrad;
             ctx.beginPath();
             safeArc(ctx, 0, 1, ringRadius + 8);
             ctx.fill();
 
-            // Vòng vàng chính sắc nét dưới chân
-            ctx.strokeStyle = "#fbbf24";
+            // Vòng viền chính
+            ctx.strokeStyle = isPvP ? "#f43f5e" : "#fbbf24";
             ctx.lineWidth = 2.6;
             ctx.beginPath();
             safeArc(ctx, 0, 1, ringRadius);
             ctx.stroke();
 
-            // Vòng viền vàng sáng bên trong
-            ctx.strokeStyle = "rgba(254, 240, 138, 0.85)";
+            // Vòng viền sáng bên trong
+            ctx.strokeStyle = isPvP ? "rgba(254, 205, 211, 0.85)" : "rgba(254, 240, 138, 0.85)";
             ctx.lineWidth = 1.2;
             ctx.setLineDash([6, 4]);
             ctx.beginPath();
@@ -9666,11 +10037,16 @@
                 t: "start",
                 mapId: window.currentMapId || 1,
                 difficulty: curDiff,
-                hz: XENO_COOP.tickRate
+                hz: XENO_COOP.tickRate,
+                gameMode: window.gameMode || "campaign"
             });
             window.closeCoopModal();
             window.closeMainMenuSettings(true);
-            showToast("BẮT ĐẦU CHIẾN DỊCH", `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`);
+            const isPvP = (window.gameMode === "pvp_gungame");
+            showToast(
+                isPvP ? "ĐẤU TRƯỜNG 1V1 GUN GAME" : "BẮT ĐẦU CHIẾN DỊCH",
+                isPvP ? "Màn đêm bóng tối • Lướt Q/E né đạn • Thăng cấp 7 vũ khí!" : `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`
+            );
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
                     initCampaign(false, false);
@@ -16656,6 +17032,10 @@
                 }
             }
 
+            if (window.gameMode === "pvp_gungame") {
+                triggerPvPSonarPing(player.x, player.y);
+            }
+
             const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
                 ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === w.id)
                 : null;
@@ -16719,6 +17099,21 @@
                 }
 
                 // Pierce through all Nuclear Vats, Barrels, Crates, and Enemies along the laser beam!
+                if (window.gameMode === "pvp_gungame" && window.teammate && window.teammate.active && !window.teammate.isDown) {
+                    const rSum = 18 + beamHalfWidth;
+                    if (pointToSegmentDistSq(window.teammate.x, window.teammate.y, muzzleX, muzzleY, endX, endY) <= rSum * rSum) {
+                        const actualDmg = PVP_WEAPON_DAMAGE[6] || 6.5;
+                        bakeBloodSplatter(window.teammate.x, window.teammate.y, 8, 0.5);
+                        if (frameCounter % 3 === 0 && typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                            XENO_COOP.sendPacket({
+                                t: "PVP_HIT",
+                                dmg: actualDmg,
+                                weaponId: 6,
+                                fromGunLevel: PVP_GUNGAME_STATE.gunLevel
+                            });
+                        }
+                    }
+                }
                 for (let v = 0; v < nuclearVats.length; v++) {
                     const vat = nuclearVats[v];
                     if (!vat.active) continue;
@@ -17513,6 +17908,32 @@
                 return;
             }
 
+            // TAC-OPS SOLO 1V1 PVP GUN GAME: Rơi đạn hoặc tiền và phát Sonar Ping
+            if (window.gameMode === "pvp_gungame") {
+                triggerPvPSonarPing(crate.x, crate.y);
+                const r = Math.random();
+                if (r < 0.45) {
+                    const w = WEAPON_DATA[player.currentWeapon];
+                    if (w && w.maxAmmo !== Infinity) {
+                        const refillAmt = Math.round(w.maxAmmo * 0.35);
+                        w.ammo = Math.min(w.maxAmmo, w.ammo + refillAmt);
+                        addFloatingText(crate.x, crate.y, `+${refillAmt} ĐẠN!`, "#38bdf8");
+                        updateWeaponDockHUD();
+                    } else {
+                        player.credits += 40;
+                        addFloatingText(crate.x, crate.y, "+$40 CHIẾN LỢI PHẨM", "#fbbf24");
+                        updateTopLeftHUD();
+                    }
+                } else if (r < 0.75) {
+                    player.credits += 50;
+                    addFloatingText(crate.x, crate.y, "+$50 CHIẾN LỢI PHẨM", "#fbbf24");
+                    updateTopLeftHUD();
+                } else {
+                    spawnItemDrop(crate.x, crate.y, Math.random() < 0.5 ? "medkit" : "armor");
+                }
+                return;
+            }
+
             let syncedDropItem = null;
             let syncedCashReward = 0;
             if (itemDropCooldownFrames <= 0 && Math.random() < 0.35) {
@@ -17670,6 +18091,22 @@
             updateTopLeftHUD();
 
             if (player.hp <= 0) {
+                if (window.gameMode === "pvp_gungame") {
+                    player.isDown = true;
+                    PVP_GUNGAME_STATE.deaths++;
+                    showToast("BẠN BỊ HẠ GỤC!", "Hồi sinh sau 2.5 giây...");
+                    if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                        XENO_COOP.sendPacket({
+                            t: "PVP_DOWN",
+                            killerGunLevel: PVP_GUNGAME_STATE.opponentGunLevel
+                        });
+                    }
+                    updatePvPTopHUD();
+                    setTimeout(() => {
+                        respawnPlayerInPvP();
+                    }, 2500);
+                    return;
+                }
                 triggerPlayerDeath();
             }
         }
@@ -18791,10 +19228,18 @@
             camera.x += (targetCamX - camera.x) * 0.16;
             camera.y += (targetCamY - camera.y) * 0.16;
 
-            if (!window.touchAimActive) {
+            const isTouchActiveMode = (typeof getEffectiveTouchMode === "function" && getEffectiveTouchMode()) || window.lastInputDevice === "touch";
+            if (!isTouchActiveMode) {
                 mouse.worldX = mouse.screenX + camera.x;
                 mouse.worldY = mouse.screenY + camera.y;
                 player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            } else {
+                // Trên Mobile Touch: Cần ngắm joystick hoặc chạm màn hình điều khiển trực tiếp player.angle.
+                // Đồng bộ mouse.worldX/Y và screenX/Y theo góc nhìn hiện tại, TUYỆT ĐỐI KHÔNG snap giật về tâm màn hình cũ!
+                mouse.worldX = player.x + Math.cos(player.angle) * 350;
+                mouse.worldY = player.y + Math.sin(player.angle) * 350;
+                mouse.screenX = mouse.worldX - camera.x;
+                mouse.screenY = mouse.worldY - camera.y;
             }
 
             if (mouse.down) {
@@ -18995,8 +19440,8 @@
                 }
             }
 
-            // Dynamic Multi-Wave Spawner & Multi-Boss Wave Trigger (Rule A: HOST-AUTHORITATIVE ONLY)
-            if (!isCoopClient()) {
+            // Dynamic Multi-Wave Spawner & Multi-Boss Wave Trigger (Rule A: HOST-AUTHORITATIVE ONLY - Bỏ qua trong PvP Gun Game)
+            if (!isCoopClient() && window.gameMode !== "pvp_gungame") {
                 const totalWaves = getTotalWavesForCurrentMap();
                 const spec = getDynamicWaveSpec(currentWave);
                 const waveQuota = Math.max(10, Math.round(spec.total * currentDifficulty.densityMult));
@@ -19137,6 +19582,33 @@
                         }
                     }
                     continue;
+                }
+
+                // TAC-OPS SOLO 1V1 PVP GUN GAME: Bullet Collision against Opponent
+                if (window.gameMode === "pvp_gungame" && !b.isHostile && !b.isTeammate && window.teammate && window.teammate.active && !window.teammate.isDown) {
+                    const tHitR = 17 + b.size;
+                    const tDx = b.x - window.teammate.x;
+                    const tDy = b.y - window.teammate.y;
+                    if (Math.abs(tDx) <= tHitR && Math.abs(tDy) <= tHitR && (tDx * tDx + tDy * tDy < tHitR * tHitR)) {
+                        b.active = false;
+                        const wId = player.currentWeapon || 0;
+                        const baseDmg = (typeof PVP_WEAPON_DAMAGE[wId] === "number") ? PVP_WEAPON_DAMAGE[wId] : (b.damage * 0.35);
+                        const actualDmg = Number((baseDmg * (player.overdriveBuffTimer > 0 ? 1.5 : 1.0)).toFixed(1));
+
+                        bakeBloodSplatter(window.teammate.x, window.teammate.y, 14, 0.7);
+                        if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
+                        addFloatingText(window.teammate.x, window.teammate.y - 25, `-${actualDmg}`, "#f43f5e");
+
+                        if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                            XENO_COOP.sendPacket({
+                                t: "PVP_HIT",
+                                dmg: actualDmg,
+                                weaponId: wId,
+                                fromGunLevel: PVP_GUNGAME_STATE.gunLevel
+                            });
+                        }
+                        continue;
+                    }
                 }
 
                 // Check Intact Green Nuclear Bio-Vats (Fast AABB + squared dist)
@@ -26678,9 +27150,9 @@
             lightCtx.setTransform(LIGHT_SCALE, 0, 0, LIGHT_SCALE, 0, 0);
 
             lightCtx.globalCompositeOperation = "source-over";
-            const baseDarkness = window.currentMapId >= 2 ? 0.42 : 0.80;
+            const baseDarkness = (window.gameMode === "pvp_gungame") ? 0.94 : (window.currentMapId >= 2 ? 0.42 : 0.80);
             // Độ tối giảm giật mạnh khi tia điện cao áp bùng nổ trong lúc nạp máy phát điện
-            const flickerDrop = (generatorPowerState && generatorPowerState.flickerAlpha) ? generatorPowerState.flickerAlpha : 0;
+            const flickerDrop = (window.gameMode !== "pvp_gungame" && generatorPowerState && generatorPowerState.flickerAlpha) ? generatorPowerState.flickerAlpha : 0;
             const darknessAlpha = Math.max(0.12, baseDarkness * (1.0 - flickerDrop * 0.85));
             lightCtx.fillStyle = window.currentMapId >= 2 
                 ? `rgba(3, 10, 26, ${darknessAlpha.toFixed(3)})` 
@@ -27016,8 +27488,8 @@
                 minimapCtx.restore();
             }
 
-            // Online Co-Op Teammate Blip on Radar Minimap (Tam giác mũi tên xanh ngọc cho đồng đội)
-            if (window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active) {
+            // Online Co-Op Teammate Blip on Radar Minimap (Chỉ vẽ trong chế độ Co-Op; trong PvP Gun Game ẩn đi để tạo sự bất ngờ trong bóng tối)
+            if (window.gameMode !== "pvp_gungame" && window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active) {
                 const tx = window.teammate.x * scaleX;
                 const ty = window.teammate.y * scaleY;
                 const tAngle = (typeof window.teammate.angle === "number") ? window.teammate.angle : 0;
@@ -27033,6 +27505,34 @@
                 minimapCtx.fillStyle = window.teammate.isDown ? "#f43f5e" : "#2dd4bf";
                 minimapCtx.fill();
                 minimapCtx.restore();
+            }
+
+            // TAC-OPS SOLO 1V1 PVP GUN GAME: Sonar Ping Wave Rings on Minimap Radar
+            if (PVP_GUNGAME_STATE.sonarPings && PVP_GUNGAME_STATE.sonarPings.length > 0) {
+                for (let i = PVP_GUNGAME_STATE.sonarPings.length - 1; i >= 0; i--) {
+                    const sp = PVP_GUNGAME_STATE.sonarPings[i];
+                    sp.timer--;
+                    if (sp.timer <= 0) {
+                        PVP_GUNGAME_STATE.sonarPings.splice(i, 1);
+                        continue;
+                    }
+                    const progress = 1 - (sp.timer / sp.maxTimer);
+                    const pingRadius = 3.0 + progress * 15.0;
+                    const alpha = (1 - progress) * 0.9;
+
+                    minimapCtx.save();
+                    minimapCtx.strokeStyle = `rgba(244, 63, 94, ${alpha.toFixed(2)})`;
+                    minimapCtx.lineWidth = 1.8;
+                    minimapCtx.beginPath();
+                    safeArc(minimapCtx, sp.x * scaleX, sp.y * scaleY, pingRadius);
+                    minimapCtx.stroke();
+
+                    minimapCtx.fillStyle = `rgba(244, 63, 94, ${alpha.toFixed(2)})`;
+                    minimapCtx.beginPath();
+                    safeArc(minimapCtx, sp.x * scaleX, sp.y * scaleY, 2.5);
+                    minimapCtx.fill();
+                    minimapCtx.restore();
+                }
             }
         }
 
@@ -27758,6 +28258,11 @@
         }
 
         function buyOrRefillArmory(idx) {
+            if (window.gameMode === "pvp_gungame") {
+                if (typeof sfx !== "undefined" && sfx) sfx.playError();
+                showToast("CHẾ ĐỘ GUN GAME", "Súng chỉ được thăng cấp khi hạ gục đối thủ! Hãy dùng tiền nâng cấp Máu, Giáp và Tốc độ.");
+                return;
+            }
             const w = WEAPON_DATA[idx];
             if (!w) return;
             const rCost = w.refillCost || 90;
@@ -30881,13 +31386,43 @@
             items.forEach(it => it.active = false);
             particles.forEach(p => p.active = false);
 
+            if (window.gameMode === "pvp_gungame") {
+                PVP_GUNGAME_STATE.active = true;
+                PVP_GUNGAME_STATE.gunLevel = 0;
+                PVP_GUNGAME_STATE.kills = 0;
+                PVP_GUNGAME_STATE.deaths = 0;
+                PVP_GUNGAME_STATE.opponentGunLevel = 0;
+                PVP_GUNGAME_STATE.matchEnded = false;
+                PVP_GUNGAME_STATE.sonarPings = [];
+
+                WEAPON_DATA.forEach((w, idx) => {
+                    w.unlocked = (idx === 0);
+                    w.ammo = (idx === 0) ? Infinity : (PVP_AMMO_PER_LEVEL[idx] || 50);
+                });
+                player.currentWeapon = 0;
+
+                if (isCoopClient()) {
+                    player.x = PVP_GUNGAME_STATE.spawnPoints[1].x;
+                    player.y = PVP_GUNGAME_STATE.spawnPoints[1].y;
+                } else {
+                    player.x = PVP_GUNGAME_STATE.spawnPoints[0].x;
+                    player.y = PVP_GUNGAME_STATE.spawnPoints[0].y;
+                }
+
+                if (mapGenerator) {
+                    mapGenerator.active = false;
+                }
+            } else {
+                PVP_GUNGAME_STATE.active = false;
+            }
+
             drawBaseFloor();
             spawnProps();
             rebuildObstacleSpatialGrid();
             computeFlowField();
 
-            // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn
-            if (!isCoopClient()) {
+            // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn (Bỏ qua trong PvP Gun Game)
+            if (!isCoopClient() && window.gameMode !== "pvp_gungame") {
                 const openingCount = (window.currentMapId === 1)
                     ? (currentDifficulty.id === "hard" ? 6 : 4)
                     : ((window.currentMapId === 2)
@@ -30906,6 +31441,7 @@
 
             updateTopLeftHUD();
             updateWeaponDockHUD();
+            updatePvPTopHUD();
             renderRadarMinimap();
             updateNvgFilter();
             updateNvgUI();
@@ -31243,6 +31779,7 @@
 
 
         window.addEventListener("mousemove", e => {
+            window.lastInputDevice = "mouse";
             const scaleX = VIEW_W / Math.max(1, window.innerWidth);
             const scaleY = VIEW_H / Math.max(1, window.innerHeight);
             mouse.screenX = e.clientX * scaleX;
@@ -31266,6 +31803,7 @@
                 // Chuột trái: Bắn súng liên tục (Ấn giữ xả đạn mượt mà không bị ngắt)
                 e.preventDefault();
                 mouse.down = true;
+                window.lastInputDevice = "mouse";
                 if (!window.touchAimActive) {
                     const scaleX = VIEW_W / Math.max(1, window.innerWidth);
                     const scaleY = VIEW_H / Math.max(1, window.innerHeight);
@@ -31302,6 +31840,7 @@
         gameCanvas.addEventListener("touchstart", e => {
             if (isGameOver || isPaused || isMapWon) return;
             sfx.init();
+            window.lastInputDevice = "touch";
             if (!window.touchAimActive && e.touches.length > 0) {
                 const touch = e.touches[0];
                 const scaleX = VIEW_W / Math.max(1, window.innerWidth);
@@ -31316,6 +31855,7 @@
         }, { passive: false });
 
         gameCanvas.addEventListener("touchmove", e => {
+            window.lastInputDevice = "touch";
             if (!window.touchAimActive && mouse.down && e.touches.length > 0) {
                 const touch = e.touches[0];
                 const scaleX = VIEW_W / Math.max(1, window.innerWidth);
@@ -31329,6 +31869,7 @@
         }, { passive: false });
 
         window.addEventListener("touchend", e => {
+            window.lastInputDevice = "touch";
             if (!window.touchAimActive && e.touches.length === 0) {
                 mouse.down = false;
             }
@@ -31445,6 +31986,49 @@
             if (effective && !inLobby && !isPaused && !isPausedModal && !isArmoryOpen && !isSysOpen && !isGameOver && !isMapWon) {
                 overlay.classList.remove("hidden");
                 overlay.style.display = "block";
+
+                const isPvP = (window.gameMode === "pvp_gungame");
+                const btnQWrapper = byId("touchBtnQWrapper");
+                const btnTurretWrapper = byId("touchBtnTurretWrapper");
+                const btnInteract = byId("touchBtnInteract");
+
+                if (btnQWrapper) {
+                    if (isPvP) {
+                        btnQWrapper.classList.remove("hidden");
+                        btnQWrapper.style.display = "block";
+                    } else {
+                        btnQWrapper.classList.add("hidden");
+                        btnQWrapper.style.display = "none";
+                    }
+                }
+
+                if (btnTurretWrapper) {
+                    if (isPvP) {
+                        btnTurretWrapper.classList.add("hidden");
+                        btnTurretWrapper.style.display = "none";
+                    } else {
+                        btnTurretWrapper.classList.remove("hidden");
+                        btnTurretWrapper.style.display = "block";
+                    }
+                }
+
+                if (btnInteract) {
+                    if (isPvP) {
+                        btnInteract.innerHTML = `
+                            <span class="text-xs font-mono-tech font-black leading-none text-sky-300">[E]</span>
+                            <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-sky-200">PHẢI</span>
+                        `;
+                        btnInteract.title = "Lướt Né Phải [E] (Solo 1v1 PvP)";
+                        btnInteract.className = "touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex flex-col items-center justify-center text-sky-300 active:scale-95 transition-all";
+                    } else {
+                        btnInteract.innerHTML = `
+                            <span class="text-xs font-mono-tech font-black leading-none text-emerald-300">[E]</span>
+                            <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
+                        `;
+                        btnInteract.title = "Giữ 5s Khởi động Máy Phát / Hack [Phím E]";
+                        btnInteract.className = "touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all";
+                    }
+                }
             } else {
                 overlay.classList.add("hidden");
                 overlay.style.display = "none";
@@ -31476,7 +32060,8 @@
             aimJoy: { leftPct: 80, topPct: 70 },
             dash: { leftPct: 90, topPct: 48 },
             interact: { leftPct: 90, topPct: 62 },
-            turret: { leftPct: 81, topPct: 62 }
+            turret: { leftPct: 81, topPct: 62 },
+            qDash: { leftPct: 72, topPct: 62 }
         };
 
         function getSavedTouchLayout() {
@@ -31524,7 +32109,7 @@
                 btnDashWrapper.style.bottom = "auto";
             }
 
-            // 4. Nút [E] Tương tác
+            // 4. Nút [E] Tương tác / Lướt Phải
             const btnInteractWrapper = byId("touchBtnInteractWrapper");
             if (btnInteractWrapper) {
                 btnInteractWrapper.style.position = "fixed";
@@ -31542,6 +32127,16 @@
                 btnTurretWrapper.style.top = `${layout.turret.topPct}%`;
                 btnTurretWrapper.style.right = "auto";
                 btnTurretWrapper.style.bottom = "auto";
+            }
+
+            // 6. Nút Lướt Trái [Q] (Solo PvP Gun Game)
+            const btnQWrapper = byId("touchBtnQWrapper");
+            if (btnQWrapper && layout.qDash) {
+                btnQWrapper.style.position = "fixed";
+                btnQWrapper.style.left = `${layout.qDash.leftPct}%`;
+                btnQWrapper.style.top = `${layout.qDash.topPct}%`;
+                btnQWrapper.style.right = "auto";
+                btnQWrapper.style.bottom = "auto";
             }
         }
         window.applyTouchLayout = applyTouchLayout;
@@ -31561,7 +32156,7 @@
             window._touchEditorOpenedFromSys = Boolean(sysModal && !sysModal.classList.contains("hidden") && sysModal.style.display !== "none");
 
             // Đồng bộ vị trí hiện tại vào các control trong editor
-            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
                 if (el && layout[id]) {
@@ -31595,7 +32190,7 @@
             window._savingTouchLayoutDebounce = true;
             setTimeout(() => { window._savingTouchLayoutDebounce = false; }, 400);
 
-            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             const newLayout = {};
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
@@ -31632,7 +32227,7 @@
             } catch (err) {}
 
             const layout = getSavedTouchLayout();
-            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
                 if (el && layout[id]) {
@@ -31699,7 +32294,7 @@
             if (_touchEditorDraggingInitialized) return;
             _touchEditorDraggingInitialized = true;
 
-            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret"];
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
                 if (!el) return;
@@ -31881,7 +32476,7 @@
                 moveZone.addEventListener("touchcancel", endMoveTouch, { passive: false });
             }
 
-            // 2. RIGHT VIRTUAL JOYSTICK (Aim & Auto-Fire)
+            // 2. RIGHT VIRTUAL JOYSTICK (Ngắm & Bắn Linh Hoạt Mobile - Không Bị Nhảy Góc)
             let aimTouchId = null;
             let aimStartX = 0;
             let aimStartY = 0;
@@ -31905,6 +32500,7 @@
                     aimBase.style.right = "auto";
                     aimKnob.style.transform = "translate(0px, 0px)";
                     window.touchAimActive = true;
+                    window.lastInputDevice = "touch";
                 }, { passive: false });
 
                 aimZone.addEventListener("touchmove", (e) => {
@@ -31923,12 +32519,15 @@
                             const knobY = Math.sin(angle) * clampedDist;
                             aimKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
-                            if (dist > 10) {
+                            if (dist > 8) {
                                 player.angle = angle;
                                 mouse.worldX = player.x + Math.cos(angle) * 350;
                                 mouse.worldY = player.y + Math.sin(angle) * 350;
-                                mouse.down = true;
+                                mouse.screenX = mouse.worldX - camera.x;
+                                mouse.screenY = mouse.worldY - camera.y;
+                                mouse.down = (dist > 12);
                                 window.touchAimActive = true;
+                                window.lastInputDevice = "touch";
                             } else {
                                 mouse.down = false;
                             }
@@ -31951,6 +32550,16 @@
                             aimBase.style.bottom = "auto";
                             mouse.down = false;
                             window.touchAimActive = false;
+                            window.lastInputDevice = "touch";
+                            // GIỮ NGUYÊN GÓC BẮN VỪA VUỐT, TUYỆT ĐỐI KHÔNG BỊ NHẢY VỀ VỊ TRÍ CŨ
+                            if (typeof player !== "undefined" && player) {
+                                mouse.worldX = player.x + Math.cos(player.angle) * 350;
+                                mouse.worldY = player.y + Math.sin(player.angle) * 350;
+                                if (typeof camera !== "undefined") {
+                                    mouse.screenX = mouse.worldX - camera.x;
+                                    mouse.screenY = mouse.worldY - camera.y;
+                                }
+                            }
                             break;
                         }
                     }
@@ -31968,15 +32577,35 @@
                 }, { passive: false });
             }
 
+            // Nút [Q] Lướt Trái Tương Đối (Chỉ dùng trong Solo 1v1 PvP Gun Game)
+            const btnQ = byId("touchBtnQ");
+            if (btnQ) {
+                btnQ.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    if (typeof triggerRelativeStrafeDash === "function") {
+                        triggerRelativeStrafeDash("left");
+                    }
+                }, { passive: false });
+            }
+
+            // Nút [E] Tương Tác / Lướt Phải Tương Đối (Trong PvP kích hoạt Lướt Phải [E])
             const btnInteract = byId("touchBtnInteract");
             if (btnInteract) {
                 btnInteract.addEventListener("touchstart", (e) => {
                     e.preventDefault();
-                    keys["KeyE"] = true;
-                    triggerInteractionKeyE();
+                    if (window.gameMode === "pvp_gungame") {
+                        if (typeof triggerRelativeStrafeDash === "function") {
+                            triggerRelativeStrafeDash("right");
+                        }
+                    } else {
+                        keys["KeyE"] = true;
+                        triggerInteractionKeyE();
+                    }
                 }, { passive: false });
                 const releaseE = (e) => {
-                    keys["KeyE"] = false;
+                    if (window.gameMode !== "pvp_gungame") {
+                        keys["KeyE"] = false;
+                    }
                 };
                 btnInteract.addEventListener("touchend", releaseE, { passive: false });
                 btnInteract.addEventListener("touchcancel", releaseE, { passive: false });
@@ -32111,13 +32740,21 @@
             if (isPaused || inLobby || isMapWon) return;
 
             if (["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7"].includes(e.code)) {
-                selectWeaponSlot(parseInt(e.code.replace("Digit", ""), 10) - 1);
+                if (window.gameMode !== "pvp_gungame") {
+                    selectWeaponSlot(parseInt(e.code.replace("Digit", ""), 10) - 1);
+                }
             }
             if (e.code === "Space") {
                 e.preventDefault();
                 triggerPlayerDash();
+            } else if (e.code === "KeyQ") {
+                triggerRelativeStrafeDash("left");
             } else if (e.code === "KeyE") {
-                triggerInteractionKeyE();
+                if (window.gameMode === "pvp_gungame") {
+                    triggerRelativeStrafeDash("right");
+                } else {
+                    triggerInteractionKeyE();
+                }
             } else if (e.code === "KeyT") {
                 deployAutoTurret(false);
             } else if (e.code === "KeyN") {
@@ -32128,10 +32765,18 @@
         window.addEventListener("keyup", e => { keys[e.code] = false; });
 
         function updateAim() {
-            if (!window.touchAimActive) {
+            const isTouchActiveMode = (typeof getEffectiveTouchMode === "function" && getEffectiveTouchMode()) || window.lastInputDevice === "touch";
+            if (!isTouchActiveMode) {
                 mouse.worldX = mouse.screenX + camera.x;
                 mouse.worldY = mouse.screenY + camera.y;
                 player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            } else {
+                // Trên Mobile Touch: Cần ngắm joystick hoặc chạm màn hình điều khiển trực tiếp player.angle.
+                // Đồng bộ mouse.worldX/Y và screenX/Y theo góc nhìn hiện tại, TUYỆT ĐỐI KHÔNG snap giật về tâm màn hình cũ!
+                mouse.worldX = player.x + Math.cos(player.angle) * 350;
+                mouse.worldY = player.y + Math.sin(player.angle) * 350;
+                mouse.screenX = mouse.worldX - camera.x;
+                mouse.screenY = mouse.worldY - camera.y;
             }
         }
 

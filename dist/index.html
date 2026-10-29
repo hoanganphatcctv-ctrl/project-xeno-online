@@ -1503,6 +1503,26 @@
         <span id="coopHudRevive" class="text-amber-300 font-bold hidden ml-1 animate-pulse">CẢNH BÁO: ĐỒNG ĐỘI GỤC!</span>
     </div>
 
+    <!-- TAC-OPS SOLO 1V1 PVP GUN GAME TOP HUD -->
+    <div id="pvpGunGameHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-slate-950/95 border-2 border-rose-500/80 text-[10px] font-mono-tech shadow-[0_0_25px_rgba(244,63,94,0.4)] pointer-events-none">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <div class="flex items-center gap-1.5">
+            <span class="text-rose-400 font-black uppercase tracking-wider">⚔️ 1V1 GUN GAME:</span>
+            <span id="pvpHudSelfWeapon" class="text-emerald-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <div id="pvpHudScore" class="px-2 py-0.5 bg-rose-950/80 border border-rose-500/50 text-white font-black text-xs tracking-widest">
+            0 - 0
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <div class="flex items-center gap-1.5">
+            <span class="text-slate-400 font-bold uppercase">ĐỐI THỦ:</span>
+            <span id="pvpHudOppWeapon" class="text-cyan-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
+        </div>
+        <span class="text-slate-600 font-black">|</span>
+        <span class="text-amber-300 font-bold hidden sm:inline">[Q/E: LƯỚT NÉ]</span>
+    </div>
+
     <!-- ==========================================================================
          FIRST-TIME PLAYER GENERATOR TIP (MAP 1 ONLY - MIDDLE-LEFT HUD)
          ========================================================================== -->
@@ -1685,11 +1705,19 @@
             </button>
         </div>
 
-        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers) -->
+        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers / Strafe Right in PvP) -->
         <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 62%;">
             <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all" title="Giữ 5s Khởi động Máy Phát / Hack [Phím E]">
                 <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
+            </button>
+        </div>
+
+        <!-- Quick Action Button: Strafe Dash Left [Q] (Solo 1v1 PvP Gun Game Only) -->
+        <div id="touchBtnQWrapper" class="pointer-events-auto fixed hidden" style="left: 72%; top: 62%;">
+            <button id="touchBtnQ" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex flex-col items-center justify-center text-sky-300 active:scale-95 transition-all" title="Lướt Né Trái [Q]">
+                <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-sky-200">TRÁI</span>
             </button>
         </div>
 
@@ -1793,6 +1821,17 @@
                 <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">THÁP</span>
+                </div>
+            </div>
+
+            <!-- Edit: Strafe Dash Left [Q] Button (Solo 1v1 PvP) -->
+            <div id="dragCtrl_qDash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 72%; top: 62%;">
+                <div class="px-1.5 py-0.5 rounded-none bg-sky-950/90 border border-sky-400 text-sky-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    LƯỚT TRÁI [Q] (SOLO PVP)
+                </div>
+                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-sky-400 flex flex-col items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                    <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                    <span class="text-[7.5px] font-mono-tech font-bold uppercase text-sky-200">TRÁI</span>
                 </div>
             </div>
         </div>
@@ -3620,7 +3659,7 @@
                                         <h3 class="text-xs font-black text-amber-300 uppercase">TÙY CHỈNH BỐ CỤC PHÍM CẢM ỨNG (PUBG MOBILE STYLE)</h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400 mt-1">
-                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút [E] Tương tác, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
+                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút Lướt Trái [Q], Nút [E] Tương tác/Lướt Phải, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
                                     </p>
                                 </div>
                             </div>
@@ -4304,6 +4343,22 @@
                         </button>
                         <button id="coopHostCloseRoomBtn" onclick="window.toggleCoopHostRoomState()" class="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-[11px] font-extrabold uppercase transition cursor-pointer">
                             ĐÓNG PHÒNG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hàng 1.5: Chọn Chế Độ Tác Chiến (Co-Op Chiến Dịch vs Solo 1v1 Gun Game Đêm Tối) -->
+                <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-slate-400 font-bold uppercase">CHẾ ĐỘ TÁC CHIẾN</span>
+                        <span id="coopHostModeLabel" class="text-cyan-400 font-bold uppercase">🤝 CO-OP BẮN QUÁI</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button id="coopModeCoopBtn" type="button" onclick="window.setCoopGameMode('campaign')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 cursor-pointer">
+                            🤝 CO-OP BẮN QUÁI
+                        </button>
+                        <button id="coopModePvpBtn" type="button" onclick="window.setCoopGameMode('pvp_gungame')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
+                            ⚔️ 1V1 GUN GAME ĐÊM TỐI
                         </button>
                     </div>
                 </div>
