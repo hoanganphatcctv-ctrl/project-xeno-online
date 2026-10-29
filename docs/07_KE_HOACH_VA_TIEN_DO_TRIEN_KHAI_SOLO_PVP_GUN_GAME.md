@@ -95,13 +95,19 @@ flowchart TD
 - [x] **8.4**: Tự động ẩn nút Tháp pháo `[T]` trong chế độ Solo PvP Gun Game để tránh chật chội màn hình mobile.
 - [x] **8.5**: **Khắc phục lỗi ngắm bắn mobile bị gán cứng vào tâm**: Xóa bỏ hiện tượng snap giật về tâm màn hình (`VIEW_W/2, VIEW_H/2`) khi nhả cần ngắm; giữ nguyên góc ngắm `player.angle` sau khi vuốt; vuốt hướng nào nòng súng xoay và bắn theo hướng đó liên tục và mượt mà.
 
+### 🔘 Giai đoạn 9: 2 Thanh Kéo Tùy Chỉnh (Độ Trong Suốt & Kích Thước), Highlight Màu Vàng & Xóa Emoji Solo 1v1
+- [x] **9.1**: Bổ sung thanh công cụ thuộc tính `#touchEditorControlPanel` trong Layout Editor với **Thanh kéo Độ trong suốt (20% – 100%)** và **Thanh kéo Kích thước nút (60% – 160%)**.
+- [x] **9.2**: Cơ chế chọn nút trực quan: Bấm vào bất kỳ nút nào thì nút đó lập tức **chuyển sang màu vàng phát sáng (`#fbbf24`, pulse neon, outline 2px vàng, nhãn vàng chữ đen)** để người chơi nhận biết rõ ràng nút đang chỉnh.
+- [x] **9.3**: Cập nhật live real-time: Kéo slider thì kích thước hoặc độ trong suốt của nút đang chọn thay đổi trực tiếp ngay trên màn hình và được lưu vào `localStorage` (`scale`, `opacity`).
+- [x] **9.4**: **Loại bỏ toàn bộ emoji chỗ chế độ Solo 1v1**: Gỡ bỏ các biểu tượng `⚔️` và `🤝` ở Top HUD, nút chọn phòng, tiêu đề sảnh, text đồng bộ phòng, giữ giao diện phong cách quân sự viễn tưởng chuyên nghiệp.
+
 ---
 
 ## 🏆 5. KẾT QUẢ TRIỂN KHAI & ĐÓNG GÓI HOÀN TẤT
-* **Trạng thái**: ✅ **100% HOÀN THÀNH (31/31 Hạng mục)**
+* **Trạng thái**: ✅ **100% HOÀN THÀNH (35/35 Hạng mục)**
 * **File nguồn đã sửa**: [`alien-shooter-fullstack/frontend/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/index.html)
-* **Kích thước JS gốc**: $1,484,302\text{ bytes}$ ($1,449.5\text{ KB}$)
-* **Kích thước JS minified**: $627,950\text{ bytes}$ ($613.2\text{ KB}$) qua Terser Headless Edge
+* **Kích thước JS gốc**: $1,492,857\text{ bytes}$ ($1,457.9\text{ KB}$)
+* **Kích thước JS minified**: $632,264\text{ bytes}$ ($617.4\text{ KB}$) qua Terser Headless Edge
 * **Các file đích đã đồng bộ**:
   - [`dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/dist/game.min.js) & [`dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/dist/index.html)
   - [`frontend/dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/dist/game.min.js) & [`frontend/dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/dist/index.html)

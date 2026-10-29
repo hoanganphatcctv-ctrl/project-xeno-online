@@ -1230,6 +1230,33 @@
             }
         }
 
+        /* Touch Controls Layout Editor - Yellow Selection Style */
+        .touch-ctrl-selected {
+            z-index: 105 !important;
+        }
+        .touch-ctrl-selected .ctrl-label {
+            background: #f59e0b !important;
+            color: #020617 !important;
+            border-color: #fef08a !important;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.95) !important;
+            font-weight: 900 !important;
+            transform: scale(1.08);
+            transition: all 0.15s ease;
+        }
+        .touch-ctrl-selected .ctrl-body {
+            border-color: #fbbf24 !important;
+            border-style: solid !important;
+            border-width: 3px !important;
+            box-shadow: 0 0 28px rgba(251, 191, 36, 0.95), inset 0 0 18px rgba(251, 191, 36, 0.5) !important;
+            outline: 2px solid #fde047 !important;
+            outline-offset: 3px !important;
+            animation: touchCtrlYellowPulse 1.8s infinite alternate !important;
+        }
+        @keyframes touchCtrlYellowPulse {
+            0% { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7)); }
+            100% { filter: drop-shadow(0 0 20px rgba(251, 191, 36, 1)); }
+        }
+
     </style>
 </head>
 <body class="relative w-screen h-screen overflow-hidden select-none">
@@ -1507,7 +1534,7 @@
     <div id="pvpGunGameHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-slate-950/95 border-2 border-rose-500/80 text-[10px] font-mono-tech shadow-[0_0_25px_rgba(244,63,94,0.4)] pointer-events-none">
         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
         <div class="flex items-center gap-1.5">
-            <span class="text-rose-400 font-black uppercase tracking-wider">⚔️ 1V1 GUN GAME:</span>
+            <span class="text-rose-400 font-black uppercase tracking-wider">1V1 GUN GAME:</span>
             <span id="pvpHudSelfWeapon" class="text-emerald-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
         </div>
         <span class="text-slate-600 font-black">|</span>
@@ -1758,21 +1785,44 @@
             </div>
         </div>
 
-        <!-- Instruction Banner -->
-        <div class="absolute inset-x-0 top-16 text-center pointer-events-none z-10 px-4">
-            <span class="inline-block px-4 py-1.5 bg-slate-900/90 border border-amber-500/40 text-amber-300 text-xs font-mono-tech font-bold shadow-lg">
-                Chạm &amp; Kéo các nút điều khiển để đổi vị trí &bull; Bấm [LƯU BỐ CỤC] khi hoàn tất
-            </span>
+        <!-- Property Controls Bar: Selected Button, Opacity Slider, Size Slider -->
+        <div id="touchEditorControlPanel" class="fixed top-12 sm:top-14 inset-x-0 z-[101] bg-slate-950/95 border-b-2 border-amber-500/60 px-4 py-2 flex flex-wrap items-center justify-between sm:justify-center gap-x-6 gap-y-2 text-xs font-mono-tech shadow-[0_10px_30px_rgba(0,0,0,0.85)] backdrop-blur-md">
+            <!-- Selected Button Indicator -->
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,1)] animate-ping"></span>
+                <span class="text-slate-400 text-[11px] font-bold uppercase">NÚT ĐANG CHỌN:</span>
+                <span id="touchEditorSelectedName" class="px-2.5 py-0.5 bg-amber-500/25 border-2 border-amber-400 text-amber-300 font-black text-xs tracking-wider uppercase shadow-[0_0_12px_rgba(245,158,11,0.4)]">CẦN DI CHUYỂN</span>
+            </div>
+
+            <!-- Slider 1: Độ Trong Suốt (Opacity) -->
+            <div class="flex items-center gap-2">
+                <span class="text-slate-300 font-bold text-[11px] whitespace-nowrap">ĐỘ TRONG SUỐT:</span>
+                <input id="sliderTouchOpacity" type="range" min="20" max="100" value="100"
+                       style="--slider-pct: 100%;"
+                       class="w-24 sm:w-36 tech-range-slider range-amber cursor-pointer"
+                       oninput="window.updateSelectedTouchOpacity(this.value)" />
+                <span id="valTouchOpacity" class="w-10 text-right font-black text-amber-300 text-xs">100%</span>
+            </div>
+
+            <!-- Slider 2: Kích Thước (Size/Scale) -->
+            <div class="flex items-center gap-2">
+                <span class="text-slate-300 font-bold text-[11px] whitespace-nowrap">KÍCH THƯỚC:</span>
+                <input id="sliderTouchScale" type="range" min="60" max="160" value="100"
+                       style="--slider-pct: 50%;"
+                       class="w-24 sm:w-36 tech-range-slider range-amber cursor-pointer"
+                       oninput="window.updateSelectedTouchScale(this.value)" />
+                <span id="valTouchScale" class="w-10 text-right font-black text-amber-300 text-xs">100%</span>
+            </div>
         </div>
 
         <!-- Draggable Controls inside Layout Editor -->
-        <div id="editorTouchArea" class="absolute inset-0 pt-14">
+        <div id="editorTouchArea" class="absolute inset-0 pt-28">
             <!-- Edit: Move Joystick -->
-            <div id="dragCtrl_moveJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
-                <div class="px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_moveJoy" onclick="window.selectTouchEditorControl('moveJoy')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
+                <div class="ctrl-label px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     CẦN DI CHUYỂN
                 </div>
-                <div class="w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                <div class="ctrl-body w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/80 border border-emerald-300 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><path d="M12 2L8 6h3v4H7V7l-4 4 4 4v-3h4v4H8l4 4 4-4h-3v-4h4v3l4-4-4-4v3h-4V6h3l-4-4z"/></svg>
                     </div>
@@ -1780,11 +1830,11 @@
             </div>
 
             <!-- Edit: Aim Joystick -->
-            <div id="dragCtrl_aimJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
-                <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_aimJoy" onclick="window.selectTouchEditorControl('aimJoy')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
+                <div class="ctrl-label px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     CẦN NGẮM &amp; BẮN
                 </div>
-                <div class="w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+                <div class="ctrl-body w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-rose-500/80 border border-rose-300 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><circle cx="12" cy="12" r="3"/><path d="M11 2h2v3h-2zm0 17h2v3h-2zm-9-8h3v2H2zm17 0h3v2h-3z"/></svg>
                     </div>
@@ -1792,44 +1842,44 @@
             </div>
 
             <!-- Edit: Dash Button -->
-            <div id="dragCtrl_dash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_dash" onclick="window.selectTouchEditorControl('dash')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     LƯỚT DASH
                 </div>
-                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                <div class="ctrl-body w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
                     <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7 2v11h3v9l7-12h-4l3-8z"/></svg>
                     <span class="text-[7.5px] font-mono-tech font-black">DASH</span>
                 </div>
             </div>
 
             <!-- Edit: Interact [E] Button -->
-            <div id="dragCtrl_interact" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_interact" onclick="window.selectTouchEditorControl('interact')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     NÚT [E]
                 </div>
-                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">BẬT</span>
                 </div>
             </div>
 
             <!-- Edit: Turret [T] Button -->
-            <div id="dragCtrl_turret" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_turret" onclick="window.selectTouchEditorControl('turret')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     THÁP [T]
                 </div>
-                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">THÁP</span>
                 </div>
             </div>
 
             <!-- Edit: Strafe Dash Left [Q] Button (Solo 1v1 PvP) -->
-            <div id="dragCtrl_qDash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 72%; top: 62%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-sky-950/90 border border-sky-400 text-sky-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_qDash" onclick="window.selectTouchEditorControl('qDash')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 72%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-sky-950/90 border border-sky-400 text-sky-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     LƯỚT TRÁI [Q] (SOLO PVP)
                 </div>
-                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-sky-400 flex flex-col items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-sky-400 flex flex-col items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-sky-200">TRÁI</span>
                 </div>
@@ -4351,14 +4401,14 @@
                 <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
                     <div class="flex items-center justify-between text-[10px]">
                         <span class="text-slate-400 font-bold uppercase">CHẾ ĐỘ TÁC CHIẾN</span>
-                        <span id="coopHostModeLabel" class="text-cyan-400 font-bold uppercase">🤝 CO-OP BẮN QUÁI</span>
+                        <span id="coopHostModeLabel" class="text-cyan-400 font-bold uppercase">CO-OP BẮN QUÁI</span>
                     </div>
                     <div class="grid grid-cols-2 gap-1.5">
                         <button id="coopModeCoopBtn" type="button" onclick="window.setCoopGameMode('campaign')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 cursor-pointer">
-                            🤝 CO-OP BẮN QUÁI
+                            CO-OP BẮN QUÁI
                         </button>
                         <button id="coopModePvpBtn" type="button" onclick="window.setCoopGameMode('pvp_gungame')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
-                            ⚔️ 1V1 GUN GAME ĐÊM TỐI
+                            1V1 GUN GAME ĐÊM TỐI
                         </button>
                     </div>
                 </div>
@@ -6888,7 +6938,7 @@
             const startBtn = byId("coopHostStartBtn");
 
             if (modeLabel) {
-                modeLabel.textContent = isPvP ? "⚔️ 1V1 GUN GAME ĐÊM TỐI" : "🤝 CO-OP BẮN QUÁI";
+                modeLabel.textContent = isPvP ? "1V1 GUN GAME ĐÊM TỐI" : "CO-OP BẮN QUÁI";
                 modeLabel.className = isPvP ? "text-rose-400 font-black uppercase" : "text-cyan-400 font-bold uppercase";
             }
             if (coopBtn) {
@@ -7615,7 +7665,7 @@
                 if (titleEl) titleEl.textContent = `${roomLabel} • ĐỘI HÌNH 2/2`;
                 if (metaEl) {
                     const diffLabel = this.getDifficultyLabel(this.hostDifficulty || this.getDifficultyId());
-                    const modeStr = (window.gameMode === "pvp_gungame") ? "⚔️ 1V1 GUN GAME ĐÊM TỐI" : "🤝 CO-OP BẮN QUÁI";
+                    const modeStr = (window.gameMode === "pvp_gungame") ? "1V1 GUN GAME ĐÊM TỐI" : "CO-OP BẮN QUÁI";
                     metaEl.textContent = `Chế độ: ${modeStr} • Map ${this.hostMapId || window.currentMapId || 1} • ${diffLabel} • ${this.tickRate}Hz`;
                 }
 
@@ -32056,12 +32106,12 @@
         // MOBILE TOUCH CONTROLS CUSTOM LAYOUT (PUBG MOBILE STYLE)
         // =========================================================================
         const DEFAULT_TOUCH_LAYOUT = {
-            moveJoy: { leftPct: 6, topPct: 70 },
-            aimJoy: { leftPct: 80, topPct: 70 },
-            dash: { leftPct: 90, topPct: 48 },
-            interact: { leftPct: 90, topPct: 62 },
-            turret: { leftPct: 81, topPct: 62 },
-            qDash: { leftPct: 72, topPct: 62 }
+            moveJoy: { leftPct: 6, topPct: 70, scale: 1.0, opacity: 1.0 },
+            aimJoy: { leftPct: 80, topPct: 70, scale: 1.0, opacity: 1.0 },
+            dash: { leftPct: 90, topPct: 48, scale: 1.0, opacity: 1.0 },
+            interact: { leftPct: 90, topPct: 62, scale: 1.0, opacity: 1.0 },
+            turret: { leftPct: 81, topPct: 62, scale: 1.0, opacity: 1.0 },
+            qDash: { leftPct: 72, topPct: 62, scale: 1.0, opacity: 1.0 }
         };
 
         function getSavedTouchLayout() {
@@ -32069,10 +32119,23 @@
                 const raw = localStorage.getItem("xeno_touch_layout");
                 if (raw) {
                     const parsed = JSON.parse(raw);
-                    return { ...DEFAULT_TOUCH_LAYOUT, ...parsed };
+                    const merged = {};
+                    Object.keys(DEFAULT_TOUCH_LAYOUT).forEach(k => {
+                        if (parsed && parsed[k]) {
+                            merged[k] = {
+                                leftPct: (parsed[k].leftPct !== undefined) ? Number(parsed[k].leftPct) : DEFAULT_TOUCH_LAYOUT[k].leftPct,
+                                topPct: (parsed[k].topPct !== undefined) ? Number(parsed[k].topPct) : DEFAULT_TOUCH_LAYOUT[k].topPct,
+                                scale: (parsed[k].scale !== undefined) ? Number(parsed[k].scale) : 1.0,
+                                opacity: (parsed[k].opacity !== undefined) ? Number(parsed[k].opacity) : 1.0
+                            };
+                        } else {
+                            merged[k] = { ...DEFAULT_TOUCH_LAYOUT[k] };
+                        }
+                    });
+                    return merged;
                 }
             } catch (e) {}
-            return { ...DEFAULT_TOUCH_LAYOUT };
+            return JSON.parse(JSON.stringify(DEFAULT_TOUCH_LAYOUT));
         }
         window.getSavedTouchLayout = getSavedTouchLayout;
 
@@ -32087,6 +32150,9 @@
                 moveBase.style.top = `${layout.moveJoy.topPct}%`;
                 moveBase.style.right = "auto";
                 moveBase.style.bottom = "auto";
+                moveBase.style.opacity = (layout.moveJoy.opacity !== undefined) ? layout.moveJoy.opacity : 1.0;
+                moveBase.style.transform = `scale(${(layout.moveJoy.scale !== undefined) ? layout.moveJoy.scale : 1.0})`;
+                moveBase.style.transformOrigin = "center center";
             }
 
             // 2. Cần ngắm & bắn phải
@@ -32097,6 +32163,9 @@
                 aimBase.style.top = `${layout.aimJoy.topPct}%`;
                 aimBase.style.right = "auto";
                 aimBase.style.bottom = "auto";
+                aimBase.style.opacity = (layout.aimJoy.opacity !== undefined) ? layout.aimJoy.opacity : 1.0;
+                aimBase.style.transform = `scale(${(layout.aimJoy.scale !== undefined) ? layout.aimJoy.scale : 1.0})`;
+                aimBase.style.transformOrigin = "center center";
             }
 
             // 3. Nút Lướt Dash
@@ -32107,6 +32176,9 @@
                 btnDashWrapper.style.top = `${layout.dash.topPct}%`;
                 btnDashWrapper.style.right = "auto";
                 btnDashWrapper.style.bottom = "auto";
+                btnDashWrapper.style.opacity = (layout.dash.opacity !== undefined) ? layout.dash.opacity : 1.0;
+                btnDashWrapper.style.transform = `scale(${(layout.dash.scale !== undefined) ? layout.dash.scale : 1.0})`;
+                btnDashWrapper.style.transformOrigin = "center center";
             }
 
             // 4. Nút [E] Tương tác / Lướt Phải
@@ -32117,6 +32189,9 @@
                 btnInteractWrapper.style.top = `${layout.interact.topPct}%`;
                 btnInteractWrapper.style.right = "auto";
                 btnInteractWrapper.style.bottom = "auto";
+                btnInteractWrapper.style.opacity = (layout.interact.opacity !== undefined) ? layout.interact.opacity : 1.0;
+                btnInteractWrapper.style.transform = `scale(${(layout.interact.scale !== undefined) ? layout.interact.scale : 1.0})`;
+                btnInteractWrapper.style.transformOrigin = "center center";
             }
 
             // 5. Nút Tháp Pháo [T]
@@ -32127,6 +32202,9 @@
                 btnTurretWrapper.style.top = `${layout.turret.topPct}%`;
                 btnTurretWrapper.style.right = "auto";
                 btnTurretWrapper.style.bottom = "auto";
+                btnTurretWrapper.style.opacity = (layout.turret.opacity !== undefined) ? layout.turret.opacity : 1.0;
+                btnTurretWrapper.style.transform = `scale(${(layout.turret.scale !== undefined) ? layout.turret.scale : 1.0})`;
+                btnTurretWrapper.style.transformOrigin = "center center";
             }
 
             // 6. Nút Lướt Trái [Q] (Solo PvP Gun Game)
@@ -32137,12 +32215,116 @@
                 btnQWrapper.style.top = `${layout.qDash.topPct}%`;
                 btnQWrapper.style.right = "auto";
                 btnQWrapper.style.bottom = "auto";
+                btnQWrapper.style.opacity = (layout.qDash.opacity !== undefined) ? layout.qDash.opacity : 1.0;
+                btnQWrapper.style.transform = `scale(${(layout.qDash.scale !== undefined) ? layout.qDash.scale : 1.0})`;
+                btnQWrapper.style.transformOrigin = "center center";
             }
         }
         window.applyTouchLayout = applyTouchLayout;
 
+        const TOUCH_CTRL_NAMES = {
+            moveJoy: "CẦN DI CHUYỂN",
+            aimJoy: "CẦN NGẮM & BẮN",
+            dash: "LƯỚT DASH",
+            interact: "NÚT [E] PHẢI / BẬT",
+            turret: "THÁP PHÁO [T]",
+            qDash: "LƯỚT TRÁI [Q]"
+        };
+
+        function selectTouchEditorControl(id) {
+            if (!id) return;
+            window._selectedTouchControlId = id;
+            const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
+
+            itemIds.forEach(otherId => {
+                const el = byId(`dragCtrl_${otherId}`);
+                if (el) {
+                    if (otherId === id) {
+                        el.classList.add("touch-ctrl-selected");
+                    } else {
+                        el.classList.remove("touch-ctrl-selected");
+                    }
+                }
+            });
+
+            const nameEl = byId("touchEditorSelectedName");
+            if (nameEl) {
+                nameEl.textContent = TOUCH_CTRL_NAMES[id] || id.toUpperCase();
+            }
+
+            if (!window._editorLayout) {
+                window._editorLayout = getSavedTouchLayout();
+            }
+            const itemData = window._editorLayout[id] || { scale: 1.0, opacity: 1.0 };
+            const op = Math.round(((itemData.opacity !== undefined) ? itemData.opacity : 1.0) * 100);
+            const sc = Math.round(((itemData.scale !== undefined) ? itemData.scale : 1.0) * 100);
+
+            const sliderOp = byId("sliderTouchOpacity");
+            const valOp = byId("valTouchOpacity");
+            if (sliderOp) {
+                sliderOp.value = op;
+                sliderOp.style.setProperty("--slider-pct", `${((op - 20) / (100 - 20)) * 100}%`);
+            }
+            if (valOp) valOp.textContent = `${op}%`;
+
+            const sliderSc = byId("sliderTouchScale");
+            const valSc = byId("valTouchScale");
+            if (sliderSc) {
+                sliderSc.value = sc;
+                sliderSc.style.setProperty("--slider-pct", `${((sc - 60) / (160 - 60)) * 100}%`);
+            }
+            if (valSc) valSc.textContent = `${sc}%`;
+        }
+        window.selectTouchEditorControl = selectTouchEditorControl;
+
+        function updateSelectedTouchOpacity(val) {
+            const id = window._selectedTouchControlId;
+            if (!id) return;
+            if (!window._editorLayout) window._editorLayout = getSavedTouchLayout();
+            if (!window._editorLayout[id]) window._editorLayout[id] = {};
+
+            const numVal = Number(val);
+            const op = Number((numVal / 100).toFixed(2));
+            window._editorLayout[id].opacity = op;
+
+            const valEl = byId("valTouchOpacity");
+            if (valEl) valEl.textContent = `${numVal}%`;
+            const slider = byId("sliderTouchOpacity");
+            if (slider) slider.style.setProperty("--slider-pct", `${((numVal - 20) / (100 - 20)) * 100}%`);
+
+            const el = byId(`dragCtrl_${id}`);
+            if (el) {
+                el.style.opacity = op;
+            }
+        }
+        window.updateSelectedTouchOpacity = updateSelectedTouchOpacity;
+
+        function updateSelectedTouchScale(val) {
+            const id = window._selectedTouchControlId;
+            if (!id) return;
+            if (!window._editorLayout) window._editorLayout = getSavedTouchLayout();
+            if (!window._editorLayout[id]) window._editorLayout[id] = {};
+
+            const numVal = Number(val);
+            const sc = Number((numVal / 100).toFixed(2));
+            window._editorLayout[id].scale = sc;
+
+            const valEl = byId("valTouchScale");
+            if (valEl) valEl.textContent = `${numVal}%`;
+            const slider = byId("sliderTouchScale");
+            if (slider) slider.style.setProperty("--slider-pct", `${((numVal - 60) / (160 - 60)) * 100}%`);
+
+            const el = byId(`dragCtrl_${id}`);
+            if (el) {
+                el.style.transform = `scale(${sc})`;
+                el.style.transformOrigin = "center center";
+            }
+        }
+        window.updateSelectedTouchScale = updateSelectedTouchScale;
+
         function openTouchLayoutEditor() {
             const layout = getSavedTouchLayout();
+            window._editorLayout = JSON.parse(JSON.stringify(layout));
             const modal = byId("touchLayoutEditorModal");
             if (!modal) return;
 
@@ -32155,7 +32337,7 @@
             window._touchEditorOpenedFromPause = Boolean(pauseModal && !pauseModal.classList.contains("hidden") && pauseModal.style.display !== "none");
             window._touchEditorOpenedFromSys = Boolean(sysModal && !sysModal.classList.contains("hidden") && sysModal.style.display !== "none");
 
-            // Đồng bộ vị trí hiện tại vào các control trong editor
+            // Đồng bộ vị trí, scale và opacity vào các control trong editor
             const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
@@ -32164,8 +32346,14 @@
                     el.style.top = `${layout[id].topPct}%`;
                     el.style.right = "auto";
                     el.style.bottom = "auto";
+                    el.style.opacity = (layout[id].opacity !== undefined) ? layout[id].opacity : 1.0;
+                    el.style.transform = `scale(${(layout[id].scale !== undefined) ? layout[id].scale : 1.0})`;
+                    el.style.transformOrigin = "center center";
                 }
             });
+
+            // Mặc định chọn nút đầu tiên: CẦN DI CHUYỂN
+            selectTouchEditorControl("moveJoy");
 
             // Tạm ẩn modal cài đặt hệ thống để lấy không gian thao tác kéo phím
             if (sysModal) {
@@ -32198,7 +32386,11 @@
                     const rect = el.getBoundingClientRect();
                     const leftPct = Number(((rect.left / window.innerWidth) * 100).toFixed(2));
                     const topPct = Number(((rect.top / window.innerHeight) * 100).toFixed(2));
-                    newLayout[id] = { leftPct, topPct };
+                    const curScale = (window._editorLayout && window._editorLayout[id] && window._editorLayout[id].scale !== undefined)
+                        ? window._editorLayout[id].scale : 1.0;
+                    const curOpacity = (window._editorLayout && window._editorLayout[id] && window._editorLayout[id].opacity !== undefined)
+                        ? window._editorLayout[id].opacity : 1.0;
+                    newLayout[id] = { leftPct, topPct, scale: curScale, opacity: curOpacity };
                 }
             });
 
@@ -32209,7 +32401,7 @@
             applyTouchLayout();
 
             if (typeof showToast === "function") {
-                showToast("BỐ CỤC PHÍM PUBGM", "Đã lưu vị trí phím cảm ứng thành công!");
+                showToast("BỐ CỤC PHÍM PUBGM", "Đã lưu vị trí, kích thước và độ trong suốt thành công!");
             }
             if (typeof sfx !== "undefined" && sfx) sfx.playPickup();
 
@@ -32227,19 +32419,25 @@
             } catch (err) {}
 
             const layout = getSavedTouchLayout();
+            window._editorLayout = JSON.parse(JSON.stringify(layout));
+
             const itemIds = ["moveJoy", "aimJoy", "dash", "interact", "turret", "qDash"];
             itemIds.forEach(id => {
                 const el = byId(`dragCtrl_${id}`);
                 if (el && layout[id]) {
                     el.style.left = `${layout[id].leftPct}%`;
                     el.style.top = `${layout[id].topPct}%`;
+                    el.style.opacity = 1.0;
+                    el.style.transform = "scale(1.0)";
+                    el.style.transformOrigin = "center center";
                 }
             });
 
+            selectTouchEditorControl(window._selectedTouchControlId || "moveJoy");
             applyTouchLayout();
 
             if (typeof showToast === "function") {
-                showToast("ĐẶT LẠI MẶC ĐỊNH", "Đã khôi phục bố cục phím chuẩn!");
+                showToast("ĐẶT LẠI MẶC ĐỊNH", "Đã khôi phục bố cục, kích thước và độ trong suốt chuẩn!");
             }
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
         }
@@ -32306,10 +32504,11 @@
 
                 const onStart = (clientX, clientY) => {
                     isDragging = true;
+                    selectTouchEditorControl(id);
                     const rect = el.getBoundingClientRect();
                     grabX = clientX - rect.left;
                     grabY = clientY - rect.top;
-                    el.style.zIndex = "100";
+                    el.style.zIndex = "110";
                 };
 
                 const onMove = (clientX, clientY) => {
@@ -32318,9 +32517,9 @@
                     let newLeft = clientX - grabX;
                     let newTop = clientY - grabY;
 
-                    // Giới hạn trong khung nhìn màn hình
+                    // Giới hạn trong khung nhìn màn hình (tránh che thanh công cụ thuộc tính ở đỉnh)
                     newLeft = Math.max(5, Math.min(window.innerWidth - rect.width - 5, newLeft));
-                    newTop = Math.max(55, Math.min(window.innerHeight - rect.height - 5, newTop));
+                    newTop = Math.max(90, Math.min(window.innerHeight - rect.height - 5, newTop));
 
                     const leftPct = (newLeft / window.innerWidth) * 100;
                     const topPct = (newTop / window.innerHeight) * 100;
@@ -32334,8 +32533,13 @@
                 const onEnd = () => {
                     isDragging = false;
                     startTouchId = null;
-                    el.style.zIndex = "";
+                    el.style.zIndex = el.classList.contains("touch-ctrl-selected") ? "105" : "";
                 };
+
+                el.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    selectTouchEditorControl(id);
+                });
 
                 // Sự kiện chạm cảm ứng Mobile
                 el.addEventListener("touchstart", (e) => {
