@@ -11730,6 +11730,10 @@
                 surfaceCtx.fillRect(w.x - 4, w.y - 2, w.w + 14, w.h + 12);
             }
             surfaceCtx.restore();
+
+            if (typeof buildStaticMinimap === "function") {
+                buildStaticMinimap();
+            }
         }
 
         const STATIC_BLOOD_COLORS_GREEN = { main: "rgba(34, 197, 94, 0.76)", dark: "rgba(21, 128, 61, 0.88)", bright: "#4ade80" };
@@ -13530,20 +13534,17 @@
             }
         }
 
-        // HỆ THỐNG ĐỔ BÓNG 2.5D TIẾP ĐẤT HƯỚNG CHÉO (dx: +10, dy: +12)
+        // HỆ THỐNG ĐỔ BÓNG 2.5D TIẾP ĐẤT HƯỚNG CHÉO (dx: +10, dy: +12) - Zero save/restore fast path
         function drawDropShadowRect25D(c, x, y, w, h, r = 6) {
-            c.save();
             c.fillStyle = "rgba(1, 4, 12, 0.46)";
             drawRoundRect(c, x + 10, y + 12, w, h, r);
             c.fill();
             c.fillStyle = "rgba(2, 6, 18, 0.34)";
             drawRoundRect(c, x + 5, y + 6, w, h, r);
             c.fill();
-            c.restore();
         }
 
         function drawDropShadowCircle25D(c, cx, cy, rad) {
-            c.save();
             c.fillStyle = "rgba(1, 4, 12, 0.48)";
             c.beginPath();
             safeArc(c, cx + 10, cy + 12, rad * 1.04);
@@ -13552,7 +13553,6 @@
             c.beginPath();
             safeArc(c, cx + 5, cy + 6, rad * 1.01);
             c.fill();
-            c.restore();
         }
 
         // THÁP DỮ LIỆU HOLOGRAM 3D XOAY TRÒN (ROTATING 3D WIREFRAME OCTAHEDRON HOLOGRAM TOWER)
@@ -19780,63 +19780,63 @@
                     ctx.restore();
                 }
 
-                // 4. Cặp cánh cửa nắp cống cơ khí trượt ngang thủy lực (Dual Sliding Heavy Hydraulic Shutters)
+                // 4. Cặp cánh cửa nắp cống cơ khí trượt ngang thủy lực (Dual Sliding Heavy Hydraulic Shutters - Zero ctx.clip)
                 const slideDist = Math.round(v.openProgress * 23);
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(-26, -26, 52, 52);
-                ctx.clip();
+                const visibleH = Math.max(0, 26 - slideDist);
 
-                // Cánh cửa trên (trượt lên trên theo slideDist)
-                const topY = -26 - slideDist;
-                const topH = 26;
-                const gDoorTop = getCachedLinearGradient(ctx, "vent_door_t", 0, topY, 0, topY + topH, [
-                    [0, "#334155"],
-                    [0.5, "#1e293b"],
-                    [1, "#0f172a"]
-                ]);
-                ctx.fillStyle = gDoorTop;
-                ctx.fillRect(-26, topY, 52, topH);
-                ctx.strokeStyle = "#475569";
-                ctx.lineWidth = 1.5;
-                for (let gy = topY + 4; gy < topY + topH - 3; gy += 7) {
+                if (visibleH > 0) {
+                    // Cánh cửa trên (trượt lên trên)
+                    const topDrawY = -26;
+                    const gDoorTop = getCachedLinearGradient(ctx, "vent_door_t", 0, -26, 0, 0, [
+                        [0, "#334155"],
+                        [0.5, "#1e293b"],
+                        [1, "#0f172a"]
+                    ]);
+                    ctx.fillStyle = gDoorTop;
+                    ctx.fillRect(-26, topDrawY, 52, visibleH);
+                    ctx.strokeStyle = "#475569";
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.moveTo(-24, gy);
-                    ctx.lineTo(24, gy);
+                    for (let gy = topDrawY + 4; gy < topDrawY + visibleH - 2; gy += 7) {
+                        ctx.moveTo(-24, gy);
+                        ctx.lineTo(24, gy);
+                    }
                     ctx.stroke();
-                }
-                // Răng thép khóa cài ở mép nối
-                ctx.fillStyle = "#64748b";
-                for (let tx = -24; tx < 24; tx += 8) {
-                    ctx.beginPath();
-                    ctx.moveTo(tx, topY + topH);
-                    ctx.lineTo(tx + 4, topY + topH + 3);
-                    ctx.lineTo(tx + 8, topY + topH);
-                    ctx.fill();
-                }
 
-                // Cánh cửa dưới (trượt xuống dưới theo slideDist)
-                const btmY = 0 + slideDist;
-                const btmH = 26;
-                const gDoorBtm = getCachedLinearGradient(ctx, "vent_door_b", 0, btmY, 0, btmY + btmH, [
-                    [0, "#0f172a"],
-                    [0.5, "#1e293b"],
-                    [1, "#334155"]
-                ]);
-                ctx.fillStyle = gDoorBtm;
-                ctx.fillRect(-26, btmY, 52, btmH);
-                ctx.strokeStyle = "#475569";
-                ctx.lineWidth = 1.5;
-                for (let gy = btmY + 5; gy < btmY + btmH - 3; gy += 7) {
+                    // Răng thép khóa cài ở mép nối
+                    if (visibleH >= 6) {
+                        ctx.fillStyle = "#64748b";
+                        ctx.beginPath();
+                        const edgeY = topDrawY + visibleH;
+                        for (let tx = -24; tx < 24; tx += 8) {
+                            ctx.moveTo(tx, edgeY);
+                            ctx.lineTo(tx + 4, Math.min(0, edgeY + 3));
+                            ctx.lineTo(tx + 8, edgeY);
+                        }
+                        ctx.fill();
+                    }
+
+                    // Cánh cửa dưới (trượt xuống dưới)
+                    const btmDrawY = slideDist;
+                    const gDoorBtm = getCachedLinearGradient(ctx, "vent_door_b", 0, 0, 0, 26, [
+                        [0, "#0f172a"],
+                        [0.5, "#1e293b"],
+                        [1, "#334155"]
+                    ]);
+                    ctx.fillStyle = gDoorBtm;
+                    ctx.fillRect(-26, btmDrawY, 52, visibleH);
+                    ctx.strokeStyle = "#475569";
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.moveTo(-24, gy);
-                    ctx.lineTo(24, gy);
+                    for (let gy = btmDrawY + 5; gy < btmDrawY + visibleH - 2; gy += 7) {
+                        ctx.moveTo(-24, gy);
+                        ctx.lineTo(24, gy);
+                    }
                     ctx.stroke();
-                }
-                ctx.fillStyle = (v.openProgress < 0.1) ? "#ca8a04" : "#ef4444";
-                ctx.fillRect(-24, btmY, 48, 2.5);
 
-                ctx.restore();
+                    ctx.fillStyle = (v.openProgress < 0.1) ? "#ca8a04" : "#ef4444";
+                    ctx.fillRect(-24, btmDrawY, 48, 2.5);
+                }
 
                 // 5. 4 Bu lông lục giác gia cố 4 góc
                 ctx.fillStyle = "#94a3b8";
@@ -19852,15 +19852,19 @@
                 if (v.openProgress >= 0.08) {
                     // CẢNH BÁO QUÁI CHUI RA: Đèn chớp Strobe đỏ/cam cường độ cao
                     const strobe = Math.sin(now * 0.022 + (v.hazardPhase || 0)) > 0.0;
+                    // Lớp phát quang viền mềm (Zero shadowBlur)
+                    ctx.fillStyle = strobe ? "rgba(239, 68, 68, 0.35)" : "rgba(245, 158, 11, 0.35)";
+                    for (let l = 0; l < 4; l++) {
+                        ctx.beginPath();
+                        safeArc(ctx, ledCoords[l][0], ledCoords[l][1], 4.8);
+                        ctx.fill();
+                    }
                     ctx.fillStyle = strobe ? "#ef4444" : "#f59e0b";
-                    ctx.shadowColor = strobe ? "rgba(239, 68, 68, 0.9)" : "rgba(245, 158, 11, 0.6)";
-                    ctx.shadowBlur = 8;
                     for (let l = 0; l < 4; l++) {
                         ctx.beginPath();
                         safeArc(ctx, ledCoords[l][0], ledCoords[l][1], 2.4);
                         ctx.fill();
                     }
-                    ctx.shadowBlur = 0;
                 } else {
                     // AN TOÀN: Đèn xanh tĩnh
                     ctx.fillStyle = "#10b981";
@@ -19885,8 +19889,8 @@
                 shakeY = (Math.random() - 0.5) * screenShake * sm;
             }
 
-            const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, Math.round(camera.x - shakeX)));
-            const camY = Math.max(0, Math.min(WORLD_H - VIEW_H, Math.round(camera.y - shakeY)));
+            const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, camera.x - shakeX));
+            const camY = Math.max(0, Math.min(WORLD_H - VIEW_H, camera.y - shakeY));
 
             if (window.currentMapId === 2) {
                 renderSpaceBackground(camX, camY);
@@ -19983,27 +19987,23 @@
                     [0.68, "rgba(249, 115, 22, 0.58)"],
                     [1, "rgba(220, 38, 38, 0)"]
                 ]);
-                ctx.save();
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = fg;
                 ctx.beginPath();
                 safeArc(ctx, 0, 0, rStep);
                 ctx.fill();
-                ctx.restore();
 
-                // Các lưỡi lửa động nhảy múa
+                // Các lưỡi lửa động nhảy múa (Zero inner save/restore overhead)
                 for (let t = 0; t < 4; t++) {
                     const tang = fp.phase + t * 1.57 + nowRender * 0.006;
                     const tr = fp.radius * 0.42;
                     const tx = Math.cos(tang) * tr;
                     const ty = Math.sin(tang) * tr;
-                    ctx.save();
                     ctx.globalAlpha = (t % 2 === 0 ? 0.75 : 0.65) * alpha;
                     ctx.fillStyle = (t % 2 === 0) ? "#fde047" : "#ef4444";
                     ctx.beginPath();
                     safeArc(ctx, tx, ty, (8 + (t * 3)) * flick);
                     ctx.fill();
-                    ctx.restore();
                 }
                 ctx.restore();
             }
@@ -20077,23 +20077,22 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Sọc chéo phản quang màu vàng-đen cảnh báo nguy hiểm
-                ctx.save();
-                ctx.beginPath();
-                drawRoundRect(ctx, 3, 3, bar.w - 6, bar.h - 6, 2);
-                ctx.clip();
+                // Sọc chéo phản quang màu vàng-đen cảnh báo nguy hiểm (Analytic zero-clip batching)
+                const bx0 = 3, by0 = 3, bx1 = bar.w - 3, by1 = bar.h - 3;
                 ctx.fillStyle = "#0f172a";
-                ctx.fillRect(3, 3, bar.w - 6, bar.h - 6);
+                ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
                 ctx.strokeStyle = "rgba(250, 204, 21, 0.78)";
                 ctx.lineWidth = 4.5;
-                const maxDim = bar.w + bar.h;
-                for (let s = -bar.h; s < maxDim; s += 13) {
-                    ctx.beginPath();
-                    ctx.moveTo(s, 0);
-                    ctx.lineTo(s - bar.h, bar.h);
-                    ctx.stroke();
+                ctx.beginPath();
+                for (let s = bx0 + by0; s <= bx1 + by1; s += 13) {
+                    const xStart = Math.max(bx0, s - by1);
+                    const xEnd = Math.min(bx1, s - by0);
+                    if (xStart < xEnd) {
+                        ctx.moveTo(xStart, s - xStart);
+                        ctx.lineTo(xEnd, s - xEnd);
+                    }
                 }
-                ctx.restore();
+                ctx.stroke();
 
                 // Đường năng lượng lượng tử viền đỉnh công sự (Quantum Crest Conduit)
                 const qPulse = 0.72 + 0.28 * Math.sin(nowRender * 0.01 + i);
@@ -20642,17 +20641,13 @@
                 const scroll = (performance.now() * 0.45) % ringSpacing;
                 ctx.strokeStyle = "#ffffff";
                 ctx.lineWidth = 1.8;
+                ctx.beginPath();
                 for (let d = scroll; d < bLen - 20; d += ringSpacing) {
                     const rx = lb.x1 + (bdx / bLen) * d;
                     const ry = lb.y1 + (bdy / bLen) * d;
-                    ctx.save();
-                    ctx.translate(rx, ry);
-                    ctx.rotate(bAng);
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, 3.5, 7 + heat * 6, 0, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.restore();
+                    ctx.ellipse(rx, ry, 3.5, 7 + heat * 6, bAng, 0, Math.PI * 2);
                 }
+                ctx.stroke();
                 ctx.restore();
             }
 
@@ -20819,17 +20814,16 @@
             }
             ctx.globalAlpha = 1;
 
+            ctx.font = "800 12px 'JetBrains Mono', monospace";
+            ctx.textAlign = "center";
             for (let i = 0; i < MAX_FLOATING_TEXTS; i++) {
                 const ft = floatingTexts[i];
                 if (!ft.active) continue;
-                ctx.save();
-                ctx.font = "800 12px 'JetBrains Mono', monospace";
                 ctx.fillStyle = ft.color;
                 ctx.globalAlpha = Math.max(0, ft.life / 54);
-                ctx.textAlign = "center";
                 ctx.fillText(ft.text, ft.x, ft.y);
-                ctx.restore();
             }
+            ctx.globalAlpha = 1;
 
             ctx.restore();
 
@@ -20886,7 +20880,11 @@
                 ctx.restore();
             }
 
-            if (frameCounter % 6 === 0) renderRadarMinimap();
+            const nowMinimap = performance.now();
+            if (nowMinimap - lastMinimapRenderTime >= 80) {
+                lastMinimapRenderTime = nowMinimap;
+                renderRadarMinimap();
+            }
 
             // Hybrid WebGL Post-Processing Hook
             if (window.webglPostProcessor && window.webglPostProcessor.enabled && window.webglPostProcessor.isAvailable) {
@@ -26841,24 +26839,44 @@
             lightCtx.restore();
         }
 
+        let staticMinimapCanvas = null;
+        let lastMinimapRenderTime = 0;
+
+        function buildStaticMinimap() {
+            if (!minimapCanvas) return;
+            if (!staticMinimapCanvas) {
+                staticMinimapCanvas = document.createElement("canvas");
+                staticMinimapCanvas.width = minimapCanvas.width;
+                staticMinimapCanvas.height = minimapCanvas.height;
+            }
+            const sCtx = staticMinimapCanvas.getContext("2d");
+            const mw = staticMinimapCanvas.width;
+            const mh = staticMinimapCanvas.height;
+            const scaleX = mw / WORLD_W;
+            const scaleY = mh / WORLD_H;
+
+            sCtx.fillStyle = "#060a12";
+            sCtx.fillRect(0, 0, mw, mh);
+
+            ROOMS.forEach(r => {
+                sCtx.fillStyle = r.isCenter ? "#172554" : "#0f172a";
+                sCtx.fillRect(r.x * scaleX, r.y * scaleY, r.w * scaleX - 0.5, r.h * scaleY - 0.5);
+            });
+
+            sCtx.fillStyle = "#475569";
+            WALLS.forEach(w => {
+                sCtx.fillRect(w.x * scaleX, w.y * scaleY, Math.max(1.2, w.w * scaleX), Math.max(1.2, w.h * scaleY));
+            });
+        }
+
         function renderRadarMinimap() {
+            if (!staticMinimapCanvas) buildStaticMinimap();
             const mw = minimapCanvas.width;
             const mh = minimapCanvas.height;
             const scaleX = mw / WORLD_W;
             const scaleY = mh / WORLD_H;
 
-            minimapCtx.fillStyle = "#060a12";
-            minimapCtx.fillRect(0, 0, mw, mh);
-
-            ROOMS.forEach(r => {
-                minimapCtx.fillStyle = r.isCenter ? "#172554" : "#0f172a";
-                minimapCtx.fillRect(r.x * scaleX, r.y * scaleY, r.w * scaleX - 0.5, r.h * scaleY - 0.5);
-            });
-
-            minimapCtx.fillStyle = "#475569";
-            WALLS.forEach(w => {
-                minimapCtx.fillRect(w.x * scaleX, w.y * scaleY, Math.max(1.2, w.w * scaleX), Math.max(1.2, w.h * scaleY));
-            });
+            minimapCtx.drawImage(staticMinimapCanvas, 0, 0);
 
             DOORS.forEach(d => {
                 minimapCtx.fillStyle = d.openAmount >= 0.5 ? "#10b981" : "#ef4444";
@@ -27884,7 +27902,7 @@
 
         // Global Display, Theme & Performance Settings State
         window.uiTheme = "dark"; // Exclusively Dark Tactical
-        window.fpsLimit = 120; // 60, 90, 120, 144, or 0 (Unlimited)
+        window.fpsLimit = 144; // 60, 90, 120, 144, 200, or 0 (Unlimited)
         window.gameBrightness = 100;
         window.gameContrast = 100;
         window.screenShakeMult = 1.0;
@@ -28321,7 +28339,7 @@
                 if (savedFps !== null) {
                     setFpsLimit(parseInt(savedFps, 10));
                 } else {
-                    setFpsLimit(120);
+                    setFpsLimit(144);
                 }
 
                 const savedZoom = localStorage.getItem("xeno_screen_zoom");
@@ -29980,26 +29998,17 @@
             ctx.fill();
             ctx.stroke();
 
-            // Hazard Warning Stripes on Top & Bottom Rim
-            ctx.save();
-            ctx.beginPath();
-            drawRoundRect(ctx, -38, -28, 76, 8, 4);
-            ctx.clip();
-            for (let sx = -38; sx < 38; sx += 12) {
-                ctx.fillStyle = (Math.floor(sx / 12) % 2 === 0) ? "#f59e0b" : "#0f172a";
-                ctx.fillRect(sx, -28, 12, 8);
+            // Hazard Warning Stripes on Top & Bottom Rim (Zero-clip high GPU batching)
+            for (let rimIdx = 0; rimIdx < 2; rimIdx++) {
+                const rimY = rimIdx === 0 ? -28 : 20;
+                ctx.fillStyle = "#0f172a";
+                ctx.fillRect(-38, rimY, 76, 8);
+                ctx.fillStyle = "#f59e0b";
+                for (let sx = -34; sx < 34; sx += 24) {
+                    const bw = Math.min(12, 34 - sx);
+                    ctx.fillRect(sx, rimY, bw, 8);
+                }
             }
-            ctx.restore();
-
-            ctx.save();
-            ctx.beginPath();
-            drawRoundRect(ctx, -38, 20, 76, 8, 4);
-            ctx.clip();
-            for (let sx = -38; sx < 38; sx += 12) {
-                ctx.fillStyle = (Math.floor(sx / 12) % 2 === 0) ? "#f59e0b" : "#0f172a";
-                ctx.fillRect(sx, 20, 12, 8);
-            }
-            ctx.restore();
 
             // Central Heavy Metal Enclosure
             ctx.fillStyle = "#1e293b";
@@ -32139,18 +32148,24 @@
 
             idleBackgroundRenderedFrames = 0;
             const now = performance.now();
-            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
+            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
             const targetInterval = 1000 / targetFps;
 
             if (!nextFrameDeadline) {
                 nextFrameDeadline = now;
             }
 
-            const remaining = nextFrameDeadline - now;
-            if (remaining > 1.5 && targetFps < 60) {
-                framePacerPending = true;
-                framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
-                return;
+            if (targetFps < 200) {
+                const remaining = nextFrameDeadline - now;
+                if (remaining > 1.2) {
+                    framePacerPending = true;
+                    if (typeof requestAnimationFrame === "function") {
+                        framePacerRafId = requestAnimationFrame(onFramePacerTick);
+                    } else {
+                        framePacerTimeoutId = setTimeout(onFramePacerTick, Math.max(1, Math.floor(remaining)));
+                    }
+                    return;
+                }
             }
 
             nextFrameDeadline += targetInterval;
@@ -32176,7 +32191,7 @@
                 return;
             }
 
-            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 60;
+            const targetFps = (window.fpsLimit && window.fpsLimit > 0) ? Math.min(200, window.fpsLimit) : 200;
             if (typeof requestAnimationFrame === "function" && targetFps >= 55) {
                 framePacerRafId = requestAnimationFrame(onFramePacerTick);
                 return;
@@ -32219,22 +32234,6 @@
                 }
                 if (ticks >= MAX_PHYSICS_TICKS_PER_FRAME) {
                     loopAccumulator = 0;
-                }
-                // Smooth sub-frame camera interpolation for 120 / 144 / 200 FPS
-                if (ticks === 0 && !isGameOver) {
-                    const maxCamX = Math.max(0, WORLD_W - VIEW_W);
-                    const maxCamY = Math.max(0, WORLD_H - VIEW_H);
-                    let camFocusX = player.x;
-                    let camFocusY = player.y;
-                    if (window.XENO_COOP && window.XENO_COOP.active && player.isDown && window.teammate && window.teammate.active && !window.teammate.isDown) {
-                        camFocusX = window.teammate.x;
-                        camFocusY = window.teammate.y;
-                    }
-                    const targetCamX = Math.max(0, Math.min(maxCamX, camFocusX - VIEW_W / 2));
-                    const targetCamY = Math.max(0, Math.min(maxCamY, camFocusY - VIEW_H / 2));
-                    const alpha = Math.min(1, elapsed / FIXED_PHYSICS_STEP) * 0.16;
-                    camera.x += (targetCamX - camera.x) * alpha;
-                    camera.y += (targetCamY - camera.y) * alpha;
                 }
                 updateAim();
                 renderWorld();
@@ -33491,6 +33490,8 @@
             heatSourceBuffer: new Float32Array(12),
             pointLightBuffer: new Float32Array(12),
             pointLightColorBuffer: new Float32Array(12),
+            allocatedWidth: 0,
+            allocatedHeight: 0,
             anamorphicIntensity: 0.0,
             graphicsTier: 1, // 0 = Standard 2D, 1 = High Shader, 2 = Ultra Epic Cinematic
             epicIntensity: 1.0, // 0.5 to 1.5
@@ -33582,6 +33583,7 @@
                         uniform float u_contrast;
                         uniform float u_nvg;
                         uniform vec4 u_shockwaves[4];
+                        uniform float u_shockwaveCount;
 
                         // ULTRA EPIC CINEMATIC GRAPHICS UNIFORMS
                         uniform float u_epicMode;
@@ -33607,26 +33609,29 @@
                             vec2 texel = 1.0 / u_resolution;
                             vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
 
-                            // 1. SÓNG XUNG KÍCH VẬT THỂ NỔ (Shockwave Refraction)
+                            // 1. SÓNG XUNG KÍCH VẬT THỂ NỔ (Fast Bypassed Shockwave Refraction)
                             vec2 totalDistort = vec2(0.0, 0.0);
                             float shockBlur = 0.0;
                             float shockGlow = 0.0;
 
-                            for (int i = 0; i < 4; i++) {
-                                vec4 sw = u_shockwaves[i];
-                                if (sw.w > 0.002 && sw.z > 0.0) {
-                                    vec2 diff = (uv - sw.xy) * aspect;
-                                    float d = length(diff);
-                                    float ringWidth = 0.068;
-                                    float distDiff = d - sw.z;
-                                    if (abs(distDiff) < ringWidth) {
-                                        float factor = 1.0 - abs(distDiff) / ringWidth;
-                                        float wave = sin(factor * 3.14159265);
-                                        vec2 dir = normalize(diff + vec2(0.00001, 0.00001));
-                                        float disp = wave * sw.w * 0.046 * (1.0 - clamp(sw.z * 1.3, 0.0, 0.85));
-                                        totalDistort += (dir / aspect) * (distDiff < 0.0 ? disp : -disp * 0.45);
-                                        shockBlur += wave * sw.w * 2.6;
-                                        shockGlow += wave * sw.w * 0.38;
+                            if (u_shockwaveCount > 0.5) {
+                                for (int i = 0; i < 4; i++) {
+                                    if (float(i) >= u_shockwaveCount) break;
+                                    vec4 sw = u_shockwaves[i];
+                                    if (sw.w > 0.002 && sw.z > 0.0) {
+                                        vec2 diff = (uv - sw.xy) * aspect;
+                                        float d = length(diff);
+                                        float ringWidth = 0.068;
+                                        float distDiff = d - sw.z;
+                                        if (abs(distDiff) < ringWidth) {
+                                            float factor = 1.0 - abs(distDiff) / ringWidth;
+                                            float wave = sin(factor * 3.14159265);
+                                            vec2 dir = normalize(diff + vec2(0.00001, 0.00001));
+                                            float disp = wave * sw.w * 0.046 * (1.0 - clamp(sw.z * 1.3, 0.0, 0.85));
+                                            totalDistort += (dir / aspect) * (distDiff < 0.0 ? disp : -disp * 0.45);
+                                            shockBlur += wave * sw.w * 2.6;
+                                            shockGlow += wave * sw.w * 0.38;
+                                        }
                                     }
                                 }
                             }
@@ -33664,11 +33669,13 @@
                                 vec3 s2 = texture2D(u_tex, clamp(distortedUv - bDir, 0.0, 1.0)).rgb;
                                 vec3 s3 = texture2D(u_tex, clamp(distortedUv + bDir * 1.8, 0.0, 1.0)).rgb;
                                 baseCol = s0 * 0.42 + s1 * 0.24 + s2 * 0.24 + s3 * 0.10;
-                            } else {
+                            } else if (caOffset > 0.001) {
                                 float r = texture2D(u_tex, clamp(distortedUv + caDir * caOffset, 0.0, 1.0)).r;
-                                float g = texture2D(u_tex, distortedUv).g;
+                                vec2 gb = texture2D(u_tex, distortedUv).gb;
                                 float b = texture2D(u_tex, clamp(distortedUv - caDir * caOffset, 0.0, 1.0)).b;
-                                baseCol = vec3(r, g, b);
+                                baseCol = vec3(r, gb.x, b);
+                            } else {
+                                baseCol = texture2D(u_tex, distortedUv).rgb;
                             }
 
                             // Anh chop nhiet no bung sang
@@ -33718,38 +33725,28 @@
                             vec3 bloomCol = vec3(0.0, 0.0, 0.0);
                             if (u_bloom > 0.01) {
                                 float bDist = 2.2 * u_bloom;
-                                // 4-Tap Bilateral Smooth Blur can bang da huong
+                                // 2-Tap Bilateral Smooth Blur
                                 vec3 s1 = texture2D(u_tex, clamp(distortedUv + vec2( texel.x,  texel.y) * bDist, 0.0, 1.0)).rgb;
                                 vec3 s2 = texture2D(u_tex, clamp(distortedUv + vec2(-texel.x, -texel.y) * bDist, 0.0, 1.0)).rgb;
-                                vec3 s3 = texture2D(u_tex, clamp(distortedUv + vec2(-texel.x,  texel.y) * bDist, 0.0, 1.0)).rgb;
-                                vec3 s4 = texture2D(u_tex, clamp(distortedUv + vec2( texel.x, -texel.y) * bDist, 0.0, 1.0)).rgb;
                                 vec3 b1 = max(s1 - vec3(0.62, 0.62, 0.62), vec3(0.0, 0.0, 0.0)) * 1.5;
                                 vec3 b2 = max(s2 - vec3(0.62, 0.62, 0.62), vec3(0.0, 0.0, 0.0)) * 1.5;
-                                vec3 b3 = max(s3 - vec3(0.62, 0.62, 0.62), vec3(0.0, 0.0, 0.0)) * 1.5;
-                                vec3 b4 = max(s4 - vec3(0.62, 0.62, 0.62), vec3(0.0, 0.0, 0.0)) * 1.5;
-                                bloomCol = (b1 + b2 + b3 + b4) * 0.22 * u_bloom;
+                                bloomCol = (b1 + b2) * 0.44 * u_bloom;
 
                                 // ULTRA EPIC: Khuếch tán vầng hào quang điện ảnh siêu mềm (Diffuse Cinematic Halo)
                                 if (u_epicMode > 0.5 && u_epicFlags.z > 0.5) {
-                                    float hDist = 3.8 * u_epicIntensity;
+                                    float hDist = 3.6 * u_epicIntensity;
                                     vec3 h1 = max(texture2D(u_tex, clamp(distortedUv + vec2( texel.x * hDist, 0.0), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
                                     vec3 h2 = max(texture2D(u_tex, clamp(distortedUv - vec2( texel.x * hDist, 0.0), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
-                                    vec3 h3 = max(texture2D(u_tex, clamp(distortedUv + vec2(0.0,  texel.y * hDist), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
-                                    vec3 h4 = max(texture2D(u_tex, clamp(distortedUv - vec2(0.0,  texel.y * hDist), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
-                                    vec3 epicHalo = (h1 + h2 + h3 + h4) * vec3(0.40, 0.70, 1.15) * 0.22 * u_epicIntensity;
+                                    vec3 epicHalo = (h1 + h2) * vec3(0.40, 0.70, 1.15) * 0.42 * u_epicIntensity;
                                     bloomCol += epicHalo;
                                 }
 
                                 // ULTRA EPIC: Vet loe ngang dien anh toi uu (Sci-Fi Anamorphic Lens Flares - Fast Bilateral 2-tap)
-                                if (u_epicMode > 0.5 && u_anamorphic > 0.03) {
-                                    vec2 off1 = vec2(14.0 * texel.x, 0.0);
-                                    vec2 off2 = vec2(28.0 * texel.x, 0.0);
+                                if (u_epicMode > 0.5 && u_anamorphic > 0.04) {
+                                    vec2 off1 = vec2(20.0 * texel.x, 0.0);
                                     vec3 a1 = max(texture2D(u_tex, clamp(distortedUv + off1, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
                                     vec3 a2 = max(texture2D(u_tex, clamp(distortedUv - off1, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
-                                    vec3 a3 = max(texture2D(u_tex, clamp(distortedUv + off2, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
-                                    vec3 a4 = max(texture2D(u_tex, clamp(distortedUv - off2, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
-                                    vec3 anaCol = (a1 + a2) * 0.65 + (a3 + a4) * 0.35;
-                                    bloomCol += anaCol * vec3(0.40, 0.75, 1.30) * u_anamorphic * 0.55 * u_epicIntensity;
+                                    bloomCol += (a1 + a2) * vec3(0.40, 0.75, 1.30) * (u_anamorphic * 0.65 * u_epicIntensity);
                                 }
                             }
                             vec3 col = baseCol + bloomCol;
@@ -33777,9 +33774,7 @@
                             if (u_epicMode > 0.5 && u_epicFlags.y > 0.5) {
                                 float floorWave = sin(uv.x * 35.0 + u_time * 2.0) * 0.002;
                                 vec2 reflUv = vec2(uv.x + floorWave, clamp(uv.y + 0.038, 0.0, 1.0));
-                                vec3 rs1 = texture2D(u_tex, clamp(reflUv + vec2(texel.x * 1.8, 0.0), 0.0, 1.0)).rgb;
-                                vec3 rs2 = texture2D(u_tex, clamp(reflUv - vec2(texel.x * 1.8, 0.0), 0.0, 1.0)).rgb;
-                                vec3 reflSample = (rs1 + rs2) * 0.5;
+                                vec3 reflSample = texture2D(u_tex, reflUv).rgb;
                                 vec3 specular = max(reflSample - vec3(0.78, 0.78, 0.78), vec3(0.0, 0.0, 0.0));
                                 col += specular * vec3(0.35, 0.60, 0.80) * 0.25 * u_epicIntensity;
                             }
@@ -33908,6 +33903,7 @@
                         contrast: gl.getUniformLocation(program, "u_contrast"),
                         nvg: gl.getUniformLocation(program, "u_nvg"),
                         shockwaves: gl.getUniformLocation(program, "u_shockwaves"),
+                        shockwaveCount: gl.getUniformLocation(program, "u_shockwaveCount"),
                         epicMode: gl.getUniformLocation(program, "u_epicMode"),
                         epicIntensity: gl.getUniformLocation(program, "u_epicIntensity"),
                         playerLight: gl.getUniformLocation(program, "u_playerLight"),
@@ -33992,6 +33988,8 @@
                 this.canvas.height = Math.max(240, h || window.innerHeight);
                 this.canvas.style.width = "100%";
                 this.canvas.style.height = "100%";
+                this.allocatedWidth = 0;
+                this.allocatedHeight = 0;
                 if (this.gl) {
                     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
                 }
@@ -34002,10 +34000,16 @@
                 const gl = this.gl;
 
                 try {
-                    // Upload pixel frame từ 2D canvas sang GPU WebGL texture
+                    // Upload pixel frame từ 2D canvas sang GPU WebGL texture (Zero re-allocation fast sub-image blit)
                     gl.activeTexture(gl.TEXTURE0);
                     gl.bindTexture(gl.TEXTURE_2D, this.texture);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+                    if (this.allocatedWidth !== sourceCanvas.width || this.allocatedHeight !== sourceCanvas.height) {
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+                        this.allocatedWidth = sourceCanvas.width;
+                        this.allocatedHeight = sourceCanvas.height;
+                    } else {
+                        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas);
+                    }
 
                     gl.useProgram(this.program);
 
@@ -34136,6 +34140,9 @@
                     }
                     if (this.locations.shockwaves) {
                         gl.uniform4fv(this.locations.shockwaves, this.shockwaveBuffer);
+                    }
+                    if (this.locations.shockwaveCount) {
+                        gl.uniform1f(this.locations.shockwaveCount, activeCount);
                     }
 
                     // ULTRA EPIC: Thu thap va upload Nguon sang da diem dong toi uu (Unrolled Point Lights)
