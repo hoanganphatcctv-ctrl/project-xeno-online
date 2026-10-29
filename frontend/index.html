@@ -1445,9 +1445,9 @@
                         <!-- 2. THANH GIÁP NANO (ARMOR BAR) - 3D Capsule Glowing Bar -->
                         <div class="flex flex-col gap-0.5">
                             <div class="flex items-center justify-between text-[9px] font-mono-tech leading-none">
-                                <span class="font-extrabold text-cyan-400 drop-shadow flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                                    GIÁP (-65%)
+                                <span id="hudArmorLabel" class="font-extrabold text-cyan-400 drop-shadow flex items-center gap-1">
+                                    <span id="hudArmorDot" class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    <span id="hudArmorTitle">GIÁP (-65%)</span>
                                 </span>
                                 <span id="hudArmorText" class="font-black text-white drop-shadow tracking-wider">50/100</span>
                             </div>
@@ -6756,6 +6756,9 @@
             maxHp: 100,
             armor: 50,
             maxArmor: 100,
+            mana: 100,
+            maxMana: 100,
+            manaExhausted: false,
             baseSpeed: 4.4,
             credits: 120,
             currentWeapon: 0,
@@ -6961,14 +6964,25 @@
 
         // KỸ NĂNG LƯỚT NÉ TƯƠNG ĐỐI THEO GÓC NHÌN (Q: TRÁI, E: PHẢI)
         function triggerRelativeStrafeDash(direction = "left") {
-            if (isPaused || isGameOver || isMapWon || player.dashCooldown > 0 || player.isDown) return;
+            if (isPaused || isGameOver || isMapWon || player.isDown) return;
+            if (window.gameMode === "pvp_gungame") {
+                if (player.manaExhausted || (player.mana || 0) <= 1) {
+                    addFloatingText(player.x, player.y - 20, player.manaExhausted ? "KIỆT SỨC (>80%)!" : "HẾT NĂNG LƯỢNG!", "#f43f5e");
+                    if (typeof sfx !== "undefined" && sfx && sfx.playError) sfx.playError();
+                    return;
+                }
+                if (player.dashCooldown > 0) return;
+                player.dashCooldown = 2; // 2 frames debounce
+            } else {
+                if (player.dashCooldown > 0) return;
+                player.dashCooldown = 85; // ~1.4s cooldown nhanh cho PvE
+            }
             const sign = (direction === "left") ? -1 : 1;
             const perpAngle = player.angle + sign * (Math.PI / 2);
             const dx = Math.cos(perpAngle);
             const dy = Math.sin(perpAngle);
 
             player.dashActiveTimer = 11;
-            player.dashCooldown = 85; // ~1.4s cooldown nhanh cho PvP
             player.dashVx = dx * 15.5;
             player.dashVy = dy * 15.5;
 
@@ -7059,7 +7073,11 @@
             if (!PVP_GUNGAME_STATE.active || PVP_GUNGAME_STATE.matchEnded) return;
             player.isDown = false;
             player.hp = player.maxHp;
-            player.armor = player.maxArmor;
+            player.armor = 0;
+            player.maxArmor = 0;
+            player.mana = 100;
+            player.maxMana = 100;
+            player.manaExhausted = false;
             player.invulnTimer = 110; // 1.8s bất tử
 
             // Chọn điểm spawn xa đối thủ nhất
@@ -16500,8 +16518,15 @@
                 player.hp = Math.min(player.maxHp, player.hp + 45);
                 addFloatingText(x, y, "+45 MÁU", "#f43f5e");
             } else if (kind === "armor") {
-                player.armor = Math.min(player.maxArmor, player.armor + 50);
-                addFloatingText(x, y, "+50 GIÁP NANO", "#38bdf8");
+                if (window.gameMode === "pvp_gungame") {
+                    player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + 50);
+                    if (player.mana >= 80) player.manaExhausted = false;
+                    addFloatingText(x, y, "+50% NĂNG LƯỢNG LƯỚT", "#38bdf8");
+                    updateTopLeftHUD();
+                } else {
+                    player.armor = Math.min(player.maxArmor, player.armor + 50);
+                    addFloatingText(x, y, "+50 GIÁP NANO", "#38bdf8");
+                }
             } else if (kind === "ammo") {
                 const curW = WEAPON_DATA[player.currentWeapon];
                 if (curW && curW.unlocked && curW.maxAmmo !== Infinity) {
@@ -16574,7 +16599,19 @@
         }
 
         function triggerPlayerDash() {
-            if (isPaused || isGameOver || isMapWon || player.dashCooldown > 0 || player.isDown) return;
+            if (isPaused || isGameOver || isMapWon || player.isDown) return;
+            if (window.gameMode === "pvp_gungame") {
+                if (player.manaExhausted || (player.mana || 0) <= 1) {
+                    addFloatingText(player.x, player.y - 20, player.manaExhausted ? "KIỆT SỨC (>80%)!" : "HẾT NĂNG LƯỢNG!", "#f43f5e");
+                    if (typeof sfx !== "undefined" && sfx && sfx.playError) sfx.playError();
+                    return;
+                }
+                if (player.dashCooldown > 0) return;
+                player.dashCooldown = 2; // 2 frames debounce
+            } else {
+                if (player.dashCooldown > 0) return;
+                player.dashCooldown = 165; // ~2.75s cooldown
+            }
             let dx = 0, dy = 0;
             if (keys["KeyW"] || keys["ArrowUp"]) dy -= 1;
             if (keys["KeyS"] || keys["ArrowDown"]) dy += 1;
@@ -16593,7 +16630,6 @@
                 dy /= len;
             }
             player.dashActiveTimer = 11;
-            player.dashCooldown = 165; // ~2.75s cooldown
             player.dashVx = dx * 15.5;
             player.dashVy = dy * 15.5;
             sfx.playShoot("cryo");
@@ -18118,7 +18154,7 @@
         function damagePlayer(amount) {
             if (isMapWon || isGameOver || player.dashActiveTimer > 0 || player.invulnTimer > 0 || player.isDown) return;
             player.invulnTimer = 20; // 0.33s post-hit invulnerability prevents instant multi-hit deaths
-            if (player.armor > 0) {
+            if (player.armor > 0 && window.gameMode !== "pvp_gungame") {
                 const prevArmor = player.armor;
                 const absorbed = Math.min(player.armor, amount * 0.65);
                 player.armor -= absorbed;
@@ -18995,6 +19031,10 @@
                 if (barricades[i].hitFlash > 0) barricades[i].hitFlash--;
             }
 
+            if (frameCounter % 4 === 0 && window.gameMode === "pvp_gungame") {
+                updateTopLeftHUD();
+            }
+
             if (frameCounter % 8 === 0) {
                 renderActiveBuffPills();
                 const cdEl = byId("hudItemCd");
@@ -19004,17 +19044,48 @@
                 }
                 const dashEl = byId("hudDashCd");
                 if (dashEl) {
-                    dashEl.textContent = player.dashCooldown > 0 ? `${(player.dashCooldown / 60).toFixed(1)}s` : "SẴN";
-                    dashEl.className = player.dashCooldown > 0 ? "text-slate-400 font-bold" : "text-emerald-400 font-extrabold";
+                    if (window.gameMode === "pvp_gungame") {
+                        if (player.manaExhausted) {
+                            dashEl.textContent = "KIỆT SỨC";
+                            dashEl.className = "text-rose-400 font-extrabold animate-pulse";
+                        } else {
+                            dashEl.textContent = `${Math.round(player.mana || 0)}%`;
+                            dashEl.className = "text-sky-400 font-extrabold";
+                        }
+                    } else {
+                        dashEl.textContent = player.dashCooldown > 0 ? `${(player.dashCooldown / 60).toFixed(1)}s` : "SẴN";
+                        dashEl.className = player.dashCooldown > 0 ? "text-slate-400 font-bold" : "text-emerald-400 font-extrabold";
+                    }
                 }
                 const touchDash = byId("touchBtnDash");
-                if (touchDash) {
-                    if (player.dashCooldown > 0) {
-                        touchDash.style.opacity = "0.45";
-                        touchDash.classList.add("grayscale");
-                    } else {
-                        touchDash.style.opacity = "1";
-                        touchDash.classList.remove("grayscale");
+                const touchBtnQ = byId("touchBtnQ");
+                const touchBtnInteract = byId("touchBtnInteract");
+                if (window.gameMode === "pvp_gungame") {
+                    const isLocked = player.manaExhausted || (player.mana || 0) <= 1;
+                    if (touchDash) {
+                        touchDash.style.opacity = isLocked ? "0.4" : "1";
+                        if (isLocked) touchDash.classList.add("grayscale");
+                        else touchDash.classList.remove("grayscale");
+                    }
+                    if (touchBtnQ) {
+                        touchBtnQ.style.opacity = isLocked ? "0.4" : "1";
+                        if (isLocked) touchBtnQ.classList.add("grayscale");
+                        else touchBtnQ.classList.remove("grayscale");
+                    }
+                    if (touchBtnInteract) {
+                        touchBtnInteract.style.opacity = isLocked ? "0.4" : "1";
+                        if (isLocked) touchBtnInteract.classList.add("grayscale");
+                        else touchBtnInteract.classList.remove("grayscale");
+                    }
+                } else {
+                    if (touchDash) {
+                        if (player.dashCooldown > 0) {
+                            touchDash.style.opacity = "0.45";
+                            touchDash.classList.add("grayscale");
+                        } else {
+                            touchDash.style.opacity = "1";
+                            touchDash.classList.remove("grayscale");
+                        }
                     }
                 }
 
@@ -19086,7 +19157,32 @@
                 }
                 resolveWallSliding(player);
                 addPlayerTrail(player.x, player.y, player.angle, 14);
+
+                // Solo 1v1 PvP Mana Drain: 100% mana cho tổng ~3.5s lướt (210 frames tại 60fps)
+                if (window.gameMode === "pvp_gungame") {
+                    const drain = (100 / 210) * dtScale;
+                    player.mana = Math.max(0, (player.mana || 0) - drain);
+                    if (player.mana <= 0) {
+                        player.mana = 0;
+                        player.manaExhausted = true;
+                        player.dashActiveTimer = 0; // hết mana ngắt lướt ngay
+                        if (typeof sfx !== "undefined" && sfx && sfx.playError) sfx.playError();
+                        addFloatingText(player.x, player.y - 20, "KIỆT SỨC (>80%)!", "#f43f5e");
+                    }
+                }
             } else {
+                // Solo 1v1 PvP Mana Regeneration: hồi đầy 0 -> 100% trong 10s (600 frames tại 60fps)
+                if (window.gameMode === "pvp_gungame") {
+                    if ((player.mana || 0) < (player.maxMana || 100)) {
+                        const regen = (100 / 600) * dtScale;
+                        player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + regen);
+                        if (player.manaExhausted && player.mana >= 80) {
+                            player.manaExhausted = false;
+                            addFloatingText(player.x, player.y - 20, "NĂNG LƯỢNG ĐÃ HỒI!", "#38bdf8");
+                        }
+                    }
+                }
+
                 let mx = 0, my = 0;
                 const isModalOpenNow = isAnyBlockingModalOpen();
                 if (!isModalOpenNow) {
@@ -27684,10 +27780,52 @@
             setText("hudHpText", `${Math.ceil(player.hp)}/${player.maxHp}`);
             setText("shopHpStat", `${Math.ceil(player.hp)}/${player.maxHp}`);
 
-            const armPct = (player.armor / Math.max(1, player.maxArmor)) * 100;
-            setWidth("hudArmorBar", armPct);
-            setText("hudArmorText", `${Math.ceil(player.armor)}/${player.maxArmor}`);
-            setText("shopArmorStat", `${Math.ceil(player.armor)}/${player.maxArmor}`);
+            const isPvP = (window.gameMode === "pvp_gungame");
+            const armorBarEl = byId("hudArmorBar");
+            const armorTitleEl = byId("hudArmorTitle");
+            const armorDotEl = byId("hudArmorDot");
+
+            if (isPvP) {
+                const manaPct = Math.max(0, Math.min(100, player.mana !== undefined ? player.mana : 100));
+                setWidth("hudArmorBar", manaPct);
+                if (armorTitleEl) {
+                    armorTitleEl.textContent = player.manaExhausted ? "KIỆT SỨC (HỒI >80%)" : "NĂNG LƯỢNG LƯỚT [Q/E]";
+                }
+                if (armorDotEl) {
+                    armorDotEl.className = player.manaExhausted ? "w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" : "w-1.5 h-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_#38bdf8]";
+                }
+                const armorTextEl = byId("hudArmorText");
+                if (armorTextEl) {
+                    armorTextEl.textContent = `${Math.round(manaPct)}%`;
+                    armorTextEl.className = player.manaExhausted ? "font-black text-rose-300 drop-shadow tracking-wider animate-pulse" : "font-black text-white drop-shadow tracking-wider";
+                }
+                if (armorBarEl) {
+                    armorBarEl.style.transition = "none";
+                    if (player.manaExhausted) {
+                        armorBarEl.style.background = "linear-gradient(180deg, #fda4af 0%, #f43f5e 38%, #e11d48 72%, #881337 100%)";
+                        armorBarEl.style.boxShadow = "inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.5), 0 0 14px rgba(244, 63, 94, 0.9)";
+                    } else {
+                        armorBarEl.style.background = "linear-gradient(180deg, #bae6fd 0%, #38bdf8 38%, #0284c7 72%, #0369a1 100%)";
+                        armorBarEl.style.boxShadow = "inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.85)";
+                    }
+                }
+            } else {
+                const armPct = (player.armor / Math.max(1, player.maxArmor)) * 100;
+                setWidth("hudArmorBar", armPct);
+                if (armorTitleEl) armorTitleEl.textContent = "GIÁP (-65%)";
+                if (armorDotEl) armorDotEl.className = "w-1.5 h-1.5 rounded-full bg-cyan-400";
+                const armorTextEl = byId("hudArmorText");
+                if (armorTextEl) {
+                    armorTextEl.textContent = `${Math.ceil(player.armor)}/${player.maxArmor}`;
+                    armorTextEl.className = "font-black text-white drop-shadow tracking-wider";
+                }
+                setText("shopArmorStat", `${Math.ceil(player.armor)}/${player.maxArmor}`);
+                if (armorBarEl) {
+                    armorBarEl.style.transition = "";
+                    armorBarEl.style.background = "linear-gradient(180deg, #a5f3fc 0%, #06b6d4 38%, #0891b2 72%, #164e63 100%)";
+                    armorBarEl.style.boxShadow = "inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.5), 0 0 14px rgba(6, 182, 212, 0.85)";
+                }
+            }
             setText("shopDmgStat", `x${player.damageMultiplier.toFixed(2)}`);
 
             const reactorPctEl = byId("hudReactorHpPct");
@@ -31445,6 +31583,12 @@
                 PVP_GUNGAME_STATE.matchEnded = false;
                 PVP_GUNGAME_STATE.sonarPings = [];
 
+                player.armor = 0;
+                player.maxArmor = 0;
+                player.mana = 100;
+                player.maxMana = 100;
+                player.manaExhausted = false;
+
                 WEAPON_DATA.forEach((w, idx) => {
                     w.unlocked = (idx === 0);
                     w.ammo = (idx === 0) ? Infinity : (PVP_AMMO_PER_LEVEL[idx] || 50);
@@ -32950,11 +33094,14 @@
             }
             if (e.code === "Space") {
                 e.preventDefault();
+                if (e.repeat && player.dashActiveTimer > 0) return;
                 triggerPlayerDash();
             } else if (e.code === "KeyQ") {
+                if (e.repeat && player.dashActiveTimer > 0) return;
                 triggerRelativeStrafeDash("left");
             } else if (e.code === "KeyE") {
                 if (window.gameMode === "pvp_gungame") {
+                    if (e.repeat && player.dashActiveTimer > 0) return;
                     triggerRelativeStrafeDash("right");
                 } else {
                     triggerInteractionKeyE();

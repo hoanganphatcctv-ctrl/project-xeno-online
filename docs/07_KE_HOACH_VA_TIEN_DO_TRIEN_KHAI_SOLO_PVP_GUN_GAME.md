@@ -101,18 +101,30 @@ flowchart TD
 - [x] **9.3**: Cập nhật live real-time: Kéo slider thì kích thước hoặc độ trong suốt của nút đang chọn thay đổi trực tiếp ngay trên màn hình và được lưu vào `localStorage` (`scale`, `opacity`).
 - [x] **9.4**: **Loại bỏ toàn bộ emoji chỗ chế độ Solo 1v1**: Gỡ bỏ các biểu tượng `⚔️` và `🤝` ở Top HUD, nút chọn phòng, tiêu đề sảnh, text đồng bộ phòng, giữ giao diện phong cách quân sự viễn tưởng chuyên nghiệp.
 
+### 🔘 Giai đoạn 10: Cơ Chế Lướt Không Độ Trễ & Thanh Năng Lượng Mana PvP (Tận Dụng Thanh Giáp)
+- [x] **10.1**: **Triệt tiêu delay lướt (Zero-Delay Dash)**: Trong Solo 1v1 PvP, loại bỏ thời gian hồi chiêu $1.4\text{s}$ (85 frames) của `Q`, `E` và $2.75\text{s}$ (165 frames) của Space / Chuột phải / Touch Dash; chuyển sang debounce chống lag 2 frames ($0.033\text{s}$), cho phép đổi hướng lướt zig-zag liên hoàn, tăng đột biến trong combat.
+- [x] **10.2**: **Tận dụng thanh Giáp thành Thanh Mana**: Trong PvP không sử dụng giáp (`armor = 0`, `maxArmor = 0`, sát thương trừ trực tiếp máu), tái cấu trúc slot giáp `#hudArmorBar` thành thanh hiển thị Mana năng lượng lướt (`#hudArmorTitle`: `NĂNG LƯỢNG LƯỚT [Q/E]`).
+- [x] **10.3**: **Công thức tiêu hao Mana**: $100\%$ Mana tương ứng tổng thời gian lướt tích lũy $3.5\text{s}$ ($210\text{ frames}$ tại $60\text{ fps}$, tương đương $\approx 19$ nhịp lướt liên tục). Mỗi frame lướt tiêu tốn chính xác $\frac{100}{210} \times dtScale \approx 0.4762\text{ mana}$.
+- [x] **10.4**: **Công thức hồi Mana**: Hồi phục đầy đủ $0\% \rightarrow 100\%$ trong đúng $10.0\text{s}$ ($600\text{ frames}$ tại $60\text{ fps}$, tốc độ hồi $10.0\text{ mana/giây}$) khi nhân vật không trong trạng thái lướt.
+- [x] **10.5**: **Cơ chế Kiệt Sức (Exhaustion Gate $\ge 80\%$)**: Khi người chơi lướt cạn sạch Mana về $0\%$, kích hoạt cờ `player.manaExhausted = true`, ngắt lướt ngay lập tức và khóa toàn bộ thao tác lướt cho tới khi năng lượng hồi phục đạt **tối thiểu $80\%$** ($8.0\text{s}$ hồi phục).
+- [x] **10.6**: **Trực quan hóa HUD & Phím Mobile**:
+  - Khi Kiệt Sức: Thanh chuyển gradient đỏ hồng neon (`#f43f5e`), nhãn đổi thành `KIỆT SỨC (HỒI >80%)`, text phần trăm nhấp nháy đỏ rực, các nút `[DASH]`, `[Q]`, `[E]` trên màn hình cảm ứng mờ xám ($40\%$ opacity + grayscale).
+  - Khi Bình Thường / Đang Hồi: Thanh chuyển xanh Cyan/Sky neon (`#38bdf8`), nhãn `NĂNG LƯỢNG LƯỚT [Q/E]`, cập nhật phần trăm thực tế mượt mà không độ trễ.
+  - Nhặt hòm cứu viện giáp trong PvP: Tự động tiếp tế $+50\%$ Mana và giải phóng ngay trạng thái kiệt sức nếu đạt $\ge 80\%$.
+- [x] **10.7**: **Đóng gói minified và đồng bộ toàn diện**: Chạy `build_minified.ps1` tạo JS minified $636,145\text{ bytes}$ ($621.2\text{ KB}$), đồng bộ đồng thời ra `dist/`, `frontend/dist/` và `root index.html`.
+
 ---
 
 ## 🏆 5. KẾT QUẢ TRIỂN KHAI & ĐÓNG GÓI HOÀN TẤT
-* **Trạng thái**: ✅ **100% HOÀN THÀNH (35/35 Hạng mục)**
-* **File nguồn đã sửa**: [`alien-shooter-fullstack/frontend/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/index.html)
-* **Kích thước JS gốc**: $1,492,857\text{ bytes}$ ($1,457.9\text{ KB}$)
-* **Kích thước JS minified**: $632,264\text{ bytes}$ ($617.4\text{ KB}$) qua Terser Headless Edge
+* **Trạng thái**: ✅ **100% HOÀN THÀNH (42/42 Hạng mục)**
+* **File nguồn đã sửa**: [`alien-shooter-fullstack/frontend/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/index.html)
+* **Kích thước JS gốc**: $1,501,199\text{ bytes}$ ($1,466.0\text{ KB}$)
+* **Kích thước JS minified**: $636,145\text{ bytes}$ ($621.2\text{ KB}$) qua Terser Headless Edge
 * **Các file đích đã đồng bộ**:
-  - [`dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/dist/game.min.js) & [`dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/dist/index.html)
-  - [`frontend/dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/dist/game.min.js) & [`frontend/dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/alien-shooter-fullstack/frontend/dist/index.html)
-  - [`index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google%20account%20verify/index.html) (Root)
-* **Kiểm định cú pháp & build**: Pass $100\%$ không phát sinh cảnh báo lỗi cú pháp Terser.
+  - [`dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/dist/game.min.js) & [`dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/dist/index.html)
+  - [`frontend/dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/dist/game.min.js) & [`frontend/dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/dist/index.html)
+  - [`index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/index.html) (Root)
+* **Kiểm định cú pháp & build**: Pass $100\%$ không phát sinh lỗi cú pháp Node.js VM hay Terser.
 
 ---
 
