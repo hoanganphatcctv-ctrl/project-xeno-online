@@ -33489,8 +33489,8 @@
             shockwaves: [],
             shockwaveBuffer: new Float32Array(16),
             heatSourceBuffer: new Float32Array(12),
-            pointLightBuffer: new Float32Array(24),
-            pointLightColorBuffer: new Float32Array(24),
+            pointLightBuffer: new Float32Array(12),
+            pointLightColorBuffer: new Float32Array(12),
             anamorphicIntensity: 0.0,
             graphicsTier: 1, // 0 = Standard 2D, 1 = High Shader, 2 = Ultra Epic Cinematic
             epicIntensity: 1.0, // 0.5 to 1.5
@@ -33589,8 +33589,8 @@
                         uniform vec4 u_playerLight;
                         uniform vec3 u_epicFlags;
                         uniform vec4 u_heatSources[3];
-                        uniform vec4 u_pointLights[6];
-                        uniform vec4 u_pointLightColors[6];
+                        uniform vec4 u_pointLights[3];
+                        uniform vec4 u_pointLightColors[3];
                         uniform float u_pointLightCount;
                         uniform float u_anamorphic;
                         uniform float u_wetness;
@@ -33674,24 +33674,44 @@
                             // Anh chop nhiet no bung sang
                             baseCol += vec3(shockGlow * 1.25, shockGlow * 0.90, shockGlow * 0.58);
 
-                            // ULTRA EPIC: Chieu sang da diem dong (Dynamic Multi-Point Lighting)
+                            // ULTRA EPIC: Chieu sang da diem dong toi uu (Unrolled Dynamic Multi-Point Lighting)
                             if (u_epicMode > 0.5 && u_pointLightCount > 0.5) {
                                 vec3 dLight = vec3(0.0);
-                                for (int li = 0; li < 6; li++) {
-                                    if (float(li) >= u_pointLightCount) break;
-                                    vec4 pl = u_pointLights[li];
-                                    if (pl.z > 0.001 && pl.w > 0.01) {
-                                        vec2 plDiff = (uv - pl.xy) * aspect;
-                                        float plDist = length(plDiff);
-                                        if (plDist < pl.z) {
-                                            float plAtten = 1.0 - plDist / pl.z;
-                                            plAtten = plAtten * plAtten * pl.w;
-                                            vec3 pCol = u_pointLightColors[li].rgb;
-                                            dLight += pCol * plAtten * 0.42 * u_epicIntensity;
+                                vec4 pl0 = u_pointLights[0];
+                                if (pl0.w > 0.01) {
+                                    vec2 d0 = (uv - pl0.xy) * aspect;
+                                    float dSq0 = dot(d0, d0);
+                                    float rSq0 = pl0.z * pl0.z;
+                                    if (dSq0 < rSq0) {
+                                        float att0 = 1.0 - dSq0 / rSq0;
+                                        dLight += u_pointLightColors[0].rgb * (att0 * att0 * pl0.w);
+                                    }
+                                }
+                                if (u_pointLightCount > 1.5) {
+                                    vec4 pl1 = u_pointLights[1];
+                                    if (pl1.w > 0.01) {
+                                        vec2 d1 = (uv - pl1.xy) * aspect;
+                                        float dSq1 = dot(d1, d1);
+                                        float rSq1 = pl1.z * pl1.z;
+                                        if (dSq1 < rSq1) {
+                                            float att1 = 1.0 - dSq1 / rSq1;
+                                            dLight += u_pointLightColors[1].rgb * (att1 * att1 * pl1.w);
                                         }
                                     }
                                 }
-                                baseCol += dLight;
+                                if (u_pointLightCount > 2.5) {
+                                    vec4 pl2 = u_pointLights[2];
+                                    if (pl2.w > 0.01) {
+                                        vec2 d2 = (uv - pl2.xy) * aspect;
+                                        float dSq2 = dot(d2, d2);
+                                        float rSq2 = pl2.z * pl2.z;
+                                        if (dSq2 < rSq2) {
+                                            float att2 = 1.0 - dSq2 / rSq2;
+                                            dLight += u_pointLightColors[2].rgb * (att2 * att2 * pl2.w);
+                                        }
+                                    }
+                                }
+                                baseCol += dLight * 0.42 * u_epicIntensity;
                             }
 
                             // 3. BLOOM & SCI-FI HIGH-DYNAMIC RANGE (HDR) GLOW
@@ -33720,20 +33740,16 @@
                                     bloomCol += epicHalo;
                                 }
 
-                                // ULTRA EPIC: Vet loe ngang dien anh (Sci-Fi Anamorphic Lens Flares & Starburst)
-                                if (u_epicMode > 0.5 && u_anamorphic > 0.01) {
-                                    vec3 anaCol = vec3(0.0);
-                                    float aDist = 12.0 * texel.x;
-                                    for (int ai = 1; ai <= 4; ai++) {
-                                        float fi = float(ai);
-                                        vec2 offH = vec2(fi * aDist, 0.0);
-                                        vec3 as1 = texture2D(u_tex, clamp(distortedUv + offH, 0.0, 1.0)).rgb;
-                                        vec3 as2 = texture2D(u_tex, clamp(distortedUv - offH, 0.0, 1.0)).rgb;
-                                        vec3 ab1 = max(as1 - vec3(0.70, 0.70, 0.70), vec3(0.0, 0.0, 0.0));
-                                        vec3 ab2 = max(as2 - vec3(0.70, 0.70, 0.70), vec3(0.0, 0.0, 0.0));
-                                        anaCol += (ab1 + ab2) * (1.0 / fi);
-                                    }
-                                    bloomCol += anaCol * vec3(0.40, 0.75, 1.30) * u_anamorphic * 0.48 * u_epicIntensity;
+                                // ULTRA EPIC: Vet loe ngang dien anh toi uu (Sci-Fi Anamorphic Lens Flares - Fast Bilateral 2-tap)
+                                if (u_epicMode > 0.5 && u_anamorphic > 0.03) {
+                                    vec2 off1 = vec2(14.0 * texel.x, 0.0);
+                                    vec2 off2 = vec2(28.0 * texel.x, 0.0);
+                                    vec3 a1 = max(texture2D(u_tex, clamp(distortedUv + off1, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
+                                    vec3 a2 = max(texture2D(u_tex, clamp(distortedUv - off1, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
+                                    vec3 a3 = max(texture2D(u_tex, clamp(distortedUv + off2, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
+                                    vec3 a4 = max(texture2D(u_tex, clamp(distortedUv - off2, 0.0, 1.0)).rgb - vec3(0.72, 0.72, 0.72), vec3(0.0, 0.0, 0.0));
+                                    vec3 anaCol = (a1 + a2) * 0.65 + (a3 + a4) * 0.35;
+                                    bloomCol += anaCol * vec3(0.40, 0.75, 1.30) * u_anamorphic * 0.55 * u_epicIntensity;
                                 }
                             }
                             vec3 col = baseCol + bloomCol;
@@ -33761,26 +33777,24 @@
                             if (u_epicMode > 0.5 && u_epicFlags.y > 0.5) {
                                 float floorWave = sin(uv.x * 35.0 + u_time * 2.0) * 0.002;
                                 vec2 reflUv = vec2(uv.x + floorWave, clamp(uv.y + 0.038, 0.0, 1.0));
-                                vec3 rs0 = texture2D(u_tex, reflUv).rgb;
-                                vec3 rs1 = texture2D(u_tex, reflUv + vec2(texel.x * 2.5, 0.0)).rgb;
-                                vec3 rs2 = texture2D(u_tex, reflUv - vec2(texel.x * 2.5, 0.0)).rgb;
-                                vec3 reflSample = (rs0 * 0.5 + (rs1 + rs2) * 0.25);
+                                vec3 rs1 = texture2D(u_tex, clamp(reflUv + vec2(texel.x * 1.8, 0.0), 0.0, 1.0)).rgb;
+                                vec3 rs2 = texture2D(u_tex, clamp(reflUv - vec2(texel.x * 1.8, 0.0), 0.0, 1.0)).rgb;
+                                vec3 reflSample = (rs1 + rs2) * 0.5;
                                 vec3 specular = max(reflSample - vec3(0.78, 0.78, 0.78), vec3(0.0, 0.0, 0.0));
                                 col += specular * vec3(0.35, 0.60, 0.80) * 0.25 * u_epicIntensity;
                             }
 
-                            // ULTRA EPIC: Phan xa mat san uot & vung mau/axit (Dynamic Surface Wetness & Specular Ripples)
+                            // ULTRA EPIC: Phan xa mat san uot & vung mau/axit toi uu (Zero Texture Fetch Dynamic Surface Wetness)
                             if (u_epicMode > 0.5) {
                                 float isGreenAcid = max(0.0, baseCol.g - max(baseCol.r, baseCol.b) * 1.12);
                                 float isRedBlood = max(0.0, baseCol.r - max(baseCol.g, baseCol.b) * 1.20);
                                 float isWetFloor = clamp((isGreenAcid + isRedBlood) * 2.8, 0.0, 1.0);
-                                if (isWetFloor > 0.04) {
-                                    float ripple = sin((uv.x + uv.y) * 120.0 + u_time * 5.0) * 0.0014 * isWetFloor;
-                                    vec2 wetUv = clamp(uv + vec2(ripple, -ripple), 0.0, 1.0);
-                                    vec3 wetSample = texture2D(u_tex, wetUv).rgb;
-                                    float wetGlow = dot(wetSample, vec3(0.3, 0.59, 0.11));
-                                    vec3 wetSpec = vec3(pow(wetGlow, 3.0)) * vec3(0.70, 0.90, 1.0) * isWetFloor * u_epicIntensity;
-                                    col += wetSpec * 0.32;
+                                if (isWetFloor > 0.05) {
+                                    float ripple = sin((uv.x + uv.y) * 80.0 + u_time * 4.5);
+                                    float wetGlow = dot(baseCol, vec3(0.299, 0.587, 0.114));
+                                    float spec = wetGlow * wetGlow * (1.0 + ripple * 0.22);
+                                    vec3 wetSpec = vec3(spec * spec) * vec3(0.70, 0.90, 1.0) * isWetFloor * u_epicIntensity;
+                                    col += wetSpec * 0.35;
                                 }
                             }
 
@@ -33814,16 +33828,16 @@
                                 col += vec3(grain, grain, grain);
                             }
 
-                            // ULTRA EPIC: Suong mu the tich khong gian troi bong benh (Volumetric Atmospheric Fog Drift)
+                            // ULTRA EPIC: Suong mu the tich khong gian troi bong benh toi uu (Fast Volumetric Atmospheric Fog Drift)
                             if (u_epicMode > 0.5) {
-                                float fog1 = sin(uv.x * 6.2 + u_time * 0.32) * cos(uv.y * 5.0 - u_time * 0.25);
-                                float fog2 = sin(uv.x * 12.0 - u_time * 0.50) * cos(uv.y * 10.5 + u_time * 0.40);
-                                float fogMask = clamp((fog1 * 0.6 + fog2 * 0.4) * 0.5 + 0.5, 0.0, 1.0);
-                                fogMask = smoothstep(0.25, 0.82, fogMask);
-                                float centerDist = length((uv - vec2(0.5, 0.5)) * aspect);
-                                float centerAtten = smoothstep(0.14, 0.55, centerDist);
-                                vec3 fogColor = vec3(0.10, 0.18, 0.32) * fogMask * centerAtten * 0.065 * u_epicIntensity;
-                                col += fogColor;
+                                vec2 cDiff = (uv - vec2(0.5, 0.5)) * aspect;
+                                float cDistSq = dot(cDiff, cDiff);
+                                if (cDistSq > 0.03) {
+                                    float fogWave = sin(uv.x * 7.2 + uv.y * 5.4 + u_time * 0.36) * 0.5 + 0.5;
+                                    float centerAtten = clamp((cDistSq - 0.03) * 3.5, 0.0, 1.0);
+                                    vec3 fogColor = vec3(0.10, 0.18, 0.32) * (fogWave * centerAtten * 0.060 * u_epicIntensity);
+                                    col += fogColor;
+                                }
                             }
 
                             gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -34031,7 +34045,7 @@
                     }
 
                     if (this.locations.playerLight) {
-                        if (typeof player !== "undefined" && player && typeof camera !== "undefined" && camera) {
+                        if (isEpic > 0.5 && typeof player !== "undefined" && player && typeof camera !== "undefined" && camera) {
                             const pScX = player.x - camera.x;
                             const pScY = player.y - camera.y;
                             const uvX = pScX / Math.max(1, VIEW_W);
@@ -34045,9 +34059,9 @@
                     }
 
                     if (this.locations.heatSources) {
-                        this.heatSourceBuffer.fill(0);
-                        let hCount = 0;
                         if (isEpic > 0.5 && this.epicFeatures.heatHaze) {
+                            this.heatSourceBuffer.fill(0);
+                            let hCount = 0;
                             if (typeof player !== "undefined" && player && player.muzzleFlash > 0 && typeof camera !== "undefined" && camera) {
                                 const pCos = Math.cos(player.angle || 0);
                                 const pSin = Math.sin(player.angle || 0);
@@ -34087,8 +34101,8 @@
                                     hCount++;
                                 }
                             }
+                            gl.uniform4fv(this.locations.heatSources, this.heatSourceBuffer);
                         }
-                        gl.uniform4fv(this.locations.heatSources, this.heatSourceBuffer);
                     }
 
                     // Cập nhật mảng sóng xung kích quang học u_shockwaves
@@ -34124,88 +34138,95 @@
                         gl.uniform4fv(this.locations.shockwaves, this.shockwaveBuffer);
                     }
 
-                    // ULTRA EPIC: Thu thap va upload Nguon sang da diem dong (Dynamic Multi-Point Lights)
-                    let ptCount = 0;
-                    this.pointLightBuffer.fill(0);
-                    this.pointLightColorBuffer.fill(0);
+                    // ULTRA EPIC: Thu thap va upload Nguon sang da diem dong toi uu (Unrolled Point Lights)
+                    if (isEpic > 0.5) {
+                        let ptCount = 0;
+                        this.pointLightBuffer.fill(0);
+                        this.pointLightColorBuffer.fill(0);
 
-                    if (isEpic > 0.5 && typeof camera !== "undefined" && camera) {
-                        // 1. Player Muzzle Flash light
-                        if (typeof player !== "undefined" && player && player.muzzleFlash > 0) {
-                            const pCos = Math.cos(player.angle || 0);
-                            const pSin = Math.sin(player.angle || 0);
-                            const scX = ((player.x + pCos * 38) - camera.x) / Math.max(1, VIEW_W);
-                            const scY = 1.0 - (((player.y + pSin * 38) - camera.y) / Math.max(1, VIEW_H));
-                            const curWId = (typeof player.currentWeapon === "number") ? player.currentWeapon : 0;
-                            let pr = 1.0, pg = 0.85, pb = 0.45;
-                            if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; } // Gauss cyan
-                            else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; } // Cryo ice
-                            else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; } // Flame red-orange
-                            else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; } // Laser purple
-                            this.pointLightBuffer[0] = scX;
-                            this.pointLightBuffer[1] = scY;
-                            this.pointLightBuffer[2] = 0.32;
-                            this.pointLightBuffer[3] = Math.min(1.2, player.muzzleFlash / 3.0);
-                            this.pointLightColorBuffer[0] = pr;
-                            this.pointLightColorBuffer[1] = pg;
-                            this.pointLightColorBuffer[2] = pb;
-                            this.pointLightColorBuffer[3] = 1.0;
-                            ptCount++;
-                        }
+                        if (typeof camera !== "undefined" && camera) {
+                            // 1. Player Muzzle Flash light
+                            if (typeof player !== "undefined" && player && player.muzzleFlash > 0) {
+                                const pCos = Math.cos(player.angle || 0);
+                                const pSin = Math.sin(player.angle || 0);
+                                const scX = ((player.x + pCos * 38) - camera.x) / Math.max(1, VIEW_W);
+                                const scY = 1.0 - (((player.y + pSin * 38) - camera.y) / Math.max(1, VIEW_H));
+                                const curWId = (typeof player.currentWeapon === "number") ? player.currentWeapon : 0;
+                                let pr = 1.0, pg = 0.85, pb = 0.45;
+                                if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; } // Gauss cyan
+                                else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; } // Cryo ice
+                                else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; } // Flame red-orange
+                                else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; } // Laser purple
+                                this.pointLightBuffer[0] = scX;
+                                this.pointLightBuffer[1] = scY;
+                                this.pointLightBuffer[2] = 0.32;
+                                this.pointLightBuffer[3] = Math.min(1.2, player.muzzleFlash / 3.0);
+                                this.pointLightColorBuffer[0] = pr;
+                                this.pointLightColorBuffer[1] = pg;
+                                this.pointLightColorBuffer[2] = pb;
+                                this.pointLightColorBuffer[3] = 1.0;
+                                ptCount++;
+                            }
 
-                        // 2. Teammate Muzzle Flash light
-                        if (typeof teammate !== "undefined" && teammate && teammate.active && !teammate.isDown && teammate.muzzleFlash > 0) {
-                            const tCos = Math.cos(teammate.angle || 0);
-                            const tSin = Math.sin(teammate.angle || 0);
-                            const scX = ((teammate.x + tCos * 38) - camera.x) / Math.max(1, VIEW_W);
-                            const scY = 1.0 - (((teammate.y + tSin * 38) - camera.y) / Math.max(1, VIEW_H));
-                            const curWId = (typeof teammate.currentWeapon === "number") ? teammate.currentWeapon : 0;
-                            let pr = 1.0, pg = 0.85, pb = 0.45;
-                            if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; }
-                            else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; }
-                            else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; }
-                            else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; }
-                            const off = ptCount * 4;
-                            this.pointLightBuffer[off + 0] = scX;
-                            this.pointLightBuffer[off + 1] = scY;
-                            this.pointLightBuffer[off + 2] = 0.30;
-                            this.pointLightBuffer[off + 3] = Math.min(1.0, teammate.muzzleFlash / 3.0);
-                            this.pointLightColorBuffer[off + 0] = pr;
-                            this.pointLightColorBuffer[off + 1] = pg;
-                            this.pointLightColorBuffer[off + 2] = pb;
-                            this.pointLightColorBuffer[off + 3] = 1.0;
-                            ptCount++;
-                        }
-
-                        // 3. Active Shockwaves & Explosions
-                        for (let si = 0; si < this.shockwaves.length && ptCount < 5; si++) {
-                            const sw = this.shockwaves[si];
-                            const scX = (sw.worldX - camera.x) / Math.max(1, VIEW_W);
-                            const scY = 1.0 - ((sw.worldY - camera.y) / Math.max(1, VIEW_H));
-                            if (scX > -0.2 && scX < 1.2 && scY > -0.2 && scY < 1.2) {
+                            // 2. Teammate Muzzle Flash light
+                            if (typeof teammate !== "undefined" && teammate && teammate.active && !teammate.isDown && teammate.muzzleFlash > 0 && ptCount < 3) {
+                                const tCos = Math.cos(teammate.angle || 0);
+                                const tSin = Math.sin(teammate.angle || 0);
+                                const scX = ((teammate.x + tCos * 38) - camera.x) / Math.max(1, VIEW_W);
+                                const scY = 1.0 - (((teammate.y + tSin * 38) - camera.y) / Math.max(1, VIEW_H));
+                                const curWId = (typeof teammate.currentWeapon === "number") ? teammate.currentWeapon : 0;
+                                let pr = 1.0, pg = 0.85, pb = 0.45;
+                                if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; }
+                                else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; }
+                                else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; }
+                                else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; }
                                 const off = ptCount * 4;
                                 this.pointLightBuffer[off + 0] = scX;
                                 this.pointLightBuffer[off + 1] = scY;
-                                this.pointLightBuffer[off + 2] = (sw.maxRadius / Math.max(1, VIEW_H)) * 0.90;
-                                this.pointLightBuffer[off + 3] = sw.intensity * 1.05;
-                                this.pointLightColorBuffer[off + 0] = 1.0;
-                                this.pointLightColorBuffer[off + 1] = 0.72;
-                                this.pointLightColorBuffer[off + 2] = 0.35;
+                                this.pointLightBuffer[off + 2] = 0.30;
+                                this.pointLightBuffer[off + 3] = Math.min(1.0, teammate.muzzleFlash / 3.0);
+                                this.pointLightColorBuffer[off + 0] = pr;
+                                this.pointLightColorBuffer[off + 1] = pg;
+                                this.pointLightColorBuffer[off + 2] = pb;
                                 this.pointLightColorBuffer[off + 3] = 1.0;
                                 ptCount++;
                             }
+
+                            // 3. Active Shockwaves & Explosions
+                            for (let si = 0; si < this.shockwaves.length && ptCount < 3; si++) {
+                                const sw = this.shockwaves[si];
+                                const scX = (sw.worldX - camera.x) / Math.max(1, VIEW_W);
+                                const scY = 1.0 - ((sw.worldY - camera.y) / Math.max(1, VIEW_H));
+                                if (scX > -0.2 && scX < 1.2 && scY > -0.2 && scY < 1.2) {
+                                    const off = ptCount * 4;
+                                    this.pointLightBuffer[off + 0] = scX;
+                                    this.pointLightBuffer[off + 1] = scY;
+                                    this.pointLightBuffer[off + 2] = (sw.maxRadius / Math.max(1, VIEW_H)) * 0.90;
+                                    this.pointLightBuffer[off + 3] = sw.intensity * 1.05;
+                                    this.pointLightColorBuffer[off + 0] = 1.0;
+                                    this.pointLightColorBuffer[off + 1] = 0.72;
+                                    this.pointLightColorBuffer[off + 2] = 0.35;
+                                    this.pointLightColorBuffer[off + 3] = 1.0;
+                                    ptCount++;
+                                }
+                            }
                         }
+
+                        if (this.locations.pointLights) gl.uniform4fv(this.locations.pointLights, this.pointLightBuffer);
+                        if (this.locations.pointLightColors) gl.uniform4fv(this.locations.pointLightColors, this.pointLightColorBuffer);
+                        if (this.locations.pointLightCount) gl.uniform1f(this.locations.pointLightCount, ptCount);
+
+                        // Anamorphic flare decay and threshold cutoff
+                        this.anamorphicIntensity *= 0.85;
+                        if (this.anamorphicIntensity < 0.03) this.anamorphicIntensity = 0.0;
+                        if (this.locations.anamorphic) gl.uniform1f(this.locations.anamorphic, this.anamorphicIntensity);
+                        if (this.locations.wetness) gl.uniform1f(this.locations.wetness, 1.0);
+                        if (this.locations.fogDrift) gl.uniform1f(this.locations.fogDrift, 1.0);
+                    } else {
+                        if (this.locations.pointLightCount) gl.uniform1f(this.locations.pointLightCount, 0.0);
+                        if (this.locations.anamorphic) gl.uniform1f(this.locations.anamorphic, 0.0);
+                        this.anamorphicIntensity = 0.0;
                     }
-
-                    if (this.locations.pointLights) gl.uniform4fv(this.locations.pointLights, this.pointLightBuffer);
-                    if (this.locations.pointLightColors) gl.uniform4fv(this.locations.pointLightColors, this.pointLightColorBuffer);
-                    if (this.locations.pointLightCount) gl.uniform1f(this.locations.pointLightCount, ptCount);
-
-                    // Anamorphic flare decay
-                    this.anamorphicIntensity *= 0.90;
-                    if (this.locations.anamorphic) gl.uniform1f(this.locations.anamorphic, this.anamorphicIntensity);
-                    if (this.locations.wetness) gl.uniform1f(this.locations.wetness, 1.0);
-                    if (this.locations.fogDrift) gl.uniform1f(this.locations.fogDrift, 1.0);
 
                     // Vẽ Quad Fullscreen
                     gl.drawArrays(gl.TRIANGLES, 0, 6);
