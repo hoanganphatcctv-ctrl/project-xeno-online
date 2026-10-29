@@ -16679,10 +16679,6 @@
 
             sfx.playShoot(w.type, w.id !== undefined ? w.id : player.currentWeapon);
 
-            if (w.id === 6 && window.webglPostProcessor) {
-                window.webglPostProcessor.triggerAnamorphic(0.92);
-            }
-
             if (isCoopActive() && window.XENO_COOP && window.XENO_COOP.connected) {
                 if (w.type !== "laser" || (frameCounter % 2 === 0)) {
                     window.XENO_COOP.sendPacket({
@@ -16707,9 +16703,6 @@
             // WEAPON #7: CONTINUOUS PIERCING HIGH-ENERGY LASER BEAM WITH THERMAL RAMP-UP
             if (w.type === "laser") {
                 player.laserHeat = Math.min(1.0, (player.laserHeat || 0) + 0.055);
-                if (player.laserHeat > 0.45 && window.webglPostProcessor) {
-                    window.webglPostProcessor.triggerAnamorphic(0.55);
-                }
                 const heatMult = 1.0 + player.laserHeat * 0.85; // Ramps up to 185% damage at full charge!
                 const overdriveMult = player.overdriveBuffTimer > 0 ? 2.0 : 1.0;
                 const totalDmg = w.damage * player.damageMultiplier * overdriveMult * heatMult;
@@ -26614,7 +26607,7 @@
             }
             }
 
-            // 7. Dynamic Multi-Point Star Muzzle Flash & Shockwave Ring
+            // 7. Dynamic Multi-Point Star Muzzle Flash & Spike Cross (Cục bộ tại đầu nòng súng, không chớp màn hình)
             if (player.muzzleFlash > 0) {
                 const flashX = hasCustomPlayerSkin ? (skinAsset.flashDist || 38) : (wId === 5 ? 45 : (wId === 2 ? 41 : 37));
                 const flashR = 9.5 + Math.random() * 7.5;
@@ -26671,8 +26664,8 @@
 
             // HÀM ĐỤC THỦNG MÀN ĐÊM BẰNG ÁNH SÁNG NHÂN VẬT (ÁP DỤNG ĐỒNG BỘ CHO CẢ NGƯỜI CHƠI VÀ ĐỒNG ĐỘI CO-OP)
             function punchCharacterLight(cx, cy, angle, isDown, muzzleFlash, activeLaserBeam) {
-                // 1. Quầng sáng hào quang xung quanh cơ thể mecha
-                const auraR = isDown ? 90 : (muzzleFlash > 0 ? 220 : 155);
+                // 1. Quầng sáng hào quang xung quanh cơ thể mecha (Cố định 155px, không chớp giật khi bắn súng)
+                const auraR = isDown ? 90 : 155;
                 if (masks && masks.aura) {
                     lightCtx.drawImage(masks.aura, cx - auraR, cy - auraR, auraR * 2, auraR * 2);
                 } else {
@@ -34066,17 +34059,6 @@
                         if (isEpic > 0.5 && this.epicFeatures.heatHaze) {
                             this.heatSourceBuffer.fill(0);
                             let hCount = 0;
-                            if (typeof player !== "undefined" && player && player.muzzleFlash > 0 && typeof camera !== "undefined" && camera) {
-                                const pCos = Math.cos(player.angle || 0);
-                                const pSin = Math.sin(player.angle || 0);
-                                const mX = ((player.x + pCos * 36) - camera.x) / Math.max(1, VIEW_W);
-                                const mY = 1.0 - (((player.y + pSin * 36) - camera.y) / Math.max(1, VIEW_H));
-                                this.heatSourceBuffer[0] = mX;
-                                this.heatSourceBuffer[1] = mY;
-                                this.heatSourceBuffer[2] = 0.08;
-                                this.heatSourceBuffer[3] = Math.min(0.55, player.muzzleFlash / 8);
-                                hCount++;
-                            }
                             if (typeof firePatches !== "undefined" && firePatches.length > 0 && typeof camera !== "undefined" && camera) {
                                 for (let i = 0; i < firePatches.length; i++) {
                                     const fp = firePatches[i];
@@ -34152,54 +34134,7 @@
                         this.pointLightColorBuffer.fill(0);
 
                         if (typeof camera !== "undefined" && camera) {
-                            // 1. Player Muzzle Flash light
-                            if (typeof player !== "undefined" && player && player.muzzleFlash > 0) {
-                                const pCos = Math.cos(player.angle || 0);
-                                const pSin = Math.sin(player.angle || 0);
-                                const scX = ((player.x + pCos * 38) - camera.x) / Math.max(1, VIEW_W);
-                                const scY = 1.0 - (((player.y + pSin * 38) - camera.y) / Math.max(1, VIEW_H));
-                                const curWId = (typeof player.currentWeapon === "number") ? player.currentWeapon : 0;
-                                let pr = 1.0, pg = 0.85, pb = 0.45;
-                                if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; } // Gauss cyan
-                                else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; } // Cryo ice
-                                else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; } // Flame red-orange
-                                else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; } // Laser purple
-                                this.pointLightBuffer[0] = scX;
-                                this.pointLightBuffer[1] = scY;
-                                this.pointLightBuffer[2] = 0.32;
-                                this.pointLightBuffer[3] = Math.min(1.2, player.muzzleFlash / 3.0);
-                                this.pointLightColorBuffer[0] = pr;
-                                this.pointLightColorBuffer[1] = pg;
-                                this.pointLightColorBuffer[2] = pb;
-                                this.pointLightColorBuffer[3] = 1.0;
-                                ptCount++;
-                            }
-
-                            // 2. Teammate Muzzle Flash light
-                            if (typeof teammate !== "undefined" && teammate && teammate.active && !teammate.isDown && teammate.muzzleFlash > 0 && ptCount < 3) {
-                                const tCos = Math.cos(teammate.angle || 0);
-                                const tSin = Math.sin(teammate.angle || 0);
-                                const scX = ((teammate.x + tCos * 38) - camera.x) / Math.max(1, VIEW_W);
-                                const scY = 1.0 - (((teammate.y + tSin * 38) - camera.y) / Math.max(1, VIEW_H));
-                                const curWId = (typeof teammate.currentWeapon === "number") ? teammate.currentWeapon : 0;
-                                let pr = 1.0, pg = 0.85, pb = 0.45;
-                                if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; }
-                                else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; }
-                                else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; }
-                                else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; }
-                                const off = ptCount * 4;
-                                this.pointLightBuffer[off + 0] = scX;
-                                this.pointLightBuffer[off + 1] = scY;
-                                this.pointLightBuffer[off + 2] = 0.30;
-                                this.pointLightBuffer[off + 3] = Math.min(1.0, teammate.muzzleFlash / 3.0);
-                                this.pointLightColorBuffer[off + 0] = pr;
-                                this.pointLightColorBuffer[off + 1] = pg;
-                                this.pointLightColorBuffer[off + 2] = pb;
-                                this.pointLightColorBuffer[off + 3] = 1.0;
-                                ptCount++;
-                            }
-
-                            // 3. Active Shockwaves & Explosions
+                            // Active Shockwaves & Explosions (Ánh sáng nổ thực thể, không gây chói giật khi bắn súng)
                             for (let si = 0; si < this.shockwaves.length && ptCount < 3; si++) {
                                 const sw = this.shockwaves[si];
                                 const scX = (sw.worldX - camera.x) / Math.max(1, VIEW_W);
