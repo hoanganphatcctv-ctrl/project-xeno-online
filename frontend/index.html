@@ -3404,23 +3404,23 @@
                                         <span>CHẾ ĐỘ ĐỒ HỌA GPU &amp; SHADER</span>
                                         <span id="sysWebglProtocolBadge" class="px-1.5 py-0.5 text-[9px] bg-slate-800 border border-slate-700 rounded-none text-slate-400 font-mono">FILE: 2D MODE</span>
                                     </h3>
-                                    <p id="sysWebglDescText" class="text-[11px] text-slate-400 mt-0.5">3 Cấp độ: 2D Chuẩn (Tối đa FPS) • Cao (Shader Thường) • EPIC (Next-Gen Sci-Fi).</p>
+                                    <p id="sysWebglDescText" class="text-[11px] text-slate-400 mt-0.5">3 Cấp độ: 2D Chuẩn (Tối đa FPS) • Cao (Shader Thường) • Ultra EPIC (Đồ họa Điện ảnh Đỉnh cao).</p>
                                 </div>
                                 <!-- 3-Tier Segmented Buttons -->
                                 <div id="sysGraphicsTierGroup" class="inline-flex p-1 bg-slate-950 border border-slate-800 rounded-none self-start sm:self-auto gap-1">
                                     <button type="button" id="tierBtn_0" onclick="window.setGraphicsTier(0)" class="px-3 py-1.5 text-xs font-mono-tech font-bold transition">2D CHUẨN</button>
                                     <button type="button" id="tierBtn_1" onclick="window.setGraphicsTier(1)" class="px-3 py-1.5 text-xs font-mono-tech font-bold transition">CAO</button>
-                                    <button type="button" id="tierBtn_2" onclick="window.setGraphicsTier(2)" class="px-3 py-1.5 text-xs font-mono-tech font-bold transition">EPIC</button>
+                                    <button type="button" id="tierBtn_2" onclick="window.setGraphicsTier(2)" class="px-3 py-1.5 text-xs font-mono-tech font-bold transition">ULTRA EPIC</button>
                                 </div>
                                 <button id="sysWebglToggleBtn" onclick="window.toggleWebglPostProcessing()" class="hidden"></button>
                             </div>
 
-                            <!-- EPIC Sub-Options Panel (Chỉ hiển thị khi chọn Tier 2: EPIC) -->
+                            <!-- EPIC Sub-Options Panel (Chỉ hiển thị khi chọn Tier 2: ULTRA EPIC) -->
                             <div id="sysEpicSubOptions" class="hidden pt-3 border-t border-cyan-500/25 space-y-2.5">
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="font-bold text-amber-300 font-mono-tech uppercase tracking-wide flex items-center gap-2">
                                         <span class="w-2 h-2 bg-amber-400 inline-block animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span>
-                                        Cường Độ Đồ Họa EPIC (Next-Gen Intensity)
+                                        Cường Độ Đồ Họa Ultra EPIC (Next-Gen Cinematic Intensity)
                                     </span>
                                     <span id="valEpicIntensity" class="px-2.5 py-0.5 bg-amber-500/15 border border-amber-500/40 font-mono-tech font-bold text-amber-300 text-xs">100%</span>
                                 </div>
@@ -9846,6 +9846,7 @@
         };
         const spaceProps = [];         // Đồ vật tàu không gian: Kén Ngủ Đông (cryo_pod), Máy Gia Tốc (particle_accelerator), Siêu Máy Tính (supercomputer)
         const energyCoreStations = []; // Trạm Máy Móc Lõi Năng Lượng Đồ Sộ với tia điện từ trường chớp nháy xung quanh
+        const mapTraps = [];           // 6 loai cam bay & vat can chien thuat tuong tac tren ban do
         let mapGenerator = {
             x: 0,
             y: 0,
@@ -10819,6 +10820,7 @@
             teleporters.length = 0;
             spaceProps.length = 0;
             energyCoreStations.length = 0;
+            mapTraps.length = 0;
 
             const mapId = window.currentMapId;
             const isHive = (mapId === 5);
@@ -11170,6 +11172,7 @@
             if (typeof initFlowFieldWalls === "function") {
                 initFlowFieldWalls();
             }
+            spawnMapTraps(mapId);
             spawnMapGenerator();
         }
 
@@ -11223,6 +11226,830 @@
                 holdTimer: 0,
                 roomName: targetRoom.name || "KHU VỰC VỆ TINH"
             };
+        }
+
+        // =========================================================================
+        // HE THONG 6 CAM BAY & VAT CAN CHIEN THUAT TUONG TAC TREN BAN DO (MAP TRAPS)
+        // =========================================================================
+        function spawnMapTraps(mapId) {
+            mapTraps.length = 0;
+            if (!ROOMS || ROOMS.length === 0) return;
+
+            const centerRoom = ROOMS.find(r => r.isCenter) || ROOMS[0];
+            const cx = Math.round(centerRoom.x + centerRoom.w * 0.5);
+            const cy = Math.round(centerRoom.y + centerRoom.h * 0.5);
+
+            // 1. TRU PHONG DIEN CAO THE TESLA (2-4 tru tren moi map)
+            mapTraps.push(
+                {
+                    id: "tp_center_w",
+                    type: "tesla_pylon",
+                    x: Math.round(centerRoom.x + centerRoom.w * 0.28),
+                    y: Math.round(centerRoom.y + centerRoom.h * 0.72),
+                    radius: 24,
+                    charge: 1.0,
+                    cooldownTimer: 0,
+                    cooldownMax: 720,
+                    arcTargets: [],
+                    arcTimer: 0,
+                    label: "TRU DIEN CAO THE TESLA TAY"
+                },
+                {
+                    id: "tp_center_e",
+                    type: "tesla_pylon",
+                    x: Math.round(centerRoom.x + centerRoom.w * 0.72),
+                    y: Math.round(centerRoom.y + centerRoom.h * 0.72),
+                    radius: 24,
+                    charge: 1.0,
+                    cooldownTimer: 0,
+                    cooldownMax: 720,
+                    arcTargets: [],
+                    arcTimer: 0,
+                    label: "TRU DIEN CAO THE TESLA DONG"
+                }
+            );
+
+            // 2. LUOI TIA LASER PHONG THU QUET QUA LAI (Gia lap tai cac cua ngan cach)
+            if (DOORS && DOORS.length > 0) {
+                const doorPicks = [0, 1, Math.min(3, DOORS.length - 1)];
+                for (let pi = 0; pi < doorPicks.length; pi++) {
+                    const di = doorPicks[pi];
+                    const d = DOORS[di];
+                    if (d) {
+                        const isV = (d.orient === "vertical");
+                        mapTraps.push({
+                            id: "lg_" + di,
+                            type: "laser_grid",
+                            x1: isV ? d.x + Math.round(WALL_T * 0.5) : d.x,
+                            y1: isV ? d.y : d.y + Math.round(WALL_T * 0.5),
+                            x2: isV ? d.x + Math.round(WALL_T * 0.5) : d.x + d.w,
+                            y2: isV ? d.y + d.h : d.y + Math.round(WALL_T * 0.5),
+                            orient: d.orient,
+                            span: isV ? d.h : d.w,
+                            sweepPhase: pi * 1.55,
+                            sweepSpeed: 0.024,
+                            state: "hostile", // "hostile" hoac "hacked"
+                            hackProgress: 0,
+                            hackRequired: 90,
+                            label: "LUOI TIA LASER PHONG THU"
+                        });
+                    }
+                }
+            }
+
+            // 3. HONG VAN KHI BANG CRYO & HOI NUOC AP SUAT 2.0 (Bao toan & nang cap vat ly)
+            for (let i = 0; i < ROOMS.length && mapTraps.length < 18; i++) {
+                const r = ROOMS[i];
+                if (!r.isCenter) {
+                    mapTraps.push({
+                        id: "hv_cryo_" + i,
+                        type: "hazard_vent",
+                        x: Math.round(r.x + 36),
+                        y: Math.round(r.y + r.h * 0.42),
+                        angle: 0.12,
+                        ventType: "cryo",
+                        period: 260 + (i * 20) % 80,
+                        timer: (i * 55) % 220,
+                        activeDuration: 85,
+                        range: 180,
+                        spreadAngle: 0.52,
+                        label: "HONG VAN KHI BANG CRYO"
+                    });
+                    mapTraps.push({
+                        id: "hv_steam_" + i,
+                        type: "hazard_vent",
+                        x: Math.round(r.x + r.w - 36),
+                        y: Math.round(r.y + r.h * 0.58),
+                        angle: Math.PI - 0.12,
+                        ventType: "steam",
+                        period: 240 + (i * 25) % 70,
+                        timer: (i * 75) % 200,
+                        activeDuration: 75,
+                        range: 175,
+                        spreadAngle: 0.50,
+                        label: "HONG VAN HOI NUOC AP SUAT"
+                    });
+                }
+            }
+
+            // 4. NAP CONG XA AXIT SINH HOC DINH KY (Dac biet trong cac phong Lab & Cach ly)
+            for (let i = 0; i < ROOMS.length; i++) {
+                const r = ROOMS[i];
+                const isLab = (r.name && (r.name.includes("LAB") || r.name.includes("CÁCH LY") || r.name.includes("HẦM")));
+                if (isLab || (i === 1 || i === 3)) {
+                    mapTraps.push({
+                        id: "ag_" + i,
+                        type: "acid_grate",
+                        x: Math.round(r.x + r.w * 0.45),
+                        y: Math.round(r.y + r.h * 0.55),
+                        size: 68,
+                        state: "dormant",
+                        timer: (i * 140) % 600,
+                        period: 600,
+                        eruptDuration: 300,
+                        bubbleDuration: 90,
+                        label: "NAP CONG XA AXIT SINH HOC"
+                    });
+                }
+            }
+
+            // 5. CUA THEP THUY LUC NGHIEN EP (Blast Crushers tai loi vao Hub trung tam)
+            mapTraps.push({
+                id: "bc_center_north",
+                type: "blast_crusher",
+                x: Math.round(cx - 65),
+                y: Math.round(centerRoom.y + 60),
+                w: 130,
+                h: 40,
+                state: "open",
+                timer: 0,
+                period: 380,
+                warningDuration: 70,
+                slamDuration: 16,
+                closedDuration: 85,
+                label: "CUA THEP THUY LUC NGHIEN EP BAC"
+            });
+            if (mapId >= 4) {
+                mapTraps.push({
+                    id: "bc_center_south",
+                    type: "blast_crusher",
+                    x: Math.round(cx - 65),
+                    y: Math.round(centerRoom.y + centerRoom.h - 100),
+                    w: 130,
+                    h: 40,
+                    state: "open",
+                    timer: 190,
+                    period: 380,
+                    warningDuration: 70,
+                    slamDuration: 16,
+                    closedDuration: 85,
+                    label: "CUA THEP THUY LUC NGHIEN EP NAM"
+                });
+            }
+
+            // 6. U DAI BAC PHONG THU CO DINH CUA TRAM (Station Sentry Emplacements)
+            mapTraps.push({
+                id: "ss_hub_main",
+                type: "station_sentry",
+                x: Math.round(cx),
+                y: Math.round(centerRoom.y + centerRoom.h * 0.28),
+                radius: 28,
+                active: false,
+                activeTimer: 0,
+                maxDuration: 2100, // 35 giay
+                cost: 250,
+                targetAngle: 0,
+                currentAngle: 0,
+                fireCooldown: 0,
+                range: 480,
+                damage: 28,
+                label: "U PHAO PHONG THU CO DINH TRUNG TAM"
+            });
+            if (mapId >= 5) {
+                mapTraps.push({
+                    id: "ss_hub_backup",
+                    type: "station_sentry",
+                    x: Math.round(cx),
+                    y: Math.round(centerRoom.y + centerRoom.h * 0.82),
+                    radius: 28,
+                    active: false,
+                    activeTimer: 0,
+                    maxDuration: 2100,
+                    cost: 250,
+                    targetAngle: 0,
+                    currentAngle: 0,
+                    fireCooldown: 0,
+                    range: 480,
+                    damage: 28,
+                    label: "U PHAO PHONG THU CO DINH NAM"
+                });
+            }
+        }
+
+        function triggerTeslaPylon(tr) {
+            tr.charge = 0;
+            tr.cooldownTimer = tr.cooldownMax || 720;
+            tr.arcTimer = 24;
+            tr.arcTargets.length = 0;
+            screenShake = Math.max(screenShake, 7);
+
+            if (window.webglPostProcessor) {
+                window.webglPostProcessor.triggerAnamorphic(0.55);
+            }
+
+            if (typeof sfx !== "undefined") {
+                if (sfx.playSample) sfx.playSample("tesla_blast", 0.85);
+                else if (sfx.playSyntheticShoot) sfx.playSyntheticShoot("plasma");
+            }
+
+            // Gay sat thuong va lam te liet quai vat lan can
+            for (let ei = 0; ei < enemies.length; ei++) {
+                const e = enemies[ei];
+                if (!e.active || e.hp <= 0) continue;
+                const d = Math.hypot(e.x - tr.x, e.y - tr.y);
+                if (d <= 235 && tr.arcTargets.length < 8) {
+                    tr.arcTargets.push({ x: e.x, y: e.y });
+                    damageEnemy(e, 120, 0, 0, "plasma");
+                    e.nuclearSlowTimer = Math.max(e.nuclearSlowTimer || 0, 95);
+                    for (let p = 0; p < 5; p++) {
+                        spawnParticle(e.x, e.y, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, "#38bdf8", 2.4, 15);
+                    }
+                }
+            }
+
+            // Giật giáp người chơi nếu đứng quá sát
+            if (!player.isDown && Math.hypot(player.x - tr.x, player.y - tr.y) < 75) {
+                damagePlayer(15);
+                spawnParticle(player.x, player.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#38bdf8", 2.2, 12);
+            }
+
+            addFloatingText(tr.x, tr.y - 30, "TESLA ARC DISCHARGE!", "#38bdf8");
+        }
+
+        function updateTraps(dt) {
+            if (isPaused || isGameOver || isMapWon) return;
+            const isHost = (!isCoopActive() || (window.XENO_COOP && window.XENO_COOP.isHost));
+
+            for (let i = 0; i < mapTraps.length; i++) {
+                const tr = mapTraps[i];
+
+                // 1. TRU PHONG DIEN TESLA
+                if (tr.type === "tesla_pylon") {
+                    if (tr.cooldownTimer > 0) {
+                        tr.cooldownTimer--;
+                        tr.charge = 1.0 - (tr.cooldownTimer / tr.cooldownMax);
+                    } else {
+                        tr.charge = 1.0;
+                    }
+
+                    if (tr.arcTimer > 0) tr.arcTimer--;
+
+                    if (isHost && tr.charge >= 1.0) {
+                        let shouldTrigger = false;
+                        if (Math.hypot(player.x - tr.x, player.y - tr.y) < 135) {
+                            shouldTrigger = true;
+                        }
+                        if (!shouldTrigger) {
+                            for (let ei = 0; ei < enemies.length; ei++) {
+                                const e = enemies[ei];
+                                if (e.active && e.hp > 0 && Math.hypot(e.x - tr.x, e.y - tr.y) < 185) {
+                                    shouldTrigger = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (shouldTrigger) {
+                            triggerTeslaPylon(tr);
+                        }
+                    }
+                }
+
+                // 2. LUOI TIA LASER PHONG THU
+                else if (tr.type === "laser_grid") {
+                    tr.sweepPhase += tr.sweepSpeed;
+                    const tParam = (Math.sin(tr.sweepPhase) + 1.0) * 0.5;
+                    const curBx = tr.x1 + (tr.x2 - tr.x1) * tParam;
+                    const curBy = tr.y1 + (tr.y2 - tr.y1) * tParam;
+
+                    if (isHost) {
+                        for (let ei = 0; ei < enemies.length; ei++) {
+                            const e = enemies[ei];
+                            if (!e.active || e.hp <= 0) continue;
+                            const isV = (tr.orient === "vertical");
+                            const distToBeam = isV ? Math.abs(e.x - curBx) : Math.abs(e.y - curBy);
+                            const withinSpan = isV
+                                ? (e.y >= Math.min(tr.y1, tr.y2) - 22 && e.y <= Math.max(tr.y1, tr.y2) + 22)
+                                : (e.x >= Math.min(tr.x1, tr.x2) - 22 && e.x <= Math.max(tr.x1, tr.x2) + 22);
+
+                            if (distToBeam < 24 && withinSpan) {
+                                const pushDir = isV ? (e.x > curBx ? 1 : -1) : (e.y > curBy ? 1 : -1);
+                                const kx = isV ? pushDir * 5 : 0;
+                                const ky = isV ? 0 : pushDir * 5;
+                                damageEnemy(e, 1.45, kx, ky, "laser");
+                                if (frameCounter % 6 === 0) {
+                                    spawnParticle(e.x, e.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, tr.state === "hacked" ? "#4ade80" : "#f43f5e", 2.2, 12);
+                                }
+                            }
+                        }
+                    }
+
+                    if (tr.state === "hostile" && !player.isDown) {
+                        const isV = (tr.orient === "vertical");
+                        const distToBeam = isV ? Math.abs(player.x - curBx) : Math.abs(player.y - curBy);
+                        const withinSpan = isV
+                            ? (player.y >= Math.min(tr.y1, tr.y2) - 16 && player.y <= Math.max(tr.y1, tr.y2) + 16)
+                            : (player.x >= Math.min(tr.x1, tr.x2) - 16 && player.x <= Math.max(tr.x1, tr.x2) + 16);
+
+                        if (distToBeam < 20 && withinSpan) {
+                            if (player.dashTimer > 0) {
+                                if (frameCounter % 4 === 0) {
+                                    spawnParticle(player.x, player.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#38bdf8", 2.4, 15);
+                                }
+                            } else if (frameCounter % 10 === 0) {
+                                damagePlayer(5);
+                                screenShake = Math.max(screenShake, 4);
+                                spawnParticle(player.x, player.y, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, "#f43f5e", 2.5, 12);
+                            }
+                        }
+                    }
+                }
+
+                // 3. HONG VAN KHI BANG & HOI NUOC AP SUAT
+                else if (tr.type === "hazard_vent") {
+                    tr.timer = (tr.timer + 1) % tr.period;
+                    const isActive = tr.timer < tr.activeDuration;
+
+                    if (isActive) {
+                        if (frameCounter % 2 === 0) {
+                            const spd = 3.5 + Math.random() * 3.5;
+                            const spr = (Math.random() - 0.5) * tr.spreadAngle;
+                            const pAng = tr.angle + spr;
+                            const pColor = (tr.ventType === "cryo")
+                                ? (Math.random() > 0.5 ? "#bae6fd" : "#38bdf8")
+                                : (Math.random() > 0.5 ? "#f1f5f9" : "#cbd5e1");
+                            spawnParticle(
+                                tr.x + Math.cos(tr.angle) * 16,
+                                tr.y + Math.sin(tr.angle) * 16,
+                                Math.cos(pAng) * spd,
+                                Math.sin(pAng) * spd,
+                                pColor,
+                                tr.ventType === "cryo" ? 2.5 : 3.2,
+                                22
+                            );
+                        }
+
+                        if (isHost) {
+                            for (let ei = 0; ei < enemies.length; ei++) {
+                                const e = enemies[ei];
+                                if (!e.active || e.hp <= 0) continue;
+                                const d = Math.hypot(e.x - tr.x, e.y - tr.y);
+                                if (d <= tr.range) {
+                                    const angToEnemy = Math.atan2(e.y - tr.y, e.x - tr.x);
+                                    let angDiff = Math.abs(angToEnemy - tr.angle);
+                                    while (angDiff > Math.PI) angDiff = Math.abs(angDiff - Math.PI * 2);
+                                    if (angDiff <= tr.spreadAngle) {
+                                        if (tr.ventType === "cryo") {
+                                            e.nuclearSlowTimer = Math.max(e.nuclearSlowTimer || 0, 160);
+                                            damageEnemy(e, 0.45, 0, 0, "cryo");
+                                        } else {
+                                            damageEnemy(e, 0.35, Math.cos(tr.angle) * 4.5, Math.sin(tr.angle) * 4.5, "flame");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. NAP CONG XA AXIT SINH HOC
+                else if (tr.type === "acid_grate") {
+                    tr.timer = (tr.timer + 1) % tr.period;
+                    if (tr.timer >= tr.period - tr.bubbleDuration) {
+                        tr.state = "bubbling";
+                        if (frameCounter % 4 === 0) {
+                            spawnParticle(
+                                tr.x + (Math.random() - 0.5) * tr.size * 0.7,
+                                tr.y + (Math.random() - 0.5) * tr.size * 0.7,
+                                (Math.random() - 0.5) * 1.2,
+                                -1.5 - Math.random() * 2.0,
+                                "#4ade80",
+                                2.2,
+                                16
+                            );
+                        }
+                    } else if (tr.timer < tr.eruptDuration) {
+                        tr.state = "erupting";
+                        if (frameCounter % 3 === 0) {
+                            spawnParticle(
+                                tr.x + (Math.random() - 0.5) * tr.size,
+                                tr.y + (Math.random() - 0.5) * tr.size,
+                                (Math.random() - 0.5) * 2.0,
+                                -2.0 - Math.random() * 2.5,
+                                Math.random() > 0.4 ? "#22c55e" : "#86efac",
+                                2.8,
+                                20
+                            );
+                        }
+
+                        if (isHost) {
+                            for (let ei = 0; ei < enemies.length; ei++) {
+                                const e = enemies[ei];
+                                if (!e.active || e.hp <= 0) continue;
+                                if (Math.hypot(e.x - tr.x, e.y - tr.y) <= tr.size * 0.65) {
+                                    e.corrosionTimer = 180;
+                                    damageEnemy(e, 1.15, 0, 0, "acid");
+                                }
+                            }
+                        }
+
+                        if (!player.isDown && Math.hypot(player.x - tr.x, player.y - tr.y) <= tr.size * 0.55) {
+                            if (frameCounter % 15 === 0) {
+                                damagePlayer(3);
+                            }
+                        }
+                    } else {
+                        tr.state = "dormant";
+                    }
+                }
+
+                // 5. CUA THEP THUY LUC NGHIEN EP
+                else if (tr.type === "blast_crusher") {
+                    tr.timer = (tr.timer + 1) % tr.period;
+                    const wTime = tr.warningDuration;
+                    const sTime = wTime + tr.slamDuration;
+                    const cTime = sTime + tr.closedDuration;
+
+                    if (tr.timer < wTime) {
+                        tr.state = "warning";
+                    } else if (tr.timer < sTime) {
+                        if (tr.state !== "slamming") {
+                            tr.state = "slamming";
+                            screenShake = Math.max(screenShake, 9);
+                            if (typeof sfx !== "undefined" && sfx.playSample) sfx.playSample("wall_thud", 0.95);
+
+                            if (isHost) {
+                                for (let ei = 0; ei < enemies.length; ei++) {
+                                    const e = enemies[ei];
+                                    if (!e.active || e.hp <= 0) continue;
+                                    if (e.x >= tr.x && e.x <= tr.x + tr.w && e.y >= tr.y && e.y <= tr.y + tr.h) {
+                                        damageEnemy(e, 550, 0, 0, "crush");
+                                        for (let p = 0; p < 8; p++) {
+                                            spawnParticle(e.x, e.y, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, "#ef4444", 3.0, 24);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!player.isDown && player.x >= tr.x - 10 && player.x <= tr.x + tr.w + 10 && player.y >= tr.y - 10 && player.y <= tr.y + tr.h + 10) {
+                                damagePlayer(30);
+                                player.y = (player.y < tr.y + tr.h * 0.5) ? tr.y - 34 : tr.y + tr.h + 34;
+                            }
+                        }
+                    } else if (tr.timer < cTime) {
+                        tr.state = "closed";
+                    } else {
+                        tr.state = "lifting";
+                    }
+                }
+
+                // 6. U DAI BAC PHONG THU CO DINH
+                else if (tr.type === "station_sentry") {
+                    if (tr.active) {
+                        tr.activeTimer--;
+                        if (tr.activeTimer <= 0) {
+                            tr.active = false;
+                            addFloatingText(tr.x, tr.y - 28, "U PHAO: HET NANG LUONG!", "#94a3b8");
+                        }
+
+                        if (isHost && tr.active) {
+                            let nearestEnemy = null;
+                            let nearestDist = tr.range;
+                            for (let ei = 0; ei < enemies.length; ei++) {
+                                const e = enemies[ei];
+                                if (!e.active || e.hp <= 0) continue;
+                                const d = Math.hypot(e.x - tr.x, e.y - tr.y);
+                                if (d < nearestDist) {
+                                    nearestDist = d;
+                                    nearestEnemy = e;
+                                }
+                            }
+
+                            if (nearestEnemy) {
+                                tr.targetAngle = Math.atan2(nearestEnemy.y - tr.y, nearestEnemy.x - tr.x);
+                                let diff = tr.targetAngle - tr.currentAngle;
+                                while (diff < -Math.PI) diff += Math.PI * 2;
+                                while (diff > Math.PI) diff -= Math.PI * 2;
+                                tr.currentAngle += diff * 0.18;
+
+                                if (tr.fireCooldown > 0) {
+                                    tr.fireCooldown--;
+                                } else if (Math.abs(diff) < 0.38) {
+                                    tr.fireCooldown = 6;
+                                    const cCos = Math.cos(tr.currentAngle);
+                                    const cSin = Math.sin(tr.currentAngle);
+                                    const pCos = -cSin;
+                                    const pSin = cCos;
+                                    const m1x = tr.x + cCos * 34 + pCos * 7;
+                                    const m1y = tr.y + cSin * 34 + pSin * 7;
+                                    const m2x = tr.x + cCos * 34 - pCos * 7;
+                                    const m2y = tr.y + cSin * 34 - pSin * 7;
+
+                                    damageEnemy(nearestEnemy, tr.damage, cCos * 7, cSin * 7, "bullet");
+                                    if (typeof sfx !== "undefined") {
+                                        if (sfx.playSample) sfx.playSample("sentry_shot", 0.55);
+                                        else if (sfx.playSyntheticShoot) sfx.playSyntheticShoot("bullet");
+                                    }
+
+                                    spawnParticle(m1x, m1y, cCos * 14, cSin * 14, "#fde047", 2.2, 10);
+                                    spawnParticle(m2x, m2y, cCos * 14, cSin * 14, "#fde047", 2.2, 10);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawTraps(c, camX, camY) {
+            if (!mapTraps || mapTraps.length === 0) return;
+            const viewLeft = camX - 120;
+            const viewRight = camX + VIEW_W + 120;
+            const viewTop = camY - 120;
+            const viewBottom = camY + VIEW_H + 120;
+
+            for (let i = 0; i < mapTraps.length; i++) {
+                const tr = mapTraps[i];
+                if (tr.x < viewLeft || tr.x > viewRight || tr.y < viewTop || tr.y > viewBottom) {
+                    if (tr.type !== "laser_grid" && tr.type !== "blast_crusher") continue;
+                }
+
+                c.save();
+
+                // 1. TRU PHONG DIEN TESLA
+                if (tr.type === "tesla_pylon") {
+                    // Chan de bat giac bang thep
+                    c.fillStyle = "#1e293b";
+                    c.strokeStyle = "#475569";
+                    c.lineWidth = 2;
+                    c.beginPath();
+                    for (let a = 0; a < 8; a++) {
+                        const ang = a * (Math.PI / 4) + Math.PI / 8;
+                        const px = tr.x + Math.cos(ang) * tr.radius;
+                        const py = tr.y + Math.sin(ang) * tr.radius;
+                        if (a === 0) c.moveTo(px, py); else c.lineTo(px, py);
+                    }
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    // Vong canh bao
+                    c.strokeStyle = tr.charge >= 1.0 ? "rgba(56, 189, 248, 0.65)" : "rgba(245, 158, 11, 0.45)";
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.arc(tr.x, tr.y, tr.radius * 0.72, 0, Math.PI * 2);
+                    c.stroke();
+
+                    // Loi cau nang luong
+                    if (tr.charge >= 1.0) {
+                        c.fillStyle = "#38bdf8";
+                        c.beginPath();
+                        c.arc(tr.x, tr.y, 9.5, 0, Math.PI * 2);
+                        c.fill();
+                        const oAng = (frameCounter * 0.08) % (Math.PI * 2);
+                        c.fillStyle = "#fde047";
+                        c.beginPath();
+                        c.arc(tr.x + Math.cos(oAng) * 15, tr.y + Math.sin(oAng) * 15, 2.5, 0, Math.PI * 2);
+                        c.fill();
+                    } else {
+                        c.fillStyle = "#475569";
+                        c.beginPath();
+                        c.arc(tr.x, tr.y, 8.5, 0, Math.PI * 2);
+                        c.fill();
+                        // Cooldown ring
+                        c.strokeStyle = "#f59e0b";
+                        c.lineWidth = 2.4;
+                        c.beginPath();
+                        c.arc(tr.x, tr.y, 13, -Math.PI / 2, -Math.PI / 2 + tr.charge * Math.PI * 2);
+                        c.stroke();
+                    }
+
+                    // Tia set phong ra muc tieu
+                    if (tr.arcTimer > 0 && tr.arcTargets && tr.arcTargets.length > 0) {
+                        c.strokeStyle = "#38bdf8";
+                        c.lineWidth = 2.4;
+                        for (let t = 0; t < tr.arcTargets.length; t++) {
+                            const tgt = tr.arcTargets[t];
+                            c.beginPath();
+                            c.moveTo(tr.x, tr.y);
+                            const segments = 4;
+                            for (let s = 1; s < segments; s++) {
+                                const frac = s / segments;
+                                const mx = tr.x + (tgt.x - tr.x) * frac + (Math.random() - 0.5) * 18;
+                                const my = tr.y + (tgt.y - tr.y) * frac + (Math.random() - 0.5) * 18;
+                                c.lineTo(mx, my);
+                            }
+                            c.lineTo(tgt.x, tgt.y);
+                            c.stroke();
+                        }
+                    }
+                }
+
+                // 2. LUOI TIA LASER PHONG THU
+                else if (tr.type === "laser_grid") {
+                    const tParam = (Math.sin(tr.sweepPhase) + 1.0) * 0.5;
+                    const curBx = tr.x1 + (tr.x2 - tr.x1) * tParam;
+                    const curBy = tr.y1 + (tr.y2 - tr.y1) * tParam;
+                    const isV = (tr.orient === "vertical");
+
+                    // 2 de gan vach tuong
+                    c.fillStyle = "#0f172a";
+                    c.strokeStyle = "#64748b";
+                    c.lineWidth = 2;
+                    c.strokeRect(tr.x1 - 6, tr.y1 - 6, 12, 12);
+                    c.fillRect(tr.x1 - 6, tr.y1 - 6, 12, 12);
+                    c.strokeRect(tr.x2 - 6, tr.y2 - 6, 12, 12);
+                    c.fillRect(tr.x2 - 6, tr.y2 - 6, 12, 12);
+
+                    // Tia laser
+                    const isHacked = (tr.state === "hacked");
+                    const glowCol = isHacked ? "rgba(34, 197, 94, 0.40)" : "rgba(244, 63, 94, 0.45)";
+                    const coreCol = isHacked ? "#86efac" : "#fca5a5";
+
+                    c.strokeStyle = glowCol;
+                    c.lineWidth = 7.0;
+                    c.beginPath();
+                    if (isV) { c.moveTo(curBx, tr.y1); c.lineTo(curBx, tr.y2); }
+                    else { c.moveTo(tr.x1, curBy); c.lineTo(tr.x2, curBy); }
+                    c.stroke();
+
+                    c.strokeStyle = coreCol;
+                    c.lineWidth = 2.2;
+                    c.beginPath();
+                    if (isV) { c.moveTo(curBx, tr.y1); c.lineTo(curBx, tr.y2); }
+                    else { c.moveTo(tr.x1, curBy); c.lineTo(tr.x2, curBy); }
+                    c.stroke();
+
+                    // Hint neu nguoi choi den gan de hack
+                    if (!isHacked && !player.isDown) {
+                        const dToTerminal = Math.hypot(player.x - tr.x1, player.y - tr.y1);
+                        if (dToTerminal <= 75) {
+                            c.fillStyle = "rgba(15, 23, 42, 0.85)";
+                            c.strokeStyle = "#38bdf8";
+                            c.lineWidth = 1.2;
+                            c.fillRect(tr.x1 - 42, tr.y1 - 24, 84, 18);
+                            c.strokeRect(tr.x1 - 42, tr.y1 - 24, 84, 18);
+                            c.fillStyle = "#38bdf8";
+                            c.font = "bold 9px monospace";
+                            c.textAlign = "center";
+                            c.textBaseline = "middle";
+                            c.fillText("[E] HACK LASER", tr.x1, tr.y1 - 15);
+                        }
+                    }
+                }
+
+                // 3. HONG VAN KHI BANG & HOI NUOC AP SUAT
+                else if (tr.type === "hazard_vent") {
+                    c.save();
+                    c.translate(tr.x, tr.y);
+                    c.rotate(tr.angle);
+                    c.fillStyle = "#334155";
+                    c.strokeStyle = (tr.ventType === "cryo") ? "#38bdf8" : "#cbd5e1";
+                    c.lineWidth = 1.6;
+                    c.strokeRect(-10, -10, 20, 20);
+                    c.fillRect(-10, -10, 20, 20);
+
+                    // Nozzle pipe
+                    c.fillStyle = (tr.ventType === "cryo") ? "#0284c7" : "#64748b";
+                    c.fillRect(6, -6, 8, 12);
+                    c.restore();
+                }
+
+                // 4. NAP CONG XA AXIT SINH HOC
+                else if (tr.type === "acid_grate") {
+                    const hs = tr.size * 0.5;
+                    c.fillStyle = "#0f172a";
+                    c.strokeStyle = "#475569";
+                    c.lineWidth = 2;
+                    c.fillRect(tr.x - hs, tr.y - hs, tr.size, tr.size);
+                    c.strokeRect(tr.x - hs, tr.y - hs, tr.size, tr.size);
+
+                    // Song sat luoi thoat nuoc
+                    c.strokeStyle = "rgba(100, 116, 139, 0.55)";
+                    c.lineWidth = 1.5;
+                    for (let g = -hs + 10; g < hs; g += 12) {
+                        c.beginPath();
+                        c.moveTo(tr.x + g, tr.y - hs + 4);
+                        c.lineTo(tr.x + g, tr.y + hs - 4);
+                        c.stroke();
+                    }
+
+                    // Hieu ung phun axit
+                    if (tr.state === "erupting") {
+                        c.fillStyle = "rgba(34, 197, 94, 0.35)";
+                        c.beginPath();
+                        c.arc(tr.x, tr.y, tr.size * 0.65, 0, Math.PI * 2);
+                        c.fill();
+                        c.strokeStyle = "#4ade80";
+                        c.lineWidth = 1.5;
+                        c.stroke();
+                    } else if (tr.state === "bubbling") {
+                        c.fillStyle = "rgba(74, 222, 128, 0.25)";
+                        c.beginPath();
+                        c.arc(tr.x, tr.y, tr.size * 0.45, 0, Math.PI * 2);
+                        c.fill();
+                    }
+                }
+
+                // 5. CUA THEP THUY LUC NGHIEN EP
+                else if (tr.type === "blast_crusher") {
+                    // Tru dan huong hai ben
+                    c.fillStyle = "#1e293b";
+                    c.strokeStyle = "#f59e0b";
+                    c.lineWidth = 1.5;
+                    c.strokeRect(tr.x - 14, tr.y, 14, tr.h);
+                    c.fillRect(tr.x - 14, tr.y, 14, tr.h);
+                    c.strokeRect(tr.x + tr.w, tr.y, 14, tr.h);
+                    c.fillRect(tr.x + tr.w, tr.y, 14, tr.h);
+
+                    // Khoi cua thep dap
+                    if (tr.state === "closed" || tr.state === "slamming") {
+                        c.fillStyle = "#334155";
+                        c.strokeStyle = "#ef4444";
+                        c.lineWidth = 2.4;
+                        c.fillRect(tr.x, tr.y, tr.w, tr.h);
+                        c.strokeRect(tr.x, tr.y, tr.w, tr.h);
+                        c.fillStyle = "#ef4444";
+                        c.font = "bold 10px monospace";
+                        c.textAlign = "center";
+                        c.textBaseline = "middle";
+                        c.fillText("HAZARD: DONG CUA", tr.x + tr.w * 0.5, tr.y + tr.h * 0.5);
+                    } else if (tr.state === "warning") {
+                        c.strokeStyle = (frameCounter % 16 < 8) ? "#f59e0b" : "rgba(245, 158, 11, 0.2)";
+                        c.lineWidth = 2.0;
+                        c.strokeRect(tr.x, tr.y, tr.w, tr.h);
+                        c.fillStyle = "#f59e0b";
+                        c.font = "bold 9px monospace";
+                        c.textAlign = "center";
+                        c.textBaseline = "middle";
+                        c.fillText("CANH BAO NGHIEN EP", tr.x + tr.w * 0.5, tr.y + tr.h * 0.5);
+                    }
+                }
+
+                // 6. U DAI BAC PHONG THU CO DINH
+                else if (tr.type === "station_sentry") {
+                    // De kim loai tron co vien dinh tan
+                    c.fillStyle = "#0f172a";
+                    c.strokeStyle = tr.active ? "#22c55e" : "#64748b";
+                    c.lineWidth = 2.5;
+                    c.beginPath();
+                    c.arc(tr.x, tr.y, tr.radius, 0, Math.PI * 2);
+                    c.fill();
+                    c.stroke();
+
+                    // Vong vien canh bao
+                    c.strokeStyle = tr.active ? "rgba(34, 197, 94, 0.55)" : "rgba(100, 116, 139, 0.35)";
+                    c.lineWidth = 1.2;
+                    c.beginPath();
+                    c.arc(tr.x, tr.y, tr.radius * 0.72, 0, Math.PI * 2);
+                    c.stroke();
+
+                    // Thap phao xoay theo currentAngle
+                    c.save();
+                    c.translate(tr.x, tr.y);
+                    c.rotate(tr.currentAngle);
+
+                    // Nong phao doi
+                    c.fillStyle = "#475569";
+                    c.fillRect(8, -8, 22, 5);
+                    c.fillRect(8, 3, 22, 5);
+
+                    // Dau nong phao
+                    c.fillStyle = tr.active ? "#22c55e" : "#94a3b8";
+                    c.fillRect(28, -9, 4, 7);
+                    c.fillRect(28, 2, 4, 7);
+
+                    // Mam thap phao tron
+                    c.fillStyle = tr.active ? "#1e293b" : "#1e293b";
+                    c.strokeStyle = tr.active ? "#4ade80" : "#94a3b8";
+                    c.lineWidth = 2;
+                    c.beginPath();
+                    c.arc(0, 0, 13, 0, Math.PI * 2);
+                    c.fill();
+                    c.stroke();
+
+                    // Mat LED cam bien
+                    c.fillStyle = tr.active ? "#22c55e" : "#38bdf8";
+                    c.beginPath();
+                    c.arc(4, 0, 3, 0, Math.PI * 2);
+                    c.fill();
+                    c.restore();
+
+                    // Hint hoac Thanh thoi gian
+                    if (!tr.active && !player.isDown) {
+                        const dToSentry = Math.hypot(player.x - tr.x, player.y - tr.y);
+                        if (dToSentry <= 85) {
+                            c.fillStyle = "rgba(15, 23, 42, 0.90)";
+                            c.strokeStyle = "#f59e0b";
+                            c.lineWidth = 1.2;
+                            c.fillRect(tr.x - 70, tr.y - 42, 140, 20);
+                            c.strokeRect(tr.x - 70, tr.y - 42, 140, 20);
+                            c.fillStyle = "#f59e0b";
+                            c.font = "bold 9px monospace";
+                            c.textAlign = "center";
+                            c.textBaseline = "middle";
+                            c.fillText("[E] KICH HOAT U PHAO ($250)", tr.x, tr.y - 32);
+                        }
+                    } else if (tr.active) {
+                        const pct = Math.max(0, tr.activeTimer / tr.maxDuration);
+                        c.fillStyle = "rgba(15, 23, 42, 0.85)";
+                        c.fillRect(tr.x - 25, tr.y - 38, 50, 6);
+                        c.fillStyle = "#22c55e";
+                        c.fillRect(tr.x - 25, tr.y - 38, Math.round(50 * pct), 6);
+                    }
+                }
+
+                c.restore();
+            }
         }
 
         function drawMapSpecificFloorPattern(c, room, mapId) {
@@ -12494,6 +13321,21 @@
                     addCircle({ x: br.x, y: br.y, radius: br.radius || 18 }, false, br);
                 }
             }
+            if (typeof mapTraps !== "undefined" && Array.isArray(mapTraps)) {
+                for (let i = 0; i < mapTraps.length; i++) {
+                    const tr = mapTraps[i];
+                    if (tr.type === "tesla_pylon") {
+                        addCircle({ x: tr.x, y: tr.y, radius: tr.radius || 24 }, true, tr);
+                    } else if (tr.type === "station_sentry") {
+                        addCircle({ x: tr.x, y: tr.y, radius: tr.radius || 28 }, true, tr);
+                    } else if (tr.type === "blast_crusher") {
+                        const pillarW = 20;
+                        const pillarH = tr.height || 70;
+                        addBox({ x: tr.x, y: tr.y, w: pillarW, h: pillarH }, true, true, false, tr);
+                        addBox({ x: tr.x + (tr.width || 180) - pillarW, y: tr.y, w: pillarW, h: pillarH }, true, true, false, tr);
+                    }
+                }
+            }
 
             obstacleSpatialGridReady = true;
         }
@@ -12506,6 +13348,16 @@
 
         function pointHitsWall(x, y) {
             if (!obstacleSpatialGridReady) ensureObstacleSpatialGrid();
+            if (typeof mapTraps !== "undefined" && mapTraps.length > 0) {
+                for (let i = 0; i < mapTraps.length; i++) {
+                    const tr = mapTraps[i];
+                    if (tr.type === "blast_crusher" && (tr.state === "closed" || tr.state === "slamming")) {
+                        if (x >= tr.x && x <= tr.x + tr.width && y >= tr.y && y <= tr.y + tr.height) {
+                            return true;
+                        }
+                    }
+                }
+            }
             const c = (x / OBS_GRID_CELL) | 0;
             const r = (y / OBS_GRID_CELL) | 0;
             if (c < 0 || c >= OBS_GRID_COLS || r < 0 || r >= OBS_GRID_ROWS) return false;
@@ -12532,6 +13384,17 @@
 
         function circleHitsStaticObstacle(x, y, pad = 0) {
             if (!obstacleSpatialGridReady) ensureObstacleSpatialGrid();
+            if (typeof mapTraps !== "undefined" && mapTraps.length > 0) {
+                for (let i = 0; i < mapTraps.length; i++) {
+                    const tr = mapTraps[i];
+                    if (tr.type === "blast_crusher" && (tr.state === "closed" || tr.state === "slamming")) {
+                        const cx = Math.max(tr.x, Math.min(x, tr.x + tr.width));
+                        const cy = Math.max(tr.y, Math.min(y, tr.y + tr.height));
+                        const rSum = pad + 2;
+                        if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= rSum * rSum) return true;
+                    }
+                }
+            }
             _obsQueryToken++;
             if (_obsQueryToken > 2000000000) _obsQueryToken = 1;
             const curToken = _obsQueryToken;
@@ -15927,6 +16790,13 @@
                 computerDesks[data.idx].hacked = true;
             } else if (data.kind === "supercomputer" && spaceProps[data.idx]) {
                 spaceProps[data.idx].hacked = true;
+            } else if (data.kind === "station_sentry" && typeof mapTraps !== "undefined" && mapTraps[data.idx]) {
+                const tr = mapTraps[data.idx];
+                tr.active = true;
+                tr.uptime = 2100;
+                tr.spinAngle = 0;
+            } else if (data.kind === "laser_grid" && typeof mapTraps !== "undefined" && mapTraps[data.idx]) {
+                mapTraps[data.idx].state = "hacked";
             }
         }
 
@@ -16161,6 +17031,7 @@
             setTimeout(() => setOpacity("nukeFlash", 0), 360);
             if (window.webglPostProcessor) {
                 window.webglPostProcessor.addShockwave(player.x, player.y, 750, 1100, 1.35);
+                window.webglPostProcessor.triggerAnamorphic(1.35);
             }
 
             let killedCount = 0;
@@ -16324,6 +17195,58 @@
                     showToast("DỊCH CHUYỂN LƯỢNG TỬ", `Đã cơ động tức thì sang ${dest.label}!`);
                     computeFlowField();
                     return;
+                }
+            }
+
+            // 3. Check nearby Station Sentry or Laser Grid
+            if (typeof mapTraps !== "undefined" && Array.isArray(mapTraps)) {
+                for (let i = 0; i < mapTraps.length; i++) {
+                    const tr = mapTraps[i];
+                    if (tr.type === "station_sentry") {
+                        const d = Math.hypot(player.x - tr.x, player.y - tr.y);
+                        if (d <= (tr.radius || 28) + 40) {
+                            if (tr.active) {
+                                addFloatingText(tr.x, tr.y - 32, "U PHAO DANG HOAT DONG!", "#38bdf8");
+                                return;
+                            }
+                            if (player.credits < 250) {
+                                if (typeof sfx !== "undefined" && sfx && sfx.playEmpty) sfx.playEmpty();
+                                addFloatingText(tr.x, tr.y - 32, "KHONG DU TIEN ($250)!", "#f43f5e");
+                                showToast("KHONG DU NGAN QUY", "Can $250 credits de khoi dong U Phao Chien Thuat!");
+                                return;
+                            }
+                            player.credits -= 250;
+                            tr.active = true;
+                            tr.uptime = 2100; // 35s
+                            tr.spinAngle = 0;
+                            if (typeof sfx !== "undefined" && sfx && sfx.playPickup) sfx.playPickup();
+                            screenShake = 6;
+                            addFloatingText(tr.x, tr.y - 32, "DA KICH HOAT U PHAO (-$250)!", "#10b981");
+                            showToast("U PHAO PHONG THU DA HOAT DONG", "U Phao tu dong quet va ban ha quai vat trong 35 giay!");
+                            updateTopLeftHUD();
+                            if (isCoopActive()) {
+                                window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "station_sentry", idx: i });
+                            }
+                            return;
+                        }
+                    } else if (tr.type === "laser_grid" && tr.state !== "hacked") {
+                        const lMinX = Math.min(tr.x1, tr.x2);
+                        const lMaxX = Math.max(tr.x1, tr.x2);
+                        const lMinY = Math.min(tr.y1, tr.y2);
+                        const lMaxY = Math.max(tr.y1, tr.y2);
+                        if (player.x >= lMinX - 35 && player.x <= lMaxX + 35 && player.y >= lMinY - 35 && player.y <= lMaxY + 35) {
+                            tr.state = "hacked";
+                            if (typeof sfx !== "undefined" && sfx && sfx.playPickup) sfx.playPickup();
+                            const midX = (tr.x1 + tr.x2) * 0.5;
+                            const midY = (tr.y1 + tr.y2) * 0.5;
+                            addFloatingText(midX, midY - 20, "HACK LASER THANH CONG!", "#00f5d4");
+                            showToast("DA VO HIEU HOA LUOI LASER", "Luoi phong thu Laser da bi hack va tat hoan toan!");
+                            if (isCoopActive()) {
+                                window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "laser_grid", idx: i });
+                            }
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -16678,6 +17601,10 @@
 
             sfx.playShoot(w.type, w.id !== undefined ? w.id : player.currentWeapon);
 
+            if (w.id === 6 && window.webglPostProcessor) {
+                window.webglPostProcessor.triggerAnamorphic(0.92);
+            }
+
             if (isCoopActive() && window.XENO_COOP && window.XENO_COOP.connected) {
                 if (w.type !== "laser" || (frameCounter % 2 === 0)) {
                     window.XENO_COOP.sendPacket({
@@ -16702,6 +17629,9 @@
             // WEAPON #7: CONTINUOUS PIERCING HIGH-ENERGY LASER BEAM WITH THERMAL RAMP-UP
             if (w.type === "laser") {
                 player.laserHeat = Math.min(1.0, (player.laserHeat || 0) + 0.055);
+                if (player.laserHeat > 0.45 && window.webglPostProcessor) {
+                    window.webglPostProcessor.triggerAnamorphic(0.55);
+                }
                 const heatMult = 1.0 + player.laserHeat * 0.85; // Ramps up to 185% damage at full charge!
                 const overdriveMult = player.overdriveBuffTimer > 0 ? 2.0 : 1.0;
                 const totalDmg = w.damage * player.damageMultiplier * overdriveMult * heatMult;
@@ -16896,6 +17826,11 @@
                     e.targetPlayerId = "host";
                     e.aggroLockTimer = 90; // Khóa truy sát Host 1.5 giây
                 }
+            }
+
+            // Bio-Acid Corrosion: +45% damage while monster armor is corroded
+            if (e.corrosionTimer > 0) {
+                dmg *= 1.45;
             }
 
             // =========================================================================
@@ -18542,6 +19477,11 @@
                 if (barricades[i].hitFlash > 0) barricades[i].hitFlash--;
             }
 
+            // Update Tactical Traps & Interactive Obstacles
+            if (typeof updateTraps === "function") {
+                updateTraps(dt);
+            }
+
             if (frameCounter % 8 === 0) {
                 renderActiveBuffPills();
                 const cdEl = byId("hudItemCd");
@@ -18589,6 +19529,26 @@
                         if (tp.cooldown <= 0 && Math.hypot(player.x - tp.x, player.y - tp.y) <= tp.radius + 32) {
                             promptMsg = `[E] Dịch chuyển [${tp.label}]`;
                             break;
+                        }
+                    }
+                }
+                if (!promptMsg && typeof mapTraps !== "undefined") {
+                    for (let i = 0; i < mapTraps.length; i++) {
+                        const tr = mapTraps[i];
+                        if (tr.type === "station_sentry" && !tr.active) {
+                            if (Math.hypot(player.x - tr.x, player.y - tr.y) <= (tr.radius || 28) + 40) {
+                                promptMsg = "[E] Kích hoạt Ụ Pháo ($250)";
+                                break;
+                            }
+                        } else if (tr.type === "laser_grid" && tr.state !== "hacked") {
+                            const lMinX = Math.min(tr.x1, tr.x2);
+                            const lMaxX = Math.max(tr.x1, tr.x2);
+                            const lMinY = Math.min(tr.y1, tr.y2);
+                            const lMaxY = Math.max(tr.y1, tr.y2);
+                            if (player.x >= lMinX - 35 && player.x <= lMaxX + 35 && player.y >= lMinY - 35 && player.y <= lMaxY + 35) {
+                                promptMsg = "[E] Hack Lưới Laser";
+                                break;
+                            }
                         }
                     }
                 }
@@ -19093,6 +20053,23 @@
                     b.size += 0.28;
                 }
 
+                // Check bullet trigger for charged Tesla Pylon
+                if (!b.isHostile && typeof mapTraps !== "undefined") {
+                    for (let t = 0; t < mapTraps.length; t++) {
+                        const tr = mapTraps[t];
+                        if (tr.type === "tesla_pylon" && tr.charge >= 1.0) {
+                            const pdistSq = (b.x - tr.x) * (b.x - tr.x) + (b.y - tr.y) * (b.y - tr.y);
+                            const hitR = (tr.radius || 24) + b.size + 4;
+                            if (pdistSq <= hitR * hitR) {
+                                triggerTeslaPylon(tr);
+                                b.active = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!b.active) continue;
+                }
+
                 const hitWallOrDoor = pointHitsWall(b.x, b.y) || pointHitsClosedDoor(b.x, b.y);
                 if (b.life <= 0 || hitWallOrDoor) {
                     if (b.type === "boss_meteor") {
@@ -19342,6 +20319,8 @@
 
                 if (e.hitFlash > 0) e.hitFlash--;
                 if (e.nuclearSlowTimer > 0) e.nuclearSlowTimer--;
+                if (e.corrosionTimer > 0) e.corrosionTimer--;
+                if (e.stunTimer > 0) e.stunTimer--;
 
                 if (e.burnTimer > 0) {
                     e.burnTimer--;
@@ -19352,9 +20331,11 @@
                 }
 
                 if (e.chillTimer > 0) e.chillTimer--;
+                const stunMult = (e.stunTimer > 0) ? 0 : 1.0;
                 const chillMult = (isGlobalFrozen ? (e.isBoss ? 0.50 : 0.35) : 1.0)
                     * (e.chillTimer > 0 ? (e.isBoss ? 0.82 : 0.45) : 1.0)
-                    * (e.nuclearSlowTimer > 0 ? (e.isBoss ? 0.80 : 0.50) : 1.0);
+                    * (e.nuclearSlowTimer > 0 ? (e.isBoss ? 0.80 : 0.50) : 1.0)
+                    * stunMult;
                 const bossCastMult = (e.isBoss && e.skillState !== "idle") ? 0.28 : 1.0;
                 const stepSpeed = e.speed * chillMult * bossCastMult;
 
@@ -20568,6 +21549,11 @@
             }
 
             drawAutoDoors(camX, camY);
+
+            // Draw Tactical Traps & Interactive Obstacles
+            if (typeof drawTraps === "function") {
+                drawTraps(ctx, camX, camY);
+            }
 
             drawMarinePlayer();
 
@@ -30108,7 +31094,7 @@
                     if (holdProgress > 0) {
                         ctx.fillStyle = "#38bdf8";
                         const pct = Math.round(holdProgress * 100);
-                        const bolt = (Math.floor(now / 150) % 2 === 0) ? "⚡" : " ";
+                        const bolt = (Math.floor(now / 150) % 2 === 0) ? ">>" : "  ";
                         ctx.fillText(`${bolt} ĐANG NẠP ĐIỆN TOÀN TRẠM: ${pct}% ${bolt}`, 0, 0);
                     } else {
                         ctx.fillStyle = "#ffedd5";
@@ -33481,12 +34467,20 @@
             shockwaves: [],
             shockwaveBuffer: new Float32Array(16),
             heatSourceBuffer: new Float32Array(12),
-            graphicsTier: 1, // 0 = Standard 2D, 1 = High Shader, 2 = Epic Next-Gen
+            pointLightBuffer: new Float32Array(24),
+            pointLightColorBuffer: new Float32Array(24),
+            anamorphicIntensity: 0.0,
+            graphicsTier: 1, // 0 = Standard 2D, 1 = High Shader, 2 = Ultra Epic Cinematic
             epicIntensity: 1.0, // 0.5 to 1.5
             epicFeatures: {
                 godRays: true,
                 floorReflect: true,
                 heatHaze: true
+            },
+
+            triggerAnamorphic(intensity = 0.85) {
+                if (!this.enabled || !this.isAvailable) return;
+                this.anamorphicIntensity = Math.min(1.5, Math.max(this.anamorphicIntensity, intensity));
             },
 
             addShockwave(worldX, worldY, maxRadius = 380, duration = 650, intensity = 0.85) {
@@ -33552,7 +34546,7 @@
                         }
                     `;
 
-                    // 4. Fragment Shader (GLSL ES 1.0: Sóng xung kích, Khúc xạ nhiệt, God Rays, Phản xạ sàn, Bloom & Anamorphic)
+                    // 4. Fragment Shader (GLSL ES 1.0: Song xung kich, Khuc xa nhiet, God Rays, Phan xa san, Multi-Light, Anamorphic, Wetness, Fog)
                     const fsSource = `
                         precision mediump float;
                         uniform sampler2D u_tex;
@@ -33567,12 +34561,18 @@
                         uniform float u_nvg;
                         uniform vec4 u_shockwaves[4];
 
-                        // EPIC NEXT-GEN GRAPHICS UNIFORMS
+                        // ULTRA EPIC CINEMATIC GRAPHICS UNIFORMS
                         uniform float u_epicMode;
                         uniform float u_epicIntensity;
                         uniform vec4 u_playerLight;
                         uniform vec3 u_epicFlags;
                         uniform vec4 u_heatSources[3];
+                        uniform vec4 u_pointLights[6];
+                        uniform vec4 u_pointLightColors[6];
+                        uniform float u_pointLightCount;
+                        uniform float u_anamorphic;
+                        uniform float u_wetness;
+                        uniform float u_fogDrift;
 
                         varying vec2 v_uv;
 
@@ -33649,14 +34649,34 @@
                                 baseCol = vec3(r, g, b);
                             }
 
-                            // Ánh chớp nhiệt nổ bừng sáng
+                            // Anh chop nhiet no bung sang
                             baseCol += vec3(shockGlow * 1.25, shockGlow * 0.90, shockGlow * 0.58);
 
-                            // 3. BLOOM & SCI-FI HIGH-DYNAMIC RANGE (HDR) GLOW (Loại bỏ 100% hiện tượng clone/ảo ảnh nòng súng & đạn)
+                            // ULTRA EPIC: Chieu sang da diem dong (Dynamic Multi-Point Lighting)
+                            if (u_epicMode > 0.5 && u_pointLightCount > 0.5) {
+                                vec3 dLight = vec3(0.0);
+                                for (int li = 0; li < 6; li++) {
+                                    if (float(li) >= u_pointLightCount) break;
+                                    vec4 pl = u_pointLights[li];
+                                    if (pl.z > 0.001 && pl.w > 0.01) {
+                                        vec2 plDiff = (uv - pl.xy) * aspect;
+                                        float plDist = length(plDiff);
+                                        if (plDist < pl.z) {
+                                            float plAtten = 1.0 - plDist / pl.z;
+                                            plAtten = plAtten * plAtten * pl.w;
+                                            vec3 pCol = u_pointLightColors[li].rgb;
+                                            dLight += pCol * plAtten * 0.42 * u_epicIntensity;
+                                        }
+                                    }
+                                }
+                                baseCol += dLight;
+                            }
+
+                            // 3. BLOOM & SCI-FI HIGH-DYNAMIC RANGE (HDR) GLOW
                             vec3 bloomCol = vec3(0.0, 0.0, 0.0);
                             if (u_bloom > 0.01) {
                                 float bDist = 2.2 * u_bloom;
-                                // 4-Tap Bilateral Smooth Blur cân bằng đa hướng
+                                // 4-Tap Bilateral Smooth Blur can bang da huong
                                 vec3 s1 = texture2D(u_tex, clamp(distortedUv + vec2( texel.x,  texel.y) * bDist, 0.0, 1.0)).rgb;
                                 vec3 s2 = texture2D(u_tex, clamp(distortedUv + vec2(-texel.x, -texel.y) * bDist, 0.0, 1.0)).rgb;
                                 vec3 s3 = texture2D(u_tex, clamp(distortedUv + vec2(-texel.x,  texel.y) * bDist, 0.0, 1.0)).rgb;
@@ -33667,7 +34687,7 @@
                                 vec3 b4 = max(s4 - vec3(0.62, 0.62, 0.62), vec3(0.0, 0.0, 0.0)) * 1.5;
                                 bloomCol = (b1 + b2 + b3 + b4) * 0.22 * u_bloom;
 
-                                // Chế độ EPIC: Khuếch tán vầng hào quang điện ảnh siêu mềm (Diffuse Cinematic Halo), tuyệt đối không nhân bản discrete streak
+                                // ULTRA EPIC: Khuếch tán vầng hào quang điện ảnh siêu mềm (Diffuse Cinematic Halo)
                                 if (u_epicMode > 0.5 && u_epicFlags.z > 0.5) {
                                     float hDist = 3.8 * u_epicIntensity;
                                     vec3 h1 = max(texture2D(u_tex, clamp(distortedUv + vec2( texel.x * hDist, 0.0), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
@@ -33676,6 +34696,22 @@
                                     vec3 h4 = max(texture2D(u_tex, clamp(distortedUv - vec2(0.0,  texel.y * hDist), 0.0, 1.0)).rgb - vec3(0.82, 0.82, 0.82), vec3(0.0, 0.0, 0.0));
                                     vec3 epicHalo = (h1 + h2 + h3 + h4) * vec3(0.40, 0.70, 1.15) * 0.22 * u_epicIntensity;
                                     bloomCol += epicHalo;
+                                }
+
+                                // ULTRA EPIC: Vet loe ngang dien anh (Sci-Fi Anamorphic Lens Flares & Starburst)
+                                if (u_epicMode > 0.5 && u_anamorphic > 0.01) {
+                                    vec3 anaCol = vec3(0.0);
+                                    float aDist = 12.0 * texel.x;
+                                    for (int ai = 1; ai <= 4; ai++) {
+                                        float fi = float(ai);
+                                        vec2 offH = vec2(fi * aDist, 0.0);
+                                        vec3 as1 = texture2D(u_tex, clamp(distortedUv + offH, 0.0, 1.0)).rgb;
+                                        vec3 as2 = texture2D(u_tex, clamp(distortedUv - offH, 0.0, 1.0)).rgb;
+                                        vec3 ab1 = max(as1 - vec3(0.70, 0.70, 0.70), vec3(0.0, 0.0, 0.0));
+                                        vec3 ab2 = max(as2 - vec3(0.70, 0.70, 0.70), vec3(0.0, 0.0, 0.0));
+                                        anaCol += (ab1 + ab2) * (1.0 / fi);
+                                    }
+                                    bloomCol += anaCol * vec3(0.40, 0.75, 1.30) * u_anamorphic * 0.48 * u_epicIntensity;
                                 }
                             }
                             vec3 col = baseCol + bloomCol;
@@ -33699,18 +34735,31 @@
                                 }
                             }
 
-                            // 5. PHẢN XẠ MẶT SÀN KIM LOẠI & KÍNH (Glossy Screen-Space Specular - Lọc nhòe tán xạ chống bóng ma)
+                            // 5. PHẢN XẠ MẶT SÀN KIM LOẠI & KÍNH (Glossy Screen-Space Specular - Loc nhoe tan xa chong bong ma)
                             if (u_epicMode > 0.5 && u_epicFlags.y > 0.5) {
                                 float floorWave = sin(uv.x * 35.0 + u_time * 2.0) * 0.002;
                                 vec2 reflUv = vec2(uv.x + floorWave, clamp(uv.y + 0.038, 0.0, 1.0));
-                                // Lấy mẫu nhòe tán xạ 3 điểm để mô phỏng sàn xước kim loại, không in sắc nét nòng súng
                                 vec3 rs0 = texture2D(u_tex, reflUv).rgb;
                                 vec3 rs1 = texture2D(u_tex, reflUv + vec2(texel.x * 2.5, 0.0)).rgb;
                                 vec3 rs2 = texture2D(u_tex, reflUv - vec2(texel.x * 2.5, 0.0)).rgb;
                                 vec3 reflSample = (rs0 * 0.5 + (rs1 + rs2) * 0.25);
-                                // Ngưỡng cao 0.78: Chỉ bắt ánh sáng chớp lửa nổ, máy gia tốc, không bắt thân người & súng
                                 vec3 specular = max(reflSample - vec3(0.78, 0.78, 0.78), vec3(0.0, 0.0, 0.0));
                                 col += specular * vec3(0.35, 0.60, 0.80) * 0.25 * u_epicIntensity;
+                            }
+
+                            // ULTRA EPIC: Phan xa mat san uot & vung mau/axit (Dynamic Surface Wetness & Specular Ripples)
+                            if (u_epicMode > 0.5) {
+                                float isGreenAcid = max(0.0, baseCol.g - max(baseCol.r, baseCol.b) * 1.12);
+                                float isRedBlood = max(0.0, baseCol.r - max(baseCol.g, baseCol.b) * 1.20);
+                                float isWetFloor = clamp((isGreenAcid + isRedBlood) * 2.8, 0.0, 1.0);
+                                if (isWetFloor > 0.04) {
+                                    float ripple = sin((uv.x + uv.y) * 120.0 + u_time * 5.0) * 0.0014 * isWetFloor;
+                                    vec2 wetUv = clamp(uv + vec2(ripple, -ripple), 0.0, 1.0);
+                                    vec3 wetSample = texture2D(u_tex, wetUv).rgb;
+                                    float wetGlow = dot(wetSample, vec3(0.3, 0.59, 0.11));
+                                    vec3 wetSpec = vec3(pow(wetGlow, 3.0)) * vec3(0.70, 0.90, 1.0) * isWetFloor * u_epicIntensity;
+                                    col += wetSpec * 0.32;
+                                }
                             }
 
                             // 6. VIGNETTE
@@ -33741,6 +34790,18 @@
                             if (u_epicMode > 0.5) {
                                 float grain = (hash(uv + fract(u_time * 0.04)) - 0.5) * 0.026 * u_epicIntensity;
                                 col += vec3(grain, grain, grain);
+                            }
+
+                            // ULTRA EPIC: Suong mu the tich khong gian troi bong benh (Volumetric Atmospheric Fog Drift)
+                            if (u_epicMode > 0.5) {
+                                float fog1 = sin(uv.x * 6.2 + u_time * 0.32) * cos(uv.y * 5.0 - u_time * 0.25);
+                                float fog2 = sin(uv.x * 12.0 - u_time * 0.50) * cos(uv.y * 10.5 + u_time * 0.40);
+                                float fogMask = clamp((fog1 * 0.6 + fog2 * 0.4) * 0.5 + 0.5, 0.0, 1.0);
+                                fogMask = smoothstep(0.25, 0.82, fogMask);
+                                float centerDist = length((uv - vec2(0.5, 0.5)) * aspect);
+                                float centerAtten = smoothstep(0.14, 0.55, centerDist);
+                                vec3 fogColor = vec3(0.10, 0.18, 0.32) * fogMask * centerAtten * 0.065 * u_epicIntensity;
+                                col += fogColor;
                             }
 
                             gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -33815,7 +34876,13 @@
                         epicIntensity: gl.getUniformLocation(program, "u_epicIntensity"),
                         playerLight: gl.getUniformLocation(program, "u_playerLight"),
                         epicFlags: gl.getUniformLocation(program, "u_epicFlags"),
-                        heatSources: gl.getUniformLocation(program, "u_heatSources")
+                        heatSources: gl.getUniformLocation(program, "u_heatSources"),
+                        pointLights: gl.getUniformLocation(program, "u_pointLights"),
+                        pointLightColors: gl.getUniformLocation(program, "u_pointLightColors"),
+                        pointLightCount: gl.getUniformLocation(program, "u_pointLightCount"),
+                        anamorphic: gl.getUniformLocation(program, "u_anamorphic"),
+                        wetness: gl.getUniformLocation(program, "u_wetness"),
+                        fogDrift: gl.getUniformLocation(program, "u_fogDrift")
                     };
 
                     this.onResize(VIEW_W, VIEW_H);
@@ -34035,6 +35102,123 @@
                         gl.uniform4fv(this.locations.shockwaves, this.shockwaveBuffer);
                     }
 
+                    // ULTRA EPIC: Thu thap va upload Nguon sang da diem dong (Dynamic Multi-Point Lights)
+                    let ptCount = 0;
+                    this.pointLightBuffer.fill(0);
+                    this.pointLightColorBuffer.fill(0);
+
+                    if (isEpic > 0.5 && typeof camera !== "undefined" && camera) {
+                        // 1. Player Muzzle Flash light
+                        if (typeof player !== "undefined" && player && player.muzzleFlash > 0) {
+                            const pCos = Math.cos(player.angle || 0);
+                            const pSin = Math.sin(player.angle || 0);
+                            const scX = ((player.x + pCos * 38) - camera.x) / Math.max(1, VIEW_W);
+                            const scY = 1.0 - (((player.y + pSin * 38) - camera.y) / Math.max(1, VIEW_H));
+                            const curWId = (typeof player.currentWeapon === "number") ? player.currentWeapon : 0;
+                            let pr = 1.0, pg = 0.85, pb = 0.45;
+                            if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; } // Gauss cyan
+                            else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; } // Cryo ice
+                            else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; } // Flame red-orange
+                            else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; } // Laser purple
+                            this.pointLightBuffer[0] = scX;
+                            this.pointLightBuffer[1] = scY;
+                            this.pointLightBuffer[2] = 0.32;
+                            this.pointLightBuffer[3] = Math.min(1.2, player.muzzleFlash / 3.0);
+                            this.pointLightColorBuffer[0] = pr;
+                            this.pointLightColorBuffer[1] = pg;
+                            this.pointLightColorBuffer[2] = pb;
+                            this.pointLightColorBuffer[3] = 1.0;
+                            ptCount++;
+                        }
+
+                        // 2. Teammate Muzzle Flash light
+                        if (typeof teammate !== "undefined" && teammate && teammate.active && !teammate.isDown && teammate.muzzleFlash > 0) {
+                            const tCos = Math.cos(teammate.angle || 0);
+                            const tSin = Math.sin(teammate.angle || 0);
+                            const scX = ((teammate.x + tCos * 38) - camera.x) / Math.max(1, VIEW_W);
+                            const scY = 1.0 - (((teammate.y + tSin * 38) - camera.y) / Math.max(1, VIEW_H));
+                            const curWId = (typeof teammate.currentWeapon === "number") ? teammate.currentWeapon : 0;
+                            let pr = 1.0, pg = 0.85, pb = 0.45;
+                            if (curWId === 6) { pr = 0.25; pg = 0.85; pb = 1.0; }
+                            else if (curWId === 5) { pr = 0.40; pg = 0.90; pb = 1.0; }
+                            else if (curWId === 3) { pr = 1.0; pg = 0.45; pb = 0.15; }
+                            else if (curWId === 7) { pr = 0.85; pg = 0.25; pb = 1.0; }
+                            const off = ptCount * 4;
+                            this.pointLightBuffer[off + 0] = scX;
+                            this.pointLightBuffer[off + 1] = scY;
+                            this.pointLightBuffer[off + 2] = 0.30;
+                            this.pointLightBuffer[off + 3] = Math.min(1.0, teammate.muzzleFlash / 3.0);
+                            this.pointLightColorBuffer[off + 0] = pr;
+                            this.pointLightColorBuffer[off + 1] = pg;
+                            this.pointLightColorBuffer[off + 2] = pb;
+                            this.pointLightColorBuffer[off + 3] = 1.0;
+                            ptCount++;
+                        }
+
+                        // 3. Active Shockwaves & Explosions
+                        for (let si = 0; si < this.shockwaves.length && ptCount < 5; si++) {
+                            const sw = this.shockwaves[si];
+                            const scX = (sw.worldX - camera.x) / Math.max(1, VIEW_W);
+                            const scY = 1.0 - ((sw.worldY - camera.y) / Math.max(1, VIEW_H));
+                            if (scX > -0.2 && scX < 1.2 && scY > -0.2 && scY < 1.2) {
+                                const off = ptCount * 4;
+                                this.pointLightBuffer[off + 0] = scX;
+                                this.pointLightBuffer[off + 1] = scY;
+                                this.pointLightBuffer[off + 2] = (sw.maxRadius / Math.max(1, VIEW_H)) * 0.90;
+                                this.pointLightBuffer[off + 3] = sw.intensity * 1.05;
+                                this.pointLightColorBuffer[off + 0] = 1.0;
+                                this.pointLightColorBuffer[off + 1] = 0.72;
+                                this.pointLightColorBuffer[off + 2] = 0.35;
+                                this.pointLightColorBuffer[off + 3] = 1.0;
+                                ptCount++;
+                            }
+                        }
+
+                        // 4. Active Traps (Tesla discharge or Sentry fire)
+                        if (typeof mapTraps !== "undefined" && Array.isArray(mapTraps)) {
+                            for (let ti = 0; ti < mapTraps.length && ptCount < 6; ti++) {
+                                const tr = mapTraps[ti];
+                                if (tr.type === "tesla_pylon" && tr.arcTimer > 0) {
+                                    const scX = (tr.x - camera.x) / Math.max(1, VIEW_W);
+                                    const scY = 1.0 - ((tr.y - camera.y) / Math.max(1, VIEW_H));
+                                    const off = ptCount * 4;
+                                    this.pointLightBuffer[off + 0] = scX;
+                                    this.pointLightBuffer[off + 1] = scY;
+                                    this.pointLightBuffer[off + 2] = 0.36;
+                                    this.pointLightBuffer[off + 3] = (tr.arcTimer / 22) * 1.30;
+                                    this.pointLightColorBuffer[off + 0] = 0.20;
+                                    this.pointLightColorBuffer[off + 1] = 0.85;
+                                    this.pointLightColorBuffer[off + 2] = 1.0;
+                                    this.pointLightColorBuffer[off + 3] = 1.0;
+                                    ptCount++;
+                                } else if (tr.type === "station_sentry" && tr.active && tr.fireCooldown <= 2) {
+                                    const scX = (tr.x - camera.x) / Math.max(1, VIEW_W);
+                                    const scY = 1.0 - ((tr.y - camera.y) / Math.max(1, VIEW_H));
+                                    const off = ptCount * 4;
+                                    this.pointLightBuffer[off + 0] = scX;
+                                    this.pointLightBuffer[off + 1] = scY;
+                                    this.pointLightBuffer[off + 2] = 0.22;
+                                    this.pointLightBuffer[off + 3] = 0.90;
+                                    this.pointLightColorBuffer[off + 0] = 1.0;
+                                    this.pointLightColorBuffer[off + 1] = 0.82;
+                                    this.pointLightColorBuffer[off + 2] = 0.30;
+                                    this.pointLightColorBuffer[off + 3] = 1.0;
+                                    ptCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    if (this.locations.pointLights) gl.uniform4fv(this.locations.pointLights, this.pointLightBuffer);
+                    if (this.locations.pointLightColors) gl.uniform4fv(this.locations.pointLightColors, this.pointLightColorBuffer);
+                    if (this.locations.pointLightCount) gl.uniform1f(this.locations.pointLightCount, ptCount);
+
+                    // Anamorphic flare decay
+                    this.anamorphicIntensity *= 0.90;
+                    if (this.locations.anamorphic) gl.uniform1f(this.locations.anamorphic, this.anamorphicIntensity);
+                    if (this.locations.wetness) gl.uniform1f(this.locations.wetness, 1.0);
+                    if (this.locations.fogDrift) gl.uniform1f(this.locations.fogDrift, 1.0);
+
                     // Vẽ Quad Fullscreen
                     gl.drawArrays(gl.TRIANGLES, 0, 6);
                 } catch (err) {
@@ -34244,7 +35428,7 @@
                         note.innerHTML = "<b>Đang kích hoạt WebGL Shader Thường:</b> Tán sắc quang học, Neon Bloom, Vignette &amp; CRT Scanlines.";
                         note.className = "text-[10px] font-mono-tech text-cyan-300/90 bg-cyan-950/20 px-2.5 py-1.5 border border-cyan-500/30";
                     } else {
-                        note.innerHTML = "<b>ĐANG BẬT ĐỒ HỌA EPIC NEXT-GEN:</b> Luồng sáng Volumetric God Rays, Phản xạ sàn kim loại, Gợn sóng nhiệt &amp; Anamorphic Lens Flare điện ảnh.";
+                        note.innerHTML = "<b>ĐANG BẬT ĐỒ HỌA ULTRA EPIC ĐIỆN ẢNH:</b> Chiếu sáng đa điểm động, Luồng sáng Volumetric God Rays, Vệt lóe Anamorphic Flare, Phản xạ sàn ướt Specular &amp; Sương mù không gian.";
                         note.className = "text-[10px] font-mono-tech text-amber-300/90 bg-amber-950/20 px-2.5 py-1.5 border border-amber-500/40";
                     }
                 }
