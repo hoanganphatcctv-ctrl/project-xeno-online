@@ -12645,78 +12645,43 @@
             }
 
             if (isStuck || !hasClear) {
-                const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
-                const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
-                const gIdx = gr * FLOW_COLS + gc;
+                // $O(1)$ BILINEAR FLOW FIELD SAMPLING (SIÊU TỐC THAY THẾ MA TRẬN 5X5 RAYCAST)
+                // Đọc trực tiếp hướng dòng chảy ngắn nhất qua cửa và hành lang, nội suy mượt mà giữa 4 ô lưới lân cận
+                const u = (e.x / CELL) - 0.5;
+                const v = (e.y / CELL) - 0.5;
+                const c0 = Math.max(0, Math.min(FLOW_COLS - 2, Math.floor(u)));
+                const r0 = Math.max(0, Math.min(FLOW_ROWS - 2, Math.floor(v)));
+                const fu = Math.max(0, Math.min(1, u - c0));
+                const fv = Math.max(0, Math.min(1, v - r0));
 
-                let fx = flowGrid.dirX[gIdx];
-                let fy = flowGrid.dirY[gIdx];
-                const currDist = flowGrid.dist[gIdx];
+                const i00 = r0 * FLOW_COLS + c0;
+                const i10 = i00 + 1;
+                const i01 = i00 + FLOW_COLS;
+                const i11 = i01 + 1;
 
-                // Search 5x5 neighborhood for the best visible (same-side-of-wall) open cell
-                let bestVisibleDist = (currDist > 0 && !flowGrid.blocked[gIdx]) ? currDist : 999999;
-                let bestCellX = e.x + fx * CELL;
-                let bestCellY = e.y + fy * CELL;
-                let foundVisibleCell = false;
+                // Lọc trọng số các ô hợp lệ (không bị tường chặn)
+                let w00 = flowGrid.blocked[i00] ? 0 : (1 - fu) * (1 - fv);
+                let w10 = flowGrid.blocked[i10] ? 0 : fu * (1 - fv);
+                let w01 = flowGrid.blocked[i01] ? 0 : (1 - fu) * fv;
+                let w11 = flowGrid.blocked[i11] ? 0 : fu * fv;
+                const totalW = w00 + w10 + w01 + w11;
 
-                const searchRad = (fx === 0 && fy === 0) || isStuck ? 2 : 1;
-                for (let dr = -searchRad; dr <= searchRad; dr++) {
-                    const nr = gr + dr;
-                    if (nr < 0 || nr >= FLOW_ROWS) continue;
-                    for (let dc = -searchRad; dc <= searchRad; dc++) {
-                        const nc = gc + dc;
-                        if (nc < 0 || nc >= FLOW_COLS) continue;
-                        const nIdx = nr * FLOW_COLS + nc;
-                        if (flowGrid.blocked[nIdx]) continue;
-                        const nd = flowGrid.dist[nIdx];
-                        if (nd < 0) continue;
-
-                        const cellCx = nc * CELL + CELL * 0.5;
-                        const cellCy = nr * CELL + CELL * 0.5;
-
-                        // CRITICAL: Never pick a cell on the other side of a wall or obstacle!
-                        if (segmentHitsStaticObstacle(e.x, e.y, cellCx, cellCy, 3)) continue;
-
-                        if (nd < bestVisibleDist || (!foundVisibleCell && (fx === 0 && fy === 0))) {
-                            bestVisibleDist = nd;
-                            bestCellX = cellCx;
-                            bestCellY = cellCy;
-                            foundVisibleCell = true;
-                        }
-                    }
+                let fx = 0, fy = 0;
+                if (totalW > 0.001) {
+                    fx = (flowGrid.dirX[i00] * w00 + flowGrid.dirX[i10] * w10 + flowGrid.dirX[i01] * w01 + flowGrid.dirX[i11] * w11) / totalW;
+                    fy = (flowGrid.dirY[i00] * w00 + flowGrid.dirY[i10] * w10 + flowGrid.dirY[i01] * w01 + flowGrid.dirY[i11] * w11) / totalW;
+                } else {
+                    const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
+                    const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
+                    const gIdx = gr * FLOW_COLS + gc;
+                    fx = flowGrid.dirX[gIdx];
+                    fy = flowGrid.dirY[gIdx];
                 }
 
-                if (foundVisibleCell) {
-                    const toCellX = bestCellX - e.x;
-                    const toCellY = bestCellY - e.y;
-                    const toLen = Math.hypot(toCellX, toCellY) || 0.0001;
-                    const nfx = toCellX / toLen;
-                    const nfy = toCellY / toLen;
-
-                    if (fx === 0 && fy === 0 || isStuck) {
-                        fx = nfx;
-                        fy = nfy;
-                    } else {
-                        fx = fx * 0.45 + nfx * 0.55;
-                        fy = fy * 0.45 + nfy * 0.55;
-                        const nLen = Math.hypot(fx, fy) || 0.0001;
-                        fx /= nLen;
-                        fy /= nLen;
-                    }
-                } else if (fx !== 0 || fy !== 0) {
-                    const nextX = (gc + fx) * CELL + CELL * 0.5;
-                    const nextY = (gr + fy) * CELL + CELL * 0.5;
-                    const toLen = Math.hypot(nextX - e.x, nextY - e.y) || 0.0001;
-                    fx = fx * 0.55 + ((nextX - e.x) / toLen) * 0.45;
-                    fy = fy * 0.55 + ((nextY - e.y) / toLen) * 0.45;
-                    const nLen = Math.hypot(fx, fy) || 0.0001;
-                    fx /= nLen;
-                    fy /= nLen;
-                }
-
-                if (fx !== 0 || fy !== 0) {
-                    dirX = fx;
-                    dirY = fy;
+                const fLen = Math.sqrt(fx * fx + fy * fy);
+                if (fLen > 0.0001) {
+                    dirX = fx / fLen;
+                    dirY = fy / fLen;
                 }
             }
 
@@ -19452,7 +19417,7 @@
                 const targetPos = resolveEnemyTargetPosition(e.targetPlayerId);
                 const dx = targetPos.x - e.x;
                 const dy = targetPos.y - e.y;
-                const dist = Math.hypot(dx, dy) || 0.0001;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
 
                 // AI LOD / Throttle: Quái ở ngoài màn hình xa (dist > 1100px) chỉ cập nhật tính toán góc lái phức tạp 3 frame/lần
                 let dirX, dirY;
@@ -19481,7 +19446,7 @@
                 let vx = dirX * stepSpeed;
                 let vy = dirY * stepSpeed;
 
-                // Tách Quái - Quái tối ưu qua 0-Allocation Spatial Hash Grid (thay vì lặp O(N^2) toàn bộ 520 quái)
+                // Tách Quái - Quái tối ưu qua 0-Allocation Spatial Hash Grid + Fast Math (thay vì lặp O(N^2) toàn bộ 520 quái)
                 let sepX = 0, sepY = 0;
                 const ec = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, (e.x / ENEMY_GRID_CELL) | 0));
                 const er = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, (e.y / ENEMY_GRID_CELL) | 0));
@@ -19501,16 +19466,18 @@
                                     const ody = e.y - o.y;
                                     const minSep = e.radius + o.radius + 2;
                                     if (Math.abs(odx) < minSep && Math.abs(ody) < minSep) {
-                                        const d = Math.hypot(odx, ody) || 0.0001;
-                                        if (d < minSep) {
+                                        const distSq = odx * odx + ody * ody;
+                                        if (distSq < minSep * minSep && distSq > 0.0001) {
+                                            const d = Math.sqrt(distSq);
                                             const push = (minSep - d) * 0.08;
+                                            const invD = 1 / d;
                                             if (!e.isBoss) {
-                                                sepX += (odx / d) * push;
-                                                sepY += (ody / d) * push;
+                                                sepX += (odx * invD) * push;
+                                                sepY += (ody * invD) * push;
                                             }
                                             if (!o.isBoss) {
-                                                o.x -= (odx / d) * push * dtScale;
-                                                o.y -= (ody / d) * push * dtScale;
+                                                o.x -= (odx * invD) * push * dtScale;
+                                                o.y -= (ody * invD) * push * dtScale;
                                             }
                                         }
                                     }
@@ -19529,42 +19496,38 @@
                 e.y += e.vy * dtScale;
                 resolveWallSliding(e);
 
-                // Anti-stuck detection & corner escape reflex
-                const actualMoved = Math.hypot(e.x - prevX, e.y - prevY);
-                if (stepSpeed > 0.2 && dist > e.radius + player.radius + 12 && actualMoved < stepSpeed * 0.28 * dtScale) {
+                // Anti-stuck detection & corner escape reflex ($O(1)$ Dijkstra Flow Neighbor Nudge)
+                const movedSq = (e.x - prevX) * (e.x - prevX) + (e.y - prevY) * (e.y - prevY);
+                const minExpectedDist = stepSpeed * 0.28 * dtScale;
+                if (stepSpeed > 0.2 && dist > e.radius + player.radius + 12 && movedSq < minExpectedDist * minExpectedDist) {
                     e.stuckFrames = (e.stuckFrames || 0) + 1;
-                    if (e.stuckFrames > 28) {
-                        // Find nearest open flow cell center that doesn't cross a wall and nudge toward it
+                    if (e.stuckFrames > 24) {
+                        // Tìm ô lân cận unblocked có khoảng cách Dijkstra dist nhỏ nhất hướng về người chơi
                         const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
                         const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
                         let bestEscapeD = 999999;
                         let escX = e.x, escY = e.y;
-                        for (let dr = -2; dr <= 2; dr++) {
-                            const nr = gr + dr;
-                            if (nr < 0 || nr >= FLOW_ROWS) continue;
-                            for (let dc = -2; dc <= 2; dc++) {
-                                const nc = gc + dc;
-                                if (nc < 0 || nc >= FLOW_COLS) continue;
-                                const nIdx = nr * FLOW_COLS + nc;
-                                if (flowGrid.blocked[nIdx] || flowGrid.dist[nIdx] < 0) continue;
-                                const cx = nc * CELL + CELL * 0.5;
-                                const cy = nr * CELL + CELL * 0.5;
-                                if (!segmentHitsStaticObstacle(e.x, e.y, cx, cy, 2) && flowGrid.dist[nIdx] < bestEscapeD) {
-                                    bestEscapeD = flowGrid.dist[nIdx];
-                                    escX = cx;
-                                    escY = cy;
-                                }
+                        for (let d = 0; d < 8; d++) {
+                            const nc = gc + FLOW_NEIGHBORS[d][0];
+                            const nr = gr + FLOW_NEIGHBORS[d][1];
+                            if (nc < 0 || nc >= FLOW_COLS || nr < 0 || nr >= FLOW_ROWS) continue;
+                            const nIdx = nr * FLOW_COLS + nc;
+                            if (flowGrid.blocked[nIdx] || flowGrid.dist[nIdx] < 0) continue;
+                            if (flowGrid.dist[nIdx] < bestEscapeD) {
+                                bestEscapeD = flowGrid.dist[nIdx];
+                                escX = nc * CELL + CELL * 0.5;
+                                escY = nr * CELL + CELL * 0.5;
                             }
                         }
                         if (bestEscapeD < 999999) {
                             const edx = escX - e.x;
                             const edy = escY - e.y;
-                            const elen = Math.hypot(edx, edy) || 1;
+                            const elen = Math.sqrt(edx * edx + edy * edy) || 1;
                             e.x += (edx / elen) * (stepSpeed * 1.15) * dtScale;
                             e.y += (edy / elen) * (stepSpeed * 1.15) * dtScale;
                             resolveWallSliding(e);
                         }
-                        e.stuckFrames = 12;
+                        e.stuckFrames = 10;
                     }
                 } else if (e.stuckFrames > 0) {
                     e.stuckFrames = Math.max(0, e.stuckFrames - 2);
@@ -25318,6 +25281,65 @@
             XENO_RAM_CACHE.lightMasks = lightMasks;
         }
 
+        // ============================================================================
+        // GPU PIPELINE WARM-UP (KHỬ TRIỆT ĐỂ SHADER COMPILATION & TEXTURE UPLOAD HITCH)
+        // Ép GPU Driver biên dịch trước Shader Program và tạo texture trong VRAM ngầm
+        // ============================================================================
+        function warmupGpuPipelines() {
+            try {
+                const dummyCanvas = document.createElement("canvas");
+                dummyCanvas.width = 16;
+                dummyCanvas.height = 16;
+                const dCtx = dummyCanvas.getContext("2d", { willReadFrequently: false });
+                if (!dCtx) return;
+
+                // 1. Warm-up 5 Monster Sprite Atlases
+                ["crawler", "stalker", "spitter", "brute", "praetorian"].forEach(key => {
+                    const c = XENO_RAM_CACHE.monsters[key];
+                    if (c && c.sheetCanvas) {
+                        try { dCtx.drawImage(c.sheetCanvas, 0, 0, 16, 16, 0, 0, 1, 1); } catch (e) {}
+                    }
+                });
+
+                // 2. Warm-up Active Boss Sprite Atlas
+                const curMap = window.currentMapId || 1;
+                const b = XENO_RAM_CACHE.bosses[curMap];
+                if (b && b.sheetCanvas) {
+                    try { dCtx.drawImage(b.sheetCanvas, 0, 0, 16, 16, 0, 0, 1, 1); } catch (e) {}
+                }
+
+                // 3. Warm-up Decal Stamps & Craters
+                if (XENO_RAM_CACHE.decalStamps) {
+                    const ds = XENO_RAM_CACHE.decalStamps;
+                    if (ds.blood) {
+                        ["red", "green"].forEach(pKey => {
+                            if (Array.isArray(ds.blood[pKey])) {
+                                ds.blood[pKey].forEach(bmp => {
+                                    if (bmp) try { dCtx.drawImage(bmp, 0, 0, 1, 1); } catch (e) {}
+                                });
+                            }
+                        });
+                    }
+                    if (ds.craters) {
+                        if (ds.craters.dark) try { dCtx.drawImage(ds.craters.dark, 0, 0, 1, 1); } catch (e) {}
+                        if (ds.craters.green) try { dCtx.drawImage(ds.craters.green, 0, 0, 1, 1); } catch (e) {}
+                    }
+                }
+
+                // 4. Warm-up Surface Canvas
+                if (typeof surfaceCanvas !== "undefined" && surfaceCanvas) {
+                    try { dCtx.drawImage(surfaceCanvas, 0, 0, 1, 1); } catch (e) {}
+                }
+
+                dummyCanvas.width = 0;
+                dummyCanvas.height = 0;
+                XENO_RAM_CACHE._gpuWarmedUp = true;
+            } catch (err) {
+                console.warn("[WARMUP] GPU Warmup pass:", err);
+            }
+        }
+        window.warmupGpuPipelines = warmupGpuPipelines;
+
         function initMonsterRamCache() {
             if (XENO_RAM_CACHE.initialized) return;
             XENO_RAM_CACHE.totalCanvases = 0;
@@ -25331,6 +25353,11 @@
             ensureBossCacheEntry(currentMap);
             XENO_RAM_CACHE.initialized = true;
             updateMonsterRamCacheUI();
+
+            // Khởi chạy GPU Pipeline Warm-up ngầm để biên dịch sẵn shader trước khi vào trận
+            setTimeout(() => {
+                warmupGpuPipelines();
+            }, 120);
         }
         window.initMonsterRamCache = initMonsterRamCache;
 
@@ -27593,6 +27620,11 @@
             if (settingsModal) {
                 settingsModal.classList.add("hidden");
                 settingsModal.style.display = "none";
+            }
+
+            // Kích hoạt GPU Pipeline Warm-up ngầm để biên dịch shader và nạp VRAM trước khi vào trận
+            if (typeof warmupGpuPipelines === "function") {
+                warmupGpuPipelines();
             }
 
             // Khi từ Màn Hình Chính (Sảnh) bước vào trận: luôn khởi tạo mới 100% theo súng và tiền mặc định của Map đã chọn
@@ -30460,6 +30492,11 @@
             window.currentMapId = MAP_REGISTRY[mapId] ? mapId : 1;
             campaignMode = true;
             updateMapUIState();
+            // Prewarm boss sprite cache & GPU pipeline cho map được chọn
+            if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(window.currentMapId);
+            if (typeof warmupGpuPipelines === "function") {
+                try { setTimeout(warmupGpuPipelines, 50); } catch (e) {}
+            }
             initCampaign(true, false);
             if (typeof closeMapDiffDrawer === "function") closeMapDiffDrawer();
         }
@@ -30478,6 +30515,10 @@
             window.currentMapId = 1;
             campaignMode = true;
             updateMapUIState();
+            if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(1);
+            if (typeof warmupGpuPipelines === "function") {
+                try { setTimeout(warmupGpuPipelines, 50); } catch (e) {}
+            }
             initCampaign(false, false);
         }
         window.startFullCampaignFromMap1 = startFullCampaignFromMap1;
@@ -30499,6 +30540,10 @@
             if (typeof isMapTransitionLoading !== "undefined") isMapTransitionLoading = false;
             window.currentMapId = MAP_REGISTRY[mapId] ? mapId : 1;
             updateMapUIState();
+            if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(window.currentMapId);
+            if (typeof warmupGpuPipelines === "function") {
+                try { warmupGpuPipelines(); } catch (e) {}
+            }
             initCampaign(false, carryOver);
         }
         window.switchCampaignMap = switchCampaignMap;
@@ -30534,6 +30579,10 @@
                 simulateMapTransitionLoading(nextMapId, () => {
                     window.currentMapId = nextMapId;
                     updateMapUIState();
+                    if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(nextMapId);
+                    if (typeof warmupGpuPipelines === "function") {
+                        try { warmupGpuPipelines(); } catch (e) {}
+                    }
                     initCampaign(false, true);
 
                     showToast(
@@ -30545,6 +30594,10 @@
             } else {
                 window.currentMapId = nextMapId;
                 updateMapUIState();
+                if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(nextMapId);
+                if (typeof warmupGpuPipelines === "function") {
+                    try { warmupGpuPipelines(); } catch (e) {}
+                }
                 initCampaign(false, true);
                 isTransitioningMap = false;
             }
@@ -30857,13 +30910,16 @@
             updateNvgFilter();
             updateNvgUI();
             updateAim();
-            renderWorld();
 
             if (!keepSettingsOpen) {
+                // resumeGame() đã tự động gọi updateAim(), renderWorld() và scheduleNextFrame(), tránh vẽ trùng 2 lần ở khung hình đầu tiên
                 resumeGame();
                 showToast(mapCfg.toastTitle, mapCfg.toastMsg);
-            } else if (typeof scheduleNextFrame === "function") {
-                scheduleNextFrame();
+            } else {
+                renderWorld();
+                if (typeof scheduleNextFrame === "function") {
+                    scheduleNextFrame();
+                }
             }
         }
         window.initCampaign = initCampaign;
