@@ -7110,6 +7110,16 @@
             });
             updateTopLeftHUD();
             showToast("HỒI SINH HOÀN TẤT!", "Khiên bất tử 1.8s kích hoạt. Săn lùng đối thủ!");
+
+            // BÁO CHO ĐỐI THỦ BIẾT ĐÃ HỒI SINH TẠI TỌA ĐỘ MỚI
+            if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                XENO_COOP.sendPacket({
+                    t: "PVP_RESPAWN",
+                    x: Math.round(player.x),
+                    y: Math.round(player.y),
+                    gunLevel: PVP_GUNGAME_STATE.gunLevel
+                });
+            }
         }
         window.respawnPlayerInPvP = respawnPlayerInPvP;
 
@@ -7359,6 +7369,7 @@
                     slot: this.currentSlot || this.getSlotFromRoomCode(this.roomCode) || 1,
                     mapId: window.currentMapId || 1,
                     difficulty: this.getDifficultyId(),
+                    gameMode: window.gameMode || "campaign",
                     players: this.connected ? 2 : 1,
                     maxPlayers: 2,
                     state: this.inMission ? "playing" : "waiting",
@@ -7599,6 +7610,11 @@
                     const diffLabel = this.getDifficultyLabel(s.difficulty);
                     const isSelfJoined = this.connected && !this.isHost && this.roomCode === s.roomCode;
 
+                    const isPvPRoom = (s.gameMode === "pvp_gungame");
+                    const modeTag = isPvPRoom 
+                        ? `<span class="text-[9px] font-mono-tech font-black px-1.5 py-0.5 bg-rose-500/25 text-rose-300 border border-rose-400/60 uppercase">1V1 PVP</span>`
+                        : `<span class="text-[9px] font-mono-tech font-bold px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 uppercase">CO-OP</span>`;
+
                     if (s.status === "waiting") {
                         html += `
                         <div class="flex items-center justify-between gap-2 px-3 py-2 bg-emerald-950/25 border border-emerald-500/40 hover:border-emerald-400 transition">
@@ -7606,6 +7622,7 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-black text-white uppercase tracking-wider">PHÒNG ${s.slot}</span>
                                     <span class="text-[10px] font-mono-tech px-1.5 py-0.5 bg-slate-900 text-cyan-300 border border-cyan-500/30">${s.roomCode}</span>
+                                    ${modeTag}
                                     <span class="text-[10px] font-mono-tech font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">1/2 • ĐANG CHỜ</span>
                                 </div>
                                 <div class="text-[10px] text-slate-300 font-mono-tech mt-0.5">Map ${s.mapId} • Độ khó: ${diffLabel} • ${s.hz || 60}Hz</div>
@@ -7956,12 +7973,13 @@
                             mapId: window.currentMapId || 1,
                             difficulty: this.getDifficultyId(),
                             slot: this.currentSlot,
-                            roomCode: this.getSlotRoomCode(this.currentSlot)
+                            roomCode: this.getSlotRoomCode(this.currentSlot),
+                            gameMode: window.gameMode || "campaign"
                         }, (res) => {
                             if (res && res.success) {
                                 this.roomCode = res.roomCode;
                                 this.currentSlot = res.slot || this.getSlotFromRoomCode(this.roomCode) || this.currentSlot;
-                                console.log("[CO-OP SOCKET] Room created:", this.roomCode);
+                                console.log("[CO-OP SOCKET] Room created:", this.roomCode, "mode:", window.gameMode);
                                 this.updateHostUI("Phòng đang mở công khai. Chờ đồng đội tham gia...", false);
                             } else {
                                 this.updateHostUI("Không thể tạo phòng: " + (res?.message || ""), false, true);
@@ -7984,10 +8002,12 @@
                     });
 
                     this.socket.on("teammate_down", () => {
+                        if (window.gameMode === "pvp_gungame") return;
                         this.handleData({ t: "player_down" });
                     });
 
                     this.socket.on("teammate_revived", (data) => {
+                        if (window.gameMode === "pvp_gungame") return;
                         this.handleData({ t: "revive_success", data });
                     });
 
@@ -8194,9 +8214,13 @@
                         console.log("[CO-OP SOCKET] Client connected, joining room:", cleanCode);
                         this.socket.emit("join_room", { roomCode: cleanCode }, (res) => {
                             if (res && res.success) {
-                                console.log("[CO-OP SOCKET] Joined room successfully!");
+                                console.log("[CO-OP SOCKET] Joined room successfully! Mode:", res.gameMode || "campaign");
                                 this.hostMapId = res.mapId || 1;
                                 this.hostDifficulty = res.difficulty || "normal";
+                                if (res.gameMode) {
+                                    window.gameMode = res.gameMode;
+                                    if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
+                                }
                                 this.setupSocketConnection();
                             } else {
                                 if (statusText) statusText.textContent = "Lỗi: " + (res?.message || "Phòng không tồn tại hoặc đã đầy.");
@@ -8206,12 +8230,29 @@
                         });
                     });
 
+                    this.socket.on("room_meta_updated", (data) => {
+                        if (data) {
+                            if (data.mapId) this.hostMapId = data.mapId;
+                            if (data.difficulty) this.hostDifficulty = data.difficulty;
+                            if (data.gameMode) {
+                                window.gameMode = data.gameMode;
+                                if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
+                            }
+                            this.updateClientLobbyUI();
+                        }
+                    });
+
                     this.socket.on("mission_started", (data) => {
+                        if (data && data.gameMode) {
+                            window.gameMode = data.gameMode;
+                            if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
+                        }
                         this.handleData({
                             t: "start",
                             mapId: data?.mapId || 1,
                             difficulty: data?.difficulty || this.hostDifficulty || "normal",
-                            hz: data?.hz || this.tickRate
+                            hz: data?.hz || this.tickRate,
+                            gameMode: data?.gameMode || window.gameMode || "campaign"
                         });
                     });
 
@@ -8220,14 +8261,17 @@
                     });
 
                     this.socket.on("teammate_down", () => {
+                        if (window.gameMode === "pvp_gungame") return;
                         this.handleData({ t: "player_down" });
                     });
 
                     this.socket.on("teammate_revived", (data) => {
+                        if (window.gameMode === "pvp_gungame") return;
                         this.handleData({ t: "revive_success", data });
                     });
 
                     this.socket.on("mission_failed", () => {
+                        if (window.gameMode === "pvp_gungame") return;
                         this.handleData({ t: "game_over" });
                     });
 
@@ -8352,7 +8396,8 @@
                         slot: this.currentSlot,
                         mapId: window.currentMapId || 1,
                         difficulty: this.getDifficultyId(),
-                        hz: this.tickRate
+                        hz: this.tickRate,
+                        gameMode: window.gameMode || "campaign"
                     });
                 } else {
                     const statusText = byId("coopJoinStatusText");
@@ -8405,7 +8450,8 @@
                             slot: this.currentSlot,
                             mapId: window.currentMapId || 1,
                             difficulty: this.getDifficultyId(),
-                            hz: this.tickRate
+                            hz: this.tickRate,
+                            gameMode: window.gameMode || "campaign"
                         });
                     } else {
                         const statusText = byId("coopJoinStatusText");
@@ -8467,29 +8513,43 @@
                                 this.socket.emit("start_mission", {
                                     mapId: data.mapId,
                                     difficulty: data.difficulty || this.getDifficultyId(),
-                                    hz: this.tickRate
+                                    hz: this.tickRate,
+                                    gameMode: data.gameMode || window.gameMode || "campaign"
                                 });
                                 this.socket.emit("sync_tick", {
                                     t: "room_joined",
                                     mapId: data.mapId,
                                     difficulty: data.difficulty || this.getDifficultyId(),
-                                    hz: this.tickRate
+                                    hz: this.tickRate,
+                                    gameMode: data.gameMode || window.gameMode || "campaign"
                                 });
                             } else if (data.t === "room_joined") {
                                 this.socket.emit("update_room_meta", {
                                     mapId: data.mapId,
                                     difficulty: data.difficulty,
-                                    hz: data.hz
+                                    hz: data.hz,
+                                    gameMode: data.gameMode || window.gameMode || "campaign"
+                                });
+                                this.socket.emit("sync_tick", data);
+                            } else if (data.t === "game_mode") {
+                                this.socket.emit("update_room_meta", {
+                                    gameMode: data.mode
                                 });
                                 this.socket.emit("sync_tick", data);
                             } else if (data.t === "peer_ready") {
                                 this.socket.emit("peer_ready", { ready: !!data.ready });
                             } else if (data.t === "player_down") {
-                                this.socket.emit("player_down");
+                                if (window.gameMode !== "pvp_gungame") {
+                                    this.socket.emit("player_down");
+                                }
                             } else if (data.t === "revive_success") {
-                                this.socket.emit("revive_success", data);
+                                if (window.gameMode !== "pvp_gungame") {
+                                    this.socket.emit("revive_success", data);
+                                }
                             } else if (data.t === "game_over") {
-                                this.socket.emit("game_over");
+                                if (window.gameMode !== "pvp_gungame") {
+                                    this.socket.emit("game_over");
+                                }
                             } else {
                                 this.socket.emit("sync_tick", data);
                             }
@@ -8668,8 +8728,47 @@
                 }
 
                 if (data.t === "PVP_DOWN") {
+                    teammate.isDown = true;
+                    teammate.hp = 0;
                     PVP_GUNGAME_STATE.kills++;
                     advancePvPGunLevel();
+                    if (typeof sfx !== "undefined" && sfx && sfx.playPlayerDeath) {
+                        sfx.playPlayerDeath();
+                    }
+                    bakeBloodSplatter(teammate.x, teammate.y, 22, 0.9);
+                    shockwaveRings.push({
+                        x: teammate.x,
+                        y: teammate.y,
+                        r: 10,
+                        maxR: 150,
+                        color: "#f43f5e",
+                        alpha: 0.95
+                    });
+                    addFloatingText(teammate.x, teammate.y - 30, "ĐÃ TIÊU DIỆT! (+1 CẤP)", "#10b981");
+                    showToast("ĐÃ TIÊU DIỆT ĐỐI THỦ!", `Cấp súng nâng lên: Cấp ${PVP_GUNGAME_STATE.gunLevel + 1}/7!`);
+                    updatePvPTopHUD();
+                    return;
+                }
+
+                if (data.t === "PVP_RESPAWN") {
+                    teammate.isDown = false;
+                    teammate.hp = 100;
+                    teammate.maxHp = 100;
+                    if (typeof data.x === "number") teammate.x = data.x;
+                    if (typeof data.y === "number") teammate.y = data.y;
+                    teammate.targetX = teammate.x;
+                    teammate.targetY = teammate.y;
+                    teammate.invulnTimer = 110;
+                    teammate.snapshotBuffer = [];
+                    shockwaveRings.push({
+                        x: teammate.x,
+                        y: teammate.y,
+                        r: 10,
+                        maxR: 160,
+                        color: "#38bdf8",
+                        alpha: 0.95
+                    });
+                    showToast("ĐỐI THỦ ĐÃ HỒI SINH!", "Đối thủ vừa xuất hiện trở lại tại điểm xuất phát mới!");
                     return;
                 }
 
@@ -8818,30 +8917,45 @@
                 }
 
                 if (data.t === "input" && this.isHost) {
+                    const isPvP = (window.gameMode === "pvp_gungame");
                     pushTeammateSnapshot(data);
-                    if (typeof data.hp === "number" && !isNaN(data.hp)) teammate.hp = Math.max(0, Math.min(5000, data.hp));
-                    if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
-                    if (typeof data.ar === "number" && !isNaN(data.ar)) teammate.armor = Math.max(0, Math.min(5000, data.ar));
-                    if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
+                    if (!isPvP) {
+                        if (typeof data.hp === "number" && !isNaN(data.hp)) teammate.hp = Math.max(0, Math.min(5000, data.hp));
+                        if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
+                        if (typeof data.ar === "number" && !isNaN(data.ar)) teammate.armor = Math.max(0, Math.min(5000, data.ar));
+                        if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
+                    } else {
+                        // Trong PvP Gun Game: teammate.hp đồng bộ với Client nhưng tôn trọng trạng thái đã bị hạ
+                        if (teammate.isDown) {
+                            teammate.hp = 0;
+                        } else if (typeof data.hp === "number" && !isNaN(data.hp)) {
+                            teammate.hp = Math.min(teammate.hp !== undefined ? teammate.hp : 100, data.hp);
+                        }
+                    }
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
                     const prevDown = teammate.isDown;
-                    teammate.isDown = !!data.down;
-                    if (player.isDown && typeof data.selfRev === "number") {
-                        player.reviveProgress = data.selfRev;
-                    }
-                    if (teammate.isDown !== prevDown) {
-                        this.updateHUD();
-                    }
-                    if (teammate.isDown && player.isDown && !isGameOver) {
-                        this.sendPacket({ t: "game_over" });
-                        triggerPlayerDeath(true);
+                    if (!isPvP) {
+                        teammate.isDown = !!data.down;
+                        if (player.isDown && typeof data.selfRev === "number") {
+                            player.reviveProgress = data.selfRev;
+                        }
+                        if (teammate.isDown !== prevDown) {
+                            this.updateHUD();
+                        }
+                        if (teammate.isDown && player.isDown && !isGameOver) {
+                            this.sendPacket({ t: "game_over" });
+                            triggerPlayerDeath(true);
+                        }
+                    } else {
+                        if (data.down) teammate.isDown = true;
                     }
                     return;
                 }
 
                 if (data.t === "snap" && !this.isHost) {
+                    const isPvP = (window.gameMode === "pvp_gungame");
                     if (data.hz) {
                         const newHz = data.hz === 60 ? 60 : 30;
                         if (this.tickRate !== newHz) {
@@ -8855,53 +8969,67 @@
                     const p = data.p;
                     if (p) {
                         pushTeammateSnapshot(p);
-                        if (typeof p.hp === "number") teammate.hp = p.hp;
-                        if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
-                        if (typeof p.ar === "number") teammate.armor = p.ar;
-                        if (typeof p.mar === "number") teammate.maxArmor = p.mar;
+                        if (!isPvP) {
+                            if (typeof p.hp === "number") teammate.hp = p.hp;
+                            if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
+                            if (typeof p.ar === "number") teammate.armor = p.ar;
+                            if (typeof p.mar === "number") teammate.maxArmor = p.mar;
+                        } else {
+                            if (teammate.isDown) {
+                                teammate.hp = 0;
+                            } else if (typeof p.hp === "number") {
+                                teammate.hp = Math.min(teammate.hp !== undefined ? teammate.hp : 100, p.hp);
+                            }
+                        }
                         teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
                         teammate.isShooting = !!p.shoot;
                         teammate.credits = p.cred || teammate.credits;
                         const prevDown = teammate.isDown;
-                        teammate.isDown = !!p.down;
-                        if (teammate.isDown !== prevDown) {
-                            this.updateHUD();
+                        if (!isPvP) {
+                            teammate.isDown = !!p.down;
+                            if (teammate.isDown !== prevDown) {
+                                this.updateHUD();
+                            }
+                        } else {
+                            if (p.down) teammate.isDown = true;
                         }
                     }
 
-                    // KHÔNG ghi đè player.hp / player.armor / player.isDown của Client bằng gói snap trễ từ Host
-                    // (Tránh lỗi bất tử hồi ngược máu/giáp về trạng thái cũ trên máy Client).
-                    // Chỉ nhận tiến trình đang được Host cứu (selfRev) khi Client đang bị gục.
-                    if (player.isDown && typeof data.selfRev === "number") {
-                        player.reviveProgress = data.selfRev;
-                    }
+                    if (!isPvP) {
+                        // KHÔNG ghi đè player.hp / player.armor / player.isDown của Client bằng gói snap trễ từ Host
+                        // Chỉ nhận tiến trình đang được Host cứu (selfRev) khi Client đang bị gục.
+                        if (player.isDown && typeof data.selfRev === "number") {
+                            player.reviveProgress = data.selfRev;
+                        }
 
-                    if (teammate.isDown && player.isDown && !isGameOver) {
-                        this.sendPacket({ t: "game_over" });
-                        triggerPlayerDeath(true);
-                        return;
-                    }
+                        if (teammate.isDown && player.isDown && !isGameOver) {
+                            this.sendPacket({ t: "game_over" });
+                            triggerPlayerDeath(true);
+                            return;
+                        }
 
-                    if (data.boss && window.bossEntity) {
-                        window.bossEntity.hp = data.boss.hp;
-                        window.bossEntity.x = data.boss.x;
-                        window.bossEntity.y = data.boss.y;
-                        window.bossEntity.angle = data.boss.a;
-                    }
+                        if (data.boss && window.bossEntity) {
+                            window.bossEntity.hp = data.boss.hp;
+                            window.bossEntity.x = data.boss.x;
+                            window.bossEntity.y = data.boss.y;
+                            window.bossEntity.angle = data.boss.a;
+                        }
 
-                    if (Array.isArray(data.drops)) {
-                        for (let d = 0; d < Math.min(items.length, data.drops.length); d++) {
-                            const dp = data.drops[d];
-                            items[d].active = dp.act;
-                            items[d].x = dp.x;
-                            items[d].y = dp.y;
-                            items[d].kind = dp.k;
+                        if (Array.isArray(data.drops)) {
+                            for (let d = 0; d < Math.min(items.length, data.drops.length); d++) {
+                                const dp = data.drops[d];
+                                items[d].active = dp.act;
+                                items[d].x = dp.x;
+                                items[d].y = dp.y;
+                                items[d].kind = dp.k;
+                            }
                         }
                     }
                     return;
                 }
 
                 if (data.t === "player_down") {
+                    if (window.gameMode === "pvp_gungame") return;
                     teammate.isDown = true;
                     teammate.hp = 0;
                     teammate.armor = 0;
@@ -8916,6 +9044,7 @@
                 }
 
                 if (data.t === "game_over") {
+                    if (window.gameMode === "pvp_gungame") return;
                     if (!isGameOver) {
                         player.isDown = true;
                         teammate.isDown = true;
@@ -8925,6 +9054,7 @@
                 }
 
                 if (data.t === "revive_success") {
+                    if (window.gameMode === "pvp_gungame") return;
                     player.isDown = false;
                     player.hp = Math.max(40, Math.round((player.maxHp || 100) * 0.4));
                     player.armor = Math.max(player.armor || 0, 25);
@@ -8989,8 +9119,8 @@
 
                     this.sendPacket(snapPacket);
 
-                    // Định kỳ 10-12 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống + trạng thái Cửa, Vật thể & Drops
-                    if (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval) {
+                    // Định kỳ 10-12 Hz (80ms) gửi gói tin SYNC_ENEMIES gom nhóm toàn bộ quái đang sống + trạng thái Cửa, Vật thể & Drops (Chỉ trong Co-Op Campaign)
+                    if (window.gameMode !== "pvp_gungame" && (!this.lastEnemySyncTime || (now - this.lastEnemySyncTime) >= this.enemySyncInterval)) {
                         this.lastEnemySyncTime = now;
                         const syncedEnemies = [];
                         for (let i = 0; i < MAX_ENEMIES; i++) {
@@ -9344,45 +9474,81 @@
             safeArc(ctx, 0, 2.5, 19);
             ctx.fill();
 
-            // Nếu đồng đội đang gục ngã (isDown)
-            if (teammate.isDown) {
-                const pulse = 0.8 + 0.2 * Math.sin(now * 0.008);
-                ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
-                ctx.lineWidth = 2.5;
-                ctx.setLineDash([8, 6]);
-                ctx.beginPath();
-                safeArc(ctx, 0, 0, 36 * pulse);
-                ctx.stroke();
-                ctx.setLineDash([]);
+            const isPvP = (window.gameMode === "pvp_gungame");
 
-                // Vòng nạp năng lượng cứu sống (khi đứng gần trong 5 giây)
-                if (teammate.reviveProgress > 0) {
-                    const prog = Math.min(1.0, teammate.reviveProgress);
-                    ctx.strokeStyle = "#10b981";
-                    ctx.lineWidth = 5.0;
+            // Nếu đồng đội / đối thủ đang gục ngã (isDown)
+            if (teammate.isDown) {
+                if (isPvP) {
+                    // TAC-OPS SOLO 1V1 PVP: ĐỐI THỦ ĐÃ BỊ TIÊU DIỆT, CHỜ HỒI SINH
+                    const pulse = 0.8 + 0.2 * Math.sin(now * 0.012);
+                    ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
+                    ctx.lineWidth = 2.0;
                     ctx.beginPath();
-                    ctx.arc(0, 0, 42, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+                    safeArc(ctx, 0, 0, 28 * pulse);
                     ctx.stroke();
 
-                    ctx.font = "800 10px 'JetBrains Mono', monospace";
-                    ctx.fillStyle = "#34d399";
+                    ctx.font = "800 12px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#f43f5e";
                     ctx.textAlign = "center";
-                    ctx.fillText(`CỨU: ${Math.round(prog * 100)}%`, 0, -48);
+                    ctx.fillText("☠ ĐÃ BỊ TIÊU DIỆT", 0, -32);
+
+                    ctx.font = "700 8.5px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#94a3b8";
+                    ctx.fillText("CHỜ HỒI SINH...", 0, -18);
+
+                    ctx.restore();
+                    return;
+                } else {
+                    const pulse = 0.8 + 0.2 * Math.sin(now * 0.008);
+                    ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([8, 6]);
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 0, 36 * pulse);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Vòng nạp năng lượng cứu sống (khi đứng gần trong 5 giây)
+                    if (teammate.reviveProgress > 0) {
+                        const prog = Math.min(1.0, teammate.reviveProgress);
+                        ctx.strokeStyle = "#10b981";
+                        ctx.lineWidth = 5.0;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 42, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.font = "800 10px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#34d399";
+                        ctx.textAlign = "center";
+                        ctx.fillText(`CỨU: ${Math.round(prog * 100)}%`, 0, -48);
+                    }
+
+                    // Chữ thập y tế đỏ báo hiệu
+                    ctx.fillStyle = "#f43f5e";
+                    ctx.fillRect(-3, -12, 6, 24);
+                    ctx.fillRect(-12, -3, 24, 6);
+
+                    ctx.restore();
+                    return;
                 }
+            }
 
-                // Chữ thập y tế đỏ báo hiệu
-                ctx.fillStyle = "#f43f5e";
-                ctx.fillRect(-3, -12, 6, 24);
-                ctx.fillRect(-12, -3, 24, 6);
-
+            // Hiệu ứng khiên bất tử 1.8s sau khi hồi sinh trong PvP
+            if (isPvP && teammate.invulnTimer > 0) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, 30);
+                ctx.stroke();
+                ctx.setLineDash([]);
                 ctx.restore();
-                return;
             }
 
             // ========================================================================
             // VÒNG ĐỊNH DANH DƯỚI CHÂN (VÀNG: CO-OP ĐỒNG ĐỘI / ĐỎ CRIMSON: ĐỐI THỦ PVP)
             // ========================================================================
-            const isPvP = (window.gameMode === "pvp_gungame");
             const ringPulse = 1.0 + Math.sin(now * 0.006) * 0.05;
             const ringRadius = 24.5 * ringPulse;
             const roundedRingR = Math.round(ringRadius);
@@ -17228,15 +17394,23 @@
                 if (window.gameMode === "pvp_gungame" && window.teammate && window.teammate.active && !window.teammate.isDown) {
                     const rSum = 18 + beamHalfWidth;
                     if (pointToSegmentDistSq(window.teammate.x, window.teammate.y, muzzleX, muzzleY, endX, endY) <= rSum * rSum) {
-                        const actualDmg = PVP_WEAPON_DAMAGE[6] || 6.5;
-                        bakeBloodSplatter(window.teammate.x, window.teammate.y, 8, 0.5);
-                        if (frameCounter % 3 === 0 && typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
-                            XENO_COOP.sendPacket({
-                                t: "PVP_HIT",
-                                dmg: actualDmg,
-                                weaponId: 6,
-                                fromGunLevel: PVP_GUNGAME_STATE.gunLevel
-                            });
+                        if (window.teammate.invulnTimer > 0) {
+                            spawnParticle(window.teammate.x, window.teammate.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#38bdf8", 3, 8);
+                        } else {
+                            const actualDmg = PVP_WEAPON_DAMAGE[6] || 14.0;
+                            window.teammate.hp = Math.max(0, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
+                            if (window.teammate.hp <= 0) {
+                                window.teammate.isDown = true;
+                            }
+                            bakeBloodSplatter(window.teammate.x, window.teammate.y, 8, 0.5);
+                            if (frameCounter % 3 === 0 && typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                                XENO_COOP.sendPacket({
+                                    t: "PVP_HIT",
+                                    dmg: actualDmg,
+                                    weaponId: 6,
+                                    fromGunLevel: PVP_GUNGAME_STATE.gunLevel
+                                });
+                            }
                         }
                     }
                 }
@@ -18094,6 +18268,7 @@
 
         function triggerPlayerDeath(forceGameOver = false) {
             if (isGameOver || isMapWon) return;
+            if (window.gameMode === "pvp_gungame") return; // Tuyệt đối không kích hoạt thất bại nhiệm vụ Co-Op trong PvP Gun Game
 
             // XỬ LÝ CHẾ ĐỘ CO-OP 2 NGƯỜI: TRẠNG THÁI GỤC NGÃ & CỨU VÔ HẠN (CHỈ THUA KHI CẢ 2 CÙNG GỤC)
             if (!forceGameOver && window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
@@ -18222,11 +18397,18 @@
             if (player.hp <= 0) {
                 if (isPvP) {
                     player.isDown = true;
+                    player.hp = 0;
                     PVP_GUNGAME_STATE.deaths++;
-                    showToast("BẠN BỊ HẠ GỤC!", "Hồi sinh sau 2.5 giây...");
+                    if (typeof sfx !== "undefined" && sfx && sfx.playPlayerDeath) {
+                        sfx.playPlayerDeath();
+                    }
+                    bakeBloodSplatter(player.x, player.y, 24, 0.95);
+                    showToast("BẠN ĐÃ BỊ HẠ GỤC!", "Đang hồi sinh sau 2.5 giây...");
                     if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
                         XENO_COOP.sendPacket({
                             t: "PVP_DOWN",
+                            x: Math.round(player.x),
+                            y: Math.round(player.y),
                             killerGunLevel: (typeof killerGunLevel === "number") ? killerGunLevel : PVP_GUNGAME_STATE.opponentGunLevel
                         });
                     }
@@ -18854,6 +19036,7 @@
             if (player.overdriveBuffTimer > 0) player.overdriveBuffTimer--;
             if (player.dashCooldown > 0) player.dashCooldown--;
             if (player.invulnTimer > 0) player.invulnTimer--;
+            if (window.teammate && window.teammate.invulnTimer > 0) window.teammate.invulnTimer--;
 
             // Failsafe: if Boss wave has spawned and zero Bosses remain alive, trigger victory immediately
             if (bossSpawned && !isMapWon && !isGameOver) {
@@ -19257,9 +19440,9 @@
             }
 
             // =========================================================
-            // CO-OP MULTIPLAYER: REVIVE MECHANIC (5s hold in 75px radius, unlimited revives)
+            // CO-OP MULTIPLAYER: REVIVE MECHANIC (5s hold in 75px radius, unlimited revives) - CHỈ TRONG CO-OP
             // =========================================================
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
+            if (window.gameMode !== "pvp_gungame" && window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
                 if (player.isDown) {
                     mouse.down = false;
                 }
@@ -19782,9 +19965,20 @@
                     const tDy = b.y - window.teammate.y;
                     if (Math.abs(tDx) <= tHitR && Math.abs(tDy) <= tHitR && (tDx * tDx + tDy * tDy < tHitR * tHitR)) {
                         b.active = false;
+                        if (window.teammate.invulnTimer > 0) {
+                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#38bdf8", 3, 10);
+                            if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
+                            continue;
+                        }
                         const wId = player.currentWeapon || 0;
                         const baseDmg = (typeof PVP_WEAPON_DAMAGE[wId] === "number") ? PVP_WEAPON_DAMAGE[wId] : (b.damage * 0.35);
                         const actualDmg = Number((baseDmg * (player.overdriveBuffTimer > 0 ? 1.5 : 1.0)).toFixed(1));
+
+                        // Trừ máu dự đoán tức thời phía người bắn (Predictive Damage)
+                        window.teammate.hp = Math.max(0, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
+                        if (window.teammate.hp <= 0) {
+                            window.teammate.isDown = true;
+                        }
 
                         bakeBloodSplatter(window.teammate.x, window.teammate.y, 14, 0.7);
                         if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
@@ -26415,7 +26609,9 @@
             if (isGameOver) return;
             const now = performance.now();
 
-            // Nếu người chơi đang bị hạ gục trong chế độ Co-Op (Downed State)
+            const isPvP = (window.gameMode === "pvp_gungame");
+
+            // Nếu người chơi đang bị hạ gục (Downed State)
             if (player.isDown) {
                 ctx.save();
                 ctx.translate(player.x, player.y);
@@ -26426,43 +26622,62 @@
                 safeArc(ctx, 0, 2.5, 19);
                 ctx.fill();
 
-                // Vòng tròn cảnh báo gục ngã nhấp nháy đỏ
-                const pulse = 0.8 + 0.2 * Math.sin(now * 0.008);
-                ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
-                ctx.lineWidth = 2.5;
-                ctx.setLineDash([8, 6]);
-                ctx.beginPath();
-                safeArc(ctx, 0, 0, 36 * pulse);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Hiển thị vòng tiến trình nếu đang được đồng đội tiếp cận cứu
-                if (player.reviveProgress > 0) {
-                    const prog = Math.min(1.0, player.reviveProgress);
-                    ctx.strokeStyle = "#10b981";
-                    ctx.lineWidth = 5.0;
+                if (isPvP) {
+                    // TAC-OPS SOLO 1V1 PVP: VÒNG TỬ TRẬN & ĐẾM NGƯỢC HỒI SINH
+                    const pulse = 0.8 + 0.2 * Math.sin(now * 0.012);
+                    ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
+                    ctx.lineWidth = 2.5;
                     ctx.beginPath();
-                    ctx.arc(0, 0, 42, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+                    safeArc(ctx, 0, 0, 32 * pulse);
                     ctx.stroke();
 
-                    ctx.font = "800 11px 'JetBrains Mono', monospace";
-                    ctx.fillStyle = "#34d399";
-                    ctx.textAlign = "center";
-                    ctx.fillText(`ĐANG ĐƯỢC CỨU: ${Math.round(prog * 100)}%`, 0, -48);
-                } else {
-                    ctx.font = "800 10px 'JetBrains Mono', monospace";
+                    ctx.font = "800 13px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#f43f5e";
                     ctx.textAlign = "center";
-                    ctx.fillText("BẠN ĐANG BỊ THƯƠNG NẶNG!", 0, -46);
-                    ctx.font = "700 8.5px 'JetBrains Mono', monospace";
-                    ctx.fillStyle = "#fca5a5";
-                    ctx.fillText("CHỜ ĐỒNG ĐỘI ĐẾN GẦN 5S ĐỂ CỨU", 0, -32);
-                }
+                    ctx.fillText("☠ BẠN ĐÃ BỊ HẠ GỤC", 0, -36);
 
-                // Biểu tượng chữ thập y tế đỏ
-                ctx.fillStyle = "#f43f5e";
-                ctx.fillRect(-3, -12, 6, 24);
-                ctx.fillRect(-12, -3, 24, 6);
+                    ctx.font = "700 9px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#38bdf8";
+                    ctx.fillText("ĐANG HỒI SINH SAU 2.5S...", 0, -22);
+                } else {
+                    // CO-OP: Vòng tròn cảnh báo gục ngã nhấp nháy đỏ
+                    const pulse = 0.8 + 0.2 * Math.sin(now * 0.008);
+                    ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([8, 6]);
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 0, 36 * pulse);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Hiển thị vòng tiến trình nếu đang được đồng đội tiếp cận cứu
+                    if (player.reviveProgress > 0) {
+                        const prog = Math.min(1.0, player.reviveProgress);
+                        ctx.strokeStyle = "#10b981";
+                        ctx.lineWidth = 5.0;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 42, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.font = "800 11px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#34d399";
+                        ctx.textAlign = "center";
+                        ctx.fillText(`ĐANG ĐƯỢC CỨU: ${Math.round(prog * 100)}%`, 0, -48);
+                    } else {
+                        ctx.font = "800 10px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#f43f5e";
+                        ctx.textAlign = "center";
+                        ctx.fillText("BẠN ĐANG BỊ THƯƠNG NẶNG!", 0, -46);
+                        ctx.font = "700 8.5px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = "#fca5a5";
+                        ctx.fillText("CHỜ ĐỒNG ĐỘI ĐẾN GẦN 5S ĐỂ CỨU", 0, -32);
+                    }
+
+                    // Biểu tượng chữ thập y tế đỏ
+                    ctx.fillStyle = "#f43f5e";
+                    ctx.fillRect(-3, -12, 6, 24);
+                    ctx.fillRect(-12, -3, 24, 6);
+                }
 
                 ctx.restore();
                 return;
@@ -26492,6 +26707,19 @@
             ctx.beginPath();
             safeArc(ctx, 0, 2.5, 19);
             ctx.fill();
+
+            // Hiệu ứng khiên bất tử 1.8s sau hồi sinh trong PvP
+            if (isPvP && player.invulnTimer > 0) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, 30);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
 
             // ========================================================================
             // VÒNG XANH DƯỚI CHÂN BẢN THÂN TRONG CHẾ ĐỘ ONLINE CO-OP (EMERALD IDENTIFICATION RING)

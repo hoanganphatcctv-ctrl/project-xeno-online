@@ -72,6 +72,7 @@ io.on("connection", (socket) => {
       state: "waiting",
       mapId: data?.mapId || 1,
       difficulty: data?.difficulty || "normal",
+      gameMode: data?.gameMode || "campaign",
       createdAt: Date.now()
     };
 
@@ -79,10 +80,10 @@ io.on("connection", (socket) => {
     currentRoomId = roomCode;
     socket.join(roomCode);
 
-    console.log(`[ROOM CREATED] Room ${roomCode} created by Host ${socket.id}`);
+    console.log(`[ROOM CREATED] Room ${roomCode} created by Host ${socket.id} (mode: ${roomData.gameMode})`);
 
     if (typeof callback === "function") {
-      callback({ success: true, roomCode });
+      callback({ success: true, roomCode, gameMode: roomData.gameMode });
     }
   });
 
@@ -96,6 +97,7 @@ io.on("connection", (socket) => {
         hostName: r.hostName || "CHỈ HUY P1",
         mapId: r.mapId || 1,
         difficulty: r.difficulty || "normal",
+        gameMode: r.gameMode || "campaign",
         players: r.clientId ? 2 : 1,
         maxPlayers: 2,
         state: r.state === "in_game" ? "playing" : "waiting",
@@ -131,12 +133,13 @@ io.on("connection", (socket) => {
     currentRoomId = targetCode;
     socket.join(targetCode);
 
-    console.log(`[ROOM JOINED] Player ${socket.id} joined Room ${targetCode}`);
+    console.log(`[ROOM JOINED] Player ${socket.id} joined Room ${targetCode} (mode: ${room.gameMode || "campaign"})`);
 
     // Báo cho Host biết Client đã kết nối
     io.to(room.hostId).emit("peer_connected", {
       peerId: socket.id,
-      roomCode: targetCode
+      roomCode: targetCode,
+      gameMode: room.gameMode || "campaign"
     });
 
     if (typeof callback === "function") {
@@ -145,7 +148,8 @@ io.on("connection", (socket) => {
         roomCode: targetCode,
         isHost: false,
         mapId: room.mapId || 1,
-        difficulty: room.difficulty || "normal"
+        difficulty: room.difficulty || "normal",
+        gameMode: room.gameMode || "campaign"
       });
     }
   });
@@ -159,7 +163,7 @@ io.on("connection", (socket) => {
     socket.to(currentRoomId).emit("peer_ready", { ready: room.peerReady });
   });
 
-  // 2C. HOST CẬP NHẬT BẢN ĐỒ / ĐỘ KHÓ / TẦN SỐ TRONG PHÒNG CHỜ
+  // 2C. HOST CẬP NHẬT BẢN ĐỒ / ĐỘ KHÓ / TẦN SỐ / CHẾ ĐỘ TRONG PHÒNG CHỜ
   socket.on("update_room_meta", (data) => {
     if (!currentRoomId) return;
     const room = rooms.get(currentRoomId);
@@ -167,6 +171,13 @@ io.on("connection", (socket) => {
     if (data?.mapId) room.mapId = Number(data.mapId) || 1;
     if (data?.difficulty) room.difficulty = String(data.difficulty);
     if (data?.hz) room.hz = data.hz === 60 ? 60 : 30;
+    if (data?.gameMode) room.gameMode = String(data.gameMode);
+    socket.to(currentRoomId).emit("room_meta_updated", {
+      mapId: room.mapId,
+      difficulty: room.difficulty,
+      hz: room.hz,
+      gameMode: room.gameMode
+    });
   });
 
   // 3. HOST BẮT ĐẦU XUẤT TRẬN
@@ -179,13 +190,15 @@ io.on("connection", (socket) => {
     room.mapId = data?.mapId || room.mapId || 1;
     room.difficulty = data?.difficulty || room.difficulty || "normal";
     room.hz = data?.hz === 60 ? 60 : 30;
+    room.gameMode = data?.gameMode || room.gameMode || "campaign";
 
-    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.difficulty}, ${room.hz}Hz)`);
+    console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.difficulty}, ${room.hz}Hz, ${room.gameMode})`);
 
     io.to(currentRoomId).emit("mission_started", {
       mapId: room.mapId,
       difficulty: room.difficulty,
       hz: room.hz,
+      gameMode: room.gameMode,
       startTime: Date.now()
     });
   });
@@ -239,21 +252,27 @@ io.on("connection", (socket) => {
     socket.to(currentRoomId).emit("ENEMY_DIE", payload);
   });
 
-  // 5. TRẠNG THÁI GỤC NGÃ (DOWNED)
+  // 5. TRẠNG THÁI GỤC NGÃ (DOWNED - CHỈ DÙNG CHO CHIẾN DỊCH CO-OP)
   socket.on("player_down", () => {
     if (!currentRoomId) return;
+    const room = rooms.get(currentRoomId);
+    if (room && room.gameMode === "pvp_gungame") return; // Tuyệt đối không relay gục ngã Co-Op trong PvP
     socket.to(currentRoomId).emit("teammate_down");
   });
 
-  // 6. CỨU HỒI SINH ĐỒNG ĐỘI
+  // 6. CỨU HỒI SINH ĐỒNG ĐỘI (CHỈ DÙNG CHO CO-OP)
   socket.on("revive_success", (data) => {
     if (!currentRoomId) return;
+    const room = rooms.get(currentRoomId);
+    if (room && room.gameMode === "pvp_gungame") return;
     socket.to(currentRoomId).emit("teammate_revived", data);
   });
 
-  // 7. THẤT BẠI NHIỆM VỤ (GAME OVER)
+  // 7. THẤT BẠI NHIỆM VỤ (GAME OVER - CHỈ DÙNG CHO CO-OP)
   socket.on("game_over", () => {
     if (!currentRoomId) return;
+    const room = rooms.get(currentRoomId);
+    if (room && room.gameMode === "pvp_gungame") return;
     io.to(currentRoomId).emit("mission_failed");
   });
 

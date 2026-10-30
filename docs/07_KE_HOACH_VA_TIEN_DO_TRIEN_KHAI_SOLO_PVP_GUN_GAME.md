@@ -158,3 +158,29 @@ flowchart TD
 | **5** | **M4-Cryo Băng** | Cryo | $11.5\text{ dmg}$ | **$16.0 \times 3 = 48.0\text{ dmg/loạt}$** | 60 viên | 2 loạt trúng rút 96 HP + làm chậm 25% tốc độ để dứt điểm |
 | **6** | **Pháo Gauss M82** | Plasma | $52.0\text{ dmg}$ | **$65.0\text{ dmg/viên}$** | 16 viên | Bắn tỉa công phá cao, phát 1 rút 65% máu, phát 2 kết liễu 100% |
 | **7** | **Laze Hyperion** | Laser | $6.5\text{ dmg/tick}$ | **$14.0\text{ dmg/tick}$** | 450 nạp | Tia xuyên thấu cực mạnh nung chảy trong 0.5s • **HẠ GỤC = CHIẾN THẮNG!** |
+
+---
+
+## 🛡️ 5. ĐỒNG BỘ HÓA DEDICATED SERVER & PHÂN TÁCH TRIỆT ĐỂ LOGIC CO-OP VS SOLO 1V1 PVP
+
+### 5.1. Nguyên nhân gốc rễ lỗi "Host bắn mãi không thấy Client chết, rồi tự nhiên biến mất"
+1. **Thiếu trường `gameMode` trong luồng Socket.io của Dedicated Server**:
+   - `create_room`, `join_room`, `room_meta_updated`, và `start_mission` trong `backend/server.js` trước đây không lưu và không gửi trường `gameMode`.
+   - Kết quả: Khi Host chuyển sang chế độ PvP và bấm xuất trận, máy Client vẫn chạy với `window.gameMode = "campaign"`.
+   - Khi bị bắn hết máu, Client tưởng là chế độ Co-Op nên chạy logic gục ngã chờ cứu (`triggerPlayerDeath()`), gửi gói tin `player_down` của Co-Op thay vì `PVP_DOWN`.
+2. **Không có Predictive Damage (trừ máu dự đoán tức thời)**:
+   - Trước đây khi đạn hoặc laser của Host bắn trúng Client, Host chỉ gửi `PVP_HIT` mà không tự trừ máu trên thanh máu đối thủ, khiến thanh máu phụ thuộc vào gói phản hồi trễ của mạng.
+3. **Lẫn lộn trạng thái `isDown` giữa Co-Op và PvP**:
+   - Trong Co-Op: `isDown` là trạng thái nằm chờ đồng đội đứng gần cứu (hiện chữ thập y tế, vòng nét đứt đỏ).
+   - Trong PvP: `isDown` là ĐÃ BỊ TIÊU DIỆT, chuẩn bị hồi sinh sau 2.5 giây. Việc vẽ chữ thập y tế và chặn va chạm đạn khiến Host tưởng "bắn không chết", và khi Client respawn sau 2.5s thì đối thủ đột ngột đổi vị trí ("tự nhiên biến mất").
+
+### 5.2. Các cải tiến đã triển khai hoàn tất
+- **Backend Relay (`server.js`)**:
+  - Hỗ trợ đầy đủ trường `gameMode` trong `create_room`, `join_room`, `list_rooms`, `update_room_meta`, và `start_mission`.
+  - Chặn hoàn toàn việc phát tán các sự kiện Co-Op (`player_down`, `game_over`, `revive_success`) khi phòng ở chế độ `pvp_gungame`.
+- **Đồng bộ hóa Client & Host (`frontend/index.html`)**:
+  - **Predictive Local Damage**: Khi đạn hoặc laze chạm đối thủ, thanh máu tụt ngay lập tức trên máy người bắn; nếu máu về 0 thì gán ngay `teammate.isDown = true`.
+  - **Tách biệt hiển thị Tử Trận**: Khi người chơi hoặc đối thủ bị hạ gục trong PvP, hiển thị biểu tượng đầu lâu `☠ ĐÃ TIÊU DIỆT` kèm đếm ngược 2.5s, không bao giờ hiển thị chữ thập y tế hay lời nhắc cấp cứu Co-Op.
+  - **Hiển thị Khiên Bất Tử 1.8s**: Cả 2 bên đều nhìn thấy vòng khiên năng lượng cyan bảo vệ quanh người vừa hồi sinh.
+  - **Gói tin `PVP_RESPAWN`**: Sau 2.5s hồi sinh tại góc xa nhất, gửi ngay gói tin tin cậy `PVP_RESPAWN` để xóa buffer lerp cũ và đặt vị trí mới tức thì.
+  - **Loại bỏ quái vật & `SYNC_ENEMIES`**: Chế độ PvP tự động tắt toàn bộ vòng lặp spawn quái vật và gói tin `SYNC_ENEMIES`, giúp tiết kiệm băng thông tối đa cho tick chiến đấu 60Hz/30Hz.
