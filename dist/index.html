@@ -1473,6 +1473,39 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- TAC-OPS SOLO 1V1 PVP GUN GAME HUD (VỪA KHÍT CHIỀU DÀI THẺ MÁU BÊN TRÊN) -->
+                <div id="pvpGunGameHUD" class="hidden pointer-events-auto relative w-[310px] sm:w-[325px] px-2.5 py-1.5 rounded-none bg-slate-950/95 border border-rose-500/70 shadow-[0_4px_16px_rgba(244,63,94,0.3)] backdrop-blur-md flex items-center justify-between font-mono-tech select-none"
+                     style="clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);">
+                    <!-- Sci-Fi Reticle Corner Accents -->
+                    <span class="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 border-t border-l border-rose-400"></span>
+                    <span class="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 border-b border-l border-rose-400"></span>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 border-b border-r border-rose-400"></span>
+
+                    <!-- Cột Bạn (P1 / Self) -->
+                    <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_6px_#10b981]"></span>
+                        <div class="flex flex-col min-w-0 leading-tight">
+                            <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">BẠN</span>
+                            <span id="pvpHudSelfWeapon" class="text-[9.5px] sm:text-[10px] text-emerald-300 font-black truncate max-w-[95px] sm:max-w-[110px]">CẤP 1/7 [LỤC]</span>
+                        </div>
+                    </div>
+
+                    <!-- Hộp Tỉ Số Chính Giữa (Score Board) -->
+                    <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-500/70 shadow-[0_0_10px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center shrink-0 mx-1">
+                        <span class="text-[7.5px] text-rose-300/80 uppercase tracking-widest font-black leading-none mb-0.5">TỈ SỐ</span>
+                        <span id="pvpHudScore" class="text-white font-black text-xs sm:text-sm tracking-widest leading-none">0 - 0</span>
+                    </div>
+
+                    <!-- Cột Đối Thủ (P2 / Opponent) -->
+                    <div class="flex items-center justify-end gap-1.5 min-w-0 flex-1 text-right">
+                        <div class="flex flex-col min-w-0 leading-tight">
+                            <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">ĐỐI THỦ</span>
+                            <span id="pvpHudOppWeapon" class="text-[9.5px] sm:text-[10px] text-cyan-300 font-black truncate max-w-[95px] sm:max-w-[110px]">CẤP 1/7 [LỤC]</span>
+                        </div>
+                        <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_6px_#f43f5e]"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- Tiny Horizontal Pill Badges for Active Temporary Buffs (Gọn gàng ngay dưới cụm máu) -->
@@ -1519,35 +1552,15 @@
         </div>
     </div>
 
-    <!-- TAC-OPS ONLINE CO-OP STATUS BADGE (HUD) -->
+    <!-- TAC-OPS ONLINE CO-OP / PVP NETWORK STATUS BADGE (HUD) -->
     <div id="coopTopHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1 bg-slate-950/90 border border-cyan-400/50 text-[10px] font-mono-tech shadow-lg pointer-events-none">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span id="coopHudDot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
         <span id="coopHudBannerTitle" class="text-cyan-300 font-extrabold uppercase">CO-OP ONLINE // 60Hz</span>
         <span class="text-slate-600">|</span>
         <span id="coopHudRole" class="text-white font-bold">HOST</span>
         <span class="text-slate-600">|</span>
         <span id="coopHudPing" class="text-emerald-400 font-bold">PING: --ms</span>
         <span id="coopHudRevive" class="text-amber-300 font-bold hidden ml-1 animate-pulse">CẢNH BÁO: ĐỒNG ĐỘI GỤC!</span>
-    </div>
-
-    <!-- TAC-OPS SOLO 1V1 PVP GUN GAME TOP HUD -->
-    <div id="pvpGunGameHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-slate-950/95 border-2 border-rose-500/80 text-[10px] font-mono-tech shadow-[0_0_25px_rgba(244,63,94,0.4)] pointer-events-none">
-        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-        <div class="flex items-center gap-1.5">
-            <span class="text-rose-400 font-black uppercase tracking-wider">1V1 GUN GAME:</span>
-            <span id="pvpHudSelfWeapon" class="text-emerald-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
-        </div>
-        <span class="text-slate-600 font-black">|</span>
-        <div id="pvpHudScore" class="px-2 py-0.5 bg-rose-950/80 border border-rose-500/50 text-white font-black text-xs tracking-widest">
-            0 - 0
-        </div>
-        <span class="text-slate-600 font-black">|</span>
-        <div class="flex items-center gap-1.5">
-            <span class="text-slate-400 font-bold uppercase">ĐỐI THỦ:</span>
-            <span id="pvpHudOppWeapon" class="text-cyan-300 font-extrabold uppercase">CẤP 1/7 [SONG LỤC]</span>
-        </div>
-        <span class="text-slate-600 font-black">|</span>
-        <span class="text-amber-300 font-bold hidden sm:inline">[Q/E: LƯỚT NÉ]</span>
     </div>
 
     <!-- ==========================================================================
@@ -3658,6 +3671,48 @@
 
                     <!-- TAB 4: ĐIỀU KHIỂN & PHÍM TẮT -->
                     <div id="sysTabPanel_controls" class="hidden space-y-4">
+                        <!-- CÔNG TẮC BẬT/TẮT TỰ ĐỘNG TOÀN MÀN HÌNH (AUTO FULLSCREEN CONFIG) -->
+                        <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 shadow-lg space-y-3 font-mono-tech">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                        <h3 class="text-xs font-black text-cyan-300 uppercase">TỰ ĐỘNG TOÀN MÀN HÌNH (AUTO FULLSCREEN)</h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        Tự động kích hoạt toàn màn hình khi bắt đầu ván đấu hoặc xuất trận để có tầm nhìn tác chiến tối đa. Tắt tùy chọn này nếu bạn muốn chơi game ở chế độ cửa sổ trình duyệt.
+                                    </p>
+                                </div>
+                                <button type="button" onclick="window.toggleGameFullscreen()" class="self-start sm:self-auto px-3 py-1.5 rounded-none bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/50 text-[10.5px] font-mono-tech font-bold uppercase transition flex items-center gap-1.5 shrink-0 shadow-sm" title="Bật hoặc thoát toàn màn hình ngay lập tức">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                                    <span id="btnQuickToggleFsText">PHÓNG TO NGAY</span>
+                                </button>
+                            </div>
+
+                            <!-- 2 Chế độ lựa chọn: BẬT / TẮT -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                <button id="btnAutoFs_on" type="button" onclick="window.setAutoFullscreenMode('on')" class="px-3 py-2 rounded-none border text-xs font-bold font-mono-tech uppercase flex flex-col items-center justify-center gap-1 transition bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                        <span>BẬT (TỰ ĐỘNG)</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-400 font-normal">Tự động phóng to toàn màn hình khi vào trận (Khuyên dùng)</span>
+                                </button>
+                                <button id="btnAutoFs_off" type="button" onclick="window.setAutoFullscreenMode('off')" class="px-3 py-2 rounded-none border text-xs font-bold font-mono-tech uppercase flex flex-col items-center justify-center gap-1 transition bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+                                        <span>TẮT (CỬA SỔ)</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-400 font-normal">Giữ nguyên cửa sổ trình duyệt, không tự động toàn màn hình</span>
+                                </button>
+                            </div>
+
+                            <div class="text-[10px] text-slate-400 bg-slate-950 p-2.5 border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                                <span>Chế độ tự động: <b id="lblAutoFsState" class="text-emerald-400 font-extrabold">Đang bật (Tự động Fullscreen)</b></span>
+                                <span>Trạng thái hiển thị hiện tại: <b id="lblCurrentFsStatus" class="text-white">Đang kiểm tra...</b></span>
+                            </div>
+                        </div>
+
                         <!-- CẦN ĐIỀU KHIỂN ẢO & CẢM ỨNG MOBILE (VIRTUAL JOYSTICK CONFIG) -->
                         <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 shadow-lg space-y-3 font-mono-tech">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
