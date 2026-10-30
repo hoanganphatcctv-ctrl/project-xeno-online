@@ -113,29 +113,48 @@ flowchart TD
   - Nhặt hòm cứu viện giáp trong PvP: Tự động tiếp tế $+50\%$ Mana và giải phóng ngay trạng thái kiệt sức nếu đạt $\ge 80\%$.
 - [x] **10.7**: **Đóng gói minified và đồng bộ toàn diện**: Chạy `build_minified.ps1` tạo JS minified $636,145\text{ bytes}$ ($621.2\text{ KB}$), đồng bộ đồng thời ra `dist/`, `frontend/dist/` và `root index.html`.
 
+### 🔘 Giai đoạn 11: Cân Bằng Sát Thương Súng & Máu Chuẩn 100 HP, Khử Đèn Pin Đối Thủ & Phím [F] Nhận Tiền
+- [x] **11.1**: **Cân bằng Sát thương 7 Vũ khí & Máu chuẩn 100 HP**:
+  - Cố định máu khởi đầu và máu sau khi hồi sinh trong PvP về đúng **100 HP** (`player.maxHp = 100; player.hp = 100;`), loại bỏ việc mang máu thừa từ nâng cấp PvE.
+  - Tái cân bằng bảng sát thương `PVP_WEAPON_DAMAGE`: Song Lục MK23 nâng lên **$18.0\text{ dmg/viên}$** ($36\text{ dmg/loạt}$, trúng 3 loạt là hạ gục); Shotgun M1014 đạt **$11.0\text{ dmg/viên}$** ($88\text{ dmg}$ khi trúng trọn chùm cận chiến); Minigun M134 **$8.5\text{ dmg/viên}$**; Phun Lửa M9A2 **$4.0\text{ dmg/hạt}$**; M4-Cryo **$16.0\text{ dmg/viên}$**; Pháo Gauss M82 **$65.0\text{ dmg/viên}$** (2 phát bắn tỉa kết liễu); Pháo Laze Hyperion **$14.0\text{ dmg/tick}$** (bốc hơi nhanh đối thủ để WIN).
+- [x] **11.2**: **Khắc phục lỗi Invuln Nuốt Đạn (Multi-Hit & Rapid-Fire Bug)**:
+  - Loại bỏ hoàn toàn việc gán thời gian bất tử sau dính đạn `player.invulnTimer = 20` (0.33s) trong chế độ PvP.
+  - Sửa điều kiện nhận đạn `PVP_HIT` thành `invulnTimer > 20`: Chỉ bảo vệ khi người chơi đang trong trạng thái Khiên Hồi Sinh 1.8s (`invulnTimer = 110`). Nhờ đó, cả 2 viên đạn của Song Lục, chùm 8 viên của Shotgun, và tốc độ xả 20 phát/giây của Minigun đều ghi nhận sát thương đầy đủ $100\%$, không bị nuốt đạn.
+- [x] **11.3**: **Khử triệt để Đèn Pin & Tầm nhìn của Đối phương**:
+  - Trong `renderScreenLighting`: Không đục nón đèn pin $580\text{ px}$ hoặc vòng hào quang quanh thân $155\text{ px}$ của đối thủ lên màn hình người chơi. Mỗi người chơi **CHỈ nhìn thấy không gian được chiếu sáng bởi đèn pin của chính mình**.
+  - Trong `drawTeammatePlayer`: Đối thủ nằm ngoài nón đèn pin $580\text{ px}$ và ngoài hào quang $145\text{ px}$ sẽ chìm hoàn toàn trong bóng tối ($100\%$ tàng hình trong màn đêm, không vẽ bóng, không vẽ vòng đỏ và không lộ thanh máu). Khi đối thủ nổ súng tạo chớp lửa Muzzle Flash hoặc bước vào chùm đèn pin, đối thủ sẽ lộ diện ngay lập tức.
+  - Cập nhật HUD trên đầu đối thủ trong PvP: Hiển thị nhãn **`ĐỐI THỦ [CẤP X/7]`** màu đỏ hồng neon và thanh máu đỏ thẫm.
+- [x] **11.4**: **Cơ chế Phím [F] Nhận Tiền Thưởng**:
+  - Chế độ PvP đã sử dụng phím `[E]` để lướt né tương đối sang phải, nên cơ chế tương tác nhận tiền được chuyển sang phím **`[F]`** (`KeyF`).
+  - Khi đứng gần Bàn điều khiển hoặc Siêu máy tính lượng tử, HUD Banner hiển thị nhắc phím: **`[F] Nhận Tiền Bàn Điều Khiển`** hoặc **`[F] Giải Mã Siêu Máy Tính`**.
+  - Tích hợp nhận diện click / chạm trực tiếp trên `#interactBanner` cho người chơi Mobile.
+  - Nhận tiền trong PvP được thưởng tiền mặt (`+$45 - $80`) và hồi phục ngay **`+50 Năng Lượng Lướt Mana`** (xóa bỏ trạng thái kiệt sức nếu $\ge 80\%$).
+- [x] **11.5**: **Đóng gói Minified & Đồng bộ Production**:
+  - Chạy `build_minified.ps1` tạo JS minified $637,808\text{ bytes}$ ($622.9\text{ KB}$), đồng bộ đồng thời vào `dist/`, `frontend/dist/` và `root index.html` với $0$ lỗi cú pháp.
+
 ---
 
 ## 🏆 5. KẾT QUẢ TRIỂN KHAI & ĐÓNG GÓI HOÀN TẤT
-* **Trạng thái**: ✅ **100% HOÀN THÀNH (42/42 Hạng mục)**
+* **Trạng thái**: ✅ **100% HOÀN THÀNH (47/47 Hạng mục)**
 * **File nguồn đã sửa**: [`alien-shooter-fullstack/frontend/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/index.html)
-* **Kích thước JS gốc**: $1,501,199\text{ bytes}$ ($1,466.0\text{ KB}$)
-* **Kích thước JS minified**: $636,145\text{ bytes}$ ($621.2\text{ KB}$) qua Terser Headless Edge
+* **Kích thước JS gốc**: $1,505,684\text{ bytes}$ ($1,470.4\text{ KB}$)
+* **Kích thước JS minified**: $637,808\text{ bytes}$ ($622.9\text{ KB}$) qua Terser Headless Edge
 * **Các file đích đã đồng bộ**:
   - [`dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/dist/game.min.js) & [`dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/dist/index.html)
   - [`frontend/dist/game.min.js`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/dist/game.min.js) & [`frontend/dist/index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/alien-shooter-fullstack/frontend/dist/index.html)
   - [`index.html`](file:///c:/Users/uthanhtung.chu/Documents/Xeno%20Update.ultra%20Epic%20graphic_Google account verify/index.html) (Root)
-* **Kiểm định cú pháp & build**: Pass $100\%$ không phát sinh lỗi cú pháp Node.js VM hay Terser.
+* **Kiểm định cú pháp & build**: Pass $100\%$ không phát sinh lỗi cú pháp hay Terser.
 
 ---
 
-## ⚖️ 4. BẢNG CÂN BẰNG THÔNG SỐ VŨ KHÍ PVP GUN GAME
+## ⚖️ 4. BẢNG CÂN BẰNG THÔNG SỐ VŨ KHÍ PVP GUN GAME (CÂN BẰNG MỚI CHUẨN 100 HP)
 
-| Cấp | Tên Vũ Khí | Loại Đạn | Sát Thương Gốc (PvE) | Sát Thương PvP Đề Xuất | Đạn Cấp Khi Lên Cấp | Đặc Tính Chiến Thuật |
+| Cấp | Tên Vũ Khí | Loại Đạn | Sát Thương Cũ (Bị Lỗi Nuốt Đạn) | Sát Thương Mới Cân Bằng (100 HP) | Đạn Cấp Khi Lên Cấp | Đặc Tính Chiến Thuật & Nhịp Độ |
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
-| **1** | **Song Lục MK23** | Bullet | $22 \times 2$ | **$8.0 \times 2\text{ dmg}$** | Vô hạn | Súng khởi đầu, bắn 2 viên, cơ động cao |
-| **2** | **Shotgun M1014** | Bullet | $23 \times 8$ | **$8.2 \times 8\text{ dmg}$** | 32 viên | Áp sát cực mạnh, tận dụng lướt Q/E áp sát |
-| **3** | **M134 Minigun** | Bullet | $18$ | **$6.2\text{ dmg/viên}$** | 180 viên | Xả liên thanh $50\text{ms}$, yêu cầu ghìm tâm |
-| **4** | **Phun Lửa M9A2** | Flame | $4.8 \times 3$ | **$2.2 \times 3\text{ dmg}$** | 220 viên | Phủ lửa góc hẹp, đốt cháy qua khúc quanh |
-| **5** | **M4-Cryo Băng** | Cryo | $35 \times 3$ | **$11.5 \times 3\text{ dmg}$** | 45 viên | Làm chậm tốc độ chạy đối thủ $25\%$ |
-| **6** | **Pháo Gauss M82** | Plasma | $165$ | **$52.0\text{ dmg/viên}$** | 12 viên | Bắn tỉa công phá cao, 2-3 phát kết liễu |
-| **7** | **Laze Hyperion** | Laser | $12 - 22.2$ | **$6.5\text{ dmg/tick}$** | 300 nạp | Tia xuyên thấu cực mạnh • **HẠ GỤC = WIN!** |
+| **1** | **Song Lục MK23** | Bullet | $8.0\text{ dmg}$ (viên 2 bị nuốt) | **$18.0 \times 2 = 36.0\text{ dmg/loạt}$** | Vô hạn | Bắn trúng 3 loạt là hạ gục (TTK ~1.2s), giao tranh mở đầu thần tốc |
+| **2** | **Shotgun M1014** | Bullet | $8.2\text{ dmg}$ (7 viên bị nuốt) | **$11.0 \times 8 = 88.0\text{ dmg}$** | 40 viên | Áp sát cự ly gần dí nòng cực mạnh, 1-2 phát là kết liễu |
+| **3** | **M134 Minigun** | Bullet | $6.2\text{ dmg}$ (~18 DPS do nuốt đạn) | **$8.5\text{ dmg/viên}$** (~170 DPS) | 240 viên | Tốc xả 20 phát/s, sấy chuẩn xác 0.6 giây là đối thủ bốc hơi |
+| **4** | **Phun Lửa M9A2** | Flame | $2.2\text{ dmg}$ | **$4.0\text{ dmg/hạt}$** ($12\text{ dmg/loạt}$) | 300 viên | Thiêu đốt liên tục ~0.8s, vượt chướng ngại vật khúc quanh |
+| **5** | **M4-Cryo Băng** | Cryo | $11.5\text{ dmg}$ | **$16.0 \times 3 = 48.0\text{ dmg/loạt}$** | 60 viên | 2 loạt trúng rút 96 HP + làm chậm 25% tốc độ để dứt điểm |
+| **6** | **Pháo Gauss M82** | Plasma | $52.0\text{ dmg}$ | **$65.0\text{ dmg/viên}$** | 16 viên | Bắn tỉa công phá cao, phát 1 rút 65% máu, phát 2 kết liễu 100% |
+| **7** | **Laze Hyperion** | Laser | $6.5\text{ dmg/tick}$ | **$14.0\text{ dmg/tick}$** | 450 nạp | Tia xuyên thấu cực mạnh nung chảy trong 0.5s • **HẠ GỤC = CHIẾN THẮNG!** |

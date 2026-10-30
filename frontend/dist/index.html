@@ -1608,7 +1608,7 @@
 
     <!-- INTERACTION PROMPT BANNER (LOWER-CENTER ABOVE WEAPON DOCK - NEVER TOUCHES TOP HUD) -->
     <div class="pointer-events-none fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center select-none">
-        <div id="interactBanner" class="hidden hud-panel px-3 py-1 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase">
+        <div id="interactBanner" onclick="if (typeof triggerInteractionKeyE === 'function') triggerInteractionKeyE();" class="hidden hud-panel px-3.5 py-1.5 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase pointer-events-auto cursor-pointer active:scale-95 transition-transform hover:border-emerald-300 hover:text-white">
             Nhấn <span class="text-amber-300 font-black">[E]</span> để tương tác
         </div>
     </div>

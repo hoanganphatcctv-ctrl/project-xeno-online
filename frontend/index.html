@@ -1608,7 +1608,7 @@
 
     <!-- INTERACTION PROMPT BANNER (LOWER-CENTER ABOVE WEAPON DOCK - NEVER TOUCHES TOP HUD) -->
     <div class="pointer-events-none fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center select-none">
-        <div id="interactBanner" class="hidden hud-panel px-3 py-1 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase">
+        <div id="interactBanner" onclick="if (typeof triggerInteractionKeyE === 'function') triggerInteractionKeyE();" class="hidden hud-panel px-3.5 py-1.5 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase pointer-events-auto cursor-pointer active:scale-95 transition-transform hover:border-emerald-300 hover:text-white">
             Nhấn <span class="text-amber-300 font-black">[E]</span> để tương tác
         </div>
     </div>
@@ -6882,13 +6882,13 @@
         window.gameMode = "campaign"; // "campaign" | "pvp_gungame"
 
         const PVP_WEAPON_DAMAGE = {
-            0: 8.0,  // Song Lục MK23 (x2 viên = 16 dmg/loạt)
-            1: 8.2,  // Shotgun M1014 (x8 viên tỏa = 65.6 dmg cự ly gần)
-            2: 6.2,  // M134 Minigun (50ms liên thanh = ~124 DPS)
-            3: 2.2,  // Phun Lửa M9A2 (x3 tia = 6.6 dmg/loạt thiêu đốt)
-            4: 11.5, // M4-Cryo (x3 tia = 34.5 dmg + làm chậm)
-            5: 52.0, // Pháo Gauss M82-G (công phá cao)
-            6: 6.5   // Laze Hyperion X-7 (xuyên thấu liên tục theo tick)
+            0: 18.0, // Song Lục MK23 (x2 viên = 36.0 dmg/loạt, 3 loạt trúng = 108 HP kết liễu)
+            1: 11.0, // Shotgun M1014 (x8 viên tỏa = 88.0 dmg nếu trúng trọn chùm cự ly gần)
+            2: 8.5,  // M134 Minigun (50ms liên thanh 20 viên/s = ~170 DPS, sấy 0.6s dứt điểm)
+            3: 4.0,  // Phun Lửa M9A2 (x3 tia hạt lửa = 12.0 dmg/loạt, thiêu đốt 0.8s)
+            4: 16.0, // M4-Cryo (x3 tia = 48.0 dmg/loạt + làm chậm 25% tốc chạy)
+            5: 65.0, // Pháo Gauss M82-G (công phá cực cao, 2 phát bắn tỉa chính xác kết liễu)
+            6: 14.0  // Laze Hyperion X-7 (chùm tia hội tụ xuyên thấu theo tick -> HẠ GỤC = CHIẾN THẮNG!)
         };
         window.PVP_WEAPON_DAMAGE = PVP_WEAPON_DAMAGE;
 
@@ -7072,13 +7072,14 @@
         function respawnPlayerInPvP() {
             if (!PVP_GUNGAME_STATE.active || PVP_GUNGAME_STATE.matchEnded) return;
             player.isDown = false;
-            player.hp = player.maxHp;
+            player.maxHp = 100;
+            player.hp = 100;
             player.armor = 0;
             player.maxArmor = 0;
             player.mana = 100;
             player.maxMana = 100;
             player.manaExhausted = false;
-            player.invulnTimer = 110; // 1.8s bất tử
+            player.invulnTimer = 110; // 1.8s bất tử sau hồi sinh
 
             // Chọn điểm spawn xa đối thủ nhất
             let oppX = (window.teammate && window.teammate.active) ? window.teammate.x : (WORLD_W / 2);
@@ -8661,23 +8662,8 @@
                 }
 
                 if (data.t === "PVP_HIT") {
-                    if (player.isDown || isGameOver || player.invulnTimer > 0) return;
-                    damagePlayer(data.dmg || 8);
-                    if (player.hp <= 0) {
-                        player.isDown = true;
-                        PVP_GUNGAME_STATE.deaths++;
-                        showToast("BẠN BỊ HẠ GỤC!", "Hồi sinh sau 2.5 giây...");
-                        if (typeof XENO_COOP !== "undefined") {
-                            XENO_COOP.sendPacket({
-                                t: "PVP_DOWN",
-                                killerGunLevel: data.fromGunLevel
-                            });
-                        }
-                        updatePvPTopHUD();
-                        setTimeout(() => {
-                            respawnPlayerInPvP();
-                        }, 2500);
-                    }
+                    if (player.isDown || isGameOver || player.invulnTimer > 20) return;
+                    damagePlayer(data.dmg || 18, data.fromGunLevel);
                     return;
                 }
 
@@ -9324,6 +9310,31 @@
                 ctx.restore();
             }
 
+            // TAC-OPS SOLO 1V1 PVP GUN GAME: BÓNG TỐI & TẦM NHÌN ĐÈN PIN CHIẾN THUẬT
+            if (window.gameMode === "pvp_gungame") {
+                const pvpDx = teammate.x - player.x;
+                const pvpDy = teammate.y - player.y;
+                const pvpDist = Math.hypot(pvpDx, pvpDy);
+                const inAura = (pvpDist <= 145);
+                let inFlashlight = false;
+                if (pvpDist <= 580) {
+                    const angleToTeammate = Math.atan2(pvpDy, pvpDx);
+                    let diff = angleToTeammate - player.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    if (Math.abs(diff) <= 0.45) { // Nón đèn pin 50 độ (-0.45..+0.45 rad)
+                        if (typeof hasLineOfSight !== "function" || hasLineOfSight(player.x, player.y, teammate.x, teammate.y)) {
+                            inFlashlight = true;
+                        }
+                    }
+                }
+                const isFiringNow = Boolean(teammate.isShooting || (teammate.muzzleFlash && teammate.muzzleFlash > 0) || hasActiveTeammateLaser);
+                if (!inAura && !inFlashlight && !isFiringNow) {
+                    // Đối thủ chìm hoàn toàn trong màn đêm, không hiển thị thân thể hay thanh máu
+                    return;
+                }
+            }
+
             ctx.save();
             ctx.translate(teammate.x, teammate.y);
 
@@ -9709,15 +9720,30 @@
             ctx.translate(teammate.x, teammate.y - 30);
 
             ctx.font = "800 8.5px 'JetBrains Mono', monospace";
-            ctx.fillStyle = "#fde047";
-            ctx.textAlign = "center";
-            ctx.fillText(XENO_COOP.isHost ? "P2 • ĐỒNG ĐỘI" : "P1 • CHỦ PHÒNG", 0, -5);
+            if (isPvP) {
+                const oppLvl = (typeof PVP_GUNGAME_STATE !== "undefined" && typeof PVP_GUNGAME_STATE.opponentGunLevel === "number")
+                    ? (PVP_GUNGAME_STATE.opponentGunLevel + 1)
+                    : 1;
+                ctx.fillStyle = "#f43f5e";
+                ctx.textAlign = "center";
+                ctx.fillText(`ĐỐI THỦ [CẤP ${oppLvl}/7]`, 0, -5);
 
-            ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
-            ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
+                ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
+                ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
 
-            ctx.fillStyle = "#fbbf24";
-            ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
+                ctx.fillStyle = "#f43f5e";
+                ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
+            } else {
+                ctx.fillStyle = "#fde047";
+                ctx.textAlign = "center";
+                ctx.fillText(XENO_COOP.isHost ? "P2 • ĐỒNG ĐỘI" : "P1 • CHỦ PHÒNG", 0, -5);
+
+                ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
+                ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
+
+                ctx.fillStyle = "#fbbf24";
+                ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
+            }
 
             ctx.restore();
         }
@@ -16699,10 +16725,17 @@
                     const reward = 45 + Math.floor(Math.random() * 35) + (window.currentMapId - 1) * 15;
                     player.credits += reward;
                     campaignTotalCreditsEarned += reward;
-                    player.armor = Math.min(player.maxArmor, player.armor + 30);
                     sfx.playPickup();
-                    addFloatingText(cd.x + cd.w * 0.5, cd.y - 12, `HACK THÀNH CÔNG +$${reward} & +30 GIÁP!`, "#38bdf8");
-                    showToast("ĐÃ HACK MÁY CHỦ DỮ LIỆU!", `Thu thập +$${reward} ngân quỹ tác chiến & nạp +30 Giáp Nano!`);
+                    if (window.gameMode === "pvp_gungame") {
+                        player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + 50);
+                        if (player.mana >= 80) player.manaExhausted = false;
+                        addFloatingText(cd.x + cd.w * 0.5, cd.y - 12, `HACK THÀNH CÔNG +$${reward} & +50 NĂNG LƯỢNG!`, "#38bdf8");
+                        showToast("ĐÃ HACK MÁY CHỦ DỮ LIỆU!", `Thu thập +$${reward} tiền thưởng & hồi phục Năng lượng lướt!`);
+                    } else {
+                        player.armor = Math.min(player.maxArmor, player.armor + 30);
+                        addFloatingText(cd.x + cd.w * 0.5, cd.y - 12, `HACK THÀNH CÔNG +$${reward} & +30 GIÁP!`, "#38bdf8");
+                        showToast("ĐÃ HACK MÁY CHỦ DỮ LIỆU!", `Thu thập +$${reward} ngân quỹ tác chiến & nạp +30 Giáp Nano!`);
+                    }
                     updateTopLeftHUD();
                     if (isCoopActive()) {
                         window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "desk", idx: i });
@@ -16721,10 +16754,17 @@
                     const reward = 65 + Math.floor(Math.random() * 45) + (window.currentMapId - 1) * 18;
                     player.credits += reward;
                     campaignTotalCreditsEarned += reward;
-                    player.armor = Math.min(player.maxArmor, player.armor + 35);
                     sfx.playPickup();
-                    addFloatingText(sp.x + sp.w * 0.5, sp.y - 14, `SIÊU MÁY TÍNH +$${reward} & +35 GIÁP!`, "#00f5d4");
-                    showToast("ĐÃ TRÍCH XUẤT SIÊU MÁY TÍNH LƯỢNG TỬ!", `Giải mã thành công: Nhận +$${reward} ngân quỹ & +35 Giáp Nano!`);
+                    if (window.gameMode === "pvp_gungame") {
+                        player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + 50);
+                        if (player.mana >= 80) player.manaExhausted = false;
+                        addFloatingText(sp.x + sp.w * 0.5, sp.y - 14, `SIÊU MÁY TÍNH +$${reward} & +50 NĂNG LƯỢNG!`, "#00f5d4");
+                        showToast("ĐÃ TRÍCH XUẤT SIÊU MÁY TÍNH LƯỢNG TỬ!", `Giải mã thành công: Nhận +$${reward} tiền thưởng & hồi phục Năng lượng lướt!`);
+                    } else {
+                        player.armor = Math.min(player.maxArmor, player.armor + 35);
+                        addFloatingText(sp.x + sp.w * 0.5, sp.y - 14, `SIÊU MÁY TÍNH +$${reward} & +35 GIÁP!`, "#00f5d4");
+                        showToast("ĐÃ TRÍCH XUẤT SIÊU MÁY TÍNH LƯỢNG TỬ!", `Giải mã thành công: Nhận +$${reward} ngân quỹ & +35 Giáp Nano!`);
+                    }
                     updateTopLeftHUD();
                     if (isCoopActive()) {
                         window.XENO_COOP.sendPacket({ t: "WORLD_INTERACT", kind: "supercomputer", idx: i });
@@ -18151,10 +18191,13 @@
             deathModalTimeout = setTimeout(showGameOverModalNow, 200);
         }
 
-        function damagePlayer(amount) {
-            if (isMapWon || isGameOver || player.dashActiveTimer > 0 || player.invulnTimer > 0 || player.isDown) return;
-            player.invulnTimer = 20; // 0.33s post-hit invulnerability prevents instant multi-hit deaths
-            if (player.armor > 0 && window.gameMode !== "pvp_gungame") {
+        function damagePlayer(amount, killerGunLevel) {
+            const isPvP = (window.gameMode === "pvp_gungame");
+            if (isMapWon || isGameOver || player.dashActiveTimer > 0 || (isPvP ? player.invulnTimer > 20 : player.invulnTimer > 0) || player.isDown) return;
+            if (!isPvP) {
+                player.invulnTimer = 20; // 0.33s post-hit invulnerability chỉ dành cho PvE quái vật
+            }
+            if (player.armor > 0 && !isPvP) {
                 const prevArmor = player.armor;
                 const absorbed = Math.min(player.armor, amount * 0.65);
                 player.armor -= absorbed;
@@ -18177,14 +18220,14 @@
             updateTopLeftHUD();
 
             if (player.hp <= 0) {
-                if (window.gameMode === "pvp_gungame") {
+                if (isPvP) {
                     player.isDown = true;
                     PVP_GUNGAME_STATE.deaths++;
                     showToast("BẠN BỊ HẠ GỤC!", "Hồi sinh sau 2.5 giây...");
                     if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
                         XENO_COOP.sendPacket({
                             t: "PVP_DOWN",
-                            killerGunLevel: PVP_GUNGAME_STATE.opponentGunLevel
+                            killerGunLevel: (typeof killerGunLevel === "number") ? killerGunLevel : PVP_GUNGAME_STATE.opponentGunLevel
                         });
                     }
                     updatePvPTopHUD();
@@ -19090,11 +19133,13 @@
                 }
 
                 // Check nearby interactable Console, Supercomputer or Teleporter for HUD Prompt
+                const isPvPMode = (window.gameMode === "pvp_gungame");
+                const interactKey = isPvPMode ? "[F]" : "[E]";
                 let promptMsg = "";
                 for (let i = 0; i < computerDesks.length; i++) {
                     const cd = computerDesks[i];
                     if (cd.hackable && !cd.hacked && Math.hypot(player.x - (cd.x + cd.w * 0.5), player.y - (cd.y + cd.h * 0.5)) <= 105) {
-                        promptMsg = `[E] Hack ${cd.label}`;
+                        promptMsg = `${interactKey} Nhận Tiền ${cd.label}`;
                         break;
                     }
                 }
@@ -19102,7 +19147,7 @@
                     for (let i = 0; i < spaceProps.length; i++) {
                         const sp = spaceProps[i];
                         if (sp.type === "supercomputer" && sp.hackable && !sp.hacked && Math.hypot(player.x - (sp.x + sp.w * 0.5), player.y - (sp.y + sp.h * 0.5)) <= 118) {
-                            promptMsg = `[E] Giải mã ${sp.label}`;
+                            promptMsg = `${interactKey} Giải Mã ${sp.label}`;
                             break;
                         }
                     }
@@ -19111,7 +19156,7 @@
                     for (let i = 0; i < teleporters.length; i++) {
                         const tp = teleporters[i];
                         if (tp.cooldown <= 0 && Math.hypot(player.x - tp.x, player.y - tp.y) <= tp.radius + 32) {
-                            promptMsg = `[E] Dịch chuyển [${tp.label}]`;
+                            promptMsg = `${interactKey} Dịch chuyển [${tp.label}]`;
                             break;
                         }
                     }
@@ -27366,17 +27411,34 @@
             // 1. Ánh sáng của Người chơi Bản địa (Local Player)
             punchCharacterLight(player.x - camX, player.y - camY, player.angle, player.isDown, player.muzzleFlash, player.activeLaserBeam);
 
-            // 2. Ánh sáng của Đồng đội Co-Op (Cả khi chưa hạ lẫn khi đã bị hạ và chuyển sang góc nhìn đồng đội)
+            // 2. Ánh sáng của Đồng đội Co-Op (Chỉ bật nón đèn pin & hào quang thân khi ở chế độ Co-Op Campaign)
             if (isCoopActive() && window.teammate && window.teammate.active) {
-                const tmAngle = (typeof window.teammate.angle === "number") ? window.teammate.angle : 0;
-                punchCharacterLight(
-                    window.teammate.x - camX,
-                    window.teammate.y - camY,
-                    tmAngle,
-                    window.teammate.isDown,
-                    window.teammate.muzzleFlash,
-                    window.teammate.activeLaserBeam
-                );
+                if (window.gameMode !== "pvp_gungame") {
+                    const tmAngle = (typeof window.teammate.angle === "number") ? window.teammate.angle : 0;
+                    punchCharacterLight(
+                        window.teammate.x - camX,
+                        window.teammate.y - camY,
+                        tmAngle,
+                        window.teammate.isDown,
+                        window.teammate.muzzleFlash,
+                        window.teammate.activeLaserBeam
+                    );
+                } else {
+                    // TAC-OPS SOLO 1V1 PVP GUN GAME: KHÔNG đục đèn pin hay hào quang của đối thủ!
+                    // Mỗi người chơi CHỈ nhìn thấy trong phạm vi đèn pin của chính mình.
+                    // Ngoại lệ duy nhất: Nếu đối thủ bắn Laser Hyperion #6, tia laze năng lượng cao xé toạc màn đêm:
+                    if (window.teammate.activeLaserBeam && !isGameOver) {
+                        lightCtx.save();
+                        lightCtx.strokeStyle = "rgba(0,0,0,0.85)";
+                        lightCtx.lineWidth = 68;
+                        lightCtx.lineCap = "round";
+                        lightCtx.beginPath();
+                        lightCtx.moveTo(window.teammate.activeLaserBeam.x1 - camX, window.teammate.activeLaserBeam.y1 - camY);
+                        lightCtx.lineTo(window.teammate.activeLaserBeam.x2 - camX, window.teammate.activeLaserBeam.y2 - camY);
+                        lightCtx.stroke();
+                        lightCtx.restore();
+                    }
+                }
             }
 
             // 3. Quầng sáng điện từ trường khi Máy Phát Điện đang được nạp điện (Khởi động)
@@ -31583,6 +31645,8 @@
                 PVP_GUNGAME_STATE.matchEnded = false;
                 PVP_GUNGAME_STATE.sonarPings = [];
 
+                player.maxHp = 100;
+                player.hp = 100;
                 player.armor = 0;
                 player.maxArmor = 0;
                 player.mana = 100;
@@ -33106,6 +33170,9 @@
                 } else {
                     triggerInteractionKeyE();
                 }
+            } else if (e.code === "KeyF") {
+                // Phím [F]: Nhận tiền thưởng / Hack máy chủ / Tương tác trong PvP Gun Game
+                triggerInteractionKeyE();
             } else if (e.code === "KeyT") {
                 deployAutoTurret(false);
             } else if (e.code === "KeyN") {
