@@ -1473,38 +1473,81 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- TAC-OPS SOLO 1V1 PVP GUN GAME HUD (VỪA KHÍT CHIỀU DÀI THẺ MÁU BÊN TRÊN) -->
-                <div id="pvpGunGameHUD" class="hidden pointer-events-auto relative w-[310px] sm:w-[325px] px-2.5 py-1.5 rounded-none bg-slate-950/95 border border-rose-500/70 shadow-[0_4px_16px_rgba(244,63,94,0.3)] backdrop-blur-md flex items-center justify-between font-mono-tech select-none"
-                     style="clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);">
-                    <!-- Sci-Fi Reticle Corner Accents -->
-                    <span class="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 border-t border-l border-rose-400"></span>
-                    <span class="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 border-b border-l border-rose-400"></span>
-                    <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 border-b border-r border-rose-400"></span>
+            <!-- TAC-OPS SOLO 1V1 PVP GUN GAME HUD (THIẾT KẾ MECHA SCI-FI 2.5D ĐỒNG BỘ CỤM MÁU) -->
+            <div id="pvpGunGameHUD" class="hidden pointer-events-auto relative w-[310px] sm:w-[325px] flex flex-col select-none font-mono-tech mt-0.5"
+                 style="filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85));">
+                
+                <!-- 1. Top Plate: Hazard Warning Stripes & Chamfered Title Badge -->
+                <div class="flex items-end -mb-1 pl-3 z-20">
+                    <!-- Diagonal Hazard Warning Stripes Block (Rose / Slate Hazard) -->
+                    <div class="h-3 w-9 -skew-x-12 overflow-hidden border-t border-l border-rose-500/60 shadow-md"
+                         style="background: repeating-linear-gradient(45deg, #e11d48 0 4px, #0f172a 4px 8px);">
+                    </div>
+                    <!-- Chamfered Status Badge (Rose / Crimson 2.5D Gradient) -->
+                    <div class="h-4 px-2 flex items-center justify-center text-[8px] font-black text-white tracking-widest uppercase border border-rose-400/80 shadow-[0_0_10px_rgba(244,63,94,0.35)]"
+                         style="background: linear-gradient(180deg, #e11d48 0%, #9f1239 60%, #4c0519 100%); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); margin-left: -3px;">
+                        <span class="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">⚔ TAC-OPS // SOLO 1V1 GUN GAME</span>
+                    </div>
+                </div>
 
-                    <!-- Cột Bạn (P1 / Self) -->
-                    <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_6px_#10b981]"></span>
-                        <div class="flex flex-col min-w-0 leading-tight">
-                            <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">BẠN</span>
-                            <span id="pvpHudSelfWeapon" class="text-[9.5px] sm:text-[10px] text-emerald-300 font-black truncate max-w-[95px] sm:max-w-[110px]">CẤP 1/7 [LỤC]</span>
+                <!-- 2. Main Metallic Chassis Body (2.5D Chamfered Polygon Border) -->
+                <div class="relative rounded-r-xl p-2 pl-3 pr-2.5 flex flex-col gap-1.5 border-2 border-slate-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                     style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #020617 100%); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 10px), calc(100% - 14px) 100%, 0 100%);">
+                    
+                    <!-- Middle Battle Row: Player Slot, Crimson Core Score, Opponent Slot -->
+                    <div class="flex items-center justify-between gap-1.5">
+                        
+                        <!-- Cột Bạn (P1 / Self) - 3D Recessed Capsule Slot -->
+                        <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <div class="flex items-center gap-1 leading-none">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
+                                <span class="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wider">BẠN</span>
+                            </div>
+                            <!-- Recessed 3D Capsule Bar for Weapon Name -->
+                            <div class="h-5 px-1.5 rounded-md border border-emerald-500/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.95)] flex items-center overflow-hidden relative"
+                                 style="background: linear-gradient(180deg, #021a15 0%, #064e3b 50%, #022c22 100%);">
+                                <span id="pvpHudSelfWeapon" class="text-[9px] font-black text-emerald-300 truncate w-full tracking-wide drop-shadow">CẤP 1/7 [SONG LỤC]</span>
+                                <!-- Specular Glass Highlight -->
+                                <div class="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-md"></div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Hộp Tỉ Số Chính Giữa (Score Board) -->
-                    <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-500/70 shadow-[0_0_10px_rgba(244,63,94,0.4)] flex flex-col items-center justify-center shrink-0 mx-1">
-                        <span class="text-[7.5px] text-rose-300/80 uppercase tracking-widest font-black leading-none mb-0.5">TỈ SỐ</span>
-                        <span id="pvpHudScore" class="text-white font-black text-xs sm:text-sm tracking-widest leading-none">0 - 0</span>
-                    </div>
-
-                    <!-- Cột Đối Thủ (P2 / Opponent) -->
-                    <div class="flex items-center justify-end gap-1.5 min-w-0 flex-1 text-right">
-                        <div class="flex flex-col min-w-0 leading-tight">
-                            <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">ĐỐI THỦ</span>
-                            <span id="pvpHudOppWeapon" class="text-[9.5px] sm:text-[10px] text-cyan-300 font-black truncate max-w-[95px] sm:max-w-[110px]">CẤP 1/7 [LỤC]</span>
+                        <!-- Hộp Tỉ Số Chính Giữa (2.5D Crimson Core Score Board) -->
+                        <div class="relative px-2.5 py-1 rounded-sm border-2 border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] flex flex-col items-center justify-center shrink-0 min-w-[54px]"
+                             style="background: linear-gradient(180deg, #9f1239 0%, #4c0519 60%, #2a030c 100%); clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);">
+                            <span class="text-[6.5px] text-rose-200 uppercase tracking-widest font-black leading-none mb-0.5 drop-shadow">TỈ SỐ</span>
+                            <span id="pvpHudScore" class="text-white font-black text-xs sm:text-sm tracking-widest leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">0 - 0</span>
                         </div>
-                        <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_6px_#f43f5e]"></span>
+
+                        <!-- Cột Đối Thủ (P2 / Opponent) - 3D Recessed Capsule Slot -->
+                        <div class="flex-1 min-w-0 flex flex-col gap-0.5 text-right">
+                            <div class="flex items-center justify-end gap-1 leading-none">
+                                <span class="text-[8px] text-rose-400 font-extrabold uppercase tracking-wider">ĐỐI THỦ</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]"></span>
+                            </div>
+                            <!-- Recessed 3D Capsule Bar for Opponent Weapon Name -->
+                            <div class="h-5 px-1.5 rounded-md border border-rose-500/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.95)] flex items-center justify-end overflow-hidden relative"
+                                 style="background: linear-gradient(180deg, #2a030c 0%, #4c0519 50%, #1f0208 100%);">
+                                <span id="pvpHudOppWeapon" class="text-[9px] font-black text-rose-300 truncate w-full tracking-wide drop-shadow text-right">CẤP 1/7 [SONG LỤC]</span>
+                                <!-- Specular Glass Highlight -->
+                                <div class="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-md"></div>
+                            </div>
+                        </div>
+
                     </div>
+
+                    <!-- Bottom Chassis Details: 3 Glowing Indicator Rivets & Tactical Motto -->
+                    <div class="flex items-center justify-between pt-0.5 border-t border-slate-800/80">
+                        <div class="flex items-center gap-1.5 pl-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+                        </div>
+                        <span class="text-[7.5px] font-mono-tech text-slate-400 uppercase tracking-wider font-bold">HẠ ĐỐI THỦ ĐỂ NÂNG CẤP VŨ KHÍ (MAX CẤP 7)</span>
+                    </div>
+
                 </div>
             </div>
 
@@ -1804,7 +1847,7 @@
             <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,1)] animate-ping"></span>
                 <span class="text-slate-400 text-[11px] font-bold uppercase">NÚT ĐANG CHỌN:</span>
-                <span id="touchEditorSelectedName" class="px-2.5 py-0.5 bg-amber-500/25 border-2 border-amber-400 text-amber-300 font-black text-xs tracking-wider uppercase shadow-[0_0_12px_rgba(245,158,11,0.4)]">CẦN DI CHUYỂN</span>
+                <span id="touchEditorSelectedName" class="px-2.5 py-0.5 bg-amber-500/25 border-2 border-amber-400 text-amber-300 font-black text-xs tracking-wider uppercase shadow-[0_0_12px_rgba(245,158,11,0.4)]">JOYSTICK</span>
             </div>
 
             <!-- Slider 1: Độ Trong Suốt (Opacity) -->
@@ -1833,7 +1876,7 @@
             <!-- Edit: Move Joystick -->
             <div id="dragCtrl_moveJoy" onclick="window.selectTouchEditorControl('moveJoy')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
                 <div class="ctrl-label px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    CẦN DI CHUYỂN
+                    JOYSTICK
                 </div>
                 <div class="ctrl-body w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/80 border border-emerald-300 flex items-center justify-center">
@@ -2191,7 +2234,7 @@
                     <div class="flex items-center gap-2 text-[10px] font-mono-tech text-slate-400">
                         <span id="lobbyOnlineStatus" class="text-slate-400 font-bold">○ CHẾ ĐỘ KHÁCH</span>
                         <span>|</span>
-                        <span>QUỸ: <b id="lobbyTopCredits" class="text-amber-300">$120</b></span>
+                        <span>QUỸ TÁC CHIẾN: <b id="lobbyTopCredits" class="text-amber-300">$120</b></span>
                     </div>
                 </div>
             </div>
@@ -3764,7 +3807,7 @@
                                         <h3 class="text-xs font-black text-amber-300 uppercase">TÙY CHỈNH BỐ CỤC PHÍM CẢM ỨNG (PUBG MOBILE STYLE)</h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400 mt-1">
-                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút Lướt Trái [Q], Nút [E] Tương tác/Lướt Phải, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
+                                        Kéo thả tự do các phím cảm ứng (Joystick, Ngắm &amp; Bắn, Nút Lướt Dash, Nút Lướt Trái [Q], Nút [E] Tương tác/Lướt Phải, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
                                     </p>
                                 </div>
                             </div>
@@ -4452,7 +4495,7 @@
                     </div>
                 </div>
 
-                <!-- Hàng 1.5: Chọn Chế Độ Tác Chiến (Co-Op Chiến Dịch vs Solo 1v1 Gun Game Đêm Tối) -->
+                <!-- Hàng 1.5: Chọn Chế Độ Tác Chiến (Co-Op Chiến Dịch vs Solo 1v1 Gun Game) -->
                 <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
                     <div class="flex items-center justify-between text-[10px]">
                         <span class="text-slate-400 font-bold uppercase">CHẾ ĐỘ TÁC CHIẾN</span>
@@ -4463,7 +4506,7 @@
                             CO-OP BẮN QUÁI
                         </button>
                         <button id="coopModePvpBtn" type="button" onclick="window.setCoopGameMode('pvp_gungame')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
-                            1V1 GUN GAME ĐÊM TỐI
+                            SOLO 1V1 GUN GAME
                         </button>
                     </div>
                 </div>
@@ -4614,8 +4657,8 @@
                         <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                     </div>
                     <div>
-                        <h2 class="text-sm font-black text-white uppercase font-mono-tech tracking-wider">HỆ THỐNG DANH TÍNH TÁC CHIẾN</h2>
-                        <p class="text-[10px] text-emerald-400/80 font-mono-tech">HỆ THỐNG MÁY CHỦ CLOUD // TỰ ĐỘNG ĐỒNG BỘ</p>
+                        <h2 class="text-sm font-black text-white uppercase font-mono-tech tracking-wider">ĐỊNH DANH TÁC CHIẾN</h2>
+                        <p class="text-[10px] text-emerald-400/80 font-mono-tech">HỆ THỐNG MÁY CHỦ KHÔNG GIAN // TỰ ĐỘNG ĐỒNG BỘ</p>
                     </div>
                 </div>
                 <button onclick="window.closeAuthModal()" class="w-7 h-7 rounded-none bg-slate-900 border border-slate-700 hover:bg-rose-600/90 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition">
@@ -6968,6 +7011,7 @@
             sonarPings: [], // { x, y, timer, maxTimer: 150 }
             matchEnded: false,
             matchWinner: null,
+            lastSpawnRoomId: null,
             spawnPoints: [
                 { x: 380, y: 380 },
                 { x: 2220, y: 1420 }
@@ -6996,7 +7040,7 @@
             const startBtn = byId("coopHostStartBtn");
 
             if (modeLabel) {
-                modeLabel.textContent = isPvP ? "1V1 GUN GAME ĐÊM TỐI" : "CO-OP BẮN QUÁI";
+                modeLabel.textContent = isPvP ? "SOLO 1V1 GUN GAME" : "CO-OP BẮN QUÁI";
                 modeLabel.className = isPvP ? "text-rose-400 font-black uppercase" : "text-cyan-400 font-bold uppercase";
             }
             if (coopBtn) {
@@ -7122,6 +7166,106 @@
         }
         window.advancePvPGunLevel = advancePvPGunLevel;
 
+        function getSafePvPRandomSpawnPoint() {
+            // Lấy danh sách tất cả các khoang (rooms) trên bản đồ hiện tại
+            let roomsPool = (typeof ROOMS !== "undefined" && Array.isArray(ROOMS) && ROOMS.length > 0) ? ROOMS : [];
+
+            // Tọa độ đối thủ hiện tại (để tránh spawn ngay sát sườn đối thủ)
+            const oppX = (window.teammate && window.teammate.active) ? window.teammate.x : (WORLD_W / 2);
+            const oppY = (window.teammate && window.teammate.active) ? window.teammate.y : (WORLD_H / 2);
+
+            // Tìm khoang đối thủ đang đứng
+            const oppRoom = roomsPool.find(r => oppX >= r.x && oppX <= r.x + r.w && oppY >= r.y && oppY <= r.y + r.h);
+            const oppRoomId = oppRoom ? (oppRoom.id || oppRoom.name) : null;
+
+            // 1. Lọc các khoang ứng viên hợp lệ:
+            // - Bắt buộc KHÔNG TRÙNG với khoang vừa hồi sinh lần liền trước (lastSpawnRoomId)
+            // - KHÔNG PHẢI khoang mà đối thủ đang đứng (nếu còn nhiều hơn 1 khoang khác)
+            let candidateRooms = roomsPool.filter(r => {
+                const rId = r.id || r.name;
+                if (PVP_GUNGAME_STATE.lastSpawnRoomId && rId === PVP_GUNGAME_STATE.lastSpawnRoomId) return false;
+                if (oppRoomId && rId === oppRoomId && roomsPool.length > 2) return false;
+                return true;
+            });
+
+            // Nếu lọc quá chặt dẫn đến rỗng (rất hiếm khi xảy ra), chỉ cần loại trừ khoang vừa spawn liền trước
+            if (candidateRooms.length === 0) {
+                candidateRooms = roomsPool.filter(r => (r.id || r.name) !== PVP_GUNGAME_STATE.lastSpawnRoomId);
+            }
+            if (candidateRooms.length === 0) {
+                candidateRooms = roomsPool.slice();
+            }
+
+            // 2. Chọn HOÀN TOÀN NGẪU NHIÊN một khoang từ danh sách ứng viên
+            let chosenRoom = candidateRooms[Math.floor(Math.random() * candidateRooms.length)];
+
+            let spawnX, spawnY;
+            if (chosenRoom) {
+                PVP_GUNGAME_STATE.lastSpawnRoomId = chosenRoom.id || chosenRoom.name;
+                const roomCx = Math.round(chosenRoom.x + chosenRoom.w / 2);
+                const roomCy = Math.round(chosenRoom.y + chosenRoom.h / 2);
+
+                // Thử tạo một vị trí hơi lệch ngẫu nhiên trong phòng để tránh luôn đứng chết cứng đúng 1 tọa độ pixel
+                let safeFound = false;
+                for (let attempt = 0; attempt < 8; attempt++) {
+                    const maxOffX = Math.max(0, (chosenRoom.w * 0.35) - 60);
+                    const maxOffY = Math.max(0, (chosenRoom.h * 0.35) - 60);
+                    const randX = Math.round(roomCx + (Math.random() - 0.5) * 2 * maxOffX);
+                    const randY = Math.round(roomCy + (Math.random() - 0.5) * 2 * maxOffY);
+
+                    // Kiểm tra không va chạm với tường
+                    let hitWall = false;
+                    if (typeof WALLS !== "undefined") {
+                        for (let i = 0; i < WALLS.length; i++) {
+                            const w = WALLS[i];
+                            if (randX >= w.x - 55 && randX <= w.x + w.w + 55 &&
+                                randY >= w.y - 55 && randY <= w.y + w.h + 55) {
+                                hitWall = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!hitWall) {
+                        spawnX = randX;
+                        spawnY = randY;
+                        safeFound = true;
+                        break;
+                    }
+                }
+                if (!safeFound) {
+                    spawnX = roomCx;
+                    spawnY = roomCy;
+                }
+            } else {
+                // Fallback nếu không có ROOMS: Chia bản đồ thành lưới 8 khu vực ngẫu nhiên
+                const fallbackSpawns = [
+                    { id: "nw", x: 420, y: 420, name: "KHOANG TÂY-BẮC" },
+                    { id: "n", x: Math.round(WORLD_W / 2), y: 420, name: "KHOANG PHÍA BẮC" },
+                    { id: "ne", x: WORLD_W - 420, y: 420, name: "KHOANG ĐÔNG-BẮC" },
+                    { id: "w", x: 420, y: Math.round(WORLD_H / 2), name: "KHOANG PHÍA TÂY" },
+                    { id: "c", x: Math.round(WORLD_W / 2), y: Math.round(WORLD_H / 2), name: "KHOANG TRUNG TÂM" },
+                    { id: "e", x: WORLD_W - 420, y: Math.round(WORLD_H / 2), name: "KHOANG PHÍA ĐÔNG" },
+                    { id: "sw", x: 420, y: WORLD_H - 420, name: "KHOANG TÂY-NAM" },
+                    { id: "s", x: Math.round(WORLD_W / 2), y: WORLD_H - 420, name: "KHOANG PHÍA NAM" },
+                    { id: "se", x: WORLD_W - 420, y: WORLD_H - 420, name: "KHOANG ĐÔNG-NAM" }
+                ];
+                let fCandidates = fallbackSpawns.filter(s => s.id !== PVP_GUNGAME_STATE.lastSpawnRoomId);
+                if (fCandidates.length === 0) fCandidates = fallbackSpawns;
+                const chosen = fCandidates[Math.floor(Math.random() * fCandidates.length)];
+                PVP_GUNGAME_STATE.lastSpawnRoomId = chosen.id;
+                spawnX = chosen.x;
+                spawnY = chosen.y;
+                chosenRoom = chosen;
+            }
+
+            return {
+                x: spawnX,
+                y: spawnY,
+                roomName: chosenRoom ? (chosenRoom.name || "KHOANG CHIẾN THUẬT MỚI") : "KHOANG CHIẾN THUẬT"
+            };
+        }
+        window.getSafePvPRandomSpawnPoint = getSafePvPRandomSpawnPoint;
+
         function respawnPlayerInPvP() {
             if (!PVP_GUNGAME_STATE.active || PVP_GUNGAME_STATE.matchEnded) return;
             player.isDown = false;
@@ -7134,22 +7278,10 @@
             player.manaExhausted = false;
             player.invulnTimer = 110; // 1.8s bất tử sau hồi sinh
 
-            // Chọn điểm spawn xa đối thủ nhất
-            let oppX = (window.teammate && window.teammate.active) ? window.teammate.x : (WORLD_W / 2);
-            let oppY = (window.teammate && window.teammate.active) ? window.teammate.y : (WORLD_H / 2);
-
-            let bestSpawn = PVP_GUNGAME_STATE.spawnPoints[0];
-            let maxDist = -1;
-            for (let pt of PVP_GUNGAME_STATE.spawnPoints) {
-                let d = Math.hypot(pt.x - oppX, pt.y - oppY);
-                if (d > maxDist) {
-                    maxDist = d;
-                    bestSpawn = pt;
-                }
-            }
-
-            player.x = bestSpawn.x;
-            player.y = bestSpawn.y;
+            // Chọn ngẫu nhiên bất cứ khoang nào trên bản đồ, đảm bảo KHÔNG TRÙNG với lần liền trước
+            const spawnInfo = getSafePvPRandomSpawnPoint();
+            player.x = spawnInfo.x;
+            player.y = spawnInfo.y;
             camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W / 2));
             camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H / 2));
 
@@ -7162,7 +7294,7 @@
                 alpha: 0.95
             });
             updateTopLeftHUD();
-            showToast("HỒI SINH HOÀN TẤT!", "Khiên bất tử 1.8s kích hoạt. Săn lùng đối thủ!");
+            showToast("HỒI SINH TẠI " + spawnInfo.roomName.toUpperCase() + "!", "Khiên bất tử 1.8s kích hoạt. Săn lùng đối thủ!");
 
             // BÁO CHO ĐỐI THỦ BIẾT ĐÃ HỒI SINH TẠI TỌA ĐỘ MỚI
             if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
@@ -7170,7 +7302,8 @@
                     t: "PVP_RESPAWN",
                     x: Math.round(player.x),
                     y: Math.round(player.y),
-                    gunLevel: PVP_GUNGAME_STATE.gunLevel
+                    gunLevel: PVP_GUNGAME_STATE.gunLevel,
+                    roomName: spawnInfo.roomName
                 });
             }
         }
@@ -7754,7 +7887,7 @@
                 if (titleEl) titleEl.textContent = `${roomLabel} • ĐỘI HÌNH 2/2`;
                 if (metaEl) {
                     const diffLabel = this.getDifficultyLabel(this.hostDifficulty || this.getDifficultyId());
-                    const modeStr = (window.gameMode === "pvp_gungame") ? "1V1 GUN GAME ĐÊM TỐI" : "CO-OP BẮN QUÁI";
+                    const modeStr = (window.gameMode === "pvp_gungame") ? "SOLO 1V1 GUN GAME" : "CO-OP BẮN QUÁI";
                     metaEl.textContent = `Chế độ: ${modeStr} • Map ${this.hostMapId || window.currentMapId || 1} • ${diffLabel} • ${this.tickRate}Hz`;
                 }
 
@@ -8068,7 +8201,7 @@
                         this.connected = false;
                         this.peerReady = false;
                         teammate.active = false;
-                        showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng.");
+                        showToast("NGẮT KẾT NỐI", "Đã rời phòng.");
                         this.updateHostUI("Đồng đội đã rời phòng. Đang chờ người chơi mới...", false);
                         this.updateHUD();
                     });
@@ -8333,7 +8466,7 @@
                         this.clientReady = false;
                         teammate.active = false;
                         this.updateClientLobbyUI();
-                        showToast("CO-OP NGẮT KẾT NỐI", "Chủ phòng đã đóng phòng.");
+                        showToast("NGẮT KẾT NỐI", "Chủ phòng đã đóng phòng.");
                         if (statusText) statusText.textContent = "Chủ phòng đã đóng phòng.";
                         this.resetJoinBtn("VÀO PHÒNG");
                         this.updateHUD();
@@ -8538,7 +8671,7 @@
                     this.peerReady = false;
                     this.clientReady = false;
                     teammate.active = false;
-                    showToast("CO-OP NGẮT KẾT NỐI", "Đồng đội đã rời phòng.");
+                    showToast("NGẮT KẾT NỐI", "Đã rời phòng.");
                     if (this.isHost) {
                         this.updateHostUI("Đồng đội đã rời phòng. Chờ người chơi mới...", false);
                     } else {
@@ -8769,7 +8902,7 @@
                     const isPvP = (window.gameMode === "pvp_gungame");
                     showToast(
                         "CHẾ ĐỘ PHÒNG ĐÃ ĐỔI!",
-                        isPvP ? "Chủ phòng đã chuyển sang: SOLO 1V1 GUN GAME ĐÊM TỐI!" : "Chủ phòng đã chuyển sang: CO-OP BẮN QUÁI!"
+                        isPvP ? "Chủ phòng đã chuyển sang: SOLO 1V1 GUN GAME!" : "Chủ phòng đã chuyển sang: CO-OP BẮN QUÁI!"
                     );
                     return;
                 }
@@ -8930,7 +9063,7 @@
                     return;
                 }
 
-                if (data.t === "PROP_DESTROY" && !this.isHost) {
+                if (data.t === "PROP_DESTROY") {
                     if (typeof handleClientPropDestroy === "function") {
                         handleClientPropDestroy(data);
                     }
@@ -9078,6 +9211,15 @@
                             }
                         }
                     }
+
+                    if (Array.isArray(data.deadCrates) && typeof crates !== "undefined") {
+                        for (let i = 0; i < data.deadCrates.length; i++) {
+                            const cIdx = data.deadCrates[i];
+                            if (crates[cIdx] && crates[cIdx].active) {
+                                breakSupplyCrate(crates[cIdx], true);
+                            }
+                        }
+                    }
                     return;
                 }
 
@@ -9168,6 +9310,17 @@
                             a: Number((window.bossEntity.angle || 0).toFixed(2)),
                             hp: Math.round(window.bossEntity.hp)
                         };
+                    }
+
+                    // Đồng bộ thùng gỗ đã vỡ trong PvP Gun Game qua snapshot 60Hz
+                    if (window.gameMode === "pvp_gungame" && typeof crates !== "undefined") {
+                        const deadCrates = [];
+                        for (let c = 0; c < crates.length; c++) {
+                            if (!crates[c].active) deadCrates.push(c);
+                        }
+                        if (deadCrates.length > 0) {
+                            snapPacket.deadCrates = deadCrates;
+                        }
                     }
 
                     this.sendPacket(snapPacket);
@@ -18211,6 +18364,13 @@
                         dmg: Number(dmg.toFixed(1))
                     });
                 }
+                // Trong chế độ PvP Gun Game, Client trừ máu local và tự kích nổ khi hp <= 0 (Client-side prediction phản hồi tức thì)
+                if (window.gameMode === "pvp_gungame") {
+                    crate.hp -= dmg;
+                    if (crate.hp <= 0) {
+                        breakSupplyCrate(crate, false);
+                    }
+                }
                 return;
             }
 
@@ -18295,25 +18455,36 @@
             // TAC-OPS SOLO 1V1 PVP GUN GAME: Rơi đạn hoặc tiền và phát Sonar Ping
             if (window.gameMode === "pvp_gungame") {
                 triggerPvPSonarPing(crate.x, crate.y);
-                const r = Math.random();
-                if (r < 0.45) {
-                    const w = WEAPON_DATA[player.currentWeapon];
-                    if (w && w.maxAmmo !== Infinity) {
-                        const refillAmt = Math.round(w.maxAmmo * 0.35);
-                        w.ammo = Math.min(w.maxAmmo, w.ammo + refillAmt);
-                        addFloatingText(crate.x, crate.y, `+${refillAmt} ĐẠN!`, "#38bdf8");
-                        updateWeaponDockHUD();
-                    } else {
-                        player.credits += 40;
-                        addFloatingText(crate.x, crate.y, "+$40 CHIẾN LỢI PHẨM", "#fbbf24");
+                if (!fromNetwork) {
+                    const r = Math.random();
+                    if (r < 0.45) {
+                        const w = WEAPON_DATA[player.currentWeapon];
+                        if (w && w.maxAmmo !== Infinity) {
+                            const refillAmt = Math.round(w.maxAmmo * 0.35);
+                            w.ammo = Math.min(w.maxAmmo, w.ammo + refillAmt);
+                            addFloatingText(crate.x, crate.y, `+${refillAmt} ĐẠN!`, "#38bdf8");
+                            updateWeaponDockHUD();
+                        } else {
+                            player.credits += 40;
+                            addFloatingText(crate.x, crate.y, "+$40 CHIẾN LỢI PHẨM", "#fbbf24");
+                            updateTopLeftHUD();
+                        }
+                    } else if (r < 0.75) {
+                        player.credits += 50;
+                        addFloatingText(crate.x, crate.y, "+$50 CHIẾN LỢI PHẨM", "#fbbf24");
                         updateTopLeftHUD();
+                    } else {
+                        spawnItemDrop(crate.x, crate.y, Math.random() < 0.5 ? "medkit" : "armor");
                     }
-                } else if (r < 0.75) {
-                    player.credits += 50;
-                    addFloatingText(crate.x, crate.y, "+$50 CHIẾN LỢI PHẨM", "#fbbf24");
-                    updateTopLeftHUD();
-                } else {
-                    spawnItemDrop(crate.x, crate.y, Math.random() < 0.5 ? "medkit" : "armor");
+                }
+
+                // ĐỒNG BỘ MẠNG PVP 1V1: Gửi ngay gói tin PROP_DESTROY cho đối phương
+                if (!fromNetwork && crateIdx >= 0 && window.XENO_COOP && window.XENO_COOP.connected) {
+                    window.XENO_COOP.sendPacket({
+                        t: "PROP_DESTROY",
+                        kind: "crate",
+                        idx: crateIdx
+                    });
                 }
                 return;
             }
@@ -31976,9 +32147,11 @@
                 if (isCoopClient()) {
                     player.x = PVP_GUNGAME_STATE.spawnPoints[1].x;
                     player.y = PVP_GUNGAME_STATE.spawnPoints[1].y;
+                    PVP_GUNGAME_STATE.lastSpawnRoomId = "sec_hub";
                 } else {
                     player.x = PVP_GUNGAME_STATE.spawnPoints[0].x;
                     player.y = PVP_GUNGAME_STATE.spawnPoints[0].y;
+                    PVP_GUNGAME_STATE.lastSpawnRoomId = "sec_nw";
                 }
 
                 if (mapGenerator) {
@@ -32837,7 +33010,7 @@
         window.applyTouchLayout = applyTouchLayout;
 
         const TOUCH_CTRL_NAMES = {
-            moveJoy: "CẦN DI CHUYỂN",
+            moveJoy: "JOYSTICK",
             aimJoy: "CẦN NGẮM & BẮN",
             dash: "LƯỚT DASH",
             interact: "NÚT [E] PHẢI / BẬT",
