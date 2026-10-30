@@ -9091,12 +9091,17 @@
                             teammate.angle = data.a;
                             teammate.targetAngle = data.a;
                         }
-                        teammate.lastShotTime = performance.now();
+                        if (typeof data.x === "number" && typeof data.y === "number") {
+                            teammate.x = data.x;
+                            teammate.y = data.y;
+                        }
+                        teammate.muzzleFlash = 4;
                         fireTeammateWeaponVisual(
                             typeof data.w === "number" ? data.w : (teammate.currentWeapon || 0),
                             teammate.x,
                             teammate.y,
-                            typeof data.a === "number" ? data.a : teammate.angle
+                            typeof data.a === "number" ? data.a : teammate.angle,
+                            true
                         );
                     }
                     return;
@@ -9678,12 +9683,13 @@
             }
 
             // TAC-OPS SOLO 1V1 PVP GUN GAME: BÓNG TỐI & TẦM NHÌN ĐÈN PIN CHIẾN THUẬT
+            let inAura = false;
+            let inFlashlight = false;
             if (window.gameMode === "pvp_gungame") {
                 const pvpDx = teammate.x - player.x;
                 const pvpDy = teammate.y - player.y;
                 const pvpDist = Math.hypot(pvpDx, pvpDy);
-                const inAura = (pvpDist <= 145);
-                let inFlashlight = false;
+                inAura = (pvpDist <= 145);
                 if (pvpDist <= 580) {
                     const angleToTeammate = Math.atan2(pvpDy, pvpDx);
                     let diff = angleToTeammate - player.angle;
@@ -9695,8 +9701,7 @@
                         }
                     }
                 }
-                const isFiringNow = Boolean(teammate.isShooting || (teammate.muzzleFlash && teammate.muzzleFlash > 0) || hasActiveTeammateLaser);
-                if (!inAura && !inFlashlight && !isFiringNow) {
+                if (!inAura && !inFlashlight) {
                     // Đối thủ chìm hoàn toàn trong màn đêm, không hiển thị thân thể hay thanh máu
                     return;
                 }
@@ -10124,18 +10129,20 @@
 
             ctx.font = "800 8.5px 'JetBrains Mono', monospace";
             if (isPvP) {
-                const oppLvl = (typeof PVP_GUNGAME_STATE !== "undefined" && typeof PVP_GUNGAME_STATE.opponentGunLevel === "number")
-                    ? (PVP_GUNGAME_STATE.opponentGunLevel + 1)
-                    : 1;
-                ctx.fillStyle = "#f43f5e";
-                ctx.textAlign = "center";
-                ctx.fillText(`ĐỐI THỦ [CẤP ${oppLvl}/7]`, 0, -5);
+                if (inAura || inFlashlight) {
+                    const oppLvl = (typeof PVP_GUNGAME_STATE !== "undefined" && typeof PVP_GUNGAME_STATE.opponentGunLevel === "number")
+                        ? (PVP_GUNGAME_STATE.opponentGunLevel + 1)
+                        : 1;
+                    ctx.fillStyle = "#f43f5e";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`ĐỐI THỦ [CẤP ${oppLvl}/7]`, 0, -5);
 
-                ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
-                ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
+                    ctx.fillStyle = "rgba(2, 6, 23, 0.88)";
+                    ctx.fillRect(-barW * 0.5, 0, barW, 4.5);
 
-                ctx.fillStyle = "#f43f5e";
-                ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
+                    ctx.fillStyle = "#f43f5e";
+                    ctx.fillRect(-barW * 0.5 + 0.5, 0.5, (barW - 1) * hpRatio, 3.5);
+                }
             } else {
                 ctx.fillStyle = "#fde047";
                 ctx.textAlign = "center";
@@ -17431,12 +17438,13 @@
             const w = WEAPON_DATA[wId] || WEAPON_DATA[0];
             if (!w) return;
             const now = performance.now();
-            // Chống bắn đúp nếu cả gói tin PLAYER_SHOOT và vòng lặp giữ chuột cùng kích hoạt sát nhau
-            if (window.teammate.lastShotTime && (now - window.teammate.lastShotTime < w.fireRate * 0.55)) {
+            // Chống bắn đúp chỉ áp dụng cho vòng lặp giữ chuột cục bộ (fromPacket === false)
+            if (!fromPacket && window.teammate.lastShotTime && (now - window.teammate.lastShotTime < w.fireRate * 0.55)) {
                 return;
             }
             window.teammate.lastShotTime = now;
             window.teammate.currentWeapon = w.id !== undefined ? w.id : wId;
+            window.teammate.muzzleFlash = 4;
 
             const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
                 ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === w.id)
@@ -19697,73 +19705,75 @@
             // =========================================================
             // CO-OP MULTIPLAYER: REVIVE MECHANIC (5s hold in 75px radius, unlimited revives) - CHỈ TRONG CO-OP
             // =========================================================
-            if (window.gameMode !== "pvp_gungame" && window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
-                if (player.isDown) {
-                    mouse.down = false;
-                }
+            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
+                if (window.gameMode !== "pvp_gungame") {
+                    if (player.isDown) {
+                        mouse.down = false;
+                    }
 
-                // If teammate is downed and local player is alive, check proximity to revive
-                if (window.teammate.isDown && !player.isDown) {
-                    const distToTeammate = Math.hypot(player.x - window.teammate.x, player.y - window.teammate.y);
-                    if (distToTeammate <= 85) {
-                        // Cân bằng mới: 3.5 giây cứu (3500ms thay vì 5000ms)
-                        window.teammate.reviveProgress = (window.teammate.reviveProgress || 0) + (dt / 3500);
-                        if (frameCounter % 10 === 0) {
-                            spawnParticle(
-                                window.teammate.x + (Math.random() - 0.5) * 36,
-                                window.teammate.y + (Math.random() - 0.5) * 36,
-                                (Math.random() - 0.5) * 1.5,
-                                -2.2,
-                                "#10b981",
-                                3.2,
-                                16
-                            );
-                        }
-
-                        if (window.teammate.reviveProgress >= 1.0) {
-                            // Cứu thành công! Hồi sinh đồng đội với 40 HP, 25 Giáp, sóng đẩy lùi và khiên bảo vệ
-                            window.teammate.isDown = false;
-                            window.teammate.reviveProgress = 0;
-                            window.teammate.hp = 40;
-                            window.teammate.armor = 25;
-                            window.teammate.invulnTimer = 110;
-
-                            shockwaveRings.push({
-                                x: window.teammate.x,
-                                y: window.teammate.y,
-                                r: 12,
-                                maxR: 190,
-                                color: "#10b981",
-                                alpha: 0.95
-                            });
-
-                            // Đẩy lùi nhẹ quái vật xung quanh trong bán kính 160px
-                            for (let ei = 0; ei < MAX_ENEMIES; ei++) {
-                                const ne = enemies[ei];
-                                if (!ne.active) continue;
-                                const de = Math.hypot(ne.x - window.teammate.x, ne.y - window.teammate.y);
-                                if (de < 160 && de > 1) {
-                                    const kbForce = (160 - de) * 0.14;
-                                    ne.x += ((ne.x - window.teammate.x) / de) * kbForce;
-                                    ne.y += ((ne.y - window.teammate.y) / de) * kbForce;
-                                }
+                    // If teammate is downed and local player is alive, check proximity to revive
+                    if (window.teammate.isDown && !player.isDown) {
+                        const distToTeammate = Math.hypot(player.x - window.teammate.x, player.y - window.teammate.y);
+                        if (distToTeammate <= 85) {
+                            // Cân bằng mới: 3.5 giây cứu (3500ms thay vì 5000ms)
+                            window.teammate.reviveProgress = (window.teammate.reviveProgress || 0) + (dt / 3500);
+                            if (frameCounter % 10 === 0) {
+                                spawnParticle(
+                                    window.teammate.x + (Math.random() - 0.5) * 36,
+                                    window.teammate.y + (Math.random() - 0.5) * 36,
+                                    (Math.random() - 0.5) * 1.5,
+                                    -2.2,
+                                    "#10b981",
+                                    3.2,
+                                    16
+                                );
                             }
 
-                            addFloatingText(window.teammate.x, window.teammate.y - 32, "ĐỒNG ĐỘI ĐÃ ĐƯỢC CỨU SỐNG! (+KHIÊN BẢO VỆ)", "#10b981");
-                            showToast("CỨU VIỆN THÀNH CÔNG!", "Đồng đội hồi sinh với 40 HP, 25 Giáp & Khiên Bất Tử 1.8s!");
+                            if (window.teammate.reviveProgress >= 1.0) {
+                                // Cứu thành công! Hồi sinh đồng đội với 40 HP, 25 Giáp, sóng đẩy lùi và khiên bảo vệ
+                                window.teammate.isDown = false;
+                                window.teammate.reviveProgress = 0;
+                                window.teammate.hp = 40;
+                                window.teammate.armor = 25;
+                                window.teammate.invulnTimer = 110;
 
-                            window.XENO_COOP.sendPacket({ t: "revive_success" });
-                            window.XENO_COOP.updateHUD();
-                        }
-                    } else {
-                        // Rời xa khỏi bán kính: tụt dần tiến trình cứu
-                        if (window.teammate.reviveProgress > 0) {
-                            window.teammate.reviveProgress = Math.max(0, window.teammate.reviveProgress - (dt / 2000));
+                                shockwaveRings.push({
+                                    x: window.teammate.x,
+                                    y: window.teammate.y,
+                                    r: 12,
+                                    maxR: 190,
+                                    color: "#10b981",
+                                    alpha: 0.95
+                                });
+
+                                // Đẩy lùi nhẹ quái vật xung quanh trong bán kính 160px
+                                for (let ei = 0; ei < MAX_ENEMIES; ei++) {
+                                    const ne = enemies[ei];
+                                    if (!ne.active) continue;
+                                    const de = Math.hypot(ne.x - window.teammate.x, ne.y - window.teammate.y);
+                                    if (de < 160 && de > 1) {
+                                        const kbForce = (160 - de) * 0.14;
+                                        ne.x += ((ne.x - window.teammate.x) / de) * kbForce;
+                                        ne.y += ((ne.y - window.teammate.y) / de) * kbForce;
+                                    }
+                                }
+
+                                addFloatingText(window.teammate.x, window.teammate.y - 32, "ĐỒNG ĐỘI ĐÃ ĐƯỢC CỨU SỐNG! (+KHIÊN BẢO VỆ)", "#10b981");
+                                showToast("CỨU VIỆN THÀNH CÔNG!", "Đồng đội hồi sinh với 40 HP, 25 Giáp & Khiên Bất Tử 1.8s!");
+
+                                window.XENO_COOP.sendPacket({ t: "revive_success" });
+                                window.XENO_COOP.updateHUD();
+                            }
+                        } else {
+                            // Rời xa khỏi bán kính: tụt dần tiến trình cứu
+                            if (window.teammate.reviveProgress > 0) {
+                                window.teammate.reviveProgress = Math.max(0, window.teammate.reviveProgress - (dt / 2000));
+                            }
                         }
                     }
                 }
 
-                // VISUAL SIMULATION: HIỂN THỊ ĐẠN CỦA ĐỒNG ĐỘI TRÊN CẢ HOST & CLIENT CHUẨN 100% THEO WEAPON_DATA
+                // VISUAL SIMULATION: HIỂN THỊ ĐẠN CỦA ĐỒNG ĐỘI / ĐỐI THỦ TRÊN CẢ HOST & CLIENT CHUẨN 100% THEO WEAPON_DATA
                 const tmWeaponId = window.teammate.currentWeapon || 0;
                 const tmWeapon = WEAPON_DATA[tmWeaponId] || WEAPON_DATA[0];
                 if (window.teammate.isShooting && !window.teammate.isDown) {
@@ -19788,6 +19798,9 @@
                 if (tmWeapon && tmWeapon.type !== "laser" && window.teammate.activeLaserBeam) {
                     window.teammate.activeLaserBeam = null;
                     window.teammate.laserHeat = 0;
+                }
+                if (window.teammate.muzzleFlash > 0) {
+                    window.teammate.muzzleFlash--;
                 }
             }
 
@@ -20211,6 +20224,25 @@
                         }
                     }
                     continue;
+                }
+
+                // TAC-OPS SOLO 1V1 PVP GUN GAME: Đạn đối thủ (b.isTeammate) chạm vào người chơi bản địa (Local Player)
+                if (window.gameMode === "pvp_gungame" && b.isTeammate && !player.isDown) {
+                    const pHitR = player.radius + b.size;
+                    const pDx = b.x - player.x;
+                    const pDy = b.y - player.y;
+                    if (Math.abs(pDx) <= pHitR && Math.abs(pDy) <= pHitR && (pDx * pDx + pDy * pDy < pHitR * pHitR)) {
+                        b.active = false;
+                        if (player.invulnTimer > 0) {
+                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#38bdf8", 3, 10);
+                            if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
+                        } else {
+                            bakeBloodSplatter(player.x, player.y, 14, 0.7);
+                            if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
+                            spawnParticle(b.x, b.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#f43f5e", 2.8, 12);
+                        }
+                        continue;
+                    }
                 }
 
                 // TAC-OPS SOLO 1V1 PVP GUN GAME: Bullet Collision against Opponent
@@ -21905,6 +21937,9 @@
                     ctx.fillStyle = `rgba(56, 189, 248, ${generatorPowerState.ambientFlash.toFixed(3)})`;
                     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
                 }
+
+                // Hiển thị lớp đạn và vệt đạn tracer phát sáng huỳnh quang xuyên màn đêm
+                drawLuminescentProjectiles(ctx, camX, camY);
             }
 
             if (player.hasNvg && player.nvgActive) {
@@ -27809,6 +27844,216 @@
                 ctx.fill();
             }
             ctx.restore();
+        }
+
+        // =========================================================================
+        // HỆ THỐNG ĐẠN & TIA LỬA NÒNG SÁNG HUỲNH QUANG TRONG BÓNG TỐI (LUMINESCENT PROJECTILES)
+        // Hiển thị cả 2 luồng đạn của người chơi và đối thủ phát sáng chói lọi xuyên màn đêm
+        // =========================================================================
+        function drawGenericLaserBeam(c, lb, now) {
+            if (!lb || lb.timer <= 0) return;
+            const heat = Math.min(1.0, lb.heat || 0);
+            const outerColor = heat > 0.65 ? "rgba(244, 114, 182, 0.42)" : "rgba(0, 245, 212, 0.36)";
+            const midColor = heat > 0.65 ? "#f472b6" : "#00f5d4";
+            const pulseW = 1 + Math.sin(now * 0.045) * 0.16;
+
+            c.save();
+            c.lineCap = "round";
+
+            // Layer 1: Wide Outer Energy Halo
+            c.strokeStyle = outerColor;
+            c.lineWidth = (14 + heat * 16) * pulseW;
+            c.beginPath();
+            c.moveTo(lb.x1, lb.y1);
+            c.lineTo(lb.x2, lb.y2);
+            c.stroke();
+
+            // Layer 2: High-Intensity Plasma Core
+            c.strokeStyle = midColor;
+            c.lineWidth = (6.5 + heat * 7.5) * pulseW;
+            c.beginPath();
+            c.moveTo(lb.x1, lb.y1);
+            c.lineTo(lb.x2, lb.y2);
+            c.stroke();
+
+            // Layer 3: Pure White-Hot Singularity Filament
+            c.strokeStyle = "#ffffff";
+            c.lineWidth = 2.6 + heat * 2.8;
+            c.beginPath();
+            c.moveTo(lb.x1, lb.y1);
+            c.lineTo(lb.x2, lb.y2);
+            c.stroke();
+
+            // Endpoint flares
+            const flareR = (12 + heat * 12) * pulseW;
+            c.fillStyle = midColor;
+            c.beginPath();
+            safeArc(c, lb.x1, lb.y1, flareR * 0.7);
+            safeArc(c, lb.x2, lb.y2, flareR);
+            c.fill();
+
+            c.fillStyle = "#ffffff";
+            c.beginPath();
+            safeArc(c, lb.x1, lb.y1, flareR * 0.35);
+            safeArc(c, lb.x2, lb.y2, flareR * 0.48);
+            c.fill();
+            c.restore();
+        }
+
+        function drawGenericMuzzleFlash(c, originX, originY, angle, weaponId) {
+            const wId = weaponId || 0;
+            if (wId === 6) return; // Laser beam có flare riêng
+            const skinAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.playerSkins)
+                ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === wId)
+                : null;
+            const hasCustomSkin = window.useCustomPlayerWeaponSprites && skinAsset && skinAsset.loaded && skinAsset.img;
+            const flashDist = hasCustomSkin ? (skinAsset.flashDist || 38) : (wId === 5 ? 45 : (wId === 2 ? 41 : 36));
+            const fx = originX + Math.cos(angle) * flashDist;
+            const fy = originY + Math.sin(angle) * flashDist;
+            const r = 10 + Math.random() * 6;
+
+            c.save();
+            c.fillStyle = "rgba(251, 191, 36, 0.45)";
+            c.beginPath();
+            safeArc(c, fx, fy, r * 1.5);
+            c.fill();
+
+            c.fillStyle = "#fef08a";
+            c.beginPath();
+            safeArc(c, fx, fy, r * 0.85);
+            c.fill();
+
+            c.fillStyle = "#ffffff";
+            c.beginPath();
+            safeArc(c, fx, fy, r * 0.42);
+            c.fill();
+            c.restore();
+        }
+
+        function drawLuminescentProjectiles(c, camX, camY) {
+            const now = performance.now();
+            c.save();
+            c.translate(-camX, -camY);
+            c.lineCap = "round";
+
+            // 1. Đại Pháo Laser Hyperion #7 của Local Player
+            if (player && player.activeLaserBeam && player.activeLaserBeam.timer > 0 && !isGameOver) {
+                drawGenericLaserBeam(c, player.activeLaserBeam, now);
+            }
+
+            // 2. Đại Pháo Laser Hyperion #7 của Đồng đội / Đối thủ
+            if (window.teammate && window.teammate.active && !window.teammate.isDown && window.teammate.activeLaserBeam && window.teammate.activeLaserBeam.timer > 0) {
+                drawGenericLaserBeam(c, window.teammate.activeLaserBeam, now);
+            }
+
+            // 3. Toàn bộ viên đạn đang hoạt động trong viewport
+            for (let i = 0; i < MAX_BULLETS; i++) {
+                const b = bullets[i];
+                if (!b.active) continue;
+                if (b.x + 40 < camX || b.x - 40 > camX + VIEW_W || b.y + 40 < camY || b.y - 40 > camY + VIEW_H) continue;
+
+                if (b.type === "flame" || b.type === "boss_flame") {
+                    const a = Math.max(0.25, b.life / b.maxLife);
+                    c.fillStyle = `rgba(249, 115, 22, ${(a * 0.48).toFixed(2)})`;
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, b.size * 2.2);
+                    c.fill();
+
+                    c.fillStyle = b.life > b.maxLife * 0.5 ? `rgba(254, 240, 138, ${a.toFixed(2)})` : `rgba(249, 115, 22, ${a.toFixed(2)})`;
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, b.size * 1.15);
+                    c.fill();
+
+                    c.fillStyle = `rgba(255, 255, 255, ${(a * 0.9).toFixed(2)})`;
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, b.size * 0.45);
+                    c.fill();
+                } else if (b.type === "boss_magma_orb" || b.type === "boss_meteor") {
+                    const sz = b.size;
+                    c.fillStyle = (b.type === "boss_meteor") ? "rgba(239, 68, 68, 0.45)" : "rgba(249, 115, 22, 0.42)";
+                    c.beginPath();
+                    safeArc(c, b.x - b.vx * 0.9, b.y - b.vy * 0.9, sz * 1.45);
+                    safeArc(c, b.x, b.y, sz * 2.05);
+                    c.fill();
+
+                    c.fillStyle = b.color || "#f97316";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 1.1);
+                    c.fill();
+
+                    c.fillStyle = "#fef08a";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 0.48);
+                    c.fill();
+                } else if (b.type === "plasma" || b.type === "boss_plasma") {
+                    const sz = b.size;
+                    c.fillStyle = (b.type === "plasma") ? "rgba(192, 132, 252, 0.46)" : "rgba(244, 114, 182, 0.42)";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 2.2);
+                    c.fill();
+
+                    c.fillStyle = b.color || "#c084fc";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 1.15);
+                    c.fill();
+
+                    c.fillStyle = "#ffffff";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 0.48);
+                    c.fill();
+                } else if (b.type === "cryo") {
+                    const sz = b.size;
+                    c.fillStyle = "rgba(56, 189, 248, 0.45)";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 2.2);
+                    c.fill();
+
+                    c.fillStyle = b.color || "#38bdf8";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 1.1);
+                    c.fill();
+
+                    c.fillStyle = "#f0f9ff";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, sz * 0.45);
+                    c.fill();
+                } else {
+                    // Đạn Kinetic (Súng Lục MK23, Shotgun M1014, Minigun M134, pháo...)
+                    // Lớp 1: Quầng sáng Tracer Neon Glow rộng xé toạc bóng đêm
+                    c.strokeStyle = b.color || "#fbbf24";
+                    c.lineWidth = Math.max(3.4, b.size * 1.75);
+                    c.globalAlpha = 0.65;
+                    c.beginPath();
+                    c.moveTo(b.x, b.y);
+                    c.lineTo(b.x - b.vx * 1.95, b.y - b.vy * 1.95);
+                    c.stroke();
+
+                    // Lớp 2: Thân đạn Tracer sắc bén
+                    c.lineWidth = Math.max(2.1, b.size * 1.05);
+                    c.globalAlpha = 0.95;
+                    c.beginPath();
+                    c.moveTo(b.x, b.y);
+                    c.lineTo(b.x - b.vx * 1.4, b.y - b.vy * 1.4);
+                    c.stroke();
+
+                    // Lớp 3: Đầu đạn trắng nóng rực (White-Hot Core Tip)
+                    c.strokeStyle = "#ffffff";
+                    c.lineWidth = Math.max(1.3, b.size * 0.55);
+                    c.globalAlpha = 1.0;
+                    c.beginPath();
+                    c.moveTo(b.x, b.y);
+                    c.lineTo(b.x - b.vx * 0.68, b.y - b.vy * 0.68);
+                    c.stroke();
+
+                    // Lớp 4: Điểm sáng tròn chói lòa ở mũi viên đạn
+                    c.fillStyle = "#ffffff";
+                    c.beginPath();
+                    safeArc(c, b.x, b.y, Math.max(1.2, b.size * 0.45));
+                    c.fill();
+                }
+            }
+            c.globalAlpha = 1.0;
+            c.restore();
         }
 
         function renderScreenLighting(camX, camY) {
