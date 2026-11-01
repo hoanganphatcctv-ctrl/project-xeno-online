@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -1230,6 +1230,33 @@
             }
         }
 
+        /* Touch Controls Layout Editor - Yellow Selection Style */
+        .touch-ctrl-selected {
+            z-index: 105 !important;
+        }
+        .touch-ctrl-selected .ctrl-label {
+            background: #f59e0b !important;
+            color: #020617 !important;
+            border-color: #fef08a !important;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.95) !important;
+            font-weight: 900 !important;
+            transform: scale(1.08);
+            transition: all 0.15s ease;
+        }
+        .touch-ctrl-selected .ctrl-body {
+            border-color: #fbbf24 !important;
+            border-style: solid !important;
+            border-width: 3px !important;
+            box-shadow: 0 0 28px rgba(251, 191, 36, 0.95), inset 0 0 18px rgba(251, 191, 36, 0.5) !important;
+            outline: 2px solid #fde047 !important;
+            outline-offset: 3px !important;
+            animation: touchCtrlYellowPulse 1.8s infinite alternate !important;
+        }
+        @keyframes touchCtrlYellowPulse {
+            0% { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7)); }
+            100% { filter: drop-shadow(0 0 20px rgba(251, 191, 36, 1)); }
+        }
+
     </style>
 </head>
 <body class="relative w-screen h-screen overflow-hidden select-none">
@@ -1418,9 +1445,9 @@
                         <!-- 2. THANH GIÁP NANO (ARMOR BAR) - 3D Capsule Glowing Bar -->
                         <div class="flex flex-col gap-0.5">
                             <div class="flex items-center justify-between text-[9px] font-mono-tech leading-none">
-                                <span class="font-extrabold text-cyan-400 drop-shadow flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                                    GIÁP (-65%)
+                                <span id="hudArmorLabel" class="font-extrabold text-cyan-400 drop-shadow flex items-center gap-1">
+                                    <span id="hudArmorDot" class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    <span id="hudArmorTitle">GIÁP (-65%)</span>
                                 </span>
                                 <span id="hudArmorText" class="font-black text-white drop-shadow tracking-wider">50/100</span>
                             </div>
@@ -1445,6 +1472,82 @@
                             <span class="text-[8px] font-mono-tech text-slate-400 uppercase tracking-wider">CHỈ SỐ SINH TỒN</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- TAC-OPS SOLO 1V1 PVP GUN GAME HUD (THIẾT KẾ MECHA SCI-FI 2.5D ĐỒNG BỘ CỤM MÁU) -->
+            <div id="pvpGunGameHUD" class="hidden pointer-events-auto relative w-[310px] sm:w-[325px] flex flex-col select-none font-mono-tech mt-0.5"
+                 style="filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85));">
+                
+                <!-- 1. Top Plate: Hazard Warning Stripes & Chamfered Title Badge -->
+                <div class="flex items-end -mb-1 pl-3 z-20">
+                    <!-- Diagonal Hazard Warning Stripes Block (Rose / Slate Hazard) -->
+                    <div class="h-3 w-9 -skew-x-12 overflow-hidden border-t border-l border-rose-500/60 shadow-md"
+                         style="background: repeating-linear-gradient(45deg, #e11d48 0 4px, #0f172a 4px 8px);">
+                    </div>
+                    <!-- Chamfered Status Badge (Rose / Crimson 2.5D Gradient) -->
+                    <div class="h-4 px-2 flex items-center justify-center text-[8px] font-black text-white tracking-widest uppercase border border-rose-400/80 shadow-[0_0_10px_rgba(244,63,94,0.35)]"
+                         style="background: linear-gradient(180deg, #e11d48 0%, #9f1239 60%, #4c0519 100%); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); margin-left: -3px;">
+                        <span class="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">⚔ TAC-OPS // SOLO 1V1 GUN GAME</span>
+                    </div>
+                </div>
+
+                <!-- 2. Main Metallic Chassis Body (2.5D Chamfered Polygon Border) -->
+                <div class="relative rounded-r-xl p-2 pl-3 pr-2.5 flex flex-col gap-1.5 border-2 border-slate-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                     style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #020617 100%); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 10px), calc(100% - 14px) 100%, 0 100%);">
+                    
+                    <!-- Middle Battle Row: Player Slot, Crimson Core Score, Opponent Slot -->
+                    <div class="flex items-center justify-between gap-1.5">
+                        
+                        <!-- Cột Bạn (P1 / Self) - 3D Recessed Capsule Slot -->
+                        <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <div class="flex items-center gap-1 leading-none">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
+                                <span class="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wider">BẠN</span>
+                            </div>
+                            <!-- Recessed 3D Capsule Bar for Weapon Name -->
+                            <div class="h-5 px-1.5 rounded-md border border-emerald-500/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.95)] flex items-center overflow-hidden relative"
+                                 style="background: linear-gradient(180deg, #021a15 0%, #064e3b 50%, #022c22 100%);">
+                                <span id="pvpHudSelfWeapon" class="text-[9px] font-black text-emerald-300 truncate w-full tracking-wide drop-shadow">CẤP 1/7 [SONG LỤC]</span>
+                                <!-- Specular Glass Highlight -->
+                                <div class="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-md"></div>
+                            </div>
+                        </div>
+
+                        <!-- Hộp Tỉ Số Chính Giữa (2.5D Crimson Core Score Board) -->
+                        <div class="relative px-2.5 py-1 rounded-sm border-2 border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] flex flex-col items-center justify-center shrink-0 min-w-[54px]"
+                             style="background: linear-gradient(180deg, #9f1239 0%, #4c0519 60%, #2a030c 100%); clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);">
+                            <span class="text-[6.5px] text-rose-200 uppercase tracking-widest font-black leading-none mb-0.5 drop-shadow">TỈ SỐ</span>
+                            <span id="pvpHudScore" class="text-white font-black text-xs sm:text-sm tracking-widest leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">0 - 0</span>
+                        </div>
+
+                        <!-- Cột Đối Thủ (P2 / Opponent) - 3D Recessed Capsule Slot -->
+                        <div class="flex-1 min-w-0 flex flex-col gap-0.5 text-right">
+                            <div class="flex items-center justify-end gap-1 leading-none">
+                                <span class="text-[8px] text-rose-400 font-extrabold uppercase tracking-wider">ĐỐI THỦ</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]"></span>
+                            </div>
+                            <!-- Recessed 3D Capsule Bar for Opponent Weapon Name -->
+                            <div class="h-5 px-1.5 rounded-md border border-rose-500/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.95)] flex items-center justify-end overflow-hidden relative"
+                                 style="background: linear-gradient(180deg, #2a030c 0%, #4c0519 50%, #1f0208 100%);">
+                                <span id="pvpHudOppWeapon" class="text-[9px] font-black text-rose-300 truncate w-full tracking-wide drop-shadow text-right">CẤP 1/7 [SONG LỤC]</span>
+                                <!-- Specular Glass Highlight -->
+                                <div class="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-md"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Bottom Chassis Details: 3 Glowing Indicator Rivets & Tactical Motto -->
+                    <div class="flex items-center justify-between pt-0.5 border-t border-slate-800/80">
+                        <div class="flex items-center gap-1.5 pl-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+                        </div>
+                        <span class="text-[7.5px] font-mono-tech text-slate-400 uppercase tracking-wider font-bold">HẠ ĐỐI THỦ ĐỂ NÂNG CẤP VŨ KHÍ (MAX CẤP 7)</span>
+                    </div>
+
                 </div>
             </div>
 
@@ -1492,9 +1595,9 @@
         </div>
     </div>
 
-    <!-- TAC-OPS ONLINE CO-OP STATUS BADGE (HUD) -->
+    <!-- TAC-OPS ONLINE CO-OP / PVP NETWORK STATUS BADGE (HUD) -->
     <div id="coopTopHUD" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1 bg-slate-950/90 border border-cyan-400/50 text-[10px] font-mono-tech shadow-lg pointer-events-none">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span id="coopHudDot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
         <span id="coopHudBannerTitle" class="text-cyan-300 font-extrabold uppercase">CO-OP ONLINE // 60Hz</span>
         <span class="text-slate-600">|</span>
         <span id="coopHudRole" class="text-white font-bold">HOST</span>
@@ -1561,7 +1664,7 @@
 
     <!-- INTERACTION PROMPT BANNER (LOWER-CENTER ABOVE WEAPON DOCK - NEVER TOUCHES TOP HUD) -->
     <div class="pointer-events-none fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center select-none">
-        <div id="interactBanner" class="hidden hud-panel px-3 py-1 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase">
+        <div id="interactBanner" onclick="if (typeof triggerInteractionKeyE === 'function') triggerInteractionKeyE();" class="hidden hud-panel px-3.5 py-1.5 rounded-none border border-emerald-400/90 text-[10px] font-mono-tech font-bold text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.4)] bg-slate-950/95 tracking-wide flex items-center gap-1.5 backdrop-blur-md uppercase pointer-events-auto cursor-pointer active:scale-95 transition-transform hover:border-emerald-300 hover:text-white">
             Nhấn <span class="text-amber-300 font-black">[E]</span> để tương tác
         </div>
     </div>
@@ -1685,11 +1788,19 @@
             </button>
         </div>
 
-        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers) -->
+        <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers / Strafe Right in PvP) -->
         <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 62%;">
             <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all" title="Giữ 5s Khởi động Máy Phát / Hack [Phím E]">
                 <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
+            </button>
+        </div>
+
+        <!-- Quick Action Button: Strafe Dash Left [Q] (Solo 1v1 PvP Gun Game Only) -->
+        <div id="touchBtnQWrapper" class="pointer-events-auto fixed hidden" style="left: 72%; top: 62%;">
+            <button id="touchBtnQ" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex flex-col items-center justify-center text-sky-300 active:scale-95 transition-all" title="Lướt Né Trái [Q]">
+                <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-sky-200">TRÁI</span>
             </button>
         </div>
 
@@ -1730,21 +1841,44 @@
             </div>
         </div>
 
-        <!-- Instruction Banner -->
-        <div class="absolute inset-x-0 top-16 text-center pointer-events-none z-10 px-4">
-            <span class="inline-block px-4 py-1.5 bg-slate-900/90 border border-amber-500/40 text-amber-300 text-xs font-mono-tech font-bold shadow-lg">
-                Chạm &amp; Kéo các nút điều khiển để đổi vị trí &bull; Bấm [LƯU BỐ CỤC] khi hoàn tất
-            </span>
+        <!-- Property Controls Bar: Selected Button, Opacity Slider, Size Slider -->
+        <div id="touchEditorControlPanel" class="fixed top-12 sm:top-14 inset-x-0 z-[101] bg-slate-950/95 border-b-2 border-amber-500/60 px-4 py-2 flex flex-wrap items-center justify-between sm:justify-center gap-x-6 gap-y-2 text-xs font-mono-tech shadow-[0_10px_30px_rgba(0,0,0,0.85)] backdrop-blur-md">
+            <!-- Selected Button Indicator -->
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,1)] animate-ping"></span>
+                <span class="text-slate-400 text-[11px] font-bold uppercase">NÚT ĐANG CHỌN:</span>
+                <span id="touchEditorSelectedName" class="px-2.5 py-0.5 bg-amber-500/25 border-2 border-amber-400 text-amber-300 font-black text-xs tracking-wider uppercase shadow-[0_0_12px_rgba(245,158,11,0.4)]">JOYSTICK</span>
+            </div>
+
+            <!-- Slider 1: Độ Trong Suốt (Opacity) -->
+            <div class="flex items-center gap-2">
+                <span class="text-slate-300 font-bold text-[11px] whitespace-nowrap">ĐỘ TRONG SUỐT:</span>
+                <input id="sliderTouchOpacity" type="range" min="20" max="100" value="100"
+                       style="--slider-pct: 100%;"
+                       class="w-24 sm:w-36 tech-range-slider range-amber cursor-pointer"
+                       oninput="window.updateSelectedTouchOpacity(this.value)" />
+                <span id="valTouchOpacity" class="w-10 text-right font-black text-amber-300 text-xs">100%</span>
+            </div>
+
+            <!-- Slider 2: Kích Thước (Size/Scale) -->
+            <div class="flex items-center gap-2">
+                <span class="text-slate-300 font-bold text-[11px] whitespace-nowrap">KÍCH THƯỚC:</span>
+                <input id="sliderTouchScale" type="range" min="60" max="160" value="100"
+                       style="--slider-pct: 50%;"
+                       class="w-24 sm:w-36 tech-range-slider range-amber cursor-pointer"
+                       oninput="window.updateSelectedTouchScale(this.value)" />
+                <span id="valTouchScale" class="w-10 text-right font-black text-amber-300 text-xs">100%</span>
+            </div>
         </div>
 
         <!-- Draggable Controls inside Layout Editor -->
-        <div id="editorTouchArea" class="absolute inset-0 pt-14">
+        <div id="editorTouchArea" class="absolute inset-0 pt-28">
             <!-- Edit: Move Joystick -->
-            <div id="dragCtrl_moveJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
-                <div class="px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
-                    CẦN DI CHUYỂN
+            <div id="dragCtrl_moveJoy" onclick="window.selectTouchEditorControl('moveJoy')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 6%; top: 70%;">
+                <div class="ctrl-label px-2 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    JOYSTICK
                 </div>
-                <div class="w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                <div class="ctrl-body w-28 h-28 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/80 border border-emerald-300 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><path d="M12 2L8 6h3v4H7V7l-4 4 4 4v-3h4v4H8l4 4 4-4h-3v-4h4v3l4-4-4-4v3h-4V6h3l-4-4z"/></svg>
                     </div>
@@ -1752,11 +1886,11 @@
             </div>
 
             <!-- Edit: Aim Joystick -->
-            <div id="dragCtrl_aimJoy" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
-                <div class="px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_aimJoy" onclick="window.selectTouchEditorControl('aimJoy')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 80%; top: 70%;">
+                <div class="ctrl-label px-2 py-0.5 rounded-none bg-rose-950/90 border border-rose-400 text-rose-300 text-[9px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     CẦN NGẮM &amp; BẮN
                 </div>
-                <div class="w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+                <div class="ctrl-body w-28 h-28 rounded-full border-2 border-dashed border-rose-400 bg-rose-950/50 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.3)]">
                     <div class="w-12 h-12 rounded-full bg-rose-500/80 border border-rose-300 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-950 fill-current"><circle cx="12" cy="12" r="3"/><path d="M11 2h2v3h-2zm0 17h2v3h-2zm-9-8h3v2H2zm17 0h3v2h-3z"/></svg>
                     </div>
@@ -1764,35 +1898,46 @@
             </div>
 
             <!-- Edit: Dash Button -->
-            <div id="dragCtrl_dash" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_dash" onclick="window.selectTouchEditorControl('dash')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 48%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     LƯỚT DASH
                 </div>
-                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                <div class="ctrl-body w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-dashed border-cyan-300 flex flex-col items-center justify-center text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
                     <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7 2v11h3v9l7-12h-4l3-8z"/></svg>
                     <span class="text-[7.5px] font-mono-tech font-black">DASH</span>
                 </div>
             </div>
 
             <!-- Edit: Interact [E] Button -->
-            <div id="dragCtrl_interact" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_interact" onclick="window.selectTouchEditorControl('interact')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 90%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     NÚT [E]
                 </div>
-                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">BẬT</span>
                 </div>
             </div>
 
             <!-- Edit: Turret [T] Button -->
-            <div id="dragCtrl_turret" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
-                <div class="px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+            <div id="dragCtrl_turret" onclick="window.selectTouchEditorControl('turret')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 81%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-purple-950/90 border border-purple-400 text-purple-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
                     THÁP [T]
                 </div>
-                <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-purple-400 flex flex-col items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(192,132,252,0.5)]">
                     <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
                     <span class="text-[7.5px] font-mono-tech font-bold uppercase text-slate-300">THÁP</span>
+                </div>
+            </div>
+
+            <!-- Edit: Strafe Dash Left [Q] Button (Solo 1v1 PvP) -->
+            <div id="dragCtrl_qDash" onclick="window.selectTouchEditorControl('qDash')" class="touch-drag-item fixed cursor-move flex flex-col items-center justify-center group" style="touch-action: none; left: 72%; top: 62%;">
+                <div class="ctrl-label px-1.5 py-0.5 rounded-none bg-sky-950/90 border border-sky-400 text-sky-300 text-[8.5px] font-mono-tech font-bold mb-1 shadow-md whitespace-nowrap">
+                    LƯỚT TRÁI [Q] (SOLO PVP)
+                </div>
+                <div class="ctrl-body w-12 h-12 rounded-full bg-slate-900 border-2 border-dashed border-sky-400 flex flex-col items-center justify-center text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                    <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
+                    <span class="text-[7.5px] font-mono-tech font-bold uppercase text-sky-200">TRÁI</span>
                 </div>
             </div>
         </div>
@@ -2089,7 +2234,7 @@
                     <div class="flex items-center gap-2 text-[10px] font-mono-tech text-slate-400">
                         <span id="lobbyOnlineStatus" class="text-slate-400 font-bold">○ CHẾ ĐỘ KHÁCH</span>
                         <span>|</span>
-                        <span>QUỸ: <b id="lobbyTopCredits" class="text-amber-300">$120</b></span>
+                        <span>QUỸ TÁC CHIẾN: <b id="lobbyTopCredits" class="text-amber-300">$120</b></span>
                     </div>
                 </div>
             </div>
@@ -3569,6 +3714,48 @@
 
                     <!-- TAB 4: ĐIỀU KHIỂN & PHÍM TẮT -->
                     <div id="sysTabPanel_controls" class="hidden space-y-4">
+                        <!-- CÔNG TẮC BẬT/TẮT TỰ ĐỘNG TOÀN MÀN HÌNH (AUTO FULLSCREEN CONFIG) -->
+                        <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 shadow-lg space-y-3 font-mono-tech">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                        <h3 class="text-xs font-black text-cyan-300 uppercase">TỰ ĐỘNG TOÀN MÀN HÌNH (AUTO FULLSCREEN)</h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        Tự động kích hoạt toàn màn hình khi bắt đầu ván đấu hoặc xuất trận để có tầm nhìn tác chiến tối đa. Tắt tùy chọn này nếu bạn muốn chơi game ở chế độ cửa sổ trình duyệt.
+                                    </p>
+                                </div>
+                                <button type="button" onclick="window.toggleGameFullscreen()" class="self-start sm:self-auto px-3 py-1.5 rounded-none bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/50 text-[10.5px] font-mono-tech font-bold uppercase transition flex items-center gap-1.5 shrink-0 shadow-sm" title="Bật hoặc thoát toàn màn hình ngay lập tức">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                                    <span id="btnQuickToggleFsText">PHÓNG TO NGAY</span>
+                                </button>
+                            </div>
+
+                            <!-- 2 Chế độ lựa chọn: BẬT / TẮT -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                <button id="btnAutoFs_on" type="button" onclick="window.setAutoFullscreenMode('on')" class="px-3 py-2 rounded-none border text-xs font-bold font-mono-tech uppercase flex flex-col items-center justify-center gap-1 transition bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                        <span>BẬT (TỰ ĐỘNG)</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-400 font-normal">Tự động phóng to toàn màn hình khi vào trận (Khuyên dùng)</span>
+                                </button>
+                                <button id="btnAutoFs_off" type="button" onclick="window.setAutoFullscreenMode('off')" class="px-3 py-2 rounded-none border text-xs font-bold font-mono-tech uppercase flex flex-col items-center justify-center gap-1 transition bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+                                        <span>TẮT (CỬA SỔ)</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-400 font-normal">Giữ nguyên cửa sổ trình duyệt, không tự động toàn màn hình</span>
+                                </button>
+                            </div>
+
+                            <div class="text-[10px] text-slate-400 bg-slate-950 p-2.5 border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                                <span>Chế độ tự động: <b id="lblAutoFsState" class="text-emerald-400 font-extrabold">Đang bật (Tự động Fullscreen)</b></span>
+                                <span>Trạng thái hiển thị hiện tại: <b id="lblCurrentFsStatus" class="text-white">Đang kiểm tra...</b></span>
+                            </div>
+                        </div>
+
                         <!-- CẦN ĐIỀU KHIỂN ẢO & CẢM ỨNG MOBILE (VIRTUAL JOYSTICK CONFIG) -->
                         <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 shadow-lg space-y-3 font-mono-tech">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -3620,7 +3807,7 @@
                                         <h3 class="text-xs font-black text-amber-300 uppercase">TÙY CHỈNH BỐ CỤC PHÍM CẢM ỨNG (PUBG MOBILE STYLE)</h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400 mt-1">
-                                        Kéo thả tự do các phím cảm ứng (Cần Di chuyển, Cần Ngắm &amp; Bắn, Nút Lướt Dash, Nút [E] Tương tác, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
+                                        Kéo thả tự do các phím cảm ứng (Joystick, Ngắm &amp; Bắn, Nút Lướt Dash, Nút Lướt Trái [Q], Nút [E] Tương tác/Lướt Phải, Tháp pháo [T]) đến bất kỳ vị trí nào trên màn hình theo thói quen của bạn.
                                     </p>
                                 </div>
                             </div>
@@ -4308,6 +4495,22 @@
                     </div>
                 </div>
 
+                <!-- Hàng 1.5: Chọn Chế Độ Tác Chiến (Co-Op Chiến Dịch vs Solo 1v1 Gun Game) -->
+                <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-slate-400 font-bold uppercase">CHẾ ĐỘ TÁC CHIẾN</span>
+                        <span id="coopHostModeLabel" class="text-cyan-400 font-bold uppercase">CO-OP BẮN QUÁI</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button id="coopModeCoopBtn" type="button" onclick="window.setCoopGameMode('campaign')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 cursor-pointer">
+                            CO-OP BẮN QUÁI
+                        </button>
+                        <button id="coopModePvpBtn" type="button" onclick="window.setCoopGameMode('pvp_gungame')" class="py-1.5 px-2 text-xs font-black uppercase transition bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer">
+                            SOLO 1V1 GUN GAME
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Hàng 2: Chọn Bản Đồ & Chọn Độ Khó trực tiếp ngay trong phòng -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div class="p-2.5 bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
@@ -4454,8 +4657,8 @@
                         <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                     </div>
                     <div>
-                        <h2 class="text-sm font-black text-white uppercase font-mono-tech tracking-wider">HỆ THỐNG DANH TÍNH TÁC CHIẾN</h2>
-                        <p class="text-[10px] text-emerald-400/80 font-mono-tech">HỆ THỐNG MÁY CHỦ CLOUD // TỰ ĐỘNG ĐỒNG BỘ</p>
+                        <h2 class="text-sm font-black text-white uppercase font-mono-tech tracking-wider">ĐỊNH DANH TÁC CHIẾN</h2>
+                        <p class="text-[10px] text-emerald-400/80 font-mono-tech">HỆ THỐNG MÁY CHỦ KHÔNG GIAN // TỰ ĐỘNG ĐỒNG BỘ</p>
                     </div>
                 </div>
                 <button onclick="window.closeAuthModal()" class="w-7 h-7 rounded-none bg-slate-900 border border-slate-700 hover:bg-rose-600/90 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition">
