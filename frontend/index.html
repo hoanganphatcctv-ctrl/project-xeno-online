@@ -102,6 +102,22 @@
         #webglCanvas {
             pointer-events: none;
         }
+        :root {
+            --ui-scale: 1;
+        }
+        #mainSettingsModal,
+        #topLeftHUD,
+        #topRightHUD,
+        #coopTopHUD,
+        #bossHudWrap,
+        #armoryModal > div,
+        #coopModal > div,
+        #pauseModal > div,
+        #authModal > div,
+        #victoryModal > div,
+        #gameOverModal > div {
+            zoom: var(--ui-scale, 1);
+        }
         #touchControlsOverlay {
             touch-action: none;
             -webkit-touch-callout: none;
@@ -1317,7 +1333,7 @@
     <!-- ==========================================================================
          1. SCI-FI MECHA TOP-LEFT HUD (CỤM MÁU GIÁP & CỤM THÔNG SỐ TRÊN CÙNG BÊN PHẢI)
          ========================================================================== -->
-    <div class="pointer-events-none absolute top-2.5 left-2.5 z-20 flex flex-wrap sm:flex-nowrap items-start gap-2.5">
+    <div id="topLeftHUD" class="pointer-events-none absolute top-2.5 left-2.5 z-20 flex flex-wrap sm:flex-nowrap items-start gap-2.5">
         
         <!-- CỤM 1: MÁU & GIÁP MECHA REACTOR (THEO ẢNH MẪU 100%) -->
         <div class="flex flex-col gap-1.5 shrink-0">
@@ -1640,7 +1656,7 @@
     <!-- ==========================================================================
          2. MULTI-BOSS HEALTH BAR (DODGES TOP STATS BAR - FIXED TOP-11 / SM:TOP-12)
          ========================================================================== -->
-    <div class="pointer-events-none fixed top-11 sm:top-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center w-full max-w-[280px] sm:max-w-[340px] px-2 select-none">
+    <div id="bossHudWrap" class="pointer-events-none fixed top-11 sm:top-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center w-full max-w-[280px] sm:max-w-[340px] px-2 select-none">
         <!-- MULTI-BOSS HP BAR (Appears in Final Boss Wave) -->
         <div id="bossHudPanel" class="hidden w-full hud-panel rounded-none px-2.5 py-1 sm:py-1.5 border border-rose-500/70 shadow-[0_4px_20px_rgba(244,63,94,0.35)] backdrop-blur-md">
             <div class="flex items-center justify-between text-[9px] sm:text-[9.5px] font-mono-tech leading-tight">
@@ -1680,7 +1696,7 @@
     <!-- ==========================================================================
          3. TOP-RIGHT HUD: 5x5 MATRIX RADAR MINIMAP & QUICK CONTROL BUTTONS
          ========================================================================== -->
-    <div class="pointer-events-none absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1.5 w-[230px]">
+    <div id="topRightHUD" class="pointer-events-none absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1.5 w-[230px]">
         <!-- Radar Minimap Card -->
         <div class="pointer-events-auto hud-panel rounded-none p-2 flex flex-col gap-1 shadow-xl w-full">
             <div class="flex items-center justify-between text-[9px] font-mono-tech px-0.5 gap-2">
@@ -2425,7 +2441,7 @@
                     <span id="lobbyFooterPingText">PING: --ms</span>
                     <span>FPS CAP: <b id="lobbyFooterFpsText" class="text-emerald-400">120 FPS</b></span>
                     <span>ĐỘ SÁNG: <b id="lobbyFooterBrightText" class="text-sky-300">100%</b></span>
-                    <span>ZOOM: <b id="lobbyFooterZoomText" class="text-cyan-300">100%</b></span>
+                    <button type="button" onclick="window.quickCycleUiScale(event)" class="cursor-pointer hover:text-cyan-200 transition" title="Nhấp để đổi nhanh tỉ lệ giao diện">ZOOM: <b id="lobbyFooterZoomText" class="text-cyan-300">100%</b></button>
                     <span class="hidden sm:inline">XENO-UID: 184863464700618352523</span>
                 </div>
             </div>
@@ -3423,13 +3439,57 @@
                             </div>
                         </div>
 
+                        <!-- TỈ LỆ GIAO DIỆN HỆ THỐNG (UI / HUD SCALE) -->
+                        <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-xs font-black text-cyan-400 uppercase font-mono-tech flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 bg-cyan-400 inline-block"></span>
+                                        TỈ LỆ GIAO DIỆN HỆ THỐNG (UI / HUD SCALE)
+                                    </h3>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Tùy biến kích thước Sảnh chính, thanh HUD và các cửa sổ (Tối ưu khi trình duyệt thu nhỏ 60% hoặc màn hình 4K)</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span id="sysCurrentUiScaleBadge" class="px-2 py-0.5 rounded-none bg-cyan-500/20 text-cyan-300 font-mono-tech font-bold text-xs border border-cyan-500/30">100%</span>
+                                    <button onclick="window.resetUiScale()" class="px-2.5 py-1 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-[10px] font-mono-tech font-bold text-cyan-300 transition" title="Đặt lại về tỉ lệ mặc định 100%">
+                                        ĐẶT LẠI (100%)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-none bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 transition space-y-2.5">
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    <button type="button" onclick="window.adjustUiScale(-5)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-slate-800/90 hover:bg-cyan-500/25 active:bg-cyan-500/40 border border-slate-700 hover:border-cyan-400 text-cyan-300 font-mono-tech font-black text-base sm:text-lg select-none transition cursor-pointer shrink-0">
+                                        −
+                                    </button>
+                                    
+                                    <div class="flex-1 relative flex items-center">
+                                        <input id="sliderUiScale" type="range" min="60" max="160" step="5" value="100"
+                                               style="--slider-pct: 40%;"
+                                               oninput="window.setUiScale(this.value)"
+                                               class="w-full tech-range-slider range-cyan cursor-pointer" />
+                                    </div>
+
+                                    <button type="button" onclick="window.adjustUiScale(5)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-slate-800/90 hover:bg-cyan-500/25 active:bg-cyan-500/40 border border-slate-700 hover:border-cyan-400 text-cyan-300 font-mono-tech font-black text-base sm:text-lg select-none transition cursor-pointer shrink-0">
+                                        +
+                                    </button>
+                                </div>
+
+                                <div class="flex justify-between text-[9px] font-mono-tech text-slate-500 px-0.5">
+                                    <span>60% (Thu nhỏ)</span>
+                                    <span class="text-cyan-400 font-bold">100% (Chuẩn gốc)</span>
+                                    <span>160% (Phóng đại)</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- TỈ LỆ ZOOM MÀN HÌNH CHỦ ĐỘNG (ACTIVE DISPLAY ZOOM SCALE) -->
                         <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-xs font-black text-cyan-400 uppercase font-mono-tech flex items-center gap-2">
                                         <span class="w-1.5 h-1.5 bg-cyan-400 inline-block"></span>
-                                        TỈ LỆ ZOOM MÀN HÌNH (DISPLAY ZOOM SCALE)
+                                        TỈ LỆ TẦM NHÌN CHIẾN TRƯỜNG (CAMERA FOV ZOOM)
                                     </h3>
                                     <p class="text-[11px] text-slate-400 mt-0.5">Tùy biến góc nhìn &amp; kích thước hiển thị chiến trường (Bao quát rộng hoặc Cận cảnh chi tiết, tối ưu Mobile &amp; PC)</p>
                                 </div>
@@ -11565,6 +11625,14 @@
         const lightCtx = lightCanvas.getContext("2d", {
             willReadFrequently: false
         }) || lightCanvas.getContext("2d");
+
+        let savedInitialUiScale = 100;
+        try {
+            const sui = localStorage.getItem("xeno_ui_scale");
+            if (sui !== null) savedInitialUiScale = Math.max(60, Math.min(160, parseInt(sui, 10) || 100));
+        } catch (e) {}
+        window.uiScale = savedInitialUiScale / 100;
+        document.documentElement.style.setProperty('--ui-scale', String(window.uiScale));
 
         let savedInitialZoom = 100;
         try {
@@ -30411,6 +30479,7 @@
         function refreshAllTechSliders() {
             const ids = [
                 "sliderLobbyDim",
+                "sliderUiScale",
                 "sliderScreenZoom",
                 "sliderBrightness",
                 "sliderContrast",
@@ -30427,6 +30496,76 @@
         }
         window.refreshAllTechSliders = refreshAllTechSliders;
 
+        function setUiScale(val, saveToStorage = true) {
+            let num = parseInt(val, 10);
+            if (isNaN(num)) num = 100;
+            num = Math.max(60, Math.min(160, num));
+            num = Math.round(num / 5) * 5;
+            window.uiScale = num / 100;
+
+            document.documentElement.style.setProperty('--ui-scale', String(window.uiScale));
+
+            const directTargets = [
+                "mainSettingsModal",
+                "topLeftHUD",
+                "topRightHUD",
+                "coopTopHUD",
+                "bossHudWrap"
+            ];
+            directTargets.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.zoom = String(window.uiScale);
+            });
+
+            const innerModals = document.querySelectorAll(
+                "#armoryModal > div, #coopModal > div, #pauseModal > div, #authModal > div, #victoryModal > div, #gameOverModal > div"
+            );
+            innerModals.forEach(el => {
+                if (el) el.style.zoom = String(window.uiScale);
+            });
+
+            const slider = byId("sliderUiScale");
+            if (slider) {
+                slider.value = num;
+                updateTechSliderProgress(slider);
+            }
+            setText("sysCurrentUiScaleBadge", `${num}%`);
+            setText("lobbyFooterZoomText", `${num}%`);
+
+            if (saveToStorage) {
+                try { localStorage.setItem("xeno_ui_scale", String(num)); } catch (e) {}
+            }
+        }
+        window.setUiScale = setUiScale;
+
+        function adjustUiScale(delta) {
+            if (typeof sfx !== "undefined" && sfx && typeof sfx.playClick === "function") sfx.playClick();
+            const current = Math.round((window.uiScale || 1.0) * 100);
+            setUiScale(current + delta, true);
+        }
+        window.adjustUiScale = adjustUiScale;
+
+        function resetUiScale() {
+            if (typeof sfx !== "undefined" && sfx && typeof sfx.playClick === "function") sfx.playClick();
+            setUiScale(100, true);
+        }
+        window.resetUiScale = resetUiScale;
+
+        function quickCycleUiScale(ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            if (typeof sfx !== "undefined" && sfx && typeof sfx.playClick === "function") sfx.playClick();
+            const current = Math.round((window.uiScale || 1.0) * 100);
+            let next = 100;
+            if (current < 100) next = 100;
+            else if (current < 120) next = 120;
+            else if (current < 140) next = 140;
+            else if (current < 160) next = 160;
+            else next = 80;
+            setUiScale(next, true);
+            showToast("TỈ LỆ GIAO DIỆN", `Đã đặt kích thước giao diện: ${next}%.`);
+        }
+        window.quickCycleUiScale = quickCycleUiScale;
+
         function setScreenZoom(val, saveToStorage = true) {
             let num = parseInt(val, 10);
             if (isNaN(num)) num = 100;
@@ -30440,7 +30579,6 @@
                 updateTechSliderProgress(slider);
             }
             setText("sysCurrentZoomBadge", `${num}%`);
-            setText("lobbyFooterZoomText", `${num}%`);
             if (saveToStorage) {
                 try { localStorage.setItem("xeno_screen_zoom", String(num)); } catch (e) {}
             }
@@ -30800,6 +30938,13 @@
                     setFpsLimit(parseInt(savedFps, 10));
                 } else {
                     setFpsLimit(144);
+                }
+
+                const savedUiScale = localStorage.getItem("xeno_ui_scale");
+                if (savedUiScale !== null) {
+                    setUiScale(parseInt(savedUiScale, 10) || 100, false);
+                } else {
+                    setUiScale(100, false);
                 }
 
                 const savedZoom = localStorage.getItem("xeno_screen_zoom");
