@@ -4344,20 +4344,24 @@
                             <span id="coopTickDropdownArrow" class="text-[9px] text-emerald-400 font-mono-tech">[MỞ]</span>
                         </button>
 
-                        <div id="coopTickDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-56 bg-slate-950 border border-cyan-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 p-1 flex flex-col gap-1">
+                        <div id="coopTickDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-52 bg-slate-950 border border-cyan-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 p-1 flex flex-col gap-1">
+                            <button id="coopTick90Btn" type="button" onclick="window.setCoopTickRate(90)" class="w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer">
+                                <div class="flex items-center justify-between font-black text-[10px] uppercase">
+                                    <span>90Hz (ULTRA ESPORT)</span>
+                                    <span id="coopTick90Check" class="text-[9px] hidden">ĐANG CHỌN</span>
+                                </div>
+                            </button>
                             <button id="coopTick60Btn" type="button" onclick="window.setCoopTickRate(60)" class="w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer">
                                 <div class="flex items-center justify-between font-black text-[10px] uppercase">
-                                    <span>60Hz (MẶC ĐỊNH)</span>
+                                    <span>60Hz (CHUẨN ESPORT)</span>
                                     <span id="coopTick60Check" class="text-[9px]">ĐANG CHỌN</span>
                                 </div>
-                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">60HZ-Max</span>
                             </button>
                             <button id="coopTick30Btn" type="button" onclick="window.setCoopTickRate(30)" class="w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer">
                                 <div class="flex items-center justify-between font-black text-[10px] uppercase">
-                                    <span>30Hz-(TIẾT KIỆM)</span>
+                                    <span>30Hz (TIẾT KIỆM)</span>
                                     <span id="coopTick30Check" class="text-[9px] hidden">ĐANG CHỌN</span>
                                 </div>
-                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">30HZ-(TIẾT KIỆM)</span>
                             </button>
                         </div>
                     </div>

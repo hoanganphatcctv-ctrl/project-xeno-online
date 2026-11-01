@@ -79,13 +79,21 @@ Hệ thống cho phép người chơi lựa chọn linh hoạt giữa 2 cơ ch�
 
 ---
 
-## ⏱️ 4. TẦN SỐ MẠNG (TICK RATE 60HZ / 30HZ) & ĐO PING RTT
+## ⏱️ 4. TẦN SỐ MẠNG (TICK RATE 90HZ / 60HZ / 30HZ) & SMART FALLBACK
 
-* **Tần số mạng**: Mặc định chạy ở **60Hz** (`16.66ms/tick`), có thể tùy chỉnh về **30Hz** (`33.33ms/tick`) trong cài đặt phòng chờ và tự động đồng bộ từ Host sang Client (`tick_rate_sync`).
+* **Ba nấc tần số mạng linh hoạt**:
+  * **90Hz (Ultra e-Sport)**: Chu kỳ gửi $11.11\text{ms/tick}$. Mang lại độ tươi dữ liệu tối đa, triệt tiêu vi rung trên màn hình 90Hz/120Hz/144Hz+, tối ưu đặc biệt cho thao tác lướt `Q`/`E` và Hit-Reg trong Solo PvP Gun Game.
+  * **60Hz (Chuẩn e-Sport - Mặc định)**: Chu kỳ gửi $16.66\text{ms/tick}$. Chuẩn mực ổn định cao cho mọi thiết bị và màn hình chuẩn 60 FPS.
+  * **30Hz (Tiết kiệm băng thông)**: Chu kỳ gửi $33.33\text{ms/tick}$. Giảm 50% số gói tin, phù hợp mạng di động yếu.
+* **Cơ chế Smart Fallback an toàn đa tầng**:
+  1. **Thích ứng màn hình phần cứng**: Trên màn hình 60Hz thông thường, vòng lặp game gắn với `requestAnimationFrame` tự động giới hạn ở tốc độ khung hình thực tế (~60 gói/giây), không bao giờ dồn hàng đợi (Bufferbloat) hay sinh gói tin thừa.
+  2. **Tự động phòng vệ nghẽn mạng (Network Congestion Protection)**: Khi đang ở 90Hz nếu Ping vượt quá 280ms liên tục (mạng bị chập chờn/nghẽn gói), client tự động dãn chu kỳ truyền tải về 16ms (~60Hz) để giải phóng buffer đường truyền, tự phục hồi lại 90Hz ngay khi Ping hạ nhiệt.
+  3. **Tương thích ngược Server/Host**: Nếu Client hoặc Host gửi tần số 90Hz nhưng đối phương hoặc server relay Render phiên bản cũ phản hồi mốc khác, bộ phân tích tự động chuẩn hóa về `[30, 60, 90]` mà không gây lỗi ngắt kết nối.
+  4. **Co giãn độ trễ nội suy LERP (`renderDelay`)**: Ở 90Hz, ngưỡng sàn trễ được hạ xuống $26\text{ms}$ (thay vì 40ms) khi Ping thấp, giúp chuyển động đồng đội phản hồi tức thì. Nếu Ping tăng, ngưỡng trễ tự động nới lỏng mượt mà lên tới $150\text{ms}$.
 * **Đo độ trễ khứ hồi (Ping RTT)**:
   * Mỗi `1000ms`, client phát gói `ping` mang dấu thời gian `performance.now()`. Khi nhận lại gói `pong`, tính toán độ trễ RTT.
   * Áp dụng công thức làm mượt hàm mũ (Exponential Moving Average):
-    $$\text{Ping}_{\text{smoothed}} = 0.6 \times \text{Ping}_{\text{old}} + 0.4 \times \text{Ping}_{\text{new}}$$
+    $$\text{Ping}_{\text{smoothed}} = 0.65 \times \text{Ping}_{\text{old}} + 0.35 \times \text{Ping}_{\text{new}}$$
   * Cập nhật chỉ số Ping và tần số Hz trực tiếp lên thanh `#coopTopHUD`.
 
 ---
@@ -173,4 +181,41 @@ Nhằm đảm bảo đồng đội di chuyển mượt mà 60 FPS mà không b�
   * **Đăng Nhập Google 1-Click (Google Identity Services)**: Xác thực trực tiếp qua tài khoản Google của người chơi bằng JWT ID Token, hỗ trợ đồng bộ xuyên suốt từ PC sang Mobile và PWA App.
 * **Đồng bộ danh tính trong phòng Co-Op**:
   * Biệt danh tác chiến (`Callsign`) và hình ảnh đại diện (`avatar_url`) từ tài khoản Google được truyền đồng bộ qua gói tin bắt tay phòng `ROOM_JOIN` / `PLAYER_INFO`, hiển thị chính xác trên HUD thanh máu và bảng tổng kết trận đấu của cả hai chỉ huy.
+
+---
+
+## 🤖 10. ĐỒNG BỘ TOÀN DIỆN DRONE UAV & THÁP PHÁO TỰ ĐỘNG [T] (CO-OP HYBRID)
+
+Hệ thống hỗ trợ đồng bộ hiển thị và tác chiến mượt mà cho cả **Drone UAV yểm trợ** và **Tháp Pháo Tự Động [T]** giữa hai người chơi trên cả 2 hạ tầng (Dedicated Server & P2P WebRTC):
+
+### A. Đồng bộ Drone Yểm Trợ UAV (`droneCount`)
+1. **Truyền tải số lượng Drone**:
+   * Trường `dc: player.droneCount || 0` được tích hợp trực tiếp vào gói snapshot 60Hz của Host (`snapPacket.p.dc`) và Client (`input.dc`).
+   * Máy đối phương ghi nhận vào `teammate.droneCount`.
+2. **Hiển thị bay quanh đồng đội (`drawTeammatePlayer`)**:
+   * Drone bay quanh đồng đội với góc quỹ đạo $\theta = \text{Date.now()} \times 0.0028 + i \times \frac{2\pi}{\text{droneCount}}$ ở bán kính 36px.
+   * Render Sprite Drone sắc nét từ `CUSTOM_ASSETS.drone` (kèm procedural canvas fallback nếu chưa nạp xong asset).
+   * Vẽ đèn tín hiệu nhấp nháy (Strobe Light) màu xanh cyan ngọc bích.
+3. **Bắn đạn hỗ trợ trực quan (Visual-only Sync)**:
+   * Drone đồng đội quét tìm quái vật gần nhất trong bán kính 340px và khai hỏa đạn plasma định kỳ (`frameCounter % 26 === 13`).
+   * Đạn bắn mang cờ `isTeammate: true`, tạo vệt đạn xanh lá rực rỡ và hiệu ứng tóe tia lửa/máu khi va chạm quái mà **không gây lỗi nhân đôi sát thương (Damage Duplication)**, do máy người sở hữu đã tự tính toán sát thương độc lập.
+
+### B. Đồng bộ Tháp Pháo Tự Động [T] (`turrets`)
+1. **Quy trình triển khai 3 giây (`TURRET_DEPLOYING` & `TURRET_DEPLOY_CANCEL`)**:
+   * Khi người chơi giữ phím `[T]`, gói tin `TURRET_DEPLOYING` (`x, y, duration: 3000`) được gửi sang đồng đội.
+   * Máy đồng đội hiển thị vòng tròn tiến trình ba chiều Holographic màu vàng hổ phách (`#f59e0b`) dưới chân người đặt cùng tỷ lệ phần trăm đang nạp.
+   * Nếu người chơi di chuyển hoặc bị ngắt, gói `TURRET_DEPLOY_CANCEL` hủy ngay lập tức vòng chờ.
+2. **Đồng bộ đặt pháo (`TURRET_DEPLOYED`)**:
+   * Khi hoàn tất 3s, pháo xuất hiện đồng thời trên cả 2 máy với cờ `isTeammate: true` và `owner: "client" | "host"`.
+   * Phát sóng xung kích triển khai mở rộng và âm thanh đặt pháo `sfxTurretDeploy`.
+3. **Độc lập Quota pháo (`countActiveTurrets(playerOnly = true)`)**:
+   * Mỗi người chơi sở hữu hạn ngạch độc lập tối đa **4 tháp pháo**, không xảy ra tình trạng tranh chấp hay chiếm dụng giới hạn của nhau.
+4. **Nhận diện trực quan & Cơ chế tác chiến**:
+   * Pháo của đồng đội hiển thị nhãn `PHÁO ĐỒNG ĐỘI` và lõi năng lượng pulse màu vàng hổ phách (để phân biệt với `PHÁO CỦA BẠN` màu xanh ngọc cyan).
+   * Pháo xoay nòng theo quái vật gần nhất trên cả hai máy và bắn đạn kép.
+   * Đạn từ tháp pháo đồng đội mang cờ `isTeammate: true` đảm bảo tính toàn vẹn sát thương của hệ thống Host-Authoritative.
+5. **Cơ chế Chống Rớt Gói Tin (Reconciliation Loop)**:
+   * Bản tin `SYNC_ENEMIES` của Host và `input` của Client định kỳ gửi kèm danh sách mảng pháo đang hoạt động (`turrets: syncedTurrets`).
+   * Máy đối phương tự động đối soát và đồng bộ lại nếu có gói tin UDP/WebRTC bị thất thoát.
+
 

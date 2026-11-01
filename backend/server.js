@@ -170,7 +170,10 @@ io.on("connection", (socket) => {
     if (!room || room.hostId !== socket.id) return;
     if (data?.mapId) room.mapId = Number(data.mapId) || 1;
     if (data?.difficulty) room.difficulty = String(data.difficulty);
-    if (data?.hz) room.hz = data.hz === 60 ? 60 : 30;
+    if (data?.hz) {
+      const h = Number(data.hz);
+      room.hz = (h === 90 || h === 30) ? h : 60;
+    }
     if (data?.gameMode) room.gameMode = String(data.gameMode);
     socket.to(currentRoomId).emit("room_meta_updated", {
       mapId: room.mapId,
@@ -189,7 +192,8 @@ io.on("connection", (socket) => {
     room.state = "in_game";
     room.mapId = data?.mapId || room.mapId || 1;
     room.difficulty = data?.difficulty || room.difficulty || "normal";
-    room.hz = data?.hz === 60 ? 60 : 30;
+    const reqHz = Number(data?.hz);
+    room.hz = (reqHz === 90 || reqHz === 30) ? reqHz : (room.hz || 60);
     room.gameMode = data?.gameMode || room.gameMode || "campaign";
 
     console.log(`[MISSION START] Room ${currentRoomId} starting Map ${room.mapId} (${room.difficulty}, ${room.hz}Hz, ${room.gameMode})`);
@@ -303,7 +307,7 @@ server.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`[SERVER] XENO CO-OP DEDICATED SERVER RUNNING ON PORT ${PORT}`);
   console.log(`[NETWORK] WebSocket Engine: Socket.io 4.7.5`);
-  console.log(`[SYSTEM] Ready for 30Hz Network Ticks & Matchmaking`);
+  console.log(`[SYSTEM] Ready for 30Hz / 60Hz / 90Hz Network Ticks & Matchmaking`);
   console.log(`====================================================`);
 });
 

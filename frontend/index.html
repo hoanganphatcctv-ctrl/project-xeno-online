@@ -4344,20 +4344,24 @@
                             <span id="coopTickDropdownArrow" class="text-[9px] text-emerald-400 font-mono-tech">[MỞ]</span>
                         </button>
 
-                        <div id="coopTickDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-56 bg-slate-950 border border-cyan-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 p-1 flex flex-col gap-1">
+                        <div id="coopTickDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-52 bg-slate-950 border border-cyan-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 p-1 flex flex-col gap-1">
+                            <button id="coopTick90Btn" type="button" onclick="window.setCoopTickRate(90)" class="w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer">
+                                <div class="flex items-center justify-between font-black text-[10px] uppercase">
+                                    <span>90Hz (ULTRA ESPORT)</span>
+                                    <span id="coopTick90Check" class="text-[9px] hidden">ĐANG CHỌN</span>
+                                </div>
+                            </button>
                             <button id="coopTick60Btn" type="button" onclick="window.setCoopTickRate(60)" class="w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer">
                                 <div class="flex items-center justify-between font-black text-[10px] uppercase">
-                                    <span>60Hz (MẶC ĐỊNH)</span>
+                                    <span>60Hz (CHUẨN ESPORT)</span>
                                     <span id="coopTick60Check" class="text-[9px]">ĐANG CHỌN</span>
                                 </div>
-                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">60HZ-Max</span>
                             </button>
                             <button id="coopTick30Btn" type="button" onclick="window.setCoopTickRate(30)" class="w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer">
                                 <div class="flex items-center justify-between font-black text-[10px] uppercase">
-                                    <span>30Hz-(TIẾT KIỆM)</span>
+                                    <span>30Hz (TIẾT KIỆM)</span>
                                     <span id="coopTick30Check" class="text-[9px] hidden">ĐANG CHỌN</span>
                                 </div>
-                                <span class="text-[9px] text-slate-400 font-normal mt-0.5">30HZ-(TIẾT KIỆM)</span>
                             </button>
                         </div>
                     </div>
@@ -6914,6 +6918,7 @@
             armor: 50,
             maxArmor: 100,
             credits: 120, // VẤN ĐỀ 2: TIỀN RIÊNG BIỆT CHO PLAYER 2
+            droneCount: 0,
             currentWeapon: 0,
             isShooting: false,
             isDown: false,
@@ -6953,6 +6958,10 @@
             snap.cred = data.cred !== undefined ? data.cred : teammate.credits;
             snap.down = !!data.down;
             snap.rev = data.rev || 0;
+            snap.dc = data.dc !== undefined ? data.dc : (data.droneCount !== undefined ? data.droneCount : (teammate.droneCount || 0));
+            if (data.dc !== undefined || data.droneCount !== undefined) {
+                teammate.droneCount = (data.dc !== undefined) ? data.dc : data.droneCount;
+            }
 
             if (teammate.snapshotBuffer.length > 0) {
                 const prev = teammate.snapshotBuffer[teammate.snapshotBuffer.length - 1];
@@ -9121,7 +9130,8 @@
                         selectDifficulty(this.hostDifficulty);
                     }
                     if (data.hz) {
-                        this.tickRate = data.hz === 60 ? 60 : 30;
+                        const rawHz = Number(data.hz);
+                        this.tickRate = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                         if (typeof window.syncCoopTickButtons === "function") {
                             window.syncCoopTickButtons(this.tickRate);
                         }
@@ -9145,7 +9155,8 @@
                 }
 
                 if (data.t === "tick_rate_sync" && !this.isHost && data.hz) {
-                    this.tickRate = data.hz === 60 ? 60 : 30;
+                    const rawHz = Number(data.hz);
+                    this.tickRate = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                     if (typeof window.syncCoopTickButtons === "function") {
                         window.syncCoopTickButtons(this.tickRate);
                     }
@@ -9156,7 +9167,8 @@
 
                 if (data.t === "ping") {
                     if (!this.isHost && data.hz) {
-                        const newHz = data.hz === 60 ? 60 : 30;
+                        const rawHz = Number(data.hz);
+                        const newHz = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                         if (this.tickRate !== newHz) {
                             this.tickRate = newHz;
                             if (typeof window.syncCoopTickButtons === "function") {
@@ -9177,7 +9189,8 @@
                         ? Number((this.ping * 0.65 + measuredPing * 0.35).toFixed(1))
                         : Number(measuredPing.toFixed(1));
                     if (!this.isHost && data.hz) {
-                        const newHz = data.hz === 60 ? 60 : 30;
+                        const rawHz = Number(data.hz);
+                        const newHz = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                         if (this.tickRate !== newHz) {
                             this.tickRate = newHz;
                             if (typeof window.syncCoopTickButtons === "function") {
@@ -9194,7 +9207,8 @@
                         window.gameMode = data.gameMode;
                     }
                     if (data.hz) {
-                        this.tickRate = data.hz === 60 ? 60 : 30;
+                        const rawHz = Number(data.hz);
+                        this.tickRate = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                         if (typeof window.syncCoopTickButtons === "function") {
                             window.syncCoopTickButtons(this.tickRate);
                         }
@@ -9477,6 +9491,56 @@
                     return;
                 }
 
+                if (data.t === "TURRET_DEPLOYING") {
+                    window.teammatePendingTurretDeploy = {
+                        active: true,
+                        x: data.x,
+                        y: data.y,
+                        angle: data.angle || 0,
+                        elapsedMs: 0,
+                        durationMs: 3000
+                    };
+                    return;
+                }
+
+                if (data.t === "TURRET_DEPLOY_CANCEL") {
+                    window.teammatePendingTurretDeploy = null;
+                    return;
+                }
+
+                if (data.t === "TURRET_DEPLOYED") {
+                    window.teammatePendingTurretDeploy = null;
+                    const tid = data.id || ("turret_" + (this.isHost ? "client" : "host") + "_" + Date.now());
+                    if (typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                        const exists = turrets.some(tr => tr.id === tid || (Math.hypot(tr.x - data.x, tr.y - data.y) < 18));
+                        if (!exists) {
+                            turrets.push({
+                                id: tid,
+                                active: true,
+                                x: data.x,
+                                y: data.y,
+                                angle: data.angle || 0,
+                                fireCooldown: 0,
+                                isTeammate: true,
+                                owner: data.owner || (this.isHost ? "client" : "host")
+                            });
+                            shockwaveRings.push({
+                                x: data.x,
+                                y: data.y,
+                                r: 8,
+                                maxR: 58,
+                                color: "#38bdf8",
+                                alpha: 0.95
+                            });
+                            if (typeof sfx !== "undefined" && sfx && sfx.playTurretDeploy) {
+                                sfx.playTurretDeploy();
+                            }
+                            addFloatingText(data.x, data.y - 28, "ĐỒNG ĐỘI ĐẶT THÁP PHÁO!", "#38bdf8");
+                        }
+                    }
+                    return;
+                }
+
                 if (data.t === "PLAYER_SHOOT") {
                     if (typeof fireTeammateWeaponVisual === "function" && teammate.active && !teammate.isDown) {
                         if (typeof data.w === "number") teammate.currentWeapon = data.w;
@@ -9562,6 +9626,30 @@
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
+                    if (typeof data.dc === "number") {
+                        teammate.droneCount = data.dc;
+                    }
+                    if (Array.isArray(data.turrets) && typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                        for (let i = 0; i < data.turrets.length; i++) {
+                            const ct = data.turrets[i];
+                            if (!ct) continue;
+                            const existing = turrets.find(t => t.id === ct.id || (Math.hypot(t.x - ct.x, t.y - ct.y) < 18));
+                            if (!existing) {
+                                turrets.push({
+                                    id: ct.id || ("turret_c_" + Date.now()),
+                                    active: true,
+                                    x: ct.x,
+                                    y: ct.y,
+                                    angle: ct.a || 0,
+                                    fireCooldown: 0,
+                                    isTeammate: true,
+                                    owner: "client"
+                                });
+                            } else if (existing.isTeammate && typeof ct.a === "number") {
+                                existing.angle = ct.a;
+                            }
+                        }
+                    }
                     return;
                 }
 
@@ -9574,7 +9662,8 @@
                     }
                     const isPvP = (window.gameMode === "pvp_gungame");
                     if (data.hz) {
-                        const newHz = data.hz === 60 ? 60 : 30;
+                        const rawHz = Number(data.hz);
+                        const newHz = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
                         if (this.tickRate !== newHz) {
                             this.tickRate = newHz;
                             if (typeof window.syncCoopTickButtons === "function") {
@@ -9627,6 +9716,9 @@
                         teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
                         teammate.isShooting = !!p.shoot;
                         teammate.credits = p.cred || teammate.credits;
+                        if (typeof p.dc === "number") {
+                            teammate.droneCount = p.dc;
+                        }
                     }
 
                     if (!isPvP) {
@@ -9744,6 +9836,19 @@
                     ? (this.socket && this.socket.connected)
                     : (this.conn && this.conn.open);
                 if (!canSend) return;
+
+                // Smart Fallback Bảo Vệ Mạng & CPU:
+                // Nếu đang chạy 90Hz nhưng mạng bị nghẽn (Ping > 280ms liên tục), tự động dãn cách sang 16ms (~60Hz) để tránh bufferbloat
+                if (this.tickRate === 90 && this.ping > 280) {
+                    this._congestedCounter = (this._congestedCounter || 0) + 1;
+                    if (this._congestedCounter > 6 && (now - (this._lastCongestedSendTime || 0)) < 16.0) {
+                        return;
+                    }
+                    this._lastCongestedSendTime = now;
+                } else {
+                    this._congestedCounter = 0;
+                }
+
                 this.seq++;
 
                 if (this.isHost) {
@@ -9763,7 +9868,8 @@
                             shoot: mouse.down ? 1 : 0,
                             cred: player.credits,
                             down: player.isDown ? 1 : 0,
-                            rev: Number((player.reviveProgress || 0).toFixed(2))
+                            rev: Number((player.reviveProgress || 0).toFixed(2)),
+                            dc: player.droneCount || 0
                         },
                         selfRev: Number((teammate.reviveProgress || 0).toFixed(2))
                     };
@@ -9854,6 +9960,22 @@
                             }
                         }
 
+                        const syncedTurrets = [];
+                        if (typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                            for (let i = 0; i < turrets.length; i++) {
+                                const tr = turrets[i];
+                                if (tr && tr.active) {
+                                    syncedTurrets.push({
+                                        id: tr.id || ("turret_" + (tr.isTeammate ? "c" : "h") + "_" + i),
+                                        x: Math.round(tr.x),
+                                        y: Math.round(tr.y),
+                                        a: Number((tr.angle || 0).toFixed(2)),
+                                        owner: tr.owner || (tr.isTeammate ? "client" : "host")
+                                    });
+                                }
+                            }
+                        }
+
                         this.sendPacket({
                             t: "SYNC_ENEMIES",
                             wave: currentWave,
@@ -9863,6 +9985,7 @@
                             deadBarrels: deadBarrels,
                             deadVats: deadVats,
                             drops: activeDrops,
+                            turrets: syncedTurrets,
                             genX: mapGenerator ? Math.round(mapGenerator.x) : 0,
                             genY: mapGenerator ? Math.round(mapGenerator.y) : 0,
                             genRoom: mapGenerator ? (mapGenerator.roomName || "") : "",
@@ -9871,6 +9994,22 @@
                         });
                     }
                 } else {
+                    const clientTurrets = [];
+                    if (typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                        for (let i = 0; i < turrets.length; i++) {
+                            const tr = turrets[i];
+                            if (tr && tr.active && !tr.isTeammate) {
+                                clientTurrets.push({
+                                    id: tr.id || ("turret_c_" + i),
+                                    x: Math.round(tr.x),
+                                    y: Math.round(tr.y),
+                                    a: Number((tr.angle || 0).toFixed(2)),
+                                    owner: "client"
+                                });
+                            }
+                        }
+                    }
+
                     this.sendPacket({
                         t: "input",
                         seq: this.seq,
@@ -9886,7 +10025,9 @@
                         cred: player.credits,
                         down: player.isDown ? 1 : 0,
                         rev: Number((player.reviveProgress || 0).toFixed(2)),
-                        selfRev: Number((teammate.reviveProgress || 0).toFixed(2))
+                        selfRev: Number((teammate.reviveProgress || 0).toFixed(2)),
+                        dc: player.droneCount || 0,
+                        turrets: clientTurrets
                     });
                 }
             },
@@ -9910,7 +10051,7 @@
                 }
 
                 const isPvP = (window.gameMode === "pvp_gungame");
-                const hz = this.tickRate === 60 ? 60 : 30;
+                const hz = (this.tickRate === 90 || this.tickRate === 30) ? this.tickRate : 60;
                 if (hud) {
                     hud.classList.remove("hidden");
                     if (isPvP) {
@@ -10002,7 +10143,14 @@
                 this.peerReady = false;
                 this.clientReady = false;
                 teammate.active = false;
+                teammate.droneCount = 0;
                 teammate.snapshotBuffer = [];
+                window.teammatePendingTurretDeploy = null;
+                if (typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                    for (let i = turrets.length - 1; i >= 0; i--) {
+                        if (turrets[i].isTeammate) turrets.splice(i, 1);
+                    }
+                }
                 this.updateClientLobbyUI();
                 this.updateHUD();
             }
@@ -10018,13 +10166,14 @@
             const prevY = teammate.y;
 
             // ========================================================================
-            // COMMERCIAL-GRADE CLIENT-SIDE SNAPSHOT BUFFER (60Hz / 30Hz LERP + EXTRAPOLATION)
+            // COMMERCIAL-GRADE CLIENT-SIDE SNAPSHOT BUFFER (90Hz / 60Hz / 30Hz LERP + EXTRAPOLATION)
             // ========================================================================
             const buffer = teammate.snapshotBuffer;
             if (buffer && buffer.length >= 2) {
                 const tickInterval = 1000 / (XENO_COOP.tickRate || 60);
                 const estimatedOneWay = (XENO_COOP.ping > 0) ? (XENO_COOP.ping * 0.45) : 38;
-                const renderDelay = Math.max(40, Math.min(140, estimatedOneWay + tickInterval * 1.25));
+                const minDelayFloor = (XENO_COOP.tickRate === 90) ? 26 : 40;
+                const renderDelay = Math.max(minDelayFloor, Math.min(150, estimatedOneWay + tickInterval * 1.25));
                 const renderTime = now - renderDelay;
 
                 let s0 = null;
@@ -10286,6 +10435,93 @@
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.restore();
+
+            // Nano-Armor Energy Shield Ring cho đồng đội
+            if (teammate.armor > 0) {
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.30)";
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, 23);
+                ctx.stroke();
+            }
+
+            // Orbiting Autonomous Combat UAV Drones cho đồng đội (P2 / Teammate)
+            if (teammate.droneCount > 0 && !teammate.isDown) {
+                for (let d = 0; d < teammate.droneCount; d++) {
+                    const oAng = (now * 0.0038) + (d * Math.PI * 2 / teammate.droneCount);
+                    const dx = Math.cos(oAng) * 42;
+                    const dy = Math.sin(oAng) * 42;
+                    ctx.save();
+                    ctx.translate(dx, dy);
+                    ctx.rotate(oAng + Math.PI * 0.5);
+
+                    const droneAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.drone : null;
+                    if (droneAsset && droneAsset.loaded && droneAsset.img && droneAsset.img.naturalWidth > 0) {
+                        // Flight altitude drop shadow
+                        ctx.save();
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+                        ctx.beginPath();
+                        safeArc(ctx, 0, 4, 11);
+                        ctx.fill();
+                        ctx.restore();
+
+                        // Render custom drone sprite
+                        const dSize = droneAsset.renderSize || 28;
+                        ctx.drawImage(droneAsset.gpuBitmap || droneAsset.img, -dSize * 0.5, -dSize * 0.5, dSize, dSize);
+
+                        // Rotor spinning disc blur / glow at 4 rotor positions
+                        ctx.save();
+                        ctx.strokeStyle = "rgba(56, 189, 248, 0.40)";
+                        ctx.lineWidth = 1.2;
+                        const rOff = dSize * 0.31;
+                        for (let rx of [-rOff, rOff]) {
+                            for (let ry of [-rOff, rOff]) {
+                                ctx.beginPath();
+                                safeArc(ctx, rx, ry, 4.2);
+                                ctx.stroke();
+                            }
+                        }
+                        ctx.restore();
+
+                        // Central tech energy core pulse
+                        const corePulse = (Math.sin(now * 0.01 + d * 2) + 1) * 0.5;
+                        ctx.fillStyle = `rgba(56, 189, 248, ${0.45 + corePulse * 0.45})`;
+                        ctx.beginPath();
+                        safeArc(ctx, 0, 0, 2.5);
+                        ctx.fill();
+                    } else {
+                        // DEFAULT PROCEDURAL CANVAS UAV
+                        ctx.strokeStyle = "#34d399";
+                        ctx.lineWidth = 1.8;
+                        ctx.beginPath();
+                        ctx.moveTo(-8, -8); ctx.lineTo(8, 8);
+                        ctx.moveTo(8, -8);  ctx.lineTo(-8, 8);
+                        ctx.stroke();
+
+                        ctx.fillStyle = "rgba(52, 211, 153, 0.25)";
+                        for (let rx = -8; rx <= 8; rx += 16) {
+                            for (let ry = -8; ry <= 8; ry += 16) {
+                                ctx.beginPath();
+                                safeArc(ctx, rx, ry, 3.2);
+                                ctx.fill();
+                            }
+                        }
+
+                        ctx.fillStyle = "#059669";
+                        ctx.strokeStyle = "#6ee7b7";
+                        ctx.lineWidth = 1.2;
+                        drawRoundRect(ctx, -5, -4, 10, 8, 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.fillStyle = "#6ee7b7";
+                        ctx.beginPath();
+                        safeArc(ctx, 0, 0, 1.8);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
 
             // ========================================================================
             // RENDER NHÂN VẬT ĐỒNG ĐỘI GIỐNG HỆT ASSET CỦA NGƯỜI CHƠI CHÍNH (drawMarinePlayer)
@@ -10626,6 +10862,9 @@
             if (window.XENO_COOP && typeof window.XENO_COOP.fetchRemoteServerConfig === "function") {
                 window.XENO_COOP.fetchRemoteServerConfig();
             }
+            if (typeof window.syncCoopTickButtons === "function" && window.XENO_COOP) {
+                window.syncCoopTickButtons(window.XENO_COOP.tickRate);
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const roomParam = urlParams.get("room");
             if (roomParam) {
@@ -10885,27 +11124,39 @@
 
         window.syncCoopTickButtons = function(rate) {
             const currentLabel = byId("coopTickCurrentLabel");
-            const btn30 = byId("coopTick30Btn");
+            const btn90 = byId("coopTick90Btn");
             const btn60 = byId("coopTick60Btn");
-            const check30 = byId("coopTick30Check");
+            const btn30 = byId("coopTick30Btn");
+            const check90 = byId("coopTick90Check");
             const check60 = byId("coopTick60Check");
-            if (rate === 60) {
-                if (currentLabel) currentLabel.textContent = "60Hz LERP";
-                if (btn60) btn60.className = "w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer";
-                if (btn30) btn30.className = "w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer";
-                if (check60) check60.classList.remove("hidden");
-                if (check30) check30.classList.add("hidden");
-            } else {
+            const check30 = byId("coopTick30Check");
+
+            const inactiveStyle = "w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer";
+            if (btn90) btn90.className = inactiveStyle;
+            if (btn60) btn60.className = inactiveStyle;
+            if (btn30) btn30.className = inactiveStyle;
+            if (check90) check90.classList.add("hidden");
+            if (check60) check60.classList.add("hidden");
+            if (check30) check30.classList.add("hidden");
+
+            if (rate === 90) {
+                if (currentLabel) currentLabel.textContent = "90Hz LERP";
+                if (btn90) btn90.className = "w-full text-left px-2.5 py-1.5 transition bg-amber-500/20 text-amber-300 border border-amber-400/50 flex flex-col cursor-pointer";
+                if (check90) check90.classList.remove("hidden");
+            } else if (rate === 30) {
                 if (currentLabel) currentLabel.textContent = "30Hz LERP";
                 if (btn30) btn30.className = "w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer";
-                if (btn60) btn60.className = "w-full text-left px-2.5 py-1.5 transition bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-600 flex flex-col cursor-pointer";
                 if (check30) check30.classList.remove("hidden");
-                if (check60) check60.classList.add("hidden");
+            } else {
+                if (currentLabel) currentLabel.textContent = "60Hz LERP";
+                if (btn60) btn60.className = "w-full text-left px-2.5 py-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex flex-col cursor-pointer";
+                if (check60) check60.classList.remove("hidden");
             }
         };
 
         window.setCoopTickRate = function(rate) {
-            XENO_COOP.tickRate = rate === 60 ? 60 : 30;
+            const rawRate = Number(rate);
+            XENO_COOP.tickRate = (rawRate === 90 || rawRate === 30) ? rawRate : 60;
             window.syncCoopTickButtons(XENO_COOP.tickRate);
             window.closeCoopTickDropdown();
             XENO_COOP.updateHUD();
@@ -16436,6 +16687,88 @@
                 }
             }
 
+            // 1C. Teammate's Pending 3-Second Auto-Turret Deployment (Holographic Preview)
+            if (window.teammatePendingTurretDeploy && window.teammatePendingTurretDeploy.active) {
+                const tpx = window.teammatePendingTurretDeploy.x;
+                const tpy = window.teammatePendingTurretDeploy.y;
+                if (tpx + 65 >= camX && tpx - 65 <= camX + VIEW_W && tpy + 65 >= camY && tpy - 65 <= camY + VIEW_H) {
+                    const prog = Math.max(0, Math.min(1, (window.teammatePendingTurretDeploy.elapsedMs || 0) / 3000));
+                    const ringRadius = 30;
+
+                    ctx.save();
+                    ctx.translate(tpx, tpy);
+
+                    // Soft Amber Deployment Zone Fill
+                    const pulseAlpha = 0.14 + 0.08 * Math.sin(now * 0.012);
+                    ctx.fillStyle = `rgba(251, 191, 36, ${pulseAlpha})`;
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 0, ringRadius);
+                    ctx.fill();
+
+                    // Outer Dashed Base Ring
+                    ctx.strokeStyle = "rgba(251, 191, 36, 0.45)";
+                    ctx.lineWidth = 4.5;
+                    ctx.beginPath();
+                    safeArc(ctx, 0, 0, ringRadius);
+                    ctx.stroke();
+
+                    // Holographic Turret Base Preview
+                    ctx.save();
+                    ctx.globalAlpha = 0.42 + 0.50 * prog;
+                    const turretAsset = (typeof CUSTOM_ASSETS !== "undefined") ? CUSTOM_ASSETS.turret : null;
+                    if (turretAsset && turretAsset.loaded && turretAsset.img && turretAsset.img.naturalWidth > 0) {
+                        ctx.rotate(window.teammatePendingTurretDeploy.angle || 0);
+                        const imgW = turretAsset.img.naturalWidth;
+                        const imgH = turretAsset.img.naturalHeight;
+                        const baseDiam = imgW * (turretAsset.baseDiameterRatio || (750 / 1376));
+                        const pivX = imgW * (turretAsset.pivotXRatio || (457 / 1376));
+                        const pivY = imgH * (turretAsset.pivotYRatio || 0.5);
+                        const targetBaseDiameter = 42;
+                        const scale = targetBaseDiameter / baseDiam;
+                        const dw = imgW * scale;
+                        const dh = imgH * scale;
+                        const dx = -pivX * scale;
+                        const dy = -pivY * scale;
+                        ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
+                    }
+                    ctx.restore();
+
+                    // Active Amber Progress Arc
+                    if (prog > 0.005) {
+                        const startAng = -Math.PI * 0.5;
+                        const endAng = startAng + prog * Math.PI * 2;
+                        ctx.strokeStyle = "#fbbf24";
+                        ctx.lineWidth = 5.0;
+                        ctx.lineCap = "round";
+                        ctx.beginPath();
+                        ctx.arc(0, 0, ringRadius, startAng, endAng);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = "#fef08a";
+                        ctx.lineWidth = 2.0;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, ringRadius, startAng, endAng);
+                        ctx.stroke();
+
+                        // Glowing Leading Tip Node on the Circle
+                        const tipX = Math.cos(endAng) * ringRadius;
+                        const tipY = Math.sin(endAng) * ringRadius;
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        safeArc(ctx, tipX, tipY, 3.6);
+                        ctx.fill();
+                    }
+
+                    // Countdown & Status Text above the Turret Base
+                    const remainSec = Math.max(0, (3000 - (window.teammatePendingTurretDeploy.elapsedMs || 0)) / 1000).toFixed(1);
+                    ctx.font = "800 9.5px 'JetBrains Mono', monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "#fbbf24";
+                    ctx.fillText(`ĐỒNG ĐỘI LẮP PHÁO: ${remainSec}S (${Math.floor(prog * 100)}%)`, 0, -ringRadius - 10);
+                    ctx.restore();
+                }
+            }
+
             // 2. Deployed Auto-Turrets
             for (let i = 0; i < turrets.length; i++) {
                 const tr = turrets[i];
@@ -16470,9 +16803,11 @@
 
                     ctx.drawImage(turretAsset.gpuBitmap || turretAsset.img, dx, dy, dw, dh);
 
-                    // Central tech energy core pulse
+                    // Central tech energy core pulse (amber for teammate, cyan for self)
                     const corePulse = (Math.sin(now * 0.008) + 1) * 0.5;
-                    ctx.fillStyle = `rgba(56, 189, 248, ${0.45 + corePulse * 0.45})`;
+                    ctx.fillStyle = tr.isTeammate
+                        ? `rgba(251, 191, 36, ${0.45 + corePulse * 0.45})`
+                        : `rgba(56, 189, 248, ${0.45 + corePulse * 0.45})`;
                     ctx.beginPath();
                     safeArc(ctx, 0, 0, 3.8);
                     ctx.fill();
@@ -16491,7 +16826,7 @@
 
                     ctx.rotate(tr.angle);
                     ctx.fillStyle = "#1e293b";
-                    ctx.strokeStyle = "#fbbf24";
+                    ctx.strokeStyle = tr.isTeammate ? "#fbbf24" : "#4ade80";
                     ctx.lineWidth = 2;
                     drawRoundRect(ctx, -11, -9, 22, 18, 4);
                     ctx.fill();
@@ -16502,11 +16837,20 @@
                     ctx.fillRect(10, -5, 12, 3);
                     ctx.fillRect(10, 2, 12, 3);
 
-                    ctx.fillStyle = "#38bdf8";
+                    ctx.fillStyle = tr.isTeammate ? "#fbbf24" : "#38bdf8";
                     ctx.beginPath();
                     safeArc(ctx, 0, 0, 4);
                     ctx.fill();
                 }
+                ctx.restore();
+
+                // Tactical Owner Tag above Turret
+                ctx.save();
+                ctx.translate(tr.x, tr.y);
+                ctx.font = "800 8.5px 'JetBrains Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.fillStyle = tr.isTeammate ? "#fde047" : "#4ade80";
+                ctx.fillText(tr.isTeammate ? "PHÁO ĐỒNG ĐỘI" : "PHÁO CỦA BẠN", 0, -25);
                 ctx.restore();
             }
         }
@@ -17062,6 +17406,28 @@
                 if (typeof updateStationPowerUI === "function") updateStationPowerUI();
             }
 
+            if (Array.isArray(packet.turrets) && typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                for (let i = 0; i < packet.turrets.length; i++) {
+                    const ht = packet.turrets[i];
+                    if (!ht) continue;
+                    const existing = turrets.find(t => t.id === ht.id || (Math.hypot(t.x - ht.x, t.y - ht.y) < 18));
+                    if (!existing) {
+                        turrets.push({
+                            id: ht.id,
+                            active: true,
+                            x: ht.x,
+                            y: ht.y,
+                            angle: ht.a || 0,
+                            fireCooldown: 0,
+                            isTeammate: (ht.owner !== "client"),
+                            owner: ht.owner || "host"
+                        });
+                    } else if (existing.isTeammate && typeof ht.a === "number") {
+                        existing.angle = ht.a;
+                    }
+                }
+            }
+
             const now = performance.now();
             _seenEnemyIdsShared.clear();
 
@@ -17345,10 +17711,12 @@
             return _aliveBossesShared;
         }
 
-        function countActiveTurrets() {
+        function countActiveTurrets(playerOnly = true) {
             let count = 0;
-            for (let i = 0; i < turrets.length; i++) {
-                if (turrets[i].active) count++;
+            if (typeof turrets !== "undefined" && Array.isArray(turrets)) {
+                for (let i = 0; i < turrets.length; i++) {
+                    if (turrets[i].active && (!playerOnly || !turrets[i].isTeammate)) count++;
+                }
             }
             return count;
         }
@@ -17594,6 +17962,15 @@
                 graceFrames: 10,
                 movingWarn: false
             };
+
+            if (window.XENO_COOP && window.XENO_COOP.connected) {
+                window.XENO_COOP.sendPacket({
+                    t: "TURRET_DEPLOYING",
+                    x: Math.round(placePos.x),
+                    y: Math.round(placePos.y),
+                    angle: Number(player.angle.toFixed(2))
+                });
+            }
 
             if (typeof sfx !== "undefined" && sfx) {
                 if (sfx.playEnergyOn) sfx.playEnergyOn();
@@ -19071,6 +19448,7 @@
 
             isGameOver = true;
             if (pendingTurretDeploy) pendingTurretDeploy.active = false;
+            window.teammatePendingTurretDeploy = null;
             player.hp = 0;
             mouse.down = false;
             Object.keys(keys).forEach(k => { keys[k] = false; });
@@ -20434,6 +20812,39 @@
                 }
             }
 
+            // Autonomous Laser Drones for Teammate (Co-Op support fire visual)
+            if (window.teammate && window.teammate.active && !window.teammate.isDown && (window.teammate.droneCount > 0) && (frameCounter % 26 === 13)) {
+                let nearest = null;
+                let minDist = 380;
+                for (let i = 0; i < MAX_ENEMIES; i++) {
+                    const e = enemies[i];
+                    if (!e.active) continue;
+                    const d = Math.hypot(e.x - window.teammate.x, e.y - window.teammate.y);
+                    if (d < minDist) { minDist = d; nearest = e; }
+                }
+                if (nearest) {
+                    for (let d = 0; d < window.teammate.droneCount; d++) {
+                        const oAng = (performance.now() * 0.0038) + (d * Math.PI * 2 / window.teammate.droneCount);
+                        const dx = window.teammate.x + Math.cos(oAng) * 42;
+                        const dy = window.teammate.y + Math.sin(oAng) * 42;
+                        spawnBullet(dx, dy, Math.atan2(nearest.y - dy, nearest.x - dx), {
+                            speed: 21, damage: 12, color: "#38bdf8", size: 3.2, type: "bullet", knockback: 1.5
+                        }, false, true);
+                        if (typeof spawnParticle === "function") {
+                            spawnParticle(dx, dy, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, "#38bdf8", 2.0, 5);
+                        }
+                    }
+                }
+            }
+
+            // Teammate's Pending Turret Deployment timer
+            if (window.teammatePendingTurretDeploy && window.teammatePendingTurretDeploy.active) {
+                window.teammatePendingTurretDeploy.elapsedMs = (window.teammatePendingTurretDeploy.elapsedMs || 0) + FIXED_PHYSICS_STEP;
+                if (window.teammatePendingTurretDeploy.elapsedMs > 3500) {
+                    window.teammatePendingTurretDeploy.active = false;
+                }
+            }
+
             // Pending 3-Second Auto-Turret Deployment Logic (Must stand still for 3 seconds for green circle to complete 1 full turn)
             if (pendingTurretDeploy && pendingTurretDeploy.active) {
                 const isPressingMove = Boolean(
@@ -20452,6 +20863,9 @@
                     const distToTurret = Math.hypot(player.x - pendingTurretDeploy.x, player.y - pendingTurretDeploy.y);
                     if (player.dashActiveTimer > 0 || distToTurret > 75) {
                         pendingTurretDeploy.active = false;
+                        if (window.XENO_COOP && window.XENO_COOP.connected) {
+                            window.XENO_COOP.sendPacket({ t: "TURRET_DEPLOY_CANCEL" });
+                        }
                         if (typeof sfx !== "undefined" && sfx) sfx.playError();
                         addFloatingText(pendingTurretDeploy.x, pendingTurretDeploy.y - 24, "ĐÃ HỦY TRIỂN KHAI THÁP PHÁO!", "#f43f5e");
                         showToast("ĐÃ HỦY TRIỂN KHAI THÁP PHÁO", "Bạn đã rời khỏi vị trí trước khi vòng tròn xanh chạy đủ 3 giây!");
@@ -20479,13 +20893,27 @@
                             pendingTurretDeploy.active = false;
                             if (player.credits >= 350 && countActiveTurrets() < 4) {
                                 player.credits -= 350;
+                                const turretId = "turret_" + (window.XENO_COOP && window.XENO_COOP.isHost ? "h" : "c") + "_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
                                 turrets.push({
+                                    id: turretId,
                                     active: true,
                                     x: pendingTurretDeploy.x,
                                     y: pendingTurretDeploy.y,
                                     angle: pendingTurretDeploy.angle,
-                                    fireCooldown: 0
+                                    fireCooldown: 0,
+                                    isTeammate: false,
+                                    owner: (window.XENO_COOP && window.XENO_COOP.isHost) ? "host" : "client"
                                 });
+                                if (window.XENO_COOP && window.XENO_COOP.connected) {
+                                    window.XENO_COOP.sendPacket({
+                                        t: "TURRET_DEPLOYED",
+                                        id: turretId,
+                                        x: Math.round(pendingTurretDeploy.x),
+                                        y: Math.round(pendingTurretDeploy.y),
+                                        angle: Number(pendingTurretDeploy.angle.toFixed(2)),
+                                        owner: window.XENO_COOP.isHost ? "host" : "client"
+                                    });
+                                }
                                 if (typeof sfx !== "undefined" && sfx) {
                                     sfx.playTurretDeploy();
                                 }
@@ -20545,15 +20973,15 @@
                         const bulletCfg = {
                             speed: 23,
                             damage: 9.5, // Chia đôi sát thương từng viên (2 x 9.5 = 19 tổng sát thương như gốc)
-                            color: "#fde047",
+                            color: tr.isTeammate ? "#fbbf24" : "#fde047",
                             size: 2.8,
                             type: "bullet",
                             knockback: 1.4
                         };
 
-                        // Bắn đồng thời 2 tia đạn song song từ 2 nòng
-                        spawnBullet(b1x, b1y, tr.angle + (Math.random() - 0.5) * 0.03, bulletCfg, false);
-                        spawnBullet(b2x, b2y, tr.angle + (Math.random() - 0.5) * 0.03, bulletCfg, false);
+                        // Bắn đồng thời 2 tia đạn song song từ 2 nòng (isTeammate = true cho pháo đồng đội -> không nhân đôi sát thương)
+                        spawnBullet(b1x, b1y, tr.angle + (Math.random() - 0.5) * 0.03, bulletCfg, false, !!tr.isTeammate);
+                        spawnBullet(b2x, b2y, tr.angle + (Math.random() - 0.5) * 0.03, bulletCfg, false, !!tr.isTeammate);
 
                         if (typeof spawnParticle === "function") {
                             spawnParticle(b1x, b1y, cos * 2 + (Math.random() - 0.5), sin * 2 + (Math.random() - 0.5), "#fde047", 2.2, 5);
@@ -32713,6 +33141,7 @@
                 }
             }
             if (pendingTurretDeploy) pendingTurretDeploy.active = false;
+            window.teammatePendingTurretDeploy = null;
             setText("upgTurretLv", 0);
             setText("hudTurretCount", "0/4");
             setOpacity("damageVignette", 0);
@@ -34724,9 +35153,10 @@
                 renderWorld();
             }
 
-            // 30Hz/60Hz Co-Op Network Transmission (Chỉ gửi khi đang trong trận chiến Co-Op thực sự)
+            // 30Hz/60Hz/90Hz Co-Op Network Transmission (Chỉ gửi khi đang trong trận chiến Co-Op thực sự)
             if (isCoopActive() && !isPaused && !isMapWon && !isGameOver) {
-                if (!window.XENO_COOP.lastTickTime || (now - window.XENO_COOP.lastTickTime) >= (1000 / window.XENO_COOP.tickRate)) {
+                const targetTickInterval = 1000 / (window.XENO_COOP.tickRate || 60);
+                if (!window.XENO_COOP.lastTickTime || (now - window.XENO_COOP.lastTickTime) >= targetTickInterval) {
                     window.XENO_COOP.lastTickTime = now;
                     window.XENO_COOP.sendTick(now);
                 }
