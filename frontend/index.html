@@ -7269,8 +7269,8 @@
         function respawnPlayerInPvP() {
             if (!PVP_GUNGAME_STATE.active || PVP_GUNGAME_STATE.matchEnded) return;
             player.isDown = false;
-            player.maxHp = 100;
-            player.hp = 100;
+            player.maxHp = Math.max(100, player.maxHp || 100);
+            player.hp = player.maxHp;
             player.armor = 0;
             player.maxArmor = 0;
             player.mana = 100;
@@ -7302,6 +7302,8 @@
                     t: "PVP_RESPAWN",
                     x: Math.round(player.x),
                     y: Math.round(player.y),
+                    hp: Math.round(player.hp),
+                    mhp: Math.round(player.maxHp),
                     gunLevel: PVP_GUNGAME_STATE.gunLevel,
                     roomName: spawnInfo.roomName
                 });
@@ -8951,6 +8953,10 @@
                 if (data.t === "PVP_DOWN") {
                     teammate.isDown = true;
                     teammate.hp = 0;
+                    teammate._pvpDownAt = performance.now();
+                    teammate._reviveGraceUntil = 0;
+                    if (typeof data.x === "number") teammate.x = data.x;
+                    if (typeof data.y === "number") teammate.y = data.y;
                     PVP_GUNGAME_STATE.kills++;
                     advancePvPGunLevel();
                     if (typeof sfx !== "undefined" && sfx && sfx.playPlayerDeath) {
@@ -8973,8 +8979,10 @@
 
                 if (data.t === "PVP_RESPAWN") {
                     teammate.isDown = false;
-                    teammate.hp = 100;
-                    teammate.maxHp = 100;
+                    teammate._pvpDownAt = 0;
+                    teammate._reviveGraceUntil = performance.now() + 1800;
+                    teammate.maxHp = (typeof data.mhp === "number" && data.mhp > 0) ? data.mhp : Math.max(100, teammate.maxHp || 100);
+                    teammate.hp = (typeof data.hp === "number" && data.hp > 0) ? data.hp : teammate.maxHp;
                     if (typeof data.x === "number") teammate.x = data.x;
                     if (typeof data.y === "number") teammate.y = data.y;
                     teammate.targetX = teammate.x;
@@ -9187,63 +9195,34 @@
                 }
 
                 if (data.t === "input" && this.isHost) {
-<<<<<<< HEAD
                     if (typeof data.seq === "number") {
                         if (this.lastRemoteSeq && data.seq < this.lastRemoteSeq && (this.lastRemoteSeq - data.seq) < 600) {
                             return;
                         }
                         this.lastRemoteSeq = data.seq;
                     }
-                    pushTeammateSnapshot(data);
-                    const inReviveGrace = performance.now() < (teammate._reviveGraceUntil || 0);
-                    if (typeof data.hp === "number" && !isNaN(data.hp)) {
-                        teammate.hp = inReviveGrace ? Math.max(40, Math.min(5000, data.hp)) : Math.max(0, Math.min(5000, data.hp));
-                    }
-                    if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
-                    if (typeof data.ar === "number" && !isNaN(data.ar)) {
-                        teammate.armor = inReviveGrace ? Math.max(25, Math.min(5000, data.ar)) : Math.max(0, Math.min(5000, data.ar));
-                    }
-                    if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
-=======
                     const isPvP = (window.gameMode === "pvp_gungame");
                     pushTeammateSnapshot(data);
-                    if (!isPvP) {
-                        if (typeof data.hp === "number" && !isNaN(data.hp)) teammate.hp = Math.max(0, Math.min(5000, data.hp));
-                        if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
-                        if (typeof data.ar === "number" && !isNaN(data.ar)) teammate.armor = Math.max(0, Math.min(5000, data.ar));
-                        if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
-                    } else {
-                        // Trong PvP Gun Game: teammate.hp đồng bộ với Client nhưng tôn trọng trạng thái đã bị hạ
-                        if (teammate.isDown) {
-                            teammate.hp = 0;
-                        } else if (typeof data.hp === "number" && !isNaN(data.hp)) {
-                            teammate.hp = Math.min(teammate.hp !== undefined ? teammate.hp : 100, data.hp);
-                        }
+                    const nowPerf = performance.now();
+                    const inReviveGrace = nowPerf < (teammate._reviveGraceUntil || 0);
+                    const inPvPDownLock = isPvP && ((nowPerf - (teammate._pvpDownAt || 0)) < 600);
+                    if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
+                    if (typeof data.ar === "number" && !isNaN(data.ar)) {
+                        teammate.armor = (!isPvP && inReviveGrace) ? Math.max(25, Math.min(5000, data.ar)) : Math.max(0, Math.min(5000, data.ar));
                     }
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
-                    teammate.currentWeapon = data.w;
-                    teammate.isShooting = !!data.shoot;
-                    teammate.credits = data.cred || teammate.credits;
+                    if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
+
                     const prevDown = teammate.isDown;
-<<<<<<< HEAD
-                    // Chặn gói tin input trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
-                    if (inReviveGrace) {
-                        teammate.isDown = false;
-                    } else {
-                        teammate.isDown = !!data.down;
-                    }
-                    if (player.isDown && typeof data.selfRev === "number") {
-                        player.reviveProgress = data.selfRev;
-                    }
-                    if (teammate.isDown !== prevDown) {
-                        this.updateHUD();
-                    }
-                    if (teammate.isDown && player.isDown && !isGameOver) {
-                        this.sendPacket({ t: "game_over" });
-                        triggerPlayerDeath(true);
-=======
                     if (!isPvP) {
-                        teammate.isDown = !!data.down;
+                        if (typeof data.hp === "number" && !isNaN(data.hp)) {
+                            teammate.hp = inReviveGrace ? Math.max(40, Math.min(5000, data.hp)) : Math.max(0, Math.min(5000, data.hp));
+                        }
+                        // Chặn gói tin input trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
+                        if (inReviveGrace) {
+                            teammate.isDown = false;
+                        } else {
+                            teammate.isDown = !!data.down;
+                        }
                         if (player.isDown && typeof data.selfRev === "number") {
                             player.reviveProgress = data.selfRev;
                         }
@@ -9255,23 +9234,39 @@
                             triggerPlayerDeath(true);
                         }
                     } else {
-                        if (data.down) teammate.isDown = true;
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
+                        // Trong PvP Gun Game: đồng bộ trạng thái gục & máu chính xác từ đối thủ, tự phục hồi nếu đối thủ lướt né đạn hoặc hồi máu
+                        if (inReviveGrace) {
+                            teammate.isDown = false;
+                        } else if (inPvPDownLock) {
+                            teammate.isDown = true;
+                        } else {
+                            teammate.isDown = !!data.down;
+                        }
+                        if (teammate.isDown) {
+                            teammate.hp = 0;
+                        } else if (typeof data.hp === "number" && !isNaN(data.hp)) {
+                            const validHp = Math.max(0, Math.min(5000, data.hp));
+                            if ((nowPerf - (teammate._lastPredHitAt || 0)) < 220) {
+                                teammate.hp = Math.max(1, Math.min(teammate.hp !== undefined ? teammate.hp : validHp, validHp));
+                            } else {
+                                teammate.hp = validHp;
+                            }
+                        }
                     }
+                    teammate.currentWeapon = data.w;
+                    teammate.isShooting = !!data.shoot;
+                    teammate.credits = data.cred || teammate.credits;
                     return;
                 }
 
                 if (data.t === "snap" && !this.isHost) {
-<<<<<<< HEAD
                     if (typeof data.seq === "number") {
                         if (this.lastRemoteSeq && data.seq < this.lastRemoteSeq && (this.lastRemoteSeq - data.seq) < 600) {
                             return;
                         }
                         this.lastRemoteSeq = data.seq;
                     }
-=======
                     const isPvP = (window.gameMode === "pvp_gungame");
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
                     if (data.hz) {
                         const newHz = data.hz === 60 ? 60 : 30;
                         if (this.tickRate !== newHz) {
@@ -9285,49 +9280,47 @@
                     const p = data.p;
                     if (p) {
                         pushTeammateSnapshot(p);
-<<<<<<< HEAD
-                        const inReviveGrace = performance.now() < (teammate._reviveGraceUntil || 0);
-                        if (typeof p.hp === "number") teammate.hp = inReviveGrace ? Math.max(40, p.hp) : p.hp;
+                        const nowPerf = performance.now();
+                        const inReviveGrace = nowPerf < (teammate._reviveGraceUntil || 0);
+                        const inPvPDownLock = isPvP && ((nowPerf - (teammate._pvpDownAt || 0)) < 600);
                         if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
-                        if (typeof p.ar === "number") teammate.armor = inReviveGrace ? Math.max(25, p.ar) : p.ar;
+                        if (typeof p.ar === "number") teammate.armor = (!isPvP && inReviveGrace) ? Math.max(25, p.ar) : p.ar;
                         if (typeof p.mar === "number") teammate.maxArmor = p.mar;
-=======
-                        if (!isPvP) {
-                            if (typeof p.hp === "number") teammate.hp = p.hp;
-                            if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
-                            if (typeof p.ar === "number") teammate.armor = p.ar;
-                            if (typeof p.mar === "number") teammate.maxArmor = p.mar;
-                        } else {
-                            if (teammate.isDown) {
-                                teammate.hp = 0;
-                            } else if (typeof p.hp === "number") {
-                                teammate.hp = Math.min(teammate.hp !== undefined ? teammate.hp : 100, p.hp);
-                            }
-                        }
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
-                        teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
-                        teammate.isShooting = !!p.shoot;
-                        teammate.credits = p.cred || teammate.credits;
+
                         const prevDown = teammate.isDown;
-<<<<<<< HEAD
-                        // Chặn gói tin snap trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
-                        if (inReviveGrace) {
-                            teammate.isDown = false;
-                        } else {
-                            teammate.isDown = !!p.down;
-                        }
-                        if (teammate.isDown !== prevDown) {
-                            this.updateHUD();
-=======
                         if (!isPvP) {
-                            teammate.isDown = !!p.down;
+                            if (typeof p.hp === "number") teammate.hp = inReviveGrace ? Math.max(40, p.hp) : p.hp;
+                            // Chặn gói tin snap trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
+                            if (inReviveGrace) {
+                                teammate.isDown = false;
+                            } else {
+                                teammate.isDown = !!p.down;
+                            }
                             if (teammate.isDown !== prevDown) {
                                 this.updateHUD();
                             }
                         } else {
-                            if (p.down) teammate.isDown = true;
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
+                            if (inReviveGrace) {
+                                teammate.isDown = false;
+                            } else if (inPvPDownLock) {
+                                teammate.isDown = true;
+                            } else {
+                                teammate.isDown = !!p.down;
+                            }
+                            if (teammate.isDown) {
+                                teammate.hp = 0;
+                            } else if (typeof p.hp === "number") {
+                                const validHp = Math.max(0, Math.min(5000, p.hp));
+                                if ((nowPerf - (teammate._lastPredHitAt || 0)) < 220) {
+                                    teammate.hp = Math.max(1, Math.min(teammate.hp !== undefined ? teammate.hp : validHp, validHp));
+                                } else {
+                                    teammate.hp = validHp;
+                                }
+                            }
                         }
+                        teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
+                        teammate.isShooting = !!p.shoot;
+                        teammate.credits = p.cred || teammate.credits;
                     }
 
                     if (!isPvP) {
@@ -9351,47 +9344,25 @@
                         }
 
                         if (Array.isArray(data.drops)) {
-                            for (let d = 0; d < Math.min(items.length, data.drops.length); d++) {
-                                const dp = data.drops[d];
-                                items[d].active = dp.act;
-                                items[d].x = dp.x;
-                                items[d].y = dp.y;
-                                items[d].kind = dp.k;
+                            for (let d = 0; d < items.length; d++) {
+                                if (d < data.drops.length) {
+                                    const dp = data.drops[d];
+                                    items[d].active = !!dp.act;
+                                    items[d].x = dp.x;
+                                    items[d].y = dp.y;
+                                    items[d].kind = dp.k;
+                                } else {
+                                    items[d].active = false;
+                                }
                             }
                         }
                     }
 
-<<<<<<< HEAD
-                    if (teammate.isDown && player.isDown && !isGameOver) {
-                        this.sendPacket({ t: "game_over" });
-                        triggerPlayerDeath(true);
-                        return;
-                    }
-
-                    if (data.boss && window.bossEntity) {
-                        window.bossEntity.hp = data.boss.hp;
-                        window.bossEntity.x = data.boss.x;
-                        window.bossEntity.y = data.boss.y;
-                        window.bossEntity.angle = data.boss.a;
-                    }
-
-                    if (Array.isArray(data.drops)) {
-                        for (let d = 0; d < items.length; d++) {
-                            if (d < data.drops.length) {
-                                const dp = data.drops[d];
-                                items[d].active = !!dp.act;
-                                items[d].x = dp.x;
-                                items[d].y = dp.y;
-                                items[d].kind = dp.k;
-                            } else {
-                                items[d].active = false;
-=======
                     if (Array.isArray(data.deadCrates) && typeof crates !== "undefined") {
                         for (let i = 0; i < data.deadCrates.length; i++) {
                             const cIdx = data.deadCrates[i];
                             if (crates[cIdx] && crates[cIdx].active) {
                                 breakSupplyCrate(crates[cIdx], true);
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
                             }
                         }
                     }
@@ -9399,12 +9370,8 @@
                 }
 
                 if (data.t === "player_down") {
-<<<<<<< HEAD
-                    if (!this.inMission) return;
+                    if (!this.inMission || window.gameMode === "pvp_gungame") return;
                     teammate._reviveGraceUntil = 0;
-=======
-                    if (window.gameMode === "pvp_gungame") return;
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
                     teammate.isDown = true;
                     teammate.hp = 0;
                     teammate.armor = 0;
@@ -9419,11 +9386,7 @@
                 }
 
                 if (data.t === "game_over") {
-<<<<<<< HEAD
-                    if (!this.inMission) return;
-=======
-                    if (window.gameMode === "pvp_gungame") return;
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
+                    if (!this.inMission || window.gameMode === "pvp_gungame") return;
                     if (!isGameOver) {
                         player.isDown = true;
                         teammate.isDown = true;
@@ -10743,22 +10706,21 @@
                 gameMode: window.gameMode || "campaign"
             });
             window.closeCoopModal();
-<<<<<<< HEAD
-            const settingsModal = byId("mainSettingsModal");
-            if (settingsModal) {
-                settingsModal.classList.add("hidden");
-                settingsModal.style.display = "none";
+            if (typeof window.closeMainMenuSettings === "function") {
+                window.closeMainMenuSettings(true);
+            } else {
+                const settingsModal = byId("mainSettingsModal");
+                if (settingsModal) {
+                    settingsModal.classList.add("hidden");
+                    settingsModal.style.display = "none";
+                }
             }
             XENO_COOP.updateHUD();
-            showToast("BẮT ĐẦU CHIẾN DỊCH", `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`);
-=======
-            window.closeMainMenuSettings(true);
             const isPvP = (window.gameMode === "pvp_gungame");
             showToast(
                 isPvP ? "ĐẤU TRƯỜNG 1V1 GUN GAME" : "BẮT ĐẦU CHIẾN DỊCH",
                 isPvP ? "Màn đêm bóng tối • Lướt Q/E né đạn • Thăng cấp 7 vũ khí!" : `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`
             );
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
                     initCampaign(false, false, true);
@@ -17857,18 +17819,19 @@
                             spawnParticle(window.teammate.x, window.teammate.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#38bdf8", 3, 8);
                         } else {
                             const actualDmg = PVP_WEAPON_DAMAGE[6] || 14.0;
-                            window.teammate.hp = Math.max(0, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
-                            if (window.teammate.hp <= 0) {
-                                window.teammate.isDown = true;
-                            }
                             bakeBloodSplatter(window.teammate.x, window.teammate.y, 8, 0.5);
-                            if (frameCounter % 3 === 0 && typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
-                                XENO_COOP.sendPacket({
-                                    t: "PVP_HIT",
-                                    dmg: actualDmg,
-                                    weaponId: 6,
-                                    fromGunLevel: PVP_GUNGAME_STATE.gunLevel
-                                });
+                            if (frameCounter % 3 === 0) {
+                                // Chỉ trừ máu dự đoán trên đúng tick gửi PVP_HIT và KHÔNG tự gán teammate.isDown = true phía người bắn
+                                window.teammate._lastPredHitAt = performance.now();
+                                window.teammate.hp = Math.max(1, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
+                                if (typeof XENO_COOP !== "undefined" && XENO_COOP.connected) {
+                                    XENO_COOP.sendPacket({
+                                        t: "PVP_HIT",
+                                        dmg: actualDmg,
+                                        weaponId: 6,
+                                        fromGunLevel: PVP_GUNGAME_STATE.gunLevel
+                                    });
+                                }
                             }
                         }
                     }
@@ -19919,61 +19882,7 @@
             // =========================================================
             // CO-OP MULTIPLAYER: REVIVE MECHANIC (5s hold in 75px radius, unlimited revives) - CHỈ TRONG CO-OP
             // =========================================================
-<<<<<<< HEAD
             if (isCoopActive() && window.teammate && window.teammate.active) {
-                if (player.isDown) {
-                    mouse.down = false;
-                }
-
-                // If teammate is downed and local player is alive, check proximity to revive
-                if (window.teammate.isDown && !player.isDown) {
-                    const distToTeammate = Math.hypot(player.x - window.teammate.x, player.y - window.teammate.y);
-                    if (distToTeammate <= 85) {
-                        // Cân bằng mới: 3.5 giây cứu (3500ms thay vì 5000ms)
-                        window.teammate.reviveProgress = (window.teammate.reviveProgress || 0) + (dt / 3500);
-                        if (frameCounter % 10 === 0) {
-                            spawnParticle(
-                                window.teammate.x + (Math.random() - 0.5) * 36,
-                                window.teammate.y + (Math.random() - 0.5) * 36,
-                                (Math.random() - 0.5) * 1.5,
-                                -2.2,
-                                "#10b981",
-                                3.2,
-                                16
-                            );
-                        }
-
-                        if (window.teammate.reviveProgress >= 1.0) {
-                            // Cứu thành công! Hồi sinh đồng đội với 40 HP, 25 Giáp, sóng đẩy lùi và khiên bảo vệ
-                            // Đặt khiên chống ghi đè 2.5s để các gói input/snap trễ (in-flight) mang down:1 không bật ngược lại trạng thái gục
-                            window.teammate._reviveGraceUntil = performance.now() + 2500;
-                            window.teammate.isDown = false;
-                            window.teammate.reviveProgress = 0;
-                            window.teammate.hp = 40;
-                            window.teammate.armor = 25;
-                            window.teammate.invulnTimer = 110;
-
-                            shockwaveRings.push({
-                                x: window.teammate.x,
-                                y: window.teammate.y,
-                                r: 12,
-                                maxR: 190,
-                                color: "#10b981",
-                                alpha: 0.95
-                            });
-
-                            // Đẩy lùi nhẹ quái vật xung quanh trong bán kính 160px
-                            for (let ei = 0; ei < MAX_ENEMIES; ei++) {
-                                const ne = enemies[ei];
-                                if (!ne.active) continue;
-                                const de = Math.hypot(ne.x - window.teammate.x, ne.y - window.teammate.y);
-                                if (de < 160 && de > 1) {
-                                    const kbForce = (160 - de) * 0.14;
-                                    ne.x += ((ne.x - window.teammate.x) / de) * kbForce;
-                                    ne.y += ((ne.y - window.teammate.y) / de) * kbForce;
-                                }
-=======
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
                 if (window.gameMode !== "pvp_gungame") {
                     if (player.isDown) {
                         mouse.down = false;
@@ -19995,11 +19904,12 @@
                                     3.2,
                                     16
                                 );
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
                             }
 
                             if (window.teammate.reviveProgress >= 1.0) {
                                 // Cứu thành công! Hồi sinh đồng đội với 40 HP, 25 Giáp, sóng đẩy lùi và khiên bảo vệ
+                                // Đặt khiên chống ghi đè 2.5s để các gói input/snap trễ (in-flight) mang down:1 không bật ngược lại trạng thái gục
+                                window.teammate._reviveGraceUntil = performance.now() + 2500;
                                 window.teammate.isDown = false;
                                 window.teammate.reviveProgress = 0;
                                 window.teammate.hp = 40;
@@ -20530,11 +20440,9 @@
                         const baseDmg = (typeof PVP_WEAPON_DAMAGE[wId] === "number") ? PVP_WEAPON_DAMAGE[wId] : (b.damage * 0.35);
                         const actualDmg = Number((baseDmg * (player.overdriveBuffTimer > 0 ? 1.5 : 1.0)).toFixed(1));
 
-                        // Trừ máu dự đoán tức thời phía người bắn (Predictive Damage)
-                        window.teammate.hp = Math.max(0, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
-                        if (window.teammate.hp <= 0) {
-                            window.teammate.isDown = true;
-                        }
+                        // Trừ máu dự đoán tức thời phía người bắn nhưng KHÔNG tự gán teammate.isDown = true trước khi nhận gói PVP_DOWN / down:1 từ đối thủ
+                        window.teammate._lastPredHitAt = performance.now();
+                        window.teammate.hp = Math.max(1, (typeof window.teammate.hp === "number" ? window.teammate.hp : 100) - actualDmg);
 
                         bakeBloodSplatter(window.teammate.x, window.teammate.y, 14, 0.7);
                         if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
@@ -29522,15 +29430,14 @@
         }
 
         function buyOrRefillArmory(idx) {
-<<<<<<< HEAD
             if (player.isDown) {
                 if (typeof sfx !== "undefined" && sfx) sfx.playError();
                 showToast("ĐANG BỊ HẠ GỤC!", "Cần được đồng đội cứu sống trước khi mua hoặc nạp đạn vũ khí!");
-=======
+                return;
+            }
             if (window.gameMode === "pvp_gungame") {
                 if (typeof sfx !== "undefined" && sfx) sfx.playError();
                 showToast("CHẾ ĐỘ GUN GAME", "Súng chỉ được thăng cấp khi hạ gục đối thủ! Hãy dùng tiền nâng cấp Máu, Giáp và Tốc độ.");
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
                 return;
             }
             const w = WEAPON_DATA[idx];
@@ -32367,15 +32274,11 @@
                 simulateMapTransitionLoading(nextMapId, () => {
                     window.currentMapId = nextMapId;
                     updateMapUIState();
-<<<<<<< HEAD
-                    initCampaign(false, true, true);
-=======
                     if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(nextMapId);
                     if (typeof warmupGpuPipelines === "function") {
                         try { warmupGpuPipelines(); } catch (e) {}
                     }
-                    initCampaign(false, true);
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
+                    initCampaign(false, true, true);
 
                     showToast(
                         "CHUYỂN MÀN THÀNH CÔNG!",
@@ -32386,15 +32289,11 @@
             } else {
                 window.currentMapId = nextMapId;
                 updateMapUIState();
-<<<<<<< HEAD
-                initCampaign(false, true, true);
-=======
                 if (typeof ensureBossCacheEntry === "function") ensureBossCacheEntry(nextMapId);
                 if (typeof warmupGpuPipelines === "function") {
                     try { warmupGpuPipelines(); } catch (e) {}
                 }
-                initCampaign(false, true);
->>>>>>> 55c1b07a55a7541d7c08e6a511a20477deedcceb
+                initCampaign(false, true, true);
                 isTransitioningMap = false;
             }
         }
