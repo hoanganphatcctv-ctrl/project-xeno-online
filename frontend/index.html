@@ -105,18 +105,83 @@
         :root {
             --ui-scale: 1;
         }
-        #mainSettingsModal,
-        #topLeftHUD,
-        #topRightHUD,
+        #mainSettingsModal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: calc(100vw / var(--ui-scale, 1)) !important;
+            height: calc(100vh / var(--ui-scale, 1)) !important;
+            height: calc(100dvh / var(--ui-scale, 1)) !important;
+            max-width: calc(100vw / var(--ui-scale, 1)) !important;
+            max-height: calc(100dvh / var(--ui-scale, 1)) !important;
+            zoom: var(--ui-scale, 1);
+            overflow: hidden !important;
+        }
+        #topLeftHUD {
+            zoom: 1 !important;
+            transform: scale(var(--ui-scale, 1));
+            transform-origin: top left;
+        }
+        #topRightHUD {
+            zoom: 1 !important;
+            transform: scale(var(--ui-scale, 1));
+            transform-origin: top right;
+        }
         #coopTopHUD,
-        #bossHudWrap,
-        #armoryModal > div,
-        #coopModal > div,
+        #bossHudWrap {
+            zoom: 1 !important;
+            transform: translateX(-50%) scale(var(--ui-scale, 1));
+            transform-origin: top center;
+        }
+        #bottomCenterHUD {
+            zoom: 1 !important;
+            transform: translateX(-50%) scale(var(--ui-scale, 1));
+            transform-origin: bottom center;
+        }
         #pauseModal > div,
-        #authModal > div,
-        #victoryModal > div,
+        #fpsConfirmModal > div,
+        #authModal > div {
+            zoom: var(--ui-scale, 1);
+            max-height: calc(92vh / var(--ui-scale, 1)) !important;
+            max-width: min(28rem, calc(95vw / var(--ui-scale, 1))) !important;
+            overflow-y: auto !important;
+        }
         #gameOverModal > div {
             zoom: var(--ui-scale, 1);
+            max-height: calc(92vh / var(--ui-scale, 1)) !important;
+            max-width: min(32rem, calc(95vw / var(--ui-scale, 1))) !important;
+            overflow-y: auto !important;
+        }
+        #coopModal > div,
+        #leaderboardModal > div {
+            zoom: var(--ui-scale, 1);
+            max-height: calc(92vh / var(--ui-scale, 1)) !important;
+            max-width: min(42rem, calc(95vw / var(--ui-scale, 1))) !important;
+            overflow-y: auto !important;
+        }
+        #victoryModal > div {
+            zoom: var(--ui-scale, 1);
+            max-height: calc(92vh / var(--ui-scale, 1)) !important;
+            max-width: min(680px, calc(95vw / var(--ui-scale, 1))) !important;
+        }
+        #armoryModal > div {
+            zoom: var(--ui-scale, 1);
+            max-height: calc(90vh / var(--ui-scale, 1)) !important;
+            max-width: min(1140px, calc(96vw / var(--ui-scale, 1))) !important;
+            overflow-y: auto !important;
+        }
+        #lobbyIntelDrawer > div {
+            max-height: 92% !important;
+            max-width: min(48rem, 95%) !important;
+            overflow-y: auto !important;
+        }
+        #lobbyMapDiffDrawer > div,
+        #lobbyCodexModal > div {
+            max-height: 92% !important;
+            max-width: min(72rem, 95%) !important;
+            overflow-y: auto !important;
         }
         #touchControlsOverlay {
             touch-action: none;
@@ -1747,7 +1812,7 @@
     <!-- ==========================================================================
          4. BOTTOM-CENTER HUD: HORIZONTAL 6-WEAPON DOCK
          ========================================================================== -->
-    <div class="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 w-full max-w-4xl px-3 flex flex-col items-center gap-1" style="z-index: 35;">
+    <div id="bottomCenterHUD" class="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 w-full max-w-4xl px-3 flex flex-col items-center gap-1" style="z-index: 35;">
         <div class="hud-panel px-3 py-1 rounded-none border border-slate-700/80 text-[9px] font-mono-tech text-slate-300 hidden sm:flex items-center gap-2 shadow-lg">
             <span><b class="text-emerald-400">[WASD]</b> Di chuyển</span>
             <span>&bull;</span>
@@ -1963,7 +2028,8 @@
          5. MODAL 1: PAUSE MENU ([P] / TẠM DỪNG)
          ========================================================================== -->
     <div id="pauseModal" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="hud-modal rounded-none border-2 border-emerald-500/50 max-w-md w-full p-6 flex flex-col gap-4 text-center shadow-[0_0_50px_rgba(0,0,0,0.95)]">
+        <div class="hud-modal rounded-none border-2 border-emerald-500/50 max-w-md w-full p-6 flex flex-col gap-4 text-center shadow-[0_0_50px_rgba(0,0,0,0.95)] relative max-h-[92vh] overflow-y-auto">
+            <button onclick="window.resumeGame()" class="absolute top-3 right-3 w-7 h-7 rounded-none bg-slate-900/80 hover:bg-rose-600/90 border border-slate-700 hover:border-rose-400 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer" title="Tiếp tục [P]">&times;</button>
             <div class="mx-auto w-10 h-10 rounded-none bg-emerald-500/15 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current">
                     <path d="M6 5h3.5v14H6V5zm8.5 0H18v14h-3.5V5z"/>
@@ -2018,7 +2084,8 @@
          5B. MODAL XÁC NHẬN TEST FPS (+100 QUÁI VẬT TỪ 4 GÓC BẢN ĐỒ)
          ========================================================================== -->
     <div id="fpsConfirmModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="hud-modal rounded-none border-2 border-rose-500/60 max-w-md w-full p-6 flex flex-col gap-4 text-center shadow-[0_0_50px_rgba(0,0,0,0.95)]">
+        <div class="hud-modal rounded-none border-2 border-rose-500/60 max-w-md w-full p-6 flex flex-col gap-4 text-center shadow-[0_0_50px_rgba(0,0,0,0.95)] relative max-h-[92vh] overflow-y-auto">
+            <button onclick="window.closeFpsTestModal()" class="absolute top-3 right-3 w-7 h-7 rounded-none bg-slate-900/80 hover:bg-rose-600/90 border border-slate-700 hover:border-rose-400 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer" title="Đóng">&times;</button>
             <div class="mx-auto w-10 h-10 rounded-none bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-xs font-mono-tech font-black text-rose-300">
                 FPS
             </div>
@@ -2165,7 +2232,7 @@
     <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="window.handleAvatarFileUpload(event)" />
     <input type="file" id="lobbyBgFileInput" accept="image/*" class="hidden" onchange="window.handleLobbyBgFileUpload(event)" />
 
-    <div id="mainSettingsModal" class="fixed inset-0 z-50 bg-slate-950 select-none flex flex-col justify-between overflow-y-auto overflow-x-hidden" style="min-height: 100%; min-height: 100dvh;">
+    <div id="mainSettingsModal" class="fixed z-50 bg-slate-950 select-none flex flex-col justify-between overflow-hidden" style="top: 0; left: 0; right: auto; bottom: auto; width: calc(100vw / var(--ui-scale, 1)); height: calc(100vh / var(--ui-scale, 1)); height: calc(100dvh / var(--ui-scale, 1)); max-width: calc(100vw / var(--ui-scale, 1)); max-height: calc(100dvh / var(--ui-scale, 1)); zoom: var(--ui-scale, 1);">
 
         <!-- LAYER 1: CUSTOM OR DEFAULT HERO BACKGROUND + HOLOGRAM COMMAND SCREEN -->
         <div id="lobbyBgImageLayer" class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
@@ -2298,7 +2365,7 @@
         </div>
 
         <!-- LAYER 4: MIDDLE AREA (LEFT: SUBTLE TITLE BADGE | RIGHT: SEASON/CAMPAIGN BANNER & QUICK CHECKBOXES) -->
-        <div id="lobbyMiddleArea" class="relative z-20 flex-1 flex items-center justify-between px-3 sm:px-7 pointer-events-none my-auto py-1 sm:py-2">
+        <div id="lobbyMiddleArea" class="relative z-20 flex-1 min-h-0 flex-shrink overflow-hidden flex items-center justify-between px-3 sm:px-7 pointer-events-none my-auto py-1 sm:py-2">
 
             <!-- Left subtle game watermark & quick status -->
             <div class="hidden md:flex flex-col gap-1.5 max-w-xs pointer-events-auto">
@@ -3160,7 +3227,7 @@
              DRAWER 2: CẨM NANG VẬT THỂ TƯƠNG TÁC & ĐỐI THỦ TRONG MÀN
              ====================================================================== -->
         <div id="lobbyIntelDrawer" class="hidden fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
-            <div class="hud-modal rounded-none border-2 border-emerald-500/50 max-w-3xl w-full p-5 flex flex-col gap-4 shadow-[0_0_50px_rgba(0,0,0,0.95)]">
+            <div class="hud-modal rounded-none border-2 border-emerald-500/50 max-w-3xl w-full p-5 flex flex-col gap-4 shadow-[0_0_50px_rgba(0,0,0,0.95)] max-h-[92vh] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                     <div>
                         <h2 class="text-sm sm:text-base font-black text-white uppercase font-mono-tech tracking-wider">
@@ -3280,8 +3347,8 @@
          6B. MODAL CÀI ĐẶT GAME TIÊU CHUẨN (GIAO DIỆN, SÁNG/TỐI, FPS 60-90-120-UNLIMITED, ÂM THANH)
          ========================================================================== -->
     <div id="systemSettingsModal" class="hidden fixed inset-0 z-50 bg-slate-950/88 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
-        <div class="hud-modal rounded-none w-[920px] max-w-[95vw] h-[580px] max-h-[90vh] flex flex-col border-2 border-emerald-500/60 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.95)]"
-             style="width: 920px; max-width: 95vw; height: 580px; min-height: 580px; max-height: 90vh;">
+        <div class="hud-modal rounded-none w-[920px] max-w-[95%] h-[580px] max-h-[92%] flex flex-col border-2 border-emerald-500/60 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.95)]"
+             style="width: 920px; max-width: 95%; height: 580px; max-height: 92%;">
             <!-- Header -->
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90">
                 <div class="flex items-center gap-2.5">
@@ -4662,7 +4729,7 @@
          9. MODAL 5: GAME OVER MODAL (TỬ TRẬN // NHIỆM VỤ THẤT BẠI)
          ========================================================================== -->
     <div id="gameOverModal" class="hidden fixed inset-0 z-50 bg-slate-950/92 backdrop-blur-xl flex items-center justify-center p-4">
-        <div class="hud-modal rounded-none max-w-lg w-full p-6 flex flex-col gap-4 border-2 border-rose-500/70 text-center shadow-[0_0_50px_rgba(244,63,94,0.3)] bg-[#070b13]/98">
+        <div class="hud-modal rounded-none max-w-lg w-full p-6 flex flex-col gap-4 border-2 border-rose-500/70 text-center shadow-[0_0_50px_rgba(244,63,94,0.3)] bg-[#070b13]/98 relative max-h-[92vh] overflow-y-auto">
             <div class="mx-auto w-14 h-14 rounded-none bg-rose-500/20 border-2 border-rose-400/60 flex items-center justify-center text-rose-400 shadow-lg animate-pulse">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-8 h-8 fill-current drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]" aria-hidden="true">
                     <path d="M416 398.9c58.5-41.1 96-104.1 96-174.9C512 100.3 397.4 0 256 0S0 100.3 0 224c0 70.7 37.5 133.8 96 174.9c0 .4 0 .7 0 1.1l0 64c0 26.5 21.5 48 48 48l48 0 0-48c0-8.8 7.2-16 16-16s16 7.2 16 16l0 48 64 0 0-48c0-8.8 7.2-16 16-16s16 7.2 16 16l0 48 48 0c26.5 0 48-21.5 48-48l0-64c0-.4 0-.7 0-1.1zM96 256a64 64 0 1 1 128 0A64 64 0 1 1 96 256zm256-64a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
@@ -4714,7 +4781,7 @@
          10. MODAL 6: TACTICAL AUTH & CLOUD PROFILE (ĐĂNG NHẬP / ĐĂNG KÝ GMAIL / QUÊN PASS)
          ========================================================================== -->
     <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 select-none">
-        <div class="hud-modal rounded-none max-w-md w-full flex flex-col border-2 border-emerald-500/60 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.95)] bg-[#070b13]/98">
+        <div class="hud-modal rounded-none max-w-md w-full flex flex-col border-2 border-emerald-500/60 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.95)] bg-[#070b13]/98 relative max-h-[92vh] overflow-y-auto">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-4 border-b border-emerald-500/30 bg-slate-950/80">
                 <div class="flex items-center gap-2.5">
@@ -30505,23 +30572,73 @@
 
             document.documentElement.style.setProperty('--ui-scale', String(window.uiScale));
 
-            const directTargets = [
-                "mainSettingsModal",
-                "topLeftHUD",
-                "topRightHUD",
-                "coopTopHUD",
-                "bossHudWrap"
-            ];
-            directTargets.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.zoom = String(window.uiScale);
-            });
+            const lobbyModal = document.getElementById("mainSettingsModal");
+            if (lobbyModal) {
+                const s = window.uiScale;
+                lobbyModal.style.width = `calc(100vw / ${s})`;
+                lobbyModal.style.height = `calc(100dvh / ${s})`;
+                lobbyModal.style.maxWidth = `calc(100vw / ${s})`;
+                lobbyModal.style.maxHeight = `calc(100dvh / ${s})`;
+                lobbyModal.style.zoom = String(s);
+                lobbyModal.style.top = "0px";
+                lobbyModal.style.left = "0px";
+                lobbyModal.style.right = "auto";
+                lobbyModal.style.bottom = "auto";
+                lobbyModal.style.overflow = "hidden";
+            }
 
-            const innerModals = document.querySelectorAll(
-                "#armoryModal > div, #coopModal > div, #pauseModal > div, #authModal > div, #victoryModal > div, #gameOverModal > div"
-            );
-            innerModals.forEach(el => {
-                if (el) el.style.zoom = String(window.uiScale);
+            const tl = document.getElementById("topLeftHUD");
+            if (tl) {
+                tl.style.zoom = "1";
+                tl.style.transform = `scale(${window.uiScale})`;
+                tl.style.transformOrigin = "top left";
+            }
+
+            const tr = document.getElementById("topRightHUD");
+            if (tr) {
+                tr.style.zoom = "1";
+                tr.style.transform = `scale(${window.uiScale})`;
+                tr.style.transformOrigin = "top right";
+            }
+
+            const coop = document.getElementById("coopTopHUD");
+            if (coop) {
+                coop.style.zoom = "1";
+                coop.style.transform = `translateX(-50%) scale(${window.uiScale})`;
+                coop.style.transformOrigin = "top center";
+            }
+
+            const boss = document.getElementById("bossHudWrap");
+            if (boss) {
+                boss.style.zoom = "1";
+                boss.style.transform = `translateX(-50%) scale(${window.uiScale})`;
+                boss.style.transformOrigin = "top center";
+            }
+
+            const botHud = document.getElementById("bottomCenterHUD");
+            if (botHud) {
+                botHud.style.zoom = "1";
+                botHud.style.transform = `translateX(-50%) scale(${window.uiScale})`;
+                botHud.style.transformOrigin = "bottom center";
+            }
+
+            const modalConfigs = [
+                { sel: "#pauseModal > div", maxW: "28rem" },
+                { sel: "#fpsConfirmModal > div", maxW: "28rem" },
+                { sel: "#authModal > div", maxW: "28rem" },
+                { sel: "#gameOverModal > div", maxW: "32rem" },
+                { sel: "#coopModal > div", maxW: "42rem" },
+                { sel: "#leaderboardModal > div", maxW: "42rem" },
+                { sel: "#victoryModal > div", maxW: "680px" },
+                { sel: "#armoryModal > div", maxW: "1140px" }
+            ];
+            modalConfigs.forEach(cfg => {
+                const el = document.querySelector(cfg.sel);
+                if (el) {
+                    el.style.zoom = String(window.uiScale);
+                    el.style.maxHeight = `calc(92vh / ${window.uiScale})`;
+                    el.style.maxWidth = `min(${cfg.maxW}, calc(95vw / ${window.uiScale}))`;
+                }
             });
 
             const slider = byId("sliderUiScale");
@@ -30534,6 +30651,15 @@
 
             if (saveToStorage) {
                 try { localStorage.setItem("xeno_ui_scale", String(num)); } catch (e) {}
+            }
+
+            if (!window._uiScaleResizeBound) {
+                window._uiScaleResizeBound = true;
+                window.addEventListener("resize", () => {
+                    if (typeof window.uiScale === "number") {
+                        setUiScale(Math.round(window.uiScale * 100), false);
+                    }
+                });
             }
         }
         window.setUiScale = setUiScale;
