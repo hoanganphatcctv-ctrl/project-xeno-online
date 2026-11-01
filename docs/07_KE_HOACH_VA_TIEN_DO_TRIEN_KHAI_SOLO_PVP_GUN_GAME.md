@@ -184,3 +184,20 @@ flowchart TD
   - **Hiển thị Khiên Bất Tử 1.8s**: Cả 2 bên đều nhìn thấy vòng khiên năng lượng cyan bảo vệ quanh người vừa hồi sinh.
   - **Gói tin `PVP_RESPAWN`**: Sau 2.5s hồi sinh tại góc xa nhất, gửi ngay gói tin tin cậy `PVP_RESPAWN` để xóa buffer lerp cũ và đặt vị trí mới tức thì.
   - **Loại bỏ quái vật & `SYNC_ENEMIES`**: Chế độ PvP tự động tắt toàn bộ vòng lặp spawn quái vật và gói tin `SYNC_ENEMIES`, giúp tiết kiệm băng thông tối đa cho tick chiến đấu 60Hz/30Hz.
+
+### 5.3. Khắc Phục Lỗi Treo Màn Hình Đếm Ngược & Chuẩn Hóa Modal Kết Thúc Trận (VICTORY Tông Vàng / LOSS Tông Xám)
+1. **Nguyên nhân gốc rễ lỗi treo đếm ngược "MISSION COMPLETED"**:
+   - Khi trận đấu Solo 1v1 kết thúc, hàm `triggerPvPMatchEnd` chỉ mở `#victoryModal` mà **không khởi tạo các timer đếm ngược** (`autoTransitionInterval`, `autoTransitionTimeout`). Do đó, số "3" và vòng tròn SVG bị đứng yên vĩnh viễn.
+   - Hàm tiếp tục `confirmVictoryContinue` và sự kiện bàn phím chỉ kiểm tra cờ `if (!isMapWon) return;`. Trong PvP, `isMapWon` luôn bằng `false`, khiến người chơi bấm phím hay click chuột vào modal đều bị chặn hoàn toàn.
+   - Text modal vẫn để cố định dạng `MISSION COMPLETED` của PvE thay vì phản ánh thắng/thua Solo 1v1.
+2. **Các cải tiến đã triển khai hoàn tất**:
+   - **Thay đổi chữ linh hoạt**:
+     - Người chiến thắng: Huy hiệu `SOLO 1V1`, Tiêu đề lớn **`VICTORY`** kèm thống kê số mạng hạ gục / bị hạ.
+     - Người thất bại: Huy hiệu `SOLO 1V1`, Tiêu đề lớn **`LOSS`** kèm thống kê số mạng.
+   - **Chuẩn hóa phong cách thiết kế theo tông màu**:
+     - **Tông Màu Vàng (Người Thắng - VICTORY)**: Toàn bộ khung lục giác viền vàng hổ phách neon (`#fbbf24`), nền radial gradient amber ấm, tia hào quang vàng kim rực rỡ, vòng đếm ngược vàng, text đổ bóng `rgba(245, 158, 11, 0.9)`.
+     - **Tông Màu Xám (Người Thua - LOSS)**: Toàn bộ khung viền chuyển sang màu xám kim loại trầm / slate (`#64748b` - `#94a3b8`), nền radial gradient xám đen, tia hào quang xám mờ tinh tế, vòng đếm ngược xám bạc.
+     - **Chế độ Chiến dịch PvE**: Vẫn bảo lưu 100% tông màu Xanh Ngọc Emerald / Cyan và chữ `MISSION COMPLETED`.
+   - **Xử lý luồng thoát trận & Đếm ngược mượt mà**:
+     - Tự động chạy bộ đếm ngược 3 giây (3, 2, 1) với vòng tròn SVG hoạt ảnh mượt mà.
+     - Sau 3 giây (hoặc khi click / nhấn phím bất kỳ): Gọi `handlePvPMatchEndContinue()` đóng modal và đưa người chơi trở về Sảnh Chờ (`openMainMenuSettings`) an toàn, không còn hiện tượng treo màn hình.

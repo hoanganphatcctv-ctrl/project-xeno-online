@@ -4183,7 +4183,7 @@
     </div>
 
     <!-- ==========================================================================
-         8. MODAL 4: VICTORY MODAL (MISSION COMPLETED — SCI-FI HEXAGON HUD BANNER)
+         8. MODAL 4: VICTORY MODAL (MISSION COMPLETED / VICTORY / LOSS — SCI-FI HEXAGON HUD BANNER)
          ========================================================================== -->
     <div id="victoryModal" onclick="window.confirmVictoryContinue && window.confirmVictoryContinue()" class="hidden fixed inset-0 z-50 bg-slate-950/78 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none cursor-pointer">
         <div class="relative w-full max-w-[680px] flex flex-col items-center justify-center py-10">
@@ -4191,32 +4191,32 @@
             <svg viewBox="0 0 420 360" class="w-[330px] sm:w-[420px] h-[285px] sm:h-[360px] pointer-events-none select-none overflow-visible" aria-hidden="true">
                 <defs>
                     <linearGradient id="winOuterHexStroke" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.78" />
-                        <stop offset="50%" stop-color="#10b981" stop-opacity="0.35" />
-                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.78" />
+                        <stop id="winOuterHexStrokeStop0" offset="0%" stop-color="#38bdf8" stop-opacity="0.78" />
+                        <stop id="winOuterHexStrokeStop1" offset="50%" stop-color="#10b981" stop-opacity="0.35" />
+                        <stop id="winOuterHexStrokeStop2" offset="100%" stop-color="#38bdf8" stop-opacity="0.78" />
                     </linearGradient>
                     <linearGradient id="winOuterHexFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#071929" stop-opacity="0.65" />
-                        <stop offset="50%" stop-color="#042f2e" stop-opacity="0.35" />
-                        <stop offset="100%" stop-color="#071929" stop-opacity="0.72" />
+                        <stop id="winOuterHexFillStop0" offset="0%" stop-color="#071929" stop-opacity="0.65" />
+                        <stop id="winOuterHexFillStop1" offset="50%" stop-color="#042f2e" stop-opacity="0.35" />
+                        <stop id="winOuterHexFillStop2" offset="100%" stop-color="#071929" stop-opacity="0.72" />
                     </linearGradient>
                 </defs>
                 <!-- Outer Hexagon -->
-                <polygon points="118,12 302,12 394,180 302,348 118,348 26,180" fill="url(#winOuterHexFill)" stroke="url(#winOuterHexStroke)" stroke-width="2" />
+                <polygon id="winOuterHexPolygon" points="118,12 302,12 394,180 302,348 118,348 26,180" fill="url(#winOuterHexFill)" stroke="url(#winOuterHexStroke)" stroke-width="2" />
                 <!-- Inner Bevel Hexagon -->
-                <polygon points="124,22 296,22 382,180 296,338 124,338 38,180" fill="none" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1.2" />
+                <polygon id="winInnerHexBevel" points="124,22 296,22 382,180 296,338 124,338 38,180" fill="none" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1.2" />
             </svg>
 
             <!-- Center Horizontal Honeycomb Banner -->
             <div class="absolute inset-x-0 top-1/2 -translate-y-[54%] mx-auto w-full max-w-[600px] flex flex-col items-center">
                 <!-- Top Secondary Accent Lines (Left & Right of Top Hexagon Emblem) -->
                 <div class="w-[74%] max-w-[420px] flex items-center justify-between mb-[5px] pointer-events-none">
-                    <div class="w-[34%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
-                    <div class="w-[34%] h-[2px] bg-gradient-to-l from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
+                    <div id="winTopAccentLineL" class="w-[34%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
+                    <div id="winTopAccentLineR" class="w-[34%] h-[2px] bg-gradient-to-l from-transparent via-cyan-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
                 </div>
 
                 <!-- Main Horizontal Banner Box -->
-                <div class="relative w-full py-7 sm:py-8 px-6 flex flex-col items-center justify-center overflow-visible"
+                <div id="winMainBannerBox" class="relative w-full py-7 sm:py-8 px-6 flex flex-col items-center justify-center overflow-visible"
                      style="background: radial-gradient(ellipse 68% 90% at 50% 50%, rgba(16, 185, 129, 0.36) 0%, rgba(13, 148, 136, 0.22) 48%, rgba(4, 18, 32, 0.05) 100%);">
 
                     <!-- Honeycomb Hexagon Pattern Overlay -->
@@ -4225,7 +4225,7 @@
                         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <pattern id="winHexMeshPattern" width="34" height="30" patternUnits="userSpaceOnUse">
-                                    <polygon points="17,1 32,8.5 32,22.5 17,30 2,22.5 2,8.5" fill="none" stroke="#2dd4bf" stroke-width="0.9" stroke-opacity="0.22" />
+                                    <polygon id="winHexMeshPoly" points="17,1 32,8.5 32,22.5 17,30 2,22.5 2,8.5" fill="none" stroke="#2dd4bf" stroke-width="0.9" stroke-opacity="0.22" />
                                 </pattern>
                             </defs>
                             <rect width="100%" height="100%" fill="url(#winHexMeshPattern)" />
@@ -4233,25 +4233,25 @@
                     </div>
 
                     <!-- Top Full Horizontal Glowing Cyan Line -->
-                    <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.9)]"></div>
+                    <div id="winTopGlowLine" class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.9)]"></div>
 
                     <!-- Top Center Hexagonal Emblem Badge -->
                     <div class="absolute -top-9 sm:-top-10 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-                        <svg viewBox="0 0 84 84" class="w-16 h-16 sm:w-[74px] sm:h-[74px] drop-shadow-[0_0_15px_rgba(34,211,238,0.65)]">
+                        <svg id="winEmblemSvg" viewBox="0 0 84 84" class="w-16 h-16 sm:w-[74px] sm:h-[74px] drop-shadow-[0_0_15px_rgba(34,211,238,0.65)]">
                             <!-- Outer Dark Hexagon & Cyan Border -->
-                            <polygon points="42,3 76,22.5 76,61.5 42,81 8,61.5 8,22.5" fill="#061220" stroke="#38bdf8" stroke-width="2.4" />
+                            <polygon id="winEmblemOuter" points="42,3 76,22.5 76,61.5 42,81 8,61.5 8,22.5" fill="#061220" stroke="#38bdf8" stroke-width="2.4" />
                             <!-- Inner Hexagon Border -->
-                            <polygon points="42,9 70.5,25.5 70.5,58.5 42,75 13.5,58.5 13.5,25.5" fill="#081a2c" stroke="#22d3ee" stroke-width="1.4" stroke-opacity="0.85" />
+                            <polygon id="winEmblemInner" points="42,9 70.5,25.5 70.5,58.5 42,75 13.5,58.5 13.5,25.5" fill="#081a2c" stroke="#22d3ee" stroke-width="1.4" stroke-opacity="0.85" />
                             <!-- Glowing Cyan/Aqua Twisted Energy Flame Icon (Matching Reference Image) -->
                             <g transform="translate(42, 42)">
-                                <path d="M0,-21 C5,-12 11,-4 10,6 C9,14 3,20 -1,21 C2,15 3,9 -2,2 C-7,-4 -4,-13 0,-21 Z" fill="#38bdf8" />
-                                <path d="M-4,-14 C-1,-7 5,-1 5,7 C5,14 0,19 -5,19 C-1,14 -1,9 -6,3 C-10,-2 -8,-9 -4,-14 Z" fill="#67e8f9" />
-                                <path d="M-8,-5 C-5,0 0,5 0,11 C0,16 -4,19 -8,17 C-12,14 -12,6 -8,-5 Z" fill="#a5f3fc" />
+                                <path id="winEmblemFlame1" d="M0,-21 C5,-12 11,-4 10,6 C9,14 3,20 -1,21 C2,15 3,9 -2,2 C-7,-4 -4,-13 0,-21 Z" fill="#38bdf8" />
+                                <path id="winEmblemFlame2" d="M-4,-14 C-1,-7 5,-1 5,7 C5,14 0,19 -5,19 C-1,14 -1,9 -6,3 C-10,-2 -8,-9 -4,-14 Z" fill="#67e8f9" />
+                                <path id="winEmblemFlame3" d="M-8,-5 C-5,0 0,5 0,11 C0,16 -4,19 -8,17 C-12,14 -12,6 -8,-5 Z" fill="#a5f3fc" />
                             </g>
                         </svg>
                     </div>
 
-                    <!-- Center MISSION COMPLETED Typography -->
+                    <!-- Center MISSION COMPLETED / VICTORY / LOSS Typography -->
                     <div class="relative z-10 flex flex-col items-center justify-center text-center pt-2 pb-1">
                         <div id="winBadgeText" class="text-2xl sm:text-[38px] font-light tracking-[0.26em] uppercase text-[#5eead4] leading-tight font-mono-tech"
                              style="text-shadow: 0 0 16px rgba(45, 212, 191, 0.55);">
@@ -4261,28 +4261,29 @@
                             style="text-shadow: 0 0 22px rgba(16, 185, 129, 0.80), 0 0 44px rgba(20, 184, 166, 0.45);">
                             COMPLETED
                         </h2>
+                        <div id="winSubDetailText" class="hidden text-xs sm:text-sm font-mono-tech tracking-wider uppercase mt-1.5 font-bold"></div>
                     </div>
 
                     <!-- Bottom Tech Line with Center Trapezoid Step-Up Notch -->
                     <svg viewBox="0 0 600 28" class="absolute -bottom-[14px] inset-x-0 w-full h-[28px] pointer-events-none overflow-visible" preserveAspectRatio="none">
                         <!-- Main line with center step-up trapezoid bridge -->
-                        <path d="M 10,14 L 248,14 L 262,2 L 338,2 L 352,14 L 590,14" fill="none" stroke="#38bdf8" stroke-width="2" style="filter: drop-shadow(0 0 6px rgba(56,189,248,0.85));" />
+                        <path id="winBottomTechPath1" d="M 10,14 L 248,14 L 262,2 L 338,2 L 352,14 L 590,14" fill="none" stroke="#38bdf8" stroke-width="2" style="filter: drop-shadow(0 0 6px rgba(56,189,248,0.85));" />
                         <!-- Secondary lower accent lines & inner notch bridge -->
-                        <path d="M 110,21 L 253,21 L 266,9 L 334,9 L 347,21 L 490,21" fill="none" stroke="#0ea5e9" stroke-width="1.6" stroke-opacity="0.85" />
+                        <path id="winBottomTechPath2" d="M 110,21 L 253,21 L 266,9 L 334,9 L 347,21 L 490,21" fill="none" stroke="#0ea5e9" stroke-width="1.6" stroke-opacity="0.85" />
                     </svg>
                 </div>
 
                 <!-- Prompt Text inside Lower Hexagon: PRESS ANY KEY TO CONTINUE -->
-                <div class="mt-6 text-xs sm:text-[15px] font-mono-tech tracking-[0.22em] text-[#38bdf8] uppercase text-center drop-shadow-[0_0_8px_rgba(56,189,248,0.65)] animate-pulse">
-                    PRESS <span class="text-cyan-200 font-black">ANY KEY</span> TO CONTINUE
+                <div id="winPromptText" class="mt-6 text-xs sm:text-[15px] font-mono-tech tracking-[0.22em] text-[#38bdf8] uppercase text-center drop-shadow-[0_0_8px_rgba(56,189,248,0.65)] animate-pulse">
+                    PRESS <span id="winPromptKeySpan" class="text-cyan-200 font-black">ANY KEY</span> TO CONTINUE
                 </div>
             </div>
 
             <!-- Green Circular Countdown (3, 2, 1) Below the Hexagon -->
             <div id="winAutoCountdownBanner" class="mt-5 flex flex-col items-center justify-center gap-1.5 z-20">
-                <div class="relative w-16 h-16 sm:w-[68px] sm:h-[68px] flex items-center justify-center rounded-full bg-emerald-950/75 border border-emerald-400/40 shadow-[0_0_28px_rgba(16,185,129,0.55)]">
+                <div id="winCountdownBox" class="relative w-16 h-16 sm:w-[68px] sm:h-[68px] flex items-center justify-center rounded-full bg-emerald-950/75 border border-emerald-400/40 shadow-[0_0_28px_rgba(16,185,129,0.55)]">
                     <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(16, 185, 129, 0.20)" stroke-width="3.5" />
+                        <circle id="winCountdownCircleBg" cx="32" cy="32" r="28" fill="none" stroke="rgba(16, 185, 129, 0.20)" stroke-width="3.5" />
                         <circle id="winCountdownCircleRing" cx="32" cy="32" r="28" fill="none" stroke="#34d399" stroke-width="3.5"
                                 stroke-linecap="round" stroke-dasharray="176" stroke-dashoffset="0"
                                 style="transition: stroke-dashoffset 0.95s linear; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9));" />
