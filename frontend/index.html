@@ -7624,6 +7624,16 @@
                         this.handleData({ t: "revive_success", data });
                     });
 
+                    this.socket.on("mission_failed", () => {
+                        this.handleData({ t: "game_over" });
+                    });
+
+                    this.socket.on("map_switched", (data) => {
+                        if (data && data.mapId) {
+                            this.handleData({ t: "TRANSITION_MAP", targetMapId: data.mapId });
+                        }
+                    });
+
                     this.socket.on("peer_disconnected", () => {
                         this.connected = false;
                         this.peerReady = false;
@@ -7864,6 +7874,12 @@
                         this.handleData({ t: "game_over" });
                     });
 
+                    this.socket.on("map_switched", (data) => {
+                        if (data && data.mapId) {
+                            this.handleData({ t: "TRANSITION_MAP", targetMapId: data.mapId });
+                        }
+                    });
+
                     this.socket.on("peer_disconnected", () => {
                         this.connected = false;
                         this.clientReady = false;
@@ -7972,7 +7988,11 @@
                 this.active = true;
                 this.peerReady = false;
                 this.clientReady = false;
+                this.seq = 0;
+                this.lastRemoteSeq = 0;
                 teammate.active = true;
+                teammate.isDown = false;
+                teammate._reviveGraceUntil = 0;
                 teammate.snapshotBuffer = [];
 
                 showToast("ĐÃ KẾT NỐI PHÒNG", this.isHost ? "Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng." : "Đã vào phòng. Hãy bấm Xác nhận Sẵn sàng.");
@@ -8025,7 +8045,11 @@
                     this.active = true;
                     this.peerReady = false;
                     this.clientReady = false;
+                    this.seq = 0;
+                    this.lastRemoteSeq = 0;
                     teammate.active = true;
+                    teammate.isDown = false;
+                    teammate._reviveGraceUntil = 0;
                     teammate.snapshotBuffer = [];
 
                     showToast("ĐÃ KẾT NỐI PHÒNG", this.isHost ? "Đồng đội đã vào phòng. Chờ xác nhận Sẵn sàng." : "Đã vào phòng. Hãy bấm Xác nhận Sẵn sàng.");
@@ -8255,18 +8279,29 @@
                         selectDifficulty(data.difficulty);
                     }
                     this.inMission = true;
+                    this.seq = 0;
+                    this.lastRemoteSeq = 0;
+                    if (teammate) {
+                        teammate.isDown = false;
+                        teammate._reviveGraceUntil = 0;
+                        teammate.snapshotBuffer = [];
+                    }
                     window.currentMapId = data.mapId || this.hostMapId || 1;
                     window.closeCoopModal();
-                    window.closeMainMenuSettings(true);
+                    const settingsModal = byId("mainSettingsModal");
+                    if (settingsModal) {
+                        settingsModal.classList.add("hidden");
+                        settingsModal.style.display = "none";
+                    }
                     this.updateHUD();
                     const diffLabel = this.getDifficultyLabel(data.difficulty || this.hostDifficulty);
                     showToast("CO-OP XUẤT TRẬN", `Map ${window.currentMapId} • Độ khó: ${diffLabel} (${this.tickRate}Hz).`);
                     if (typeof simulateMissionLoading === "function") {
                         simulateMissionLoading(window.currentMapId, () => {
-                            initCampaign(false, false);
+                            initCampaign(false, false, true);
                         });
                     } else {
-                        initCampaign(false, false);
+                        initCampaign(false, false, true);
                     }
                     return;
                 }
@@ -8337,10 +8372,53 @@
                     return;
                 }
 
-                if (data.t === "TRANSITION_MAP" && !this.isHost) {
+                if (data.t === "TRANSITION_MAP") {
                     if (typeof transitionToNextMap === "function") {
-                        transitionToNextMap();
+                        transitionToNextMap(data.targetMapId, true);
                     }
+                    return;
+                }
+
+                if (data.t === "RESTART_MISSION") {
+                    if (typeof data.mapId === "number" && MAP_REGISTRY[data.mapId]) {
+                        window.currentMapId = data.mapId;
+                    }
+                    this.seq = 0;
+                    this.lastRemoteSeq = 0;
+                    if (teammate) {
+                        teammate.isDown = false;
+                        teammate._reviveGraceUntil = 0;
+                        teammate.snapshotBuffer = [];
+                    }
+                    if (typeof initCampaign === "function") {
+                        initCampaign(false, false, true);
+                    }
+                    showToast("KHỞI ĐỘNG LẠI NHIỆM VỤ", "Đồng đội đã bắt đầu lại màn chơi — Toàn đội hồi sinh 100%!");
+                    return;
+                }
+
+                if (data.t === "COOP_POWERUP") {
+                    if (data.kind === "nuke" && typeof triggerGlobalNuke === "function") {
+                        triggerGlobalNuke(true);
+                    } else if (data.kind === "freeze") {
+                        player.freezeBuffTimer = 5 * 60;
+                        if (typeof sfx !== "undefined" && sfx && sfx.playFreeze) sfx.playFreeze();
+                        setOpacity("freezeVignette", 1);
+                        addFloatingText(teammate.x || player.x, (teammate.y || player.y) - 20, "ĐỒNG ĐỘI KÍCH HOẠT ĐÔNG LẠNH CRYO!", "#67e8f9");
+                    }
+                    return;
+                }
+
+                if (data.t === "leave") {
+                    this.connected = false;
+                    this.inMission = false;
+                    this.peerReady = false;
+                    this.clientReady = false;
+                    teammate.active = false;
+                    teammate.isDown = false;
+                    teammate.snapshotBuffer = [];
+                    this.updateHUD();
+                    showToast("ĐỒNG ĐỘI ĐÃ RỜI TRẬN", "Đã chuyển sang chế độ chiến đấu độc lập (Solo).");
                     return;
                 }
 
@@ -8375,6 +8453,7 @@
                 if (data.t === "GEN_CRANK") {
                     if (mapGenerator && !mapGenerator.active && typeof data.prog === "number") {
                         mapGenerator.holdTimer = Math.max(mapGenerator.holdTimer, data.prog);
+                        mapGenerator._remoteCrankUntil = performance.now() + 260;
                     }
                     return;
                 }
@@ -8398,16 +8477,32 @@
                 }
 
                 if (data.t === "input" && this.isHost) {
+                    if (typeof data.seq === "number") {
+                        if (this.lastRemoteSeq && data.seq < this.lastRemoteSeq && (this.lastRemoteSeq - data.seq) < 600) {
+                            return;
+                        }
+                        this.lastRemoteSeq = data.seq;
+                    }
                     pushTeammateSnapshot(data);
-                    if (typeof data.hp === "number" && !isNaN(data.hp)) teammate.hp = Math.max(0, Math.min(5000, data.hp));
+                    const inReviveGrace = performance.now() < (teammate._reviveGraceUntil || 0);
+                    if (typeof data.hp === "number" && !isNaN(data.hp)) {
+                        teammate.hp = inReviveGrace ? Math.max(40, Math.min(5000, data.hp)) : Math.max(0, Math.min(5000, data.hp));
+                    }
                     if (typeof data.mhp === "number" && !isNaN(data.mhp)) teammate.maxHp = Math.max(10, Math.min(5000, data.mhp));
-                    if (typeof data.ar === "number" && !isNaN(data.ar)) teammate.armor = Math.max(0, Math.min(5000, data.ar));
+                    if (typeof data.ar === "number" && !isNaN(data.ar)) {
+                        teammate.armor = inReviveGrace ? Math.max(25, Math.min(5000, data.ar)) : Math.max(0, Math.min(5000, data.ar));
+                    }
                     if (typeof data.mar === "number" && !isNaN(data.mar)) teammate.maxArmor = Math.max(0, Math.min(5000, data.mar));
                     teammate.currentWeapon = data.w;
                     teammate.isShooting = !!data.shoot;
                     teammate.credits = data.cred || teammate.credits;
                     const prevDown = teammate.isDown;
-                    teammate.isDown = !!data.down;
+                    // Chặn gói tin input trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
+                    if (inReviveGrace) {
+                        teammate.isDown = false;
+                    } else {
+                        teammate.isDown = !!data.down;
+                    }
                     if (player.isDown && typeof data.selfRev === "number") {
                         player.reviveProgress = data.selfRev;
                     }
@@ -8422,6 +8517,12 @@
                 }
 
                 if (data.t === "snap" && !this.isHost) {
+                    if (typeof data.seq === "number") {
+                        if (this.lastRemoteSeq && data.seq < this.lastRemoteSeq && (this.lastRemoteSeq - data.seq) < 600) {
+                            return;
+                        }
+                        this.lastRemoteSeq = data.seq;
+                    }
                     if (data.hz) {
                         const newHz = data.hz === 60 ? 60 : 30;
                         if (this.tickRate !== newHz) {
@@ -8435,15 +8536,21 @@
                     const p = data.p;
                     if (p) {
                         pushTeammateSnapshot(p);
-                        if (typeof p.hp === "number") teammate.hp = p.hp;
+                        const inReviveGrace = performance.now() < (teammate._reviveGraceUntil || 0);
+                        if (typeof p.hp === "number") teammate.hp = inReviveGrace ? Math.max(40, p.hp) : p.hp;
                         if (typeof p.mhp === "number") teammate.maxHp = p.mhp;
-                        if (typeof p.ar === "number") teammate.armor = p.ar;
+                        if (typeof p.ar === "number") teammate.armor = inReviveGrace ? Math.max(25, p.ar) : p.ar;
                         if (typeof p.mar === "number") teammate.maxArmor = p.mar;
                         teammate.currentWeapon = p.w !== undefined ? p.w : teammate.currentWeapon;
                         teammate.isShooting = !!p.shoot;
                         teammate.credits = p.cred || teammate.credits;
                         const prevDown = teammate.isDown;
-                        teammate.isDown = !!p.down;
+                        // Chặn gói tin snap trễ (in-flight) mang down: 1 ghi đè ngược teammate.isDown thành true ngay sau khi vừa được cứu!
+                        if (inReviveGrace) {
+                            teammate.isDown = false;
+                        } else {
+                            teammate.isDown = !!p.down;
+                        }
                         if (teammate.isDown !== prevDown) {
                             this.updateHUD();
                         }
@@ -8470,23 +8577,29 @@
                     }
 
                     if (Array.isArray(data.drops)) {
-                        for (let d = 0; d < Math.min(items.length, data.drops.length); d++) {
-                            const dp = data.drops[d];
-                            items[d].active = dp.act;
-                            items[d].x = dp.x;
-                            items[d].y = dp.y;
-                            items[d].kind = dp.k;
+                        for (let d = 0; d < items.length; d++) {
+                            if (d < data.drops.length) {
+                                const dp = data.drops[d];
+                                items[d].active = !!dp.act;
+                                items[d].x = dp.x;
+                                items[d].y = dp.y;
+                                items[d].kind = dp.k;
+                            } else {
+                                items[d].active = false;
+                            }
                         }
                     }
                     return;
                 }
 
                 if (data.t === "player_down") {
+                    if (!this.inMission) return;
+                    teammate._reviveGraceUntil = 0;
                     teammate.isDown = true;
                     teammate.hp = 0;
                     teammate.armor = 0;
                     teammate.reviveProgress = 0;
-                    showToast("ĐỒNG ĐỘI BỊ HẠ GỤC!", "Tiếp cận trong vòng 75px và đứng yên 5 giây để hồi sinh đồng đội!");
+                    showToast("ĐỒNG ĐỘI BỊ HẠ GỤC!", "Tiếp cận trong vòng 85px và đứng gần 3.5 giây để hồi sinh đồng đội!");
                     this.updateHUD();
                     if (player.isDown && !isGameOver) {
                         this.sendPacket({ t: "game_over" });
@@ -8496,6 +8609,7 @@
                 }
 
                 if (data.t === "game_over") {
+                    if (!this.inMission) return;
                     if (!isGameOver) {
                         player.isDown = true;
                         teammate.isDown = true;
@@ -8524,6 +8638,18 @@
                         if (sfx.playPickup) sfx.playPickup();
                     }
                     if (typeof updateTopLeftHUD === "function") updateTopLeftHUD();
+                    // Gửi gói xác nhận ngược lại cho người cứu để khóa chặt trạng thái đã sống dậy trên cả 2 máy
+                    this.sendPacket({ t: "player_revived_ack" });
+                    this.updateHUD();
+                    return;
+                }
+
+                if (data.t === "player_revived_ack") {
+                    teammate._reviveGraceUntil = performance.now() + 2500;
+                    teammate.isDown = false;
+                    teammate.reviveProgress = 0;
+                    teammate.hp = Math.max(40, teammate.hp || 40);
+                    teammate.armor = Math.max(25, teammate.armor || 25);
                     this.updateHUD();
                     return;
                 }
@@ -9662,6 +9788,13 @@
             }
             const curDiff = XENO_COOP.getDifficultyId();
             XENO_COOP.inMission = true;
+            XENO_COOP.seq = 0;
+            XENO_COOP.lastRemoteSeq = 0;
+            if (window.teammate) {
+                window.teammate.isDown = false;
+                window.teammate._reviveGraceUntil = 0;
+                window.teammate.snapshotBuffer = [];
+            }
             XENO_COOP.sendPacket({
                 t: "start",
                 mapId: window.currentMapId || 1,
@@ -9669,14 +9802,19 @@
                 hz: XENO_COOP.tickRate
             });
             window.closeCoopModal();
-            window.closeMainMenuSettings(true);
+            const settingsModal = byId("mainSettingsModal");
+            if (settingsModal) {
+                settingsModal.classList.add("hidden");
+                settingsModal.style.display = "none";
+            }
+            XENO_COOP.updateHUD();
             showToast("BẮT ĐẦU CHIẾN DỊCH", `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`);
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
-                    initCampaign(false, false);
+                    initCampaign(false, false, true);
                 });
             } else {
-                initCampaign(false, false);
+                initCampaign(false, false, true);
             }
         };
 
@@ -9711,7 +9849,7 @@
         const enemiesById = new Map();
 
         function isCoopActive() {
-            return Boolean(window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected);
+            return Boolean(window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.XENO_COOP.inMission);
         }
 
         function isCoopHost() {
@@ -16141,12 +16279,15 @@
                 setOpacity("freezeVignette", 1);
                 addFloatingText(x, y, "ĐÓNG BĂNG QUÁI 5 GIÂY!", "#67e8f9");
                 showToast("QUẢ CẦU ĐÔNG LẠNH CRYO", "Quái thường bị đóng băng hoàn toàn & Trùm Cuối bị làm chậm mạnh!");
+                if (isCoopActive() && window.XENO_COOP) {
+                    window.XENO_COOP.sendPacket({ t: "COOP_POWERUP", kind: "freeze" });
+                }
             } else if (kind === "overdrive") {
                 player.overdriveBuffTimer = 8 * 60;
                 addFloatingText(x, y, "CUỒNG NỘ X2 SÁT THƯƠNG!", "#fb923c");
                 showToast("LÕI CUỒNG NỘ OVERDRIVE", "Nhân đôi sát thương (x2) & Không tốn đạn trong 8 giây!");
             } else if (kind === "nuke") {
-                triggerGlobalNuke();
+                triggerGlobalNuke(false);
             }
 
             updateTopLeftHUD();
@@ -16154,7 +16295,10 @@
         }
         window.activatePowerup = activatePowerup;
 
-        function triggerGlobalNuke() {
+        function triggerGlobalNuke(fromNetwork = false) {
+            if (isCoopActive() && !fromNetwork && window.XENO_COOP) {
+                window.XENO_COOP.sendPacket({ t: "COOP_POWERUP", kind: "nuke" });
+            }
             sfx.playExplosion();
             screenShake = 26;
             setOpacity("nukeFlash", 0.85);
@@ -16260,7 +16404,7 @@
         window.deployAutoTurret = deployAutoTurret;
 
         function triggerInteractionKeyE() {
-            if (isPaused || isGameOver || isMapWon) return;
+            if (isPaused || isGameOver || isMapWon || player.isDown) return;
 
             // 1. Check nearby Hackable Computer Console
             for (let i = 0; i < computerDesks.length; i++) {
@@ -17226,7 +17370,7 @@
                         if (isMapWon) {
                             transitionToNextMap();
                         }
-                    }, 3000);
+                    }, isCoopClient() ? 3500 : 3000);
                 } catch (err) {
                     console.error("Lỗi hiển thị modal chiến thắng:", err);
                 }
@@ -18666,7 +18810,7 @@
             // =========================================================
             // CO-OP MULTIPLAYER: REVIVE MECHANIC (5s hold in 75px radius, unlimited revives)
             // =========================================================
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && window.teammate && window.teammate.active) {
+            if (isCoopActive() && window.teammate && window.teammate.active) {
                 if (player.isDown) {
                     mouse.down = false;
                 }
@@ -18691,6 +18835,8 @@
 
                         if (window.teammate.reviveProgress >= 1.0) {
                             // Cứu thành công! Hồi sinh đồng đội với 40 HP, 25 Giáp, sóng đẩy lùi và khiên bảo vệ
+                            // Đặt khiên chống ghi đè 2.5s để các gói input/snap trễ (in-flight) mang down:1 không bật ngược lại trạng thái gục
+                            window.teammate._reviveGraceUntil = performance.now() + 2500;
                             window.teammate.isDown = false;
                             window.teammate.reviveProgress = 0;
                             window.teammate.hp = 40;
@@ -18804,7 +18950,7 @@
                         }
                     }
                 } else {
-                    if (mapGenerator.holdTimer > 0) {
+                    if (mapGenerator.holdTimer > 0 && performance.now() > (mapGenerator._remoteCrankUntil || 0)) {
                         mapGenerator.holdTimer = Math.max(0, mapGenerator.holdTimer - FIXED_PHYSICS_STEP * 2.2);
                     }
                 }
@@ -18817,7 +18963,7 @@
             let camFocusX = player.x;
             let camFocusY = player.y;
             // Khi bị hạ gục trong chế độ Co-Op, camera bám theo góc nhìn của đồng đội còn sống (Spectator Mode)
-            if (window.XENO_COOP && window.XENO_COOP.active && player.isDown && window.teammate && window.teammate.active && !window.teammate.isDown) {
+            if (isCoopActive() && player.isDown && window.teammate && window.teammate.active && !window.teammate.isDown) {
                 camFocusX = window.teammate.x;
                 camFocusY = window.teammate.y;
             }
@@ -19424,7 +19570,7 @@
                             e.x -= (pDx / pDist) * 18;
                             e.y -= (pDy / pDist) * 18;
                             resolveWallSliding(e);
-                        } else {
+                        } else if (!player.isDown) {
                             player.x += (pDx / pDist) * 24;
                             player.y += (pDy / pDist) * 24;
                             resolveWallSliding(player);
@@ -19616,7 +19762,7 @@
                         e.x -= (pDx / pDist) * 18;
                         e.y -= (pDy / pDist) * 18;
                         resolveWallSliding(e);
-                    } else {
+                    } else if (!player.isDown) {
                         player.x += (pDx / pDist) * 24;
                         player.y += (pDy / pDist) * 24;
                         resolveWallSliding(player);
@@ -19671,6 +19817,7 @@
                     it.active = false;
                     continue;
                 }
+                if (player.isDown) continue;
                 const d = Math.hypot(it.x - player.x, it.y - player.y) || 0.0001;
                 if (d < 115) {
                     it.x += (player.x - it.x) * 0.16;
@@ -27569,6 +27716,15 @@
 
         function closeMainMenuSettings(bypassLoading = false) {
             try { forceLandscapeAndFullscreen(); } catch (e) {}
+            // Nếu người chơi bấm "BẮT ĐẦU CHIẾN DỊCH" (Solo) từ Sảnh trong khi đang treo phòng Co-Op chưa xuất trận: ngắt sạch kết nối Co-Op để không bị rò rỉ gói tin sang chế độ Solo!
+            if (window.XENO_COOP && !window.XENO_COOP.inMission && (window.XENO_COOP.active || window.XENO_COOP.connected || window.XENO_COOP.socket || window.XENO_COOP.peer)) {
+                try {
+                    if (window.XENO_COOP.connected) {
+                        window.XENO_COOP.sendPacket({ t: "leave" });
+                    }
+                    window.XENO_COOP.cleanup();
+                } catch (e) {}
+            }
             const codexModal = byId("lobbyCodexModal");
             if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             const mapDrawer = byId("lobbyMapDiffDrawer");
@@ -27619,7 +27775,14 @@
                 return;
             }
             if (isGameOver || isMapWon) return;
-            isPaused = true;
+            if (player.isDown) {
+                if (typeof sfx !== "undefined" && sfx) sfx.playError();
+                showToast("ĐANG BỊ HẠ GỤC!", "Không thể mở Kho Quân Nhu khi đang bị gục — Hãy chờ đồng đội cứu viện!");
+                return;
+            }
+            if (!isCoopActive()) {
+                isPaused = true;
+            }
             mouse.down = false;
             player.activeLaserBeam = null;
             renderArmoryWeapons();
@@ -27726,6 +27889,11 @@
         }
 
         function buyOrRefillArmory(idx) {
+            if (player.isDown) {
+                if (typeof sfx !== "undefined" && sfx) sfx.playError();
+                showToast("ĐANG BỊ HẠ GỤC!", "Cần được đồng đội cứu sống trước khi mua hoặc nạp đạn vũ khí!");
+                return;
+            }
             const w = WEAPON_DATA[idx];
             if (!w) return;
             const rCost = w.refillCost || 90;
@@ -27768,6 +27936,11 @@
         window.buyOrRefillArmory = buyOrRefillArmory;
 
         function buyUpgrade(type) {
+            if (player.isDown) {
+                if (typeof sfx !== "undefined" && sfx) sfx.playError();
+                showToast("ĐANG BỊ HẠ GỤC!", "Cần được đồng đội cứu sống trước khi nâng cấp hoặc hồi phục!");
+                return;
+            }
             const cost = getUpgradeCost(type);
             if (type === "heal") {
                 const maxHeals = typeof getMaxHealCount === "function" ? getMaxHealCount(window.currentMapId) : 5;
@@ -29593,7 +29766,9 @@
 
         function openSystemSettingsModal(defaultTab = "interface") {
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
-            isPaused = true;
+            if (!isCoopActive()) {
+                isPaused = true;
+            }
             mouse.down = false;
             player.activeLaserBeam = null;
 
@@ -29642,7 +29817,9 @@
             } else if (window._sysModalOpenedFromPause && pauseModal) {
                 pauseModal.classList.remove("hidden");
                 pauseModal.style.display = "flex";
-                isPaused = true;
+                if (!isCoopActive()) {
+                    isPaused = true;
+                }
             }
 
             syncPauseState();
@@ -30504,7 +30681,7 @@
         window.switchCampaignMap = switchCampaignMap;
 
         let isTransitioningMap = false;
-        function transitionToNextMap() {
+        function transitionToNextMap(forcedMapId = null, fromNetwork = false) {
             if (isTransitioningMap) return;
             clearVictoryAutoTimers();
             isTransitioningMap = true;
@@ -30515,14 +30692,16 @@
                 vicModal.style.display = "none";
             }
 
-            const nextMapId = window.currentMapId < 10 ? (window.currentMapId + 1) : 1;
+            const nextMapId = (typeof forcedMapId === "number" && MAP_REGISTRY[forcedMapId])
+                ? forcedMapId
+                : (window.currentMapId < 10 ? (window.currentMapId + 1) : 1);
             if (nextMapId > (window.maxUnlockedMap || 1)) {
                 window.maxUnlockedMap = nextMapId;
             }
             const nextCfg = MAP_REGISTRY[nextMapId] || MAP_REGISTRY[1];
 
-            // ĐỒNG BỘ CO-OP: Host phát lệnh chuyển Map cho đồng đội
-            if (isCoopHost()) {
+            // ĐỒNG BỘ CO-OP: Khi một bên chuyển Map (hoặc bấm Tiếp tục), phát lệnh chuyển Map đồng bộ cho đồng đội
+            if (isCoopActive() && !fromNetwork && window.XENO_COOP) {
                 window.XENO_COOP.sendPacket({
                     t: "TRANSITION_MAP",
                     targetMapId: nextMapId
@@ -30534,7 +30713,7 @@
                 simulateMapTransitionLoading(nextMapId, () => {
                     window.currentMapId = nextMapId;
                     updateMapUIState();
-                    initCampaign(false, true);
+                    initCampaign(false, true, true);
 
                     showToast(
                         "CHUYỂN MÀN THÀNH CÔNG!",
@@ -30545,7 +30724,7 @@
             } else {
                 window.currentMapId = nextMapId;
                 updateMapUIState();
-                initCampaign(false, true);
+                initCampaign(false, true, true);
                 isTransitioningMap = false;
             }
         }
@@ -30605,8 +30784,17 @@
         }
         window.dismissGeneratorTip = dismissGeneratorTip;
 
-        function initCampaign(keepSettingsOpen = false, carryOver = false) {
+        function initCampaign(keepSettingsOpen = false, carryOver = false, fromNetwork = false) {
             clearVictoryAutoTimers();
+            // Nếu đang trong trận Co-Op mà người chơi bấm "CHƠI LẠI" (từ bảng Tạm dừng hoặc Thất bại), đồng bộ khởi động lại màn chơi cho cả 2 máy!
+            if (!keepSettingsOpen && !carryOver && !fromNetwork && isCoopActive() && window.XENO_COOP) {
+                window.XENO_COOP.seq = 0;
+                window.XENO_COOP.lastRemoteSeq = 0;
+                window.XENO_COOP.sendPacket({
+                    t: "RESTART_MISSION",
+                    mapId: window.currentMapId || 1
+                });
+            }
             isMapWon = false;
             isGameOver = false;
             bossSpawned = false;
@@ -30666,6 +30854,7 @@
             player.reviveProgress = 0;
             if (window.teammate) {
                 window.teammate.isDown = false;
+                window.teammate._reviveGraceUntil = performance.now() + 1500;
                 window.teammate.reviveProgress = 0;
                 window.teammate.hp = 100;
                 window.teammate.armor = 100;
@@ -30674,6 +30863,9 @@
                 window.teammate.y = WORLD_H / 2 + 40;
                 window.teammate.targetX = window.teammate.x;
                 window.teammate.targetY = window.teammate.y;
+            }
+            if (window.XENO_COOP && isCoopActive()) {
+                window.XENO_COOP.updateHUD();
             }
             window.coopHostOpenDoors = null;
             window.pendingHostileBullets = [];
@@ -30871,7 +31063,9 @@
 
         function openFpsTestModal() {
             if (isGameOver || isMapWon) return;
-            isPaused = true;
+            if (!isCoopActive()) {
+                isPaused = true;
+            }
             const modal = byId("fpsConfirmModal");
             if (modal) {
                 modal.classList.remove("hidden");
@@ -31525,7 +31719,9 @@
 
             modal.classList.remove("hidden");
             modal.style.display = "block";
-            isPaused = true;
+            if (!isCoopActive()) {
+                isPaused = true;
+            }
             initTouchLayoutEditorDragging();
         }
         window.openTouchLayoutEditor = openTouchLayoutEditor;
@@ -31630,7 +31826,9 @@
             } else if (window._touchEditorOpenedFromPause && pauseModal) {
                 pauseModal.classList.remove("hidden");
                 pauseModal.style.display = "flex";
-                isPaused = true;
+                if (!isCoopActive()) {
+                    isPaused = true;
+                }
             }
 
             syncPauseState();
@@ -32232,8 +32430,8 @@
                 renderWorld();
             }
 
-            // 30Hz Co-Op P2P Network Transmission (Chỉ gửi khi đang trong trận chiến thực sự)
-            if (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.connected && !isPaused && !isMapWon && !isGameOver) {
+            // 30Hz/60Hz Co-Op Network Transmission (Chỉ gửi khi đang trong trận chiến Co-Op thực sự)
+            if (isCoopActive() && !isPaused && !isMapWon && !isGameOver) {
                 if (!window.XENO_COOP.lastTickTime || (now - window.XENO_COOP.lastTickTime) >= (1000 / window.XENO_COOP.tickRate)) {
                     window.XENO_COOP.lastTickTime = now;
                     window.XENO_COOP.sendTick(now);
@@ -33083,7 +33281,7 @@
                 { pct: 96, text: `[5/5] Hoàn tất chuẩn bị! Đang mở cổng dịch chuyển tức thời...` }
             ];
 
-            const durationMs = 2400 + Math.random() * 1000;
+            const durationMs = (window.XENO_COOP && window.XENO_COOP.connected) ? 2400 : (2400 + Math.random() * 1000);
             const startTime = performance.now();
 
             function updateStep(now) {
@@ -33219,7 +33417,7 @@
                 try { sfx.playSample("energy_on", 0.5); } catch (e) {}
             }
 
-            const durationMs = 2600 + Math.random() * 800;
+            const durationMs = (window.XENO_COOP && window.XENO_COOP.connected) ? 2600 : (2600 + Math.random() * 800);
             const startTime = performance.now();
             const stages = mapLore.stages;
 
@@ -33428,6 +33626,15 @@
         function startNewCampaignFromLobby() {
             try { forceLandscapeAndFullscreen(); } catch (e) {}
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
+            // Dọn dẹp kết nối Co-Op ở sảnh (nếu chưa vào trận Co-Op) khi bấm bắt đầu chơi đơn (Solo)
+            if (window.XENO_COOP && !window.XENO_COOP.inMission && (window.XENO_COOP.active || window.XENO_COOP.connected || window.XENO_COOP.socket || window.XENO_COOP.peer)) {
+                try {
+                    if (window.XENO_COOP.connected) {
+                        window.XENO_COOP.sendPacket({ t: "leave" });
+                    }
+                    window.XENO_COOP.cleanup();
+                } catch (e) {}
+            }
             const settingsModal = byId("mainSettingsModal");
             if (settingsModal) {
                 settingsModal.classList.add("hidden");
