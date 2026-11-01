@@ -1761,9 +1761,9 @@
     <!-- ==========================================================================
          3. TOP-RIGHT HUD: 5x5 MATRIX RADAR MINIMAP & QUICK CONTROL BUTTONS
          ========================================================================== -->
-    <div id="topRightHUD" class="pointer-events-none absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1.5 w-[230px]">
+    <div id="topRightHUD" class="pointer-events-none absolute top-2.5 right-2.5 z-40 flex flex-col items-end gap-1.5 w-[230px]">
         <!-- Radar Minimap Card -->
-        <div class="pointer-events-auto hud-panel rounded-none p-2 flex flex-col gap-1 shadow-xl w-full">
+        <div id="hudMinimapCard" class="pointer-events-auto hud-panel rounded-none p-2 flex flex-col gap-1 shadow-xl w-full">
             <div class="flex items-center justify-between text-[9px] font-mono-tech px-0.5 gap-2">
                 <span class="text-emerald-400 font-bold flex items-center gap-1 truncate max-w-[125px]">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
@@ -1791,11 +1791,11 @@
 
         <!-- Compact Grid of Action Buttons right below Minimap -->
         <div class="pointer-events-auto grid grid-cols-2 gap-1 w-full max-w-[230px]">
-            <button onclick="window.togglePauseMenu()" class="hud-panel hover:bg-slate-800/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-amber-300 border border-amber-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Tạm dừng & Mở Menu [Phím P]">
+            <button id="hudBtnPause" onclick="window.togglePauseMenu()" class="hud-panel hover:bg-slate-800/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-amber-300 border border-amber-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Tạm dừng & Mở Menu [Phím P]">
                 <span class="px-1 rounded-none bg-amber-500/20 text-amber-300 text-[8.5px] border border-amber-500/30">P</span>
                 <span>Tạm Dừng</span>
             </button>
-            <button onclick="window.openArmoryModal()" class="hud-panel hover:bg-emerald-950/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-emerald-300 border border-emerald-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Mở Kho Vũ Khí [Phím B]">
+            <button id="hudBtnArmory" onclick="window.openArmoryModal()" class="hud-panel hover:bg-emerald-950/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-emerald-300 border border-emerald-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Mở Kho Vũ Khí [Phím B]">
                 <span class="px-1 rounded-none bg-emerald-500/20 text-emerald-300 text-[8.5px] border border-emerald-500/30">B</span>
                 <span>Kho Súng</span>
             </button>
@@ -1803,7 +1803,7 @@
                 <span id="hudNvgKey" class="px-1 rounded-none bg-slate-700/50 text-emerald-400 text-[8.5px] border border-slate-600">N</span>
                 <span id="hudNvgStatus">Kính Đêm</span>
             </button>
-            <button onclick="window.openFpsTestModal()" class="hud-panel hover:bg-rose-950/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-rose-300 border border-rose-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Thả 100 quái từ 4 góc bản đồ để kiểm tra FPS">
+            <button id="hudBtnFpsTest" onclick="window.openFpsTestModal()" class="hud-panel hover:bg-rose-950/90 active:scale-95 px-2 py-1.5 rounded-none text-[9.5px] font-mono-tech font-bold text-rose-300 border border-rose-500/40 flex items-center justify-center gap-1.5 transition w-full" title="Thả 100 quái từ 4 góc bản đồ để kiểm tra FPS">
                 <span>Test FPS</span>
             </button>
         </div>
@@ -1846,9 +1846,9 @@
             </div>
         </div>
 
-        <!-- Right Virtual Joystick Zone (Ngắm & Tự động Bắn - Aim & Auto-Shoot) -->
-        <div id="touchAimZone" class="pointer-events-auto absolute right-0 bottom-0 w-1/2 h-3/5 flex items-end justify-end p-6">
-            <div id="touchAimBase" class="fixed w-32 h-32 rounded-full border-2 border-rose-500/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(244,63,94,0.3)] flex items-center justify-center transition-opacity duration-150" style="left: 80%; top: 70%;">
+        <!-- Right Virtual Joystick Zone (Chỉ Cần Joystick Base Chính Thức nhận Bắn, Vùng còn lại không đè phím) -->
+        <div id="touchAimZone" class="pointer-events-none absolute right-0 bottom-0 w-1/2 h-full flex items-end justify-end p-6">
+            <div id="touchAimBase" class="fixed w-32 h-32 rounded-full border-2 border-rose-500/50 bg-slate-950/50 backdrop-blur-sm shadow-[0_0_20px_rgba(244,63,94,0.3)] flex items-center justify-center transition-opacity duration-150 pointer-events-auto cursor-pointer" style="left: 80%; top: 70%;">
                 <div class="absolute inset-2 rounded-full border border-dashed border-rose-500/30 pointer-events-none"></div>
                 <div id="touchAimKnob" class="w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 border-2 border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.7)] flex items-center justify-center pointer-events-none">
                     <svg viewBox="0 0 24 24" class="w-6 h-6 text-slate-950 fill-current opacity-85">
@@ -1860,7 +1860,7 @@
         </div>
 
         <!-- Quick Action Button: Dash -->
-        <div id="touchBtnDashWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 48%;">
+        <div id="touchBtnDashWrapper" class="pointer-events-auto fixed z-35" style="left: 90%; top: 48%;">
             <button id="touchBtnDash" type="button" class="touch-btn relative w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 border-2 border-cyan-300 shadow-[0_0_20px_rgba(56,189,248,0.6)] flex flex-col items-center justify-center text-slate-950 active:scale-95 transition-all" title="Lướt Phản Lực Dash [SPACE]">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current">
                     <path d="M7 2v11h3v9l7-12h-4l3-8z"/>
@@ -1870,7 +1870,7 @@
         </div>
 
         <!-- Quick Action Button: Interact [E] (Hold for Generator, Tap for Computers / Strafe Right in PvP) -->
-        <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed" style="left: 90%; top: 62%;">
+        <div id="touchBtnInteractWrapper" class="pointer-events-auto fixed z-35" style="left: 90%; top: 62%;">
             <button id="touchBtnInteract" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] flex flex-col items-center justify-center text-emerald-300 active:scale-95 transition-all" title="Giữ 5s Khởi động Máy Phát / Hack [Phím E]">
                 <span class="text-xs font-mono-tech font-black leading-none">[E]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">BẬT</span>
@@ -1878,7 +1878,7 @@
         </div>
 
         <!-- Quick Action Button: Strafe Dash Left [Q] (Solo 1v1 PvP Gun Game Only) -->
-        <div id="touchBtnQWrapper" class="pointer-events-auto fixed hidden" style="left: 72%; top: 62%;">
+        <div id="touchBtnQWrapper" class="pointer-events-auto fixed hidden z-35" style="left: 72%; top: 62%;">
             <button id="touchBtnQ" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex flex-col items-center justify-center text-sky-300 active:scale-95 transition-all" title="Lướt Né Trái [Q]">
                 <span class="text-xs font-mono-tech font-black leading-none">[Q]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-sky-200">TRÁI</span>
@@ -1886,7 +1886,7 @@
         </div>
 
         <!-- Quick Action Button: Turret [T] (Đặt Tháp Pháo cạnh nút E góc dưới) -->
-        <div id="touchBtnTurretWrapper" class="pointer-events-auto fixed" style="left: 81%; top: 62%;">
+        <div id="touchBtnTurretWrapper" class="pointer-events-auto fixed z-35" style="left: 81%; top: 62%;">
             <button id="touchBtnTurret" type="button" class="touch-btn relative w-12 h-12 rounded-full bg-slate-900/90 border-2 border-purple-400 shadow-[0_0_15px_rgba(192,132,252,0.5)] flex flex-col items-center justify-center text-purple-300 active:scale-95 transition-all" title="Đặt Tháp Pháo Tự Động ($350) [Phím T]">
                 <span class="text-xs font-mono-tech font-black leading-none">[T]</span>
                 <span class="text-[7.5px] font-mono-tech font-bold uppercase tracking-tight text-slate-300">THÁP</span>
@@ -2027,7 +2027,7 @@
 <!-- ==========================================================================
          5. MODAL 1: PAUSE MENU ([P] / TẠM DỪNG)
          ========================================================================== -->
-    <div id="pauseModal" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="pauseModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md pointer-events-auto flex items-center justify-center p-4">
         <div class="hud-modal rounded-none border-2 border-emerald-500/50 max-w-md w-full p-6 flex flex-col gap-4 text-center shadow-[0_0_50px_rgba(0,0,0,0.95)] relative max-h-[92vh] overflow-y-auto">
             <button onclick="window.resumeGame()" class="absolute top-3 right-3 w-7 h-7 rounded-none bg-slate-900/80 hover:bg-rose-600/90 border border-slate-700 hover:border-rose-400 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer" title="Tiếp tục [P]">&times;</button>
             <div class="mx-auto w-10 h-10 rounded-none bg-emerald-500/15 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
@@ -4154,7 +4154,7 @@
         </div>
     </div>
 
-    <div id="armoryModal" class="hidden fixed inset-0 z-40 bg-slate-950/35 pointer-events-none flex items-center justify-center p-2 sm:p-4">
+    <div id="armoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 pointer-events-auto flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm">
         <div class="pointer-events-auto rounded-none max-w-6xl w-[96vw] sm:w-[92vw] xl:max-w-[1140px] max-h-[88vh] flex flex-col border border-emerald-500/50 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.95)]"
              style="background: rgba(7, 11, 20, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
             <!-- Top Header Bar -->
@@ -34163,35 +34163,65 @@
             mouse.down = false;
         });
 
-        // Touch on Canvas (Direct Tap/Drag to Aim & Shoot)
+        // Tiện ích kiểm tra Modal và UI tương tác để tránh bị đè cảm ứng
+        function isAnyModalOpen() {
+            const modals = ["armoryModal", "pauseModal", "mainSettingsModal", "systemSettingsModal", "touchLayoutEditorModal", "fpsTestModal", "victoryModal", "gameOverModal", "customSkinModal"];
+            for (let i = 0; i < modals.length; i++) {
+                const m = byId(modals[i]);
+                if (m && !m.classList.contains("hidden") && m.style.display !== "none") return true;
+            }
+            return false;
+        }
+        window.isAnyModalOpen = isAnyModalOpen;
+
+        function isInteractiveUI(target) {
+            if (!target) return false;
+            return Boolean(target.closest && target.closest(
+                "button, a, input, select, textarea, .touch-btn, .hud-panel, #weaponDockContainer, #topRightHUD, #armoryModal, #pauseModal, #touchLayoutEditorModal, #mainSettingsModal, #systemSettingsModal, #victoryModal, #gameOverModal, #customSkinModal, #fpsTestModal, #toastBanner, #touchAimBase, #touchMoveBase, #touchBtnDashWrapper, #touchBtnInteractWrapper, #touchBtnQWrapper, #touchBtnTurretWrapper"
+            ));
+        }
+        window.isInteractiveUI = isInteractiveUI;
+
+        // Touch on Canvas (Chỉ nhận chuột/tap PC, trên Mobile Touch KHÔNG BAO GIỜ tự kích hoạt khai hỏa mouse.down)
         gameCanvas.addEventListener("touchstart", e => {
-            if (isGameOver || isPaused || isMapWon) return;
+            if (isGameOver || isPaused || isMapWon || isAnyModalOpen()) {
+                if (typeof mouse !== "undefined") mouse.down = false;
+                return;
+            }
+            if (isInteractiveUI(e.target)) return;
             sfx.init();
             window.lastInputDevice = "touch";
-            if (!window.touchAimActive && e.touches.length > 0) {
-                const touch = e.touches[0];
-                const scaleX = VIEW_W / Math.max(1, window.innerWidth);
-                const scaleY = VIEW_H / Math.max(1, window.innerHeight);
-                mouse.screenX = touch.clientX * scaleX;
-                mouse.screenY = touch.clientY * scaleY;
-                mouse.worldX = mouse.screenX + camera.x;
-                mouse.worldY = mouse.screenY + camera.y;
-                player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
-                mouse.down = true;
+
+            // Nếu đang bật chế độ cảm ứng Mobile Touch:
+            // Tuyệt đối KHÔNG gán mouse.down = true (Chỉ Joystick Bắn chính thức mới được khai hỏa!)
+            if (!getEffectiveTouchMode()) {
+                if (!window.touchAimActive && e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+                    const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+                    mouse.screenX = touch.clientX * scaleX;
+                    mouse.screenY = touch.clientY * scaleY;
+                    mouse.worldX = mouse.screenX + camera.x;
+                    mouse.worldY = mouse.screenY + camera.y;
+                    player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+                    mouse.down = true;
+                }
             }
         }, { passive: false });
 
         gameCanvas.addEventListener("touchmove", e => {
             window.lastInputDevice = "touch";
-            if (!window.touchAimActive && mouse.down && e.touches.length > 0) {
-                const touch = e.touches[0];
-                const scaleX = VIEW_W / Math.max(1, window.innerWidth);
-                const scaleY = VIEW_H / Math.max(1, window.innerHeight);
-                mouse.screenX = touch.clientX * scaleX;
-                mouse.screenY = touch.clientY * scaleY;
-                mouse.worldX = mouse.screenX + camera.x;
-                mouse.worldY = mouse.screenY + camera.y;
-                player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            if (!getEffectiveTouchMode()) {
+                if (!window.touchAimActive && mouse.down && e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const scaleX = VIEW_W / Math.max(1, window.innerWidth);
+                    const scaleY = VIEW_H / Math.max(1, window.innerHeight);
+                    mouse.screenX = touch.clientX * scaleX;
+                    mouse.screenY = touch.clientY * scaleY;
+                    mouse.worldX = mouse.screenX + camera.x;
+                    mouse.worldY = mouse.screenY + camera.y;
+                    player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+                }
             }
         }, { passive: false });
 
@@ -34961,41 +34991,58 @@
                 moveZone.addEventListener("touchcancel", endMoveTouch, { passive: false });
             }
 
-            // 2. RIGHT VIRTUAL JOYSTICK (Ngắm & Bắn Linh Hoạt Mobile - Không Bị Nhảy Góc)
+            // 2. RIGHT VIRTUAL JOYSTICK CHÍNH THỨC (Chỉ duy nhất Cần Joystick Base này mới có quyền Ngắm & Khai Hỏa)
             let aimTouchId = null;
-            let aimStartX = 0;
-            let aimStartY = 0;
-            const aimZone = byId("touchAimZone");
+            let aimCenterX = 0;
+            let aimCenterY = 0;
             const aimBase = byId("touchAimBase");
             const aimKnob = byId("touchAimKnob");
 
-            if (aimZone && aimBase && aimKnob) {
-                aimZone.addEventListener("touchstart", (e) => {
+            if (aimBase && aimKnob) {
+                aimBase.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    if (isAnyModalOpen() || isGameOver || isPaused || isMapWon) return;
                     if (aimTouchId !== null) return;
                     const touch = e.changedTouches[0];
                     aimTouchId = touch.identifier;
-                    aimStartX = touch.clientX;
-                    aimStartY = touch.clientY;
 
-                    aimBase.style.position = "fixed";
-                    aimBase.style.left = `${aimStartX - 64}px`;
-                    aimBase.style.top = `${aimStartY - 64}px`;
-                    aimBase.style.bottom = "auto";
-                    aimBase.style.right = "auto";
-                    aimKnob.style.transform = "translate(0px, 0px)";
+                    const rect = aimBase.getBoundingClientRect();
+                    aimCenterX = rect.left + rect.width / 2;
+                    aimCenterY = rect.top + rect.height / 2;
+
+                    const dx = touch.clientX - aimCenterX;
+                    const dy = touch.clientY - aimCenterY;
+                    const dist = Math.hypot(dx, dy);
+                    const maxR = 48;
+                    const clampedDist = Math.min(dist, maxR);
+                    const angle = Math.atan2(dy, dx);
+                    const knobX = Math.cos(angle) * clampedDist;
+                    const knobY = Math.sin(angle) * clampedDist;
+                    aimKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+                    if (dist > 8) {
+                        player.angle = angle;
+                        mouse.worldX = player.x + Math.cos(angle) * 350;
+                        mouse.worldY = player.y + Math.sin(angle) * 350;
+                        mouse.screenX = mouse.worldX - camera.x;
+                        mouse.screenY = mouse.worldY - camera.y;
+                        mouse.down = (dist > 12);
+                    } else {
+                        mouse.down = false;
+                    }
                     window.touchAimActive = true;
                     window.lastInputDevice = "touch";
                 }, { passive: false });
 
-                aimZone.addEventListener("touchmove", (e) => {
-                    e.preventDefault();
+                window.addEventListener("touchmove", (e) => {
                     if (aimTouchId === null) return;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
                         if (touch.identifier === aimTouchId) {
-                            const dx = touch.clientX - aimStartX;
-                            const dy = touch.clientY - aimStartY;
+                            e.preventDefault();
+                            const dx = touch.clientX - aimCenterX;
+                            const dy = touch.clientY - aimCenterY;
                             const maxR = 48;
                             const dist = Math.hypot(dx, dy);
                             const clampedDist = Math.min(dist, maxR);
@@ -35010,7 +35057,7 @@
                                 mouse.worldY = player.y + Math.sin(angle) * 350;
                                 mouse.screenX = mouse.worldX - camera.x;
                                 mouse.screenY = mouse.worldY - camera.y;
-                                mouse.down = (dist > 12);
+                                mouse.down = (dist > 12); // KHAI HỎA CHÍNH THỨC TỪ CẦN BẮN!
                                 window.touchAimActive = true;
                                 window.lastInputDevice = "touch";
                             } else {
@@ -35027,12 +35074,6 @@
                         if (e.changedTouches[i].identifier === aimTouchId) {
                             aimTouchId = null;
                             aimKnob.style.transform = "translate(0px, 0px)";
-                            const layout = getSavedTouchLayout();
-                            aimBase.style.position = "fixed";
-                            aimBase.style.left = `${layout.aimJoy.leftPct}%`;
-                            aimBase.style.top = `${layout.aimJoy.topPct}%`;
-                            aimBase.style.right = "auto";
-                            aimBase.style.bottom = "auto";
                             mouse.down = false;
                             window.touchAimActive = false;
                             window.lastInputDevice = "touch";
@@ -35049,15 +35090,103 @@
                         }
                     }
                 };
-                aimZone.addEventListener("touchend", endAimTouch, { passive: false });
-                aimZone.addEventListener("touchcancel", endAimTouch, { passive: false });
+                window.addEventListener("touchend", endAimTouch, { passive: false });
+                window.addEventListener("touchcancel", endAimTouch, { passive: false });
             }
 
-            // 3. QUICK ACTION BUTTONS
+            // 2B. VÙNG CẢM ỨNG BÊN NGOÀI CỦA NỬA PHẢI MÀN HÌNH (Chỉ di tâm xoay quanh, TUYỆT ĐỐI KHÔNG khai hỏa)
+            let lookTouchId = null;
+            let lookStartX = 0;
+            let lookStartY = 0;
+
+            window.addEventListener("touchstart", (e) => {
+                if (!getEffectiveTouchMode()) return;
+                if (isAnyModalOpen() || isGameOver || isPaused || isMapWon) {
+                    if (!window.touchAimActive) mouse.down = false;
+                    return;
+                }
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === moveTouchId || touch.identifier === aimTouchId) continue;
+                    // Tuyệt đối không nhận nếu bấm vào các nút chức năng hoặc modal
+                    if (isInteractiveUI(touch.target)) continue;
+                    // Vùng cảm ứng nửa phải màn hình (ngoài cần di chuyển trái)
+                    if (touch.clientX >= window.innerWidth * 0.45) {
+                        if (lookTouchId === null) {
+                            lookTouchId = touch.identifier;
+                            lookStartX = touch.clientX;
+                            lookStartY = touch.clientY;
+                            window.lastInputDevice = "touch";
+                            if (!window.touchAimActive) {
+                                mouse.down = false; // TUYỆT ĐỐI KHÔNG KHAI HỎA Ở VÙNG NGOÀI!
+                            }
+                            break;
+                        }
+                    }
+                }
+            }, { passive: true });
+
+            window.addEventListener("touchmove", (e) => {
+                if (lookTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === lookTouchId) {
+                        const dx = touch.clientX - lookStartX;
+                        const dy = touch.clientY - lookStartY;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist > 8) {
+                            const angle = Math.atan2(dy, dx);
+                            player.angle = angle;
+                            mouse.worldX = player.x + Math.cos(angle) * 350;
+                            mouse.worldY = player.y + Math.sin(angle) * 350;
+                            mouse.screenX = mouse.worldX - camera.x;
+                            mouse.screenY = mouse.worldY - camera.y;
+
+                            // Nới lỏng tâm ảo khi vuốt xa quá 55px để xoay 360 độ liên tục mượt mà
+                            if (dist > 55) {
+                                lookStartX = touch.clientX - Math.cos(angle) * 55;
+                                lookStartY = touch.clientY - Math.sin(angle) * 55;
+                            }
+                        }
+                        // CHỈ DI TÂM XOAY QUANH, TUYỆT ĐỐI KHÔNG KHAI HỎA
+                        if (!window.touchAimActive) {
+                            mouse.down = false;
+                        }
+                        break;
+                    }
+                }
+            }, { passive: true });
+
+            const endLookTouch = (e) => {
+                if (lookTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === lookTouchId) {
+                        lookTouchId = null;
+                        if (!window.touchAimActive) {
+                            mouse.down = false;
+                        }
+                        if (typeof player !== "undefined" && player) {
+                            mouse.worldX = player.x + Math.cos(player.angle) * 350;
+                            mouse.worldY = player.y + Math.sin(player.angle) * 350;
+                            if (typeof camera !== "undefined") {
+                                mouse.screenX = mouse.worldX - camera.x;
+                                mouse.screenY = mouse.worldY - camera.y;
+                            }
+                        }
+                        break;
+                    }
+                }
+            };
+            window.addEventListener("touchend", endLookTouch, { passive: true });
+            window.addEventListener("touchcancel", endLookTouch, { passive: true });
+
+            // 3. QUICK ACTION BUTTONS (Đảm bảo có stopPropagation không bị đè cảm ứng)
             const btnDash = byId("touchBtnDash");
             if (btnDash) {
                 btnDash.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     triggerPlayerDash();
                 }, { passive: false });
             }
@@ -35067,6 +35196,7 @@
             if (btnQ) {
                 btnQ.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (typeof triggerRelativeStrafeDash === "function") {
                         triggerRelativeStrafeDash("left");
                     }
@@ -35078,6 +35208,7 @@
             if (btnInteract) {
                 btnInteract.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (window.gameMode === "pvp_gungame") {
                         if (typeof triggerRelativeStrafeDash === "function") {
                             triggerRelativeStrafeDash("right");
@@ -35088,6 +35219,7 @@
                     }
                 }, { passive: false });
                 const releaseE = (e) => {
+                    e.stopPropagation();
                     if (window.gameMode !== "pvp_gungame") {
                         keys["KeyE"] = false;
                     }
@@ -35100,6 +35232,8 @@
             if (btnArmory) {
                 btnArmory.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    mouse.down = false;
                     openArmoryModal();
                 }, { passive: false });
             }
@@ -35122,8 +35256,87 @@
             if (btnCycleWeapon) {
                 btnCycleWeapon.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     cycleNextWeapon();
                 }, { passive: false });
+            }
+
+            // BẢO VỆ CÁC NÚT CHỨC NĂNG TOP-RIGHT HUD & MODALS KHÔNG BỊ ĐÈ CẢM ỨNG
+            const pauseBtn = byId("hudBtnPause");
+            if (pauseBtn) {
+                pauseBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mouse.down = false;
+                    window.togglePauseMenu();
+                }, { passive: false });
+            }
+
+            const armoryBtn = byId("hudBtnArmory");
+            if (armoryBtn) {
+                armoryBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mouse.down = false;
+                    window.openArmoryModal();
+                }, { passive: false });
+            }
+
+            const nvgBtn = byId("hudNvgBtn");
+            if (nvgBtn) {
+                nvgBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.toggleNvg();
+                }, { passive: false });
+            }
+
+            const fpsBtn = byId("hudBtnFpsTest");
+            if (fpsBtn) {
+                fpsBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.openFpsTestModal();
+                }, { passive: false });
+            }
+
+            const minimapCard = byId("hudMinimapCard");
+            if (minimapCard) {
+                minimapCard.addEventListener("touchstart", (e) => {
+                    e.stopPropagation();
+                }, { passive: true });
+            }
+
+            const armoryModalEl = byId("armoryModal");
+            if (armoryModalEl) {
+                armoryModalEl.addEventListener("touchstart", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
+                armoryModalEl.addEventListener("touchmove", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
+                armoryModalEl.addEventListener("touchend", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
+            }
+
+            const pauseModalEl = byId("pauseModal");
+            if (pauseModalEl) {
+                pauseModalEl.addEventListener("touchstart", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
+                pauseModalEl.addEventListener("touchmove", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
+                pauseModalEl.addEventListener("touchend", (e) => {
+                    e.stopPropagation();
+                    mouse.down = false;
+                }, { passive: true });
             }
 
             updateTouchOverlayVisibility();
