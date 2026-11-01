@@ -1812,7 +1812,7 @@
     <!-- ==========================================================================
          4. BOTTOM-CENTER HUD: HORIZONTAL 6-WEAPON DOCK
          ========================================================================== -->
-    <div id="bottomCenterHUD" class="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 w-full max-w-4xl px-3 flex flex-col items-center gap-1" style="z-index: 35;">
+    <div id="bottomCenterHUD" class="hidden pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 w-full max-w-4xl px-3 flex flex-col items-center gap-1" style="z-index: 35; display: none;">
         <div class="hud-panel px-3 py-1 rounded-none border border-slate-700/80 text-[9px] font-mono-tech text-slate-300 hidden sm:flex items-center gap-2 shadow-lg">
             <span><b class="text-emerald-400">[WASD]</b> Di chuyển</span>
             <span>&bull;</span>
@@ -28133,15 +28133,13 @@
             const half = cache.half;
             const r = e.radius || cache.r;
 
-            ctx.save();
-            ctx.translate(e.x, e.y);
-            ctx.rotate(e.angle);
-
-            const scale = r / (cache.r || 46);
-            const drawSize = cell * scale;
-            const drawHalf = half * scale;
-
             if (mode === "atlas" && (!e.skillState || e.skillState === "idle")) {
+                const scale = r / (cache.r || 46);
+                const drawSize = cell * scale;
+                const drawHalf = half * scale;
+                ctx.save();
+                ctx.translate(e.x, e.y);
+                ctx.rotate(e.angle);
                 ctx.drawImage(
                     cache.sheetCanvas,
                     frameIdx * cell,
@@ -28153,8 +28151,11 @@
                     drawSize,
                     drawSize
                 );
+                ctx.restore();
             } else {
                 // Khi Boss tung chiêu (Skill Casting/Enraged) hoặc Vector Mode: kết xuất trực tiếp hoạt họa cuồng nộ chân thực
+                // LƯU Ý SỬA LỖI TÀNG HÌNH: Các hàm procedural tự quản lý ctx.save()/ctx.translate(e.x, e.y)/ctx.rotate(e.angle)/ctx.restore()
+                // Tuyệt đối không translate/rotate trước ở ngoài để không bị tịnh tiến 2 lần (2 * e.x, 2 * e.y) khiến Boss bay mất khỏi màn hình!
                 if (targetMapId === 10) drawBossApexProgenitorProcedural(e, isGlobalFrozen);
                 else if (targetMapId === 9) drawBossChronoWardenProcedural(e, isGlobalFrozen);
                 else if (targetMapId === 8) drawBossAbyssalKrakenProcedural(e, isGlobalFrozen);
@@ -28164,8 +28165,6 @@
                 else if (targetMapId === 4) drawBossMagmaMonsterProcedural(e, isGlobalFrozen);
                 else drawBossOmegaMonsterProcedural(e, isGlobalFrozen);
             }
-
-            ctx.restore();
         }
 
         function drawBossOmegaMonster(e, isGlobalFrozen)       { drawBossFromRamCache(e, isGlobalFrozen, window.currentMapId || 1); }
@@ -29971,7 +29970,41 @@
         var _dockLastStatusText = [];
         var _dockLastStatusClass = [];
 
+        function updateBottomWeaponDockVisibility() {
+            const botHud = byId("bottomCenterHUD");
+            if (!botHud) return false;
+            const settingsModal = byId("mainSettingsModal");
+            const inLobby = (settingsModal && !settingsModal.classList.contains("hidden") && settingsModal.style.display !== "none") ||
+                            (typeof isLobbyLoadingSimulating !== "undefined" && isLobbyLoadingSimulating) ||
+                            (typeof isMissionLoadingSimulating !== "undefined" && isMissionLoadingSimulating) ||
+                            (typeof isMapTransitionLoading !== "undefined" && isMapTransitionLoading) ||
+                            (byId("gamePreloaderScreen") && !byId("gamePreloaderScreen").classList.contains("hidden") && byId("gamePreloaderScreen").style.display !== "none");
+            const pauseModal = byId("pauseModal");
+            const isPausedModal = pauseModal && !pauseModal.classList.contains("hidden") && pauseModal.style.display !== "none";
+            const armoryModal = byId("armoryModal");
+            const isArmoryOpen = armoryModal && !armoryModal.classList.contains("hidden") && armoryModal.style.display !== "none";
+            const sysModal = byId("systemSettingsModal");
+            const isSysOpen = sysModal && !sysModal.classList.contains("hidden") && sysModal.style.display !== "none";
+            const victoryModal = byId("victoryModal");
+            const isVictoryOpen = victoryModal && !victoryModal.classList.contains("hidden") && victoryModal.style.display !== "none";
+            const gameOverModal = byId("gameOverModal");
+            const isGameOverOpen = gameOverModal && !gameOverModal.classList.contains("hidden") && gameOverModal.style.display !== "none";
+
+            const shouldHide = inLobby || isPausedModal || isArmoryOpen || isSysOpen || isVictoryOpen || isGameOverOpen || isGameOver || isMapWon;
+            if (shouldHide) {
+                botHud.classList.add("hidden");
+                botHud.style.display = "none";
+                return false;
+            } else {
+                botHud.classList.remove("hidden");
+                botHud.style.display = "flex";
+                return true;
+            }
+        }
+        window.updateBottomWeaponDockVisibility = updateBottomWeaponDockVisibility;
+
         function updateWeaponDockHUD(forceRebuild = false) {
+            updateBottomWeaponDockVisibility();
             const dock = byId("weaponDockContainer");
             if (!dock) return;
 
@@ -30059,6 +30092,22 @@
         }
 
         function selectWeaponSlot(idx) {
+            const settingsModal = byId("mainSettingsModal");
+            const inLobby = (settingsModal && !settingsModal.classList.contains("hidden") && settingsModal.style.display !== "none") ||
+                            (typeof isLobbyLoadingSimulating !== "undefined" && isLobbyLoadingSimulating) ||
+                            (typeof isMissionLoadingSimulating !== "undefined" && isMissionLoadingSimulating) ||
+                            (typeof isMapTransitionLoading !== "undefined" && isMapTransitionLoading) ||
+                            (byId("gamePreloaderScreen") && !byId("gamePreloaderScreen").classList.contains("hidden") && byId("gamePreloaderScreen").style.display !== "none");
+            const pauseModal = byId("pauseModal");
+            const isPausedModal = pauseModal && !pauseModal.classList.contains("hidden") && pauseModal.style.display !== "none";
+            const armoryModal = byId("armoryModal");
+            const isArmoryOpen = armoryModal && !armoryModal.classList.contains("hidden") && armoryModal.style.display !== "none";
+
+            // Khóa chặn hoàn toàn: Không cho phép mua hoặc đổi súng ở thanh đáy khi đang ở sảnh chờ hoặc mở menu
+            if (inLobby || isPausedModal || isArmoryOpen || isGameOver || isMapWon) {
+                return;
+            }
+
             const w = WEAPON_DATA[idx];
             if (!w) return;
             if (!w.unlocked) {
@@ -30292,6 +30341,8 @@
             if (gameOverModal) { gameOverModal.classList.add("hidden"); gameOverModal.style.display = "none"; }
             isPaused = false;
             if (typeof updateTouchOverlayVisibility === "function") updateTouchOverlayVisibility();
+            if (typeof updateBottomWeaponDockVisibility === "function") updateBottomWeaponDockVisibility();
+            if (typeof updateWeaponDockHUD === "function") updateWeaponDockHUD();
             if (typeof resetFramePacer === "function") {
                 resetFramePacer();
             }
@@ -30338,6 +30389,7 @@
                 settingsModal.classList.remove("hidden");
                 settingsModal.style.display = "flex";
             }
+            if (typeof updateBottomWeaponDockVisibility === "function") updateBottomWeaponDockVisibility();
 
             // Reset match state into clean lobby idle mode immediately
             initCampaign(true, false);
@@ -34552,6 +34604,7 @@
         window.cycleNextWeapon = cycleNextWeapon;
 
         function updateTouchOverlayVisibility() {
+            if (typeof updateBottomWeaponDockVisibility === "function") updateBottomWeaponDockVisibility();
             const overlay = byId("touchControlsOverlay");
             if (!overlay) return;
             const settingsModal = byId("mainSettingsModal");
