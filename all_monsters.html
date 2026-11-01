@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xeno Monsters Roaming - Canvas 2D Pure Code</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            color: #94a3b8;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 50% 50%, #091329 0%, #020617 100%),
+                linear-gradient(to right, rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+        #miniTip {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 14px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 9999px;
+            font-size: 11px;
+            color: #38bdf8;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+    <div id="miniTip">Chuột nhấp để quái dạt ra | Phím Space: Tạm dừng | 15 Loài Quái & Boss đang chạy loăng quăng</div>
+
+    <script>
+    // =========================================================================
+    // PHẦN 1: CÁC HÀM TRỢ GIÚP CANVAS 2D CƠ BẢN
+    // =========================================================================
+    let frameCounter = 0;
+    const _radialGradCache = new Map();
+
+    function safeArc(c, x, y, r, sAng = 0, eAng = Math.PI * 2) {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        const rad = Number.isFinite(r) ? Math.max(0.5, r) : 1;
+        c.arc(x, y, rad, sAng, eAng);
+    }
+
+    function safeRadialGradient(c, x0, y0, r0, x1, y1, r1) {
+        const rx0 = Number.isFinite(x0) ? x0 : 0;
+        const ry0 = Number.isFinite(y0) ? y0 : 0;
+        const rr0 = Number.isFinite(r0) ? Math.max(0.01, r0) : 0.01;
+        const rx1 = Number.isFinite(x1) ? x1 : 0;
+        const ry1 = Number.isFinite(y1) ? y1 : 0;
+        const rr1 = Number.isFinite(r1) ? Math.max(rr0 + 0.1, r1) : 10;
+        try {
+            return c.createRadialGradient(rx0, ry0, rr0, rx1, ry1, rr1);
+        } catch (e) {
+            return c.createRadialGradient(0, 0, 0.1, 0, 0, 10);
+        }
+    }
+
+    function getCachedRadialGradient(c, key, x0, y0, r0, x1, y1, r1, stops) {
+        let g = _radialGradCache.get(key);
+        if (!g) {
+            g = safeRadialGradient(c, x0, y0, r0, x1, y1, r1);
+            for (let i = 0; i < stops.length; i++) {
+                g.addColorStop(stops[i][0], stops[i][1]);
+            }
+            _radialGradCache.set(key, g);
+        }
+        return g;
+    }
+
+
+    // =========================================================================
+    // PHẦN 2: BỘ PHẬN GIẢI PHẪU DÙNG CHUNG CỦA 10 BOSS
+    // 1. Đuôi 5 đốt khớp nối + Quả chùy gai 12 gai xoay tít + Cặp roi điện
+    // 2. 8 Chân khớp bọc giáp gai gối nhô cao & vuốt liềm
+    // 3. Đôi càng lưỡi hái răng cưa saw-teeth & sừng vai càn quét
+    // =========================================================================
+        function drawBossSpikedMorningStarTail(e, cfg) {
+            const r = e.radius;
+            const isCasting = e.skillState && e.skillState !== "idle";
+            const swingSpeed = isCasting ? 1.55 : 0.88;
+            const swingAmp = isCasting ? (r * 0.54) : (r * 0.38);
+            const wag = Math.sin(e.legPhase * swingSpeed) * swingAmp;
+
+            // Optional Twin Auxiliary Barbed Whip-Tendrils flanking the main Morning-Star Tail
+            if (cfg.hasTwinWhips) {
+                for (let tSide = -1; tSide <= 1; tSide += 2) {
+                    const wWag = Math.sin(e.legPhase * 1.05 + (tSide === 1 ? 0.6 : 2.2)) * (r * 0.34);
+                    const mX = -r * 1.28, mY = tSide * r * 0.58 + wWag * 0.5;
+                    const eX = -r * 1.92, eY = tSide * r * 0.52 + wWag;
+
+                    ctx.strokeStyle = cfg.darkArmor;
+                    ctx.lineWidth = Math.max(4.5, r * 0.13);
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.68, tSide * r * 0.32);
+                    ctx.lineTo(mX, mY);
+                    ctx.lineTo(eX, eY);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = cfg.veinCol;
+                    ctx.lineWidth = 1.6;
+                    ctx.stroke();
+
+                    // Whip vertebra barb
+                    ctx.fillStyle = cfg.spikeCol;
+                    ctx.beginPath();
+                    ctx.moveTo(mX, mY);
+                    ctx.lineTo(mX - r * 0.22, mY + tSide * r * 0.28);
+                    ctx.lineTo(mX + r * 0.10, mY + tSide * r * 0.06);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Crescent razor blade at whip tip
+                    ctx.fillStyle = cfg.tipGlow;
+                    ctx.beginPath();
+                    ctx.moveTo(eX + r * 0.14, eY - tSide * r * 0.10);
+                    ctx.lineTo(eX - r * 0.42, eY + tSide * r * 0.20);
+                    ctx.lineTo(eX - r * 0.12, eY - tSide * r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // 5 Articulated Armored Vertebrae Segments leading to the Colossal Morning-Star Mace
+            const segCount = 5;
+            let prevX = -r * 0.62;
+            let prevY = 0;
+
+            for (let s = 1; s <= segCount; s++) {
+                const t = s / segCount;
+                const curX = -r * (0.62 + t * 1.56);
+                const curY = Math.sin(e.legPhase * swingSpeed - t * 1.35) * swingAmp * Math.pow(t, 1.15);
+                const segW = r * (0.28 * (1 - t * 0.42));
+
+                // Armored Hexagonal Vertebra Segment
+                const dx = curX - prevX;
+                const dy = curY - prevY;
+                const segAng = Math.atan2(dy, dx);
+                const nx = -Math.sin(segAng);
+                const ny = Math.cos(segAng);
+
+                ctx.fillStyle = cfg.darkArmor;
+                ctx.strokeStyle = cfg.plateCol;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(prevX + nx * segW, prevY + ny * segW);
+                ctx.lineTo(curX + nx * segW * 0.82, curY + ny * segW * 0.82);
+                ctx.lineTo(curX - nx * segW * 0.82, curY - ny * segW * 0.82);
+                ctx.lineTo(prevX - nx * segW, prevY - ny * segW);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Lateral Razor Barbs on each tail vertebra
+                const barbLen = r * (0.34 - t * 0.08);
+                ctx.fillStyle = (s % 2 === 0) ? cfg.spikeCol : cfg.tipGlow;
+                for (let bSide = -1; bSide <= 1; bSide += 2) {
+                    const bx = (prevX + curX) * 0.5 + nx * bSide * segW * 0.85;
+                    const by = (prevY + curY) * 0.5 + ny * bSide * segW * 0.85;
+                    ctx.beginPath();
+                    ctx.moveTo(bx - dx * 0.25, by - dy * 0.25);
+                    ctx.lineTo(bx + dx * 0.45 + nx * bSide * barbLen, by + dy * 0.45 + ny * bSide * barbLen);
+                    ctx.lineTo(bx + dx * 0.22, by + dy * 0.22);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Glowing dorsal conduit node on vertebra
+                ctx.fillStyle = cfg.veinCol;
+                ctx.beginPath();
+                safeArc(ctx, (prevX + curX) * 0.5, (prevY + curY) * 0.5, Math.max(2.2, segW * 0.34));
+                ctx.fill();
+
+                prevX = curX;
+                prevY = curY;
+            }
+
+            // COLOSSAL 12-SPIKED MORNING-STAR TAIL MACE HEAD (QUẢ CHÙY GAI KHỔNG LỒ 3A)
+            const maceX = prevX - r * 0.16;
+            const maceY = prevY;
+            const maceR = r * 0.42;
+            const maceRot = wag * 0.025 + (isCasting ? frameCounter * 0.12 : 0);
+
+            ctx.save();
+            ctx.translate(maceX, maceY);
+            ctx.rotate(maceRot);
+
+            // 1. 12 Radiating Two-Tone Executioner Spikes around the Morning-Star Mace
+            const numSpikes = 12;
+            for (let k = 0; k < numSpikes; k++) {
+                const sa = (k / numSpikes) * Math.PI * 2;
+                const isMajor = (k % 3 === 0);
+                const spLen = isMajor ? (maceR * 2.15) : (maceR * 1.62);
+                const baseHalf = isMajor ? 0.24 : 0.17;
+
+                // Outer Spike Body
+                ctx.fillStyle = isMajor ? cfg.spikeCol : cfg.plateCol;
+                ctx.strokeStyle = cfg.darkArmor;
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(sa - baseHalf) * (maceR * 0.78), Math.sin(sa - baseHalf) * (maceR * 0.78));
+                ctx.lineTo(Math.cos(sa) * spLen, Math.sin(sa) * spLen);
+                ctx.lineTo(Math.cos(sa + baseHalf) * (maceR * 0.78), Math.sin(sa + baseHalf) * (maceR * 0.78));
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing Hot/Energy Tip on Major Spikes
+                if (isMajor) {
+                    ctx.fillStyle = cfg.tipGlow;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(sa - 0.11) * (spLen * 0.58), Math.sin(sa - 0.11) * (spLen * 0.58));
+                    ctx.lineTo(Math.cos(sa) * spLen, Math.sin(sa) * spLen);
+                    ctx.lineTo(Math.cos(sa + 0.11) * (spLen * 0.58), Math.sin(sa + 0.11) * (spLen * 0.58));
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // 2. Heavy Faceted Octagonal Armored Mace Core
+            ctx.fillStyle = cfg.darkArmor;
+            ctx.strokeStyle = cfg.veinCol;
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            for (let k = 0; k < 8; k++) {
+                const a = k * (Math.PI * 0.25) + Math.PI * 0.125;
+                const px = Math.cos(a) * maceR;
+                const py = Math.sin(a) * maceR;
+                if (k === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 3. Inner Cross-Braced Cage & Pulsing Energy Core of the Morning-Star
+            ctx.fillStyle = cfg.tipGlow;
+            ctx.beginPath();
+            for (let k = 0; k < 4; k++) {
+                const a = k * (Math.PI * 0.5);
+                const rad = (k % 2 === 0) ? maceR * 0.68 : maceR * 0.52;
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(a - 0.22) * (maceR * 0.35), Math.sin(a - 0.22) * (maceR * 0.35));
+                ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+                ctx.lineTo(Math.cos(a + 0.22) * (maceR * 0.35), Math.sin(a + 0.22) * (maceR * 0.35));
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, maceR * 0.26);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+
+        function drawBossArticulatedSpikedLegs(e, cfg) {
+            const r = e.radius;
+            for (let side = -1; side <= 1; side += 2) {
+                for (let l = 0; l < 4; l++) {
+                    const offsetRatio = (l - 1.5) * 0.44;
+                    const stride = Math.sin(e.legPhase + l * 1.48 + (side === 1 ? 0 : Math.PI)) * (r * 0.28);
+
+                    const rootX = offsetRatio * r * 0.94;
+                    const rootY = side * r * 0.48;
+                    const kneeX = rootX + stride * 0.62 + (l < 2 ? r * 0.10 : -r * 0.12);
+                    const kneeY = side * (r * 1.22 + (l === 1 || l === 2 ? r * 0.20 : 0));
+                    const tipX  = kneeX + stride * 0.84 + (l < 2 ? r * 0.34 : -r * 0.30);
+                    const tipY  = side * (r * 1.78);
+
+                    // 1. Armored Polygonal Femur Plate
+                    const fAng = Math.atan2(kneeY - rootY, kneeX - rootX);
+                    const fnx = -Math.sin(fAng) * 5.2;
+                    const fny = Math.cos(fAng) * 5.2;
+
+                    ctx.fillStyle = cfg.darkArmor;
+                    ctx.strokeStyle = cfg.plateCol;
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(rootX + fnx, rootY + fny);
+                    ctx.lineTo(kneeX + fnx * 0.85, kneeY + fny * 0.85);
+                    ctx.lineTo(kneeX - fnx * 0.85, kneeY - fny * 0.85);
+                    ctx.lineTo(rootX - fnx, rootY - fny);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Glowing femur power conduit
+                    ctx.strokeStyle = cfg.veinCol;
+                    ctx.lineWidth = 2.0;
+                    ctx.beginPath();
+                    ctx.moveTo(rootX, rootY);
+                    ctx.lineTo(kneeX, kneeY);
+                    ctx.stroke();
+
+                    // 2. Serrated Scythe Tibia & Razor Blade Tarsus
+                    ctx.fillStyle = cfg.spikeCol;
+                    ctx.strokeStyle = cfg.darkArmor;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(kneeX - r * 0.11, kneeY);
+                    ctx.lineTo( (kneeX + tipX) * 0.5 + (l < 2 ? r * 0.12 : -r * 0.10), (kneeY + tipY) * 0.5 + side * r * 0.08 );
+                    ctx.lineTo(tipX, tipY);
+                    ctx.lineTo(kneeX + r * 0.12, kneeY - side * r * 0.09);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Glowing Razor Claw Tip
+                    ctx.fillStyle = cfg.tipGlow;
+                    ctx.beginPath();
+                    ctx.moveTo(tipX, tipY);
+                    ctx.lineTo(tipX - (l < 2 ? r * 0.14 : -r * 0.14), tipY - side * r * 0.18);
+                    ctx.lineTo(tipX - (l < 2 ? r * 0.04 : -r * 0.04), tipY - side * r * 0.22);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // 3. Large Protruding Knee-Horn Spur
+                    ctx.fillStyle = cfg.tipGlow;
+                    ctx.strokeStyle = cfg.darkArmor;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(kneeX - r * 0.10, kneeY);
+                    ctx.lineTo(kneeX + (l < 2 ? -r * 0.24 : r * 0.22), kneeY + side * r * 0.34);
+                    ctx.lineTo(kneeX + r * 0.11, kneeY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+        }
+
+
+        function drawBossSerratedPincers(e, cfg) {
+            const r = e.radius;
+            const snap = Math.sin(e.legPhase * 1.18) * 0.20;
+            const reach = r * 1.76;
+
+            for (let side = -1; side <= 1; side += 2) {
+                // Forward-Curving Siege Shoulder Horn
+                ctx.fillStyle = cfg.spikeCol;
+                ctx.strokeStyle = cfg.darkArmor;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.14, side * r * 0.68);
+                ctx.quadraticCurveTo(r * 0.78, side * r * 1.22, r * 1.38, side * r * 0.72);
+                ctx.quadraticCurveTo(r * 0.74, side * r * 0.86, r * 0.34, side * r * 0.48);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Colossal Serrated Executioner Scythe-Pincer with 3 Inner Saw-Teeth
+                ctx.save();
+                ctx.translate(r * 0.48, side * r * 0.54);
+                ctx.rotate(side * (0.28 - snap));
+
+                ctx.fillStyle = cfg.darkArmor;
+                ctx.strokeStyle = cfg.veinCol;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(0, -side * r * 0.12);
+                ctx.lineTo(reach * 0.38, side * r * 0.48);
+                ctx.lineTo(reach * 0.78, side * r * 0.36);
+                ctx.lineTo(reach * 1.04, -side * r * 0.14);
+                // Serrated inner saw-teeth
+                ctx.lineTo(reach * 0.76, -side * r * 0.02);
+                ctx.lineTo(reach * 0.66, side * r * 0.16);
+                ctx.lineTo(reach * 0.54, -side * r * 0.06);
+                ctx.lineTo(reach * 0.44, side * r * 0.14);
+                ctx.lineTo(reach * 0.30, -side * r * 0.10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing Razor Cutting Edge along Pincer Tip
+                ctx.fillStyle = cfg.tipGlow;
+                ctx.beginPath();
+                ctx.moveTo(reach * 0.62, side * r * 0.26);
+                ctx.lineTo(reach * 0.78, side * r * 0.36);
+                ctx.lineTo(reach * 1.04, -side * r * 0.14);
+                ctx.lineTo(reach * 0.76, -side * r * 0.02);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+
+
+    // =========================================================================
+    // PHẦN 3: 5 LOÀI QUÁI THƯỜNG (CRAWLER, STALKER, BRUTE, SPITTER, PRAETORIAN)
+    // =========================================================================
+        function drawXenomorphMonsterProcedural(e, isGlobalFrozen) {
+            const r = Math.max(8, e.radius || 14);
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const flash = e.hitFlash > 0;
+
+            ctx.save();
+            ctx.translate(e.x, e.y);
+
+            // 2.5D Ground Contact Shadow under every Xenomorph
+            ctx.fillStyle = "rgba(2, 6, 18, 0.52)";
+            ctx.beginPath();
+            safeArc(ctx, 0, 3, r * 1.08);
+            ctx.fill();
+
+            // Radioactive Green Slow Ring if poisoned by Nuclear Pool
+            if (e.nuclearSlowTimer > 0) {
+                ctx.strokeStyle = "rgba(74, 222, 128, 0.75)";
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 1.28);
+                ctx.stroke();
+            }
+
+            ctx.rotate(e.angle);
+
+            const shellCol = flash ? "#ffffff" : (isChilled ? "#0369a1" : e.carapaceColor);
+            const fleshCol = flash ? "#ffffff" : (isChilled ? "#0284c7" : e.bodyColor);
+            const clawCol  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : (e.isElite ? "#4ade80" : "#e2e8f0"));
+            const spikeCol = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : (e.isElite ? "#d8b4fe" : "#fca5a5"));
+
+            // =========================================================================
+            // 1. CRAWLER XENO (QUÁI BÒ SÁT GAI ĐỘC - SPINED VENOM SWARMER)
+            // =========================================================================
+            if (e.typeKey === "crawler") {
+                const venomCol = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#4ade80");
+                const bloodTip = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#ef4444");
+                const darkArmor = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#052e16");
+                const tailWag = Math.sin(e.legPhase * 0.95) * (r * 0.42);
+
+                // Segmented Scorpion Whip-Tail with Barbs & Venom Stinger
+                const t1x = -r * 0.85, t1y = tailWag * 0.25;
+                const t2x = -r * 1.38, t2y = tailWag * 0.65;
+                const t3x = -r * 1.92, t3y = tailWag;
+                ctx.strokeStyle = darkArmor;
+                ctx.lineWidth = Math.max(2.6, r * 0.24);
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.45, 0);
+                ctx.lineTo(t1x, t1y);
+                ctx.lineTo(t2x, t2y);
+                ctx.lineTo(t3x, t3y);
+                ctx.stroke();
+
+                // Lateral Tail Spikes along segments
+                ctx.fillStyle = spikeCol;
+                for (let s = -1; s <= 1; s += 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(t1x, t1y);
+                    ctx.lineTo(t1x - r * 0.22, t1y + s * r * 0.34);
+                    ctx.lineTo(t1x + r * 0.12, t1y + s * r * 0.08);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(t2x, t2y);
+                    ctx.lineTo(t2x - r * 0.20, t2y + s * r * 0.28);
+                    ctx.lineTo(t2x + r * 0.10, t2y + s * r * 0.06);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Glowing Barbed Scorpion Stinger Tip
+                ctx.fillStyle = bloodTip;
+                ctx.beginPath();
+                ctx.moveTo(t3x - r * 0.42, t3y + tailWag * 0.18);
+                ctx.lineTo(t3x + r * 0.08, t3y - r * 0.18);
+                ctx.lineTo(t3x - r * 0.06, t3y);
+                ctx.lineTo(t3x + r * 0.08, t3y + r * 0.18);
+                ctx.closePath();
+                ctx.fill();
+
+                // 3 Pairs of Razor-Spined Arachnid Legs (Femur + Knee Spur + Blade Tarsus)
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let l = 0; l < 3; l++) {
+                        const offsetRatio = (l - 1) * 0.52;
+                        const stride = Math.sin(e.legPhase + l * 1.65 + (side === 1 ? 0 : Math.PI)) * (r * 0.32);
+
+                        const rootX = offsetRatio * r * 0.85;
+                        const rootY = side * r * 0.36;
+                        const kneeX = rootX + stride * 0.6 + (l === 0 ? r * 0.18 : (l === 2 ? -r * 0.18 : 0));
+                        const kneeY = side * (r * 1.15 + (l === 1 ? r * 0.18 : 0));
+                        const tipX  = kneeX + stride * 0.85 + (l === 0 ? r * 0.38 : -r * 0.28);
+                        const tipY  = side * (r * 1.68);
+
+                        // Armored Femur
+                        ctx.strokeStyle = darkArmor;
+                        ctx.lineWidth = Math.max(2.4, r * 0.20);
+                        ctx.beginPath();
+                        ctx.moveTo(rootX, rootY);
+                        ctx.lineTo(kneeX, kneeY);
+                        ctx.stroke();
+
+                        // Sharp Blade Tarsus
+                        ctx.fillStyle = clawCol;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.09, kneeY);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.lineTo(kneeX + r * 0.11, kneeY - side * r * 0.08);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // Protruding Knee Thorn
+                        ctx.fillStyle = spikeCol;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX, kneeY);
+                        ctx.lineTo(kneeX + r * 0.16, kneeY + side * r * 0.28);
+                        ctx.lineTo(kneeX - r * 0.10, kneeY + side * r * 0.06);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Dual Serrated Mantis Scythe-Claws with Inner Saw-Teeth
+                const pinch = Math.sin(e.legPhase * 1.25) * 0.22;
+                const clawReach = r * 1.48;
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.save();
+                    ctx.translate(r * 0.42, side * r * 0.45);
+                    ctx.rotate(side * (0.36 - pinch));
+
+                    // Main Scythe Blade
+                    ctx.fillStyle = clawCol;
+                    ctx.strokeStyle = darkArmor;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(clawReach * 0.45, side * r * 0.36);
+                    ctx.lineTo(clawReach * 1.05, -side * r * 0.12);
+                    ctx.lineTo(clawReach * 0.72, -side * r * 0.02);
+                    ctx.lineTo(clawReach * 0.58, side * r * 0.12);
+                    ctx.lineTo(clawReach * 0.45, -side * r * 0.04);
+                    ctx.lineTo(clawReach * 0.30, side * r * 0.10);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Blood/Venom Stained Razor Tip
+                    ctx.fillStyle = bloodTip;
+                    ctx.beginPath();
+                    ctx.moveTo(clawReach * 0.65, side * r * 0.16);
+                    ctx.lineTo(clawReach * 1.05, -side * r * 0.12);
+                    ctx.lineTo(clawReach * 0.72, -side * r * 0.02);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Lateral Chitinous Side-Thorns jutting from Abdomen & Thorax
+                ctx.fillStyle = spikeCol;
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let k = -1; k <= 1; k++) {
+                        const bx = k * r * 0.36 - r * 0.1;
+                        const by = side * r * 0.52;
+                        ctx.beginPath();
+                        ctx.moveTo(bx + r * 0.14, by * 0.7);
+                        ctx.lineTo(bx - r * 0.28, side * r * 0.96);
+                        ctx.lineTo(bx - r * 0.14, by * 0.7);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Jagged Angular Segmented Abdomen
+                ctx.fillStyle = darkArmor;
+                ctx.strokeStyle = venomCol;
+                ctx.lineWidth = 1.3;
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 0.52);
+                ctx.lineTo(-r * 0.62, -r * 0.64);
+                ctx.lineTo(-r * 1.08, 0);
+                ctx.lineTo(-r * 0.62, r * 0.64);
+                ctx.lineTo(0, r * 0.52);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Spiked Armored Thorax & Razor Head-Plate
+                ctx.fillStyle = fleshCol;
+                ctx.strokeStyle = darkArmor;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.98, 0);
+                ctx.lineTo(r * 0.52, -r * 0.68);
+                ctx.lineTo(-r * 0.25, -r * 0.58);
+                ctx.lineTo(-r * 0.52, 0);
+                ctx.lineTo(-r * 0.25, r * 0.58);
+                ctx.lineTo(r * 0.52, r * 0.68);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing Bio-Venom Dorsal Fissure & 4 Jagged Spine Thorns
+                ctx.strokeStyle = venomCol;
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.78, 0);
+                ctx.lineTo(r * 0.45, 0);
+                ctx.stroke();
+
+                ctx.fillStyle = bloodTip;
+                for (let s = -2; s <= 1; s++) {
+                    const sx = s * r * 0.34;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.24, 0);
+                    ctx.lineTo(sx - r * 0.22, -r * 0.24);
+                    ctx.lineTo(sx - r * 0.12, 0);
+                    ctx.lineTo(sx - r * 0.22, r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Snapping Serrated Mandibles at Front
+                ctx.fillStyle = clawCol;
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.78, side * r * 0.18);
+                    ctx.lineTo(r * 1.26, side * r * 0.05);
+                    ctx.lineTo(r * 0.88, side * r * 0.36);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 4 Menacing Compound Predator Eyes
+                ctx.fillStyle = isChilled ? "#e0f2fe" : e.eyeColor;
+                ctx.beginPath();
+                safeArc(ctx, r * 0.68, -r * 0.22, 2.2);
+                safeArc(ctx, r * 0.68,  r * 0.22, 2.2);
+                safeArc(ctx, r * 0.48, -r * 0.36, 1.7);
+                safeArc(ctx, r * 0.48,  r * 0.36, 1.7);
+                ctx.fill();
+            }
+            // =========================================================================
+            // 2. RAZOR STALKER (SÁT THỦ LƯỠI HÁI KÉP - BLADED RAPTOR ASSASSIN)
+            // =========================================================================
+            else if (e.typeKey === "stalker") {
+                const darkChitin = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#042f2e");
+                const bladeEdge  = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#f8fafc");
+                const neonEdge   = flash ? "#ffffff" : (isChilled ? "#38bdf8" : "#2dd4bf");
+                const goldEye    = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fde047");
+
+                // Twin Whip-Tails Tipped with Crescent Executioner Blades
+                for (let tSide = -1; tSide <= 1; tSide += 2) {
+                    const wag = Math.sin(e.legPhase * 0.95 + (tSide === 1 ? 0 : 1.4)) * (r * 0.38);
+                    const endX = -r * 1.98;
+                    const endY = tSide * r * 0.36 + wag;
+
+                    ctx.strokeStyle = darkChitin;
+                    ctx.lineWidth = Math.max(2.4, r * 0.19);
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.68, tSide * r * 0.18);
+                    ctx.quadraticCurveTo(-r * 1.35, tSide * r * 0.52 + wag * 0.5, endX, endY);
+                    ctx.stroke();
+
+                    // Crescent Razor Tail-Blade
+                    ctx.fillStyle = bladeEdge;
+                    ctx.beginPath();
+                    ctx.moveTo(endX + r * 0.18, endY - tSide * r * 0.12);
+                    ctx.lineTo(endX - r * 0.45, endY + tSide * r * 0.16);
+                    ctx.lineTo(endX - r * 0.12, endY - tSide * r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 4 Pairs of Swept-Back Bladed Raptor Legs with Long Knee Spurs
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let l = 0; l < 4; l++) {
+                        const offsetRatio = (l - 1.5) * 0.46;
+                        const stride = Math.sin(e.legPhase + l * 1.55 + (side === 1 ? 0 : Math.PI)) * (r * 0.32);
+
+                        const rootX = offsetRatio * r * 0.92;
+                        const rootY = side * r * 0.38;
+                        const kneeX = rootX + stride * 0.6 - r * 0.10;
+                        const kneeY = side * (r * 1.18 + (l === 1 || l === 2 ? r * 0.18 : 0));
+                        const tipX  = kneeX + stride * 0.85 + (l < 2 ? r * 0.35 : -r * 0.32);
+                        const tipY  = side * (r * 1.72);
+
+                        ctx.strokeStyle = darkChitin;
+                        ctx.lineWidth = Math.max(2.2, r * 0.18);
+                        ctx.beginPath();
+                        ctx.moveTo(rootX, rootY);
+                        ctx.lineTo(kneeX, kneeY);
+                        ctx.stroke();
+
+                        // Metallic Scythe-Foot Tip
+                        ctx.fillStyle = bladeEdge;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.08, kneeY);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.lineTo(kneeX + r * 0.12, kneeY - side * r * 0.08);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // Backward Knee-Blade Spur
+                        ctx.fillStyle = neonEdge;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX, kneeY);
+                        ctx.lineTo(kneeX - r * 0.28, kneeY + side * r * 0.26);
+                        ctx.lineTo(kneeX + r * 0.08, kneeY + side * r * 0.05);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Colossal Double-Edged Reaper Scythes (Lưỡi Hái Tử Thần)
+                const slash = Math.sin(e.legPhase * 1.2) * 0.24;
+                const scytheReach = r * 1.82;
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.save();
+                    ctx.translate(r * 0.44, side * r * 0.48);
+                    ctx.rotate(side * (0.28 - slash));
+
+                    // Armored Forearm Strut
+                    ctx.strokeStyle = darkChitin;
+                    ctx.lineWidth = 3.2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(scytheReach * 0.42, side * r * 0.38);
+                    ctx.stroke();
+
+                    // Sweeping Reaper Scythe Blade with 3 Inner Saw-Hooks
+                    ctx.fillStyle = bladeEdge;
+                    ctx.strokeStyle = neonEdge;
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    ctx.moveTo(scytheReach * 0.25, side * r * 0.26);
+                    ctx.quadraticCurveTo(scytheReach * 0.72, side * r * 0.56, scytheReach, -side * r * 0.18);
+                    ctx.lineTo(scytheReach * 0.74, -side * r * 0.04);
+                    ctx.lineTo(scytheReach * 0.66, side * r * 0.16);
+                    ctx.lineTo(scytheReach * 0.54, 0);
+                    ctx.lineTo(scytheReach * 0.44, side * r * 0.18);
+                    ctx.lineTo(scytheReach * 0.32, side * r * 0.04);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Swept-Wing Shoulder Blades & Angular Diamond Carapace Plates
+                ctx.fillStyle = darkChitin;
+                ctx.strokeStyle = neonEdge;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.35, 0);
+                ctx.lineTo(-r * 0.22, -r * 0.98);
+                ctx.lineTo(-r * 0.45, -r * 0.52);
+                ctx.lineTo(-r * 1.12, 0);
+                ctx.lineTo(-r * 0.45, r * 0.52);
+                ctx.lineTo(-r * 0.22, r * 0.98);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Elongated Horned Raptor Thorax & Crest Skull
+                ctx.fillStyle = fleshCol;
+                ctx.strokeStyle = darkChitin;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(r * 1.15, 0);
+                ctx.lineTo(r * 0.55, -r * 0.58);
+                ctx.lineTo(-r * 0.38, -r * 0.85);
+                ctx.lineTo(-r * 0.18, -r * 0.38);
+                ctx.lineTo(-r * 0.62, 0);
+                ctx.lineTo(-r * 0.18, r * 0.38);
+                ctx.lineTo(-r * 0.38, r * 0.85);
+                ctx.lineTo(r * 0.55, r * 0.58);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Dorsal Saw-Tooth Fin Ridge
+                ctx.fillStyle = goldEye;
+                for (let s = -2; s <= 2; s++) {
+                    const sx = s * r * 0.28;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.22, 0);
+                    ctx.lineTo(sx - r * 0.18, -r * 0.20);
+                    ctx.lineTo(sx - r * 0.08, 0);
+                    ctx.lineTo(sx - r * 0.18, r * 0.20);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 6 Slit-Like Golden Hunter Eyes
+                ctx.fillStyle = goldEye;
+                for (let eIdx = 0; eIdx < 3; eIdx++) {
+                    const ex = r * (0.78 - eIdx * 0.16);
+                    const ey = r * (0.16 + eIdx * 0.10);
+                    ctx.beginPath();
+                    safeArc(ctx, ex, -ey, 1.9);
+                    safeArc(ctx, ex,  ey, 1.9);
+                    ctx.fill();
+                }
+            }
+            // =========================================================================
+            // 3. BROOD BRUTE (QUÁI THÚ THIẾT GIÁP GAI NHỌN - SPIKED SIEGE JUGGERNAUT)
+            // =========================================================================
+            else if (e.typeKey === "brute") {
+                const darkPlate = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#2a0606");
+                const crimson   = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#dc2626");
+                const magmaVein = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#fb923c");
+                const boneHorn  = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#fef2f2");
+
+                // Menacing Crimson Rage Aura underneath Brute (Cached local gradient)
+                ctx.fillStyle = getCachedRadialGradient(ctx, "brute_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.55, [
+                    [0, "rgba(220, 38, 38, 0.30)"],
+                    [0.65, "rgba(249, 115, 22, 0.10)"],
+                    [1, "rgba(0,0,0,0)"]
+                ]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 1.55);
+                ctx.fill();
+
+                // Heavy Segmented Tail Ending in a 6-Spiked Morning-Star Bone Club
+                const clubWag = Math.sin(e.legPhase * 0.8) * (r * 0.36);
+                const clubX = -r * 1.72;
+                const clubY = clubWag;
+
+                ctx.strokeStyle = darkPlate;
+                ctx.lineWidth = Math.max(4.5, r * 0.26);
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.65, 0);
+                ctx.quadraticCurveTo(-r * 1.22, clubWag * 0.5, clubX, clubY);
+                ctx.stroke();
+
+                // Morning-Star Tail Mace & Radiating Bone Spikes
+                ctx.fillStyle = crimson;
+                ctx.strokeStyle = darkPlate;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                safeArc(ctx, clubX, clubY, r * 0.28);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = boneHorn;
+                for (let k = 0; k < 6; k++) {
+                    const sa = (k / 6) * Math.PI * 2 + clubWag * 0.05;
+                    ctx.beginPath();
+                    ctx.moveTo(clubX + Math.cos(sa - 0.25) * r * 0.22, clubY + Math.sin(sa - 0.25) * r * 0.22);
+                    ctx.lineTo(clubX + Math.cos(sa) * r * 0.52, clubY + Math.sin(sa) * r * 0.52);
+                    ctx.lineTo(clubX + Math.cos(sa + 0.25) * r * 0.22, clubY + Math.sin(sa + 0.25) * r * 0.22);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 4 Pairs of Heavy Plated Pillar-Legs with Knee Horns & Crusher Talons
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let l = 0; l < 4; l++) {
+                        const offsetRatio = (l - 1.5) * 0.44;
+                        const stride = Math.sin(e.legPhase + l * 1.45 + (side === 1 ? 0 : Math.PI)) * (r * 0.24);
+
+                        const rootX = offsetRatio * r * 0.90;
+                        const rootY = side * r * 0.46;
+                        const kneeX = rootX + stride * 0.55;
+                        const kneeY = side * (r * 1.15 + (l === 1 || l === 2 ? r * 0.14 : 0));
+                        const tipX  = kneeX + stride * 0.72 + (l < 2 ? r * 0.22 : -r * 0.22);
+                        const tipY  = side * (r * 1.56);
+
+                        ctx.strokeStyle = darkPlate;
+                        ctx.lineWidth = Math.max(4.2, r * 0.22);
+                        ctx.beginPath();
+                        ctx.moveTo(rootX, rootY);
+                        ctx.lineTo(kneeX, kneeY);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = crimson;
+                        ctx.lineWidth = 1.8;
+                        ctx.stroke();
+
+                        // Heavy Knee Horn
+                        ctx.fillStyle = boneHorn;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.10, kneeY);
+                        ctx.lineTo(kneeX + r * 0.08, kneeY + side * r * 0.30);
+                        ctx.lineTo(kneeX + r * 0.12, kneeY);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Colossal Serrated Crusher Claws + Forward Bull/Siege Shoulder Horns
+                const crush = Math.sin(e.legPhase * 1.05) * 0.16;
+                const pincerReach = r * 1.56;
+                for (let side = -1; side <= 1; side += 2) {
+                    // Forward-Curving Siege Horn on Shoulder
+                    ctx.fillStyle = boneHorn;
+                    ctx.strokeStyle = darkPlate;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.18, side * r * 0.65);
+                    ctx.quadraticCurveTo(r * 0.75, side * r * 1.12, r * 1.28, side * r * 0.62);
+                    ctx.quadraticCurveTo(r * 0.72, side * r * 0.78, r * 0.35, side * r * 0.42);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Serrated Crusher Gauntlet Pincer
+                    ctx.save();
+                    ctx.translate(r * 0.48, side * r * 0.50);
+                    ctx.rotate(side * (0.28 - crush));
+
+                    ctx.fillStyle = darkPlate;
+                    ctx.strokeStyle = magmaVein;
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -side * r * 0.12);
+                    ctx.lineTo(pincerReach * 0.48, side * r * 0.45);
+                    ctx.lineTo(pincerReach, -side * r * 0.08);
+                    ctx.lineTo(pincerReach * 0.74, -side * r * 0.16);
+                    ctx.lineTo(pincerReach * 0.58, side * r * 0.06);
+                    ctx.lineTo(pincerReach * 0.42, -side * r * 0.14);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Perimeter Ring of 8 Jagged Fortress Bone-Spikes around Abdomen & Thorax
+                ctx.fillStyle = boneHorn;
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let k = -2; k <= 1; k++) {
+                        const sx = k * r * 0.34;
+                        const sy = side * r * 0.68;
+                        ctx.beginPath();
+                        ctx.moveTo(sx + r * 0.16, sy * 0.75);
+                        ctx.lineTo(sx - r * 0.18, side * r * 1.08);
+                        ctx.lineTo(sx - r * 0.14, sy * 0.75);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Heavy Octagonal Armored Abdomen Plate
+                ctx.fillStyle = darkPlate;
+                ctx.strokeStyle = magmaVein;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 0.68);
+                ctx.lineTo(-r * 0.68, -r * 0.72);
+                ctx.lineTo(-r * 1.08, 0);
+                ctx.lineTo(-r * 0.68, r * 0.72);
+                ctx.lineTo(0, r * 0.68);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Hulking Armored Juggernaut Carapace
+                ctx.fillStyle = crimson;
+                ctx.strokeStyle = darkPlate;
+                ctx.lineWidth = 3.0;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.98, 0);
+                ctx.lineTo(r * 0.62, -r * 0.74);
+                ctx.lineTo(-r * 0.28, -r * 0.80);
+                ctx.lineTo(-r * 0.62, 0);
+                ctx.lineTo(-r * 0.28, r * 0.80);
+                ctx.lineTo(r * 0.62, r * 0.74);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing Bio-Furnace Core & Dorsal Spikes
+                ctx.fillStyle = magmaVein;
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 0.26);
+                ctx.fill();
+
+                ctx.fillStyle = boneHorn;
+                for (let s = -2; s <= 1; s++) {
+                    const sx = s * r * 0.34;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.24, 0);
+                    ctx.lineTo(sx - r * 0.18, -r * 0.24);
+                    ctx.lineTo(sx - r * 0.10, 0);
+                    ctx.lineTo(sx - r * 0.18, r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 6 Glowing Cyan Juggernaut Eyes & Fanged Maw
+                ctx.fillStyle = isChilled ? "#e0f2fe" : e.eyeColor;
+                for (let eIdx = 0; eIdx < 3; eIdx++) {
+                    const ex = r * (0.72 - eIdx * 0.14);
+                    const ey = r * (0.18 + eIdx * 0.12);
+                    ctx.beginPath();
+                    safeArc(ctx, ex, -ey, 2.3);
+                    safeArc(ctx, ex,  ey, 2.3);
+                    ctx.fill();
+                }
+            }
+            // =========================================================================
+            // 4. ACID SPITTER (PHÁO BINH AXIT GAI ĐỘC - SPINED CORROSIVE ARTILLERY XENO)
+            // =========================================================================
+            else if (e.typeKey === "spitter") {
+                const darkChitin = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#1a2e05");
+                const toxicLime  = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#a3e635");
+                const brightAcid = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#d9f99d");
+                const thornCol   = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#ecfccb");
+
+                // Subtle Corrosive Acid Vapor Halo underneath Spitter (Cached local gradient)
+                ctx.fillStyle = getCachedRadialGradient(ctx, "spitter_aura_" + r, 0, 0, r * 0.2, 0, 0, r * 1.48, [
+                    [0, "rgba(163, 230, 53, 0.28)"],
+                    [0.65, "rgba(101, 163, 13, 0.10)"],
+                    [1, "rgba(0, 0, 0, 0)"]
+                ]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 1.48);
+                ctx.fill();
+
+                // Segmented Barbed Acid-Mortar Tail with 3-Pronged Bio-Nozzle Tip
+                const tailWag = Math.sin(e.legPhase * 0.92) * (r * 0.40);
+                const t1x = -r * 0.86, t1y = tailWag * 0.28;
+                const t2x = -r * 1.42, t2y = tailWag * 0.68;
+                const t3x = -r * 1.96, t3y = tailWag;
+
+                ctx.strokeStyle = darkChitin;
+                ctx.lineWidth = Math.max(3.0, r * 0.22);
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.48, 0);
+                ctx.lineTo(t1x, t1y);
+                ctx.lineTo(t2x, t2y);
+                ctx.lineTo(t3x, t3y);
+                ctx.stroke();
+
+                // Lateral Tail Spines along segments
+                ctx.fillStyle = thornCol;
+                for (let s = -1; s <= 1; s += 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(t1x, t1y);
+                    ctx.lineTo(t1x - r * 0.24, t1y + s * r * 0.36);
+                    ctx.lineTo(t1x + r * 0.10, t1y + s * r * 0.08);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(t2x, t2y);
+                    ctx.lineTo(t2x - r * 0.22, t2y + s * r * 0.30);
+                    ctx.lineTo(t2x + r * 0.08, t2y + s * r * 0.06);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Spiked Bio-Acid Mortar Bulb at Tail Tip
+                ctx.fillStyle = toxicLime;
+                ctx.strokeStyle = darkChitin;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(t3x + r * 0.14, t3y);
+                ctx.lineTo(t3x - r * 0.20, t3y - r * 0.26);
+                ctx.lineTo(t3x - r * 0.48, t3y);
+                ctx.lineTo(t3x - r * 0.20, t3y + r * 0.26);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 4 Pairs of Spined Arachnid Legs with Knee Spurs & Razor Blade Tarsus
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let l = 0; l < 4; l++) {
+                        const offsetRatio = (l - 1.5) * 0.45;
+                        const stride = Math.sin(e.legPhase + l * 1.55 + (side === 1 ? 0 : Math.PI)) * (r * 0.28);
+
+                        const rootX = offsetRatio * r * 0.88;
+                        const rootY = side * r * 0.40;
+                        const kneeX = rootX + stride * 0.58 + (l < 2 ? r * 0.12 : -r * 0.12);
+                        const kneeY = side * (r * 1.16 + (l === 1 || l === 2 ? r * 0.16 : 0));
+                        const tipX  = kneeX + stride * 0.82 + (l < 2 ? r * 0.32 : -r * 0.28);
+                        const tipY  = side * (r * 1.66);
+
+                        // Armored Femur
+                        ctx.strokeStyle = darkChitin;
+                        ctx.lineWidth = Math.max(2.6, r * 0.19);
+                        ctx.beginPath();
+                        ctx.moveTo(rootX, rootY);
+                        ctx.lineTo(kneeX, kneeY);
+                        ctx.stroke();
+
+                        // Bright Razor Tarsus Blade
+                        ctx.fillStyle = thornCol;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.08, kneeY);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.lineTo(kneeX + r * 0.11, kneeY - side * r * 0.08);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // Protruding Crystalline Knee Thorn
+                        ctx.fillStyle = toxicLime;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX, kneeY);
+                        ctx.lineTo(kneeX - r * 0.22, kneeY + side * r * 0.28);
+                        ctx.lineTo(kneeX + r * 0.09, kneeY + side * r * 0.06);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Dual Serrated Acid-Injector Fore-Claws
+                const pinch = Math.sin(e.legPhase * 1.15) * 0.20;
+                const clawReach = r * 1.46;
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.save();
+                    ctx.translate(r * 0.44, side * r * 0.46);
+                    ctx.rotate(side * (0.32 - pinch));
+
+                    ctx.fillStyle = thornCol;
+                    ctx.strokeStyle = darkChitin;
+                    ctx.lineWidth = 1.3;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(clawReach * 0.46, side * r * 0.38);
+                    ctx.lineTo(clawReach * 1.02, -side * r * 0.10);
+                    ctx.lineTo(clawReach * 0.70, -side * r * 0.04);
+                    ctx.lineTo(clawReach * 0.56, side * r * 0.14);
+                    ctx.lineTo(clawReach * 0.40, -side * r * 0.04);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Glowing Acid Tip on Fore-Claw
+                    ctx.fillStyle = toxicLime;
+                    ctx.beginPath();
+                    ctx.moveTo(clawReach * 0.64, side * r * 0.16);
+                    ctx.lineTo(clawReach * 1.02, -side * r * 0.10);
+                    ctx.lineTo(clawReach * 0.70, -side * r * 0.04);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 6 Protruding Crystalline Acid Spikes jutting out from Flanks
+                ctx.fillStyle = toxicLime;
+                ctx.strokeStyle = darkChitin;
+                ctx.lineWidth = 1.1;
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let k = -1; k <= 1; k++) {
+                        const sx = k * r * 0.36 - r * 0.12;
+                        const sy = side * r * 0.54;
+                        ctx.beginPath();
+                        ctx.moveTo(sx + r * 0.16, sy * 0.72);
+                        ctx.lineTo(sx - r * 0.28, side * r * 1.06);
+                        ctx.lineTo(sx - r * 0.14, sy * 0.72);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                }
+
+                // Jagged Hexagonal Venom-Sac Abdomen
+                ctx.fillStyle = darkChitin;
+                ctx.strokeStyle = toxicLime;
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.05, -r * 0.58);
+                ctx.lineTo(-r * 0.64, -r * 0.72);
+                ctx.lineTo(-r * 1.12, 0);
+                ctx.lineTo(-r * 0.64, r * 0.72);
+                ctx.lineTo(r * 0.05, r * 0.58);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Angular Faceted Bio-Acid Chambers on Rear Flanks (replaces old round circles)
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.fillStyle = toxicLime;
+                    ctx.strokeStyle = brightAcid;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.08, side * r * 0.22);
+                    ctx.lineTo(-r * 0.38, side * r * 0.62);
+                    ctx.lineTo(-r * 0.76, side * r * 0.44);
+                    ctx.lineTo(-r * 0.56, side * r * 0.14);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Spiked Armored Artillery Thorax & Jagged Head Crest
+                ctx.fillStyle = fleshCol;
+                ctx.strokeStyle = darkChitin;
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(r * 1.04, 0);
+                ctx.lineTo(r * 0.56, -r * 0.68);
+                ctx.lineTo(-r * 0.24, -r * 0.62);
+                ctx.lineTo(-r * 0.54, 0);
+                ctx.lineTo(-r * 0.24, r * 0.62);
+                ctx.lineTo(r * 0.56, r * 0.68);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 4 Jagged Dorsal Spine Thorns down the Back
+                ctx.fillStyle = brightAcid;
+                for (let s = -2; s <= 1; s++) {
+                    const sx = s * r * 0.33;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.24, 0);
+                    ctx.lineTo(sx - r * 0.20, -r * 0.24);
+                    ctx.lineTo(sx - r * 0.10, 0);
+                    ctx.lineTo(sx - r * 0.20, r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Pressurized Acid-Sprayer Mandibles at Front
+                ctx.fillStyle = thornCol;
+                for (let side = -1; side <= 1; side += 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.80, side * r * 0.18);
+                    ctx.lineTo(r * 1.28, side * r * 0.08);
+                    ctx.lineTo(r * 0.90, side * r * 0.38);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 4 Glowing Lime-Yellow Predator Eyes
+                ctx.fillStyle = brightAcid;
+                ctx.beginPath();
+                safeArc(ctx, r * 0.70, -r * 0.22, 2.2);
+                safeArc(ctx, r * 0.70,  r * 0.22, 2.2);
+                safeArc(ctx, r * 0.50, -r * 0.36, 1.8);
+                safeArc(ctx, r * 0.50,  r * 0.36, 1.8);
+                ctx.fill();
+            }
+            // =========================================================================
+            // 5. ELITE XENO PRAETORIAN (Á TRÙM CẬN VỆ HOÀNG GIA - SPIKED ROYAL WARLORD)
+            // =========================================================================
+            else {
+                const darkRoyal  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#24033d");
+                const royalPlate = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#7e22ce");
+                const neonGreen  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#4ade80");
+                const plasmaPink = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#e879f9");
+                const boneBlade  = flash ? "#ffffff" : (isChilled ? "#f0f9ff" : "#f8fafc");
+
+                // Glowing Sub-Boss Aura under Xeno Praetorian (Cached local gradient)
+                ctx.fillStyle = getCachedRadialGradient(ctx, "elite_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.80, [
+                    [0, "rgba(168, 85, 247, 0.40)"],
+                    [0.58, "rgba(74, 222, 128, 0.16)"],
+                    [1, "rgba(0, 0, 0, 0)"]
+                ]);
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 1.80);
+                ctx.fill();
+
+                // Twin Spiked Royal Whip-Tails Tipped with Crescent Plasma Halberds
+                for (let tSide = -1; tSide <= 1; tSide += 2) {
+                    const wag = Math.sin(e.legPhase * 0.90 + (tSide === 1 ? 0 : 1.5)) * (r * 0.38);
+                    const midX = -r * 1.32, midY = tSide * r * 0.46 + wag * 0.5;
+                    const endX = -r * 1.98, endY = tSide * r * 0.38 + wag;
+
+                    ctx.strokeStyle = darkRoyal;
+                    ctx.lineWidth = Math.max(3.6, r * 0.22);
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.68, tSide * r * 0.22);
+                    ctx.lineTo(midX, midY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = plasmaPink;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    // Tail Vertebra Spike
+                    ctx.fillStyle = boneBlade;
+                    ctx.beginPath();
+                    ctx.moveTo(midX, midY);
+                    ctx.lineTo(midX - r * 0.22, midY + tSide * r * 0.30);
+                    ctx.lineTo(midX + r * 0.10, midY + tSide * r * 0.06);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Crescent Plasma Halberd Tip
+                    ctx.fillStyle = neonGreen;
+                    ctx.beginPath();
+                    ctx.moveTo(endX + r * 0.16, endY - tSide * r * 0.12);
+                    ctx.lineTo(endX - r * 0.46, endY + tSide * r * 0.18);
+                    ctx.lineTo(endX - r * 0.14, endY - tSide * r * 0.26);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 4 Pairs of Heavy Armored Scythe-Legs with Protruding Knee-Horns & Blade Feet
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let l = 0; l < 4; l++) {
+                        const offsetRatio = (l - 1.5) * 0.45;
+                        const stride = Math.sin(e.legPhase + l * 1.5 + (side === 1 ? 0 : Math.PI)) * (r * 0.26);
+
+                        const rootX = offsetRatio * r * 0.92;
+                        const rootY = side * r * 0.46;
+                        const kneeX = rootX + stride * 0.58;
+                        const kneeY = side * (r * 1.18 + (l === 1 || l === 2 ? r * 0.16 : 0));
+                        const tipX  = kneeX + stride * 0.80 + (l < 2 ? r * 0.28 : -r * 0.26);
+                        const tipY  = side * (r * 1.66);
+
+                        ctx.strokeStyle = darkRoyal;
+                        ctx.lineWidth = Math.max(3.8, r * 0.20);
+                        ctx.beginPath();
+                        ctx.moveTo(rootX, rootY);
+                        ctx.lineTo(kneeX, kneeY);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = royalPlate;
+                        ctx.lineWidth = 1.6;
+                        ctx.stroke();
+
+                        // Razor Scythe Tarsus Blade
+                        ctx.fillStyle = boneBlade;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.09, kneeY);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.lineTo(kneeX + r * 0.12, kneeY - side * r * 0.09);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // Neon-Emerald Knee Horn Spur
+                        ctx.fillStyle = neonGreen;
+                        ctx.beginPath();
+                        ctx.moveTo(kneeX - r * 0.09, kneeY);
+                        ctx.lineTo(kneeX + r * 0.08, kneeY + side * r * 0.30);
+                        ctx.lineTo(kneeX + r * 0.12, kneeY);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Colossal Serrated Executioner Scythes + Swept Shoulder Horns
+                const slash = Math.sin(e.legPhase * 1.15) * 0.20;
+                const reach = r * 1.64;
+                for (let side = -1; side <= 1; side += 2) {
+                    // Swept Royal Horn on Shoulder
+                    ctx.fillStyle = boneBlade;
+                    ctx.strokeStyle = darkRoyal;
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.16, side * r * 0.64);
+                    ctx.quadraticCurveTo(r * 0.72, side * r * 1.16, r * 1.24, side * r * 0.68);
+                    ctx.quadraticCurveTo(r * 0.68, side * r * 0.80, r * 0.32, side * r * 0.44);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Serrated Royal Executioner Scythe
+                    ctx.save();
+                    ctx.translate(r * 0.48, side * r * 0.50);
+                    ctx.rotate(side * (0.28 - slash));
+
+                    ctx.fillStyle = darkRoyal;
+                    ctx.strokeStyle = neonGreen;
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -side * r * 0.10);
+                    ctx.lineTo(reach * 0.46, side * r * 0.46);
+                    ctx.lineTo(reach, -side * r * 0.12);
+                    ctx.lineTo(reach * 0.72, -side * r * 0.16);
+                    ctx.lineTo(reach * 0.56, side * r * 0.08);
+                    ctx.lineTo(reach * 0.40, -side * r * 0.14);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Perimeter Ring of 8 Jagged Fortress Spikes around Abdomen & Thorax
+                ctx.fillStyle = plasmaPink;
+                for (let side = -1; side <= 1; side += 2) {
+                    for (let k = -2; k <= 1; k++) {
+                        const sx = k * r * 0.34;
+                        const sy = side * r * 0.66;
+                        ctx.beginPath();
+                        ctx.moveTo(sx + r * 0.15, sy * 0.75);
+                        ctx.lineTo(sx - r * 0.20, side * r * 1.06);
+                        ctx.lineTo(sx - r * 0.14, sy * 0.75);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Jagged Angular Royal Abdomen Carapace
+                ctx.fillStyle = darkRoyal;
+                ctx.strokeStyle = plasmaPink;
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 0.66);
+                ctx.lineTo(-r * 0.66, -r * 0.72);
+                ctx.lineTo(-r * 1.12, 0);
+                ctx.lineTo(-r * 0.66, r * 0.72);
+                ctx.lineTo(0, r * 0.66);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Angular Spiked Praetorian Warlord Torso & Crest
+                ctx.fillStyle = royalPlate;
+                ctx.strokeStyle = neonGreen;
+                ctx.lineWidth = 2.4;
+                ctx.beginPath();
+                ctx.moveTo(r * 1.06, 0);
+                ctx.lineTo(r * 0.60, -r * 0.74);
+                ctx.lineTo(-r * 0.28, -r * 0.80);
+                ctx.lineTo(-r * 0.64, 0);
+                ctx.lineTo(-r * 0.28, r * 0.80);
+                ctx.lineTo(r * 0.60, r * 0.74);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Twin Angular Spiked Bio-Plasma Rail-Cannons Mounted on Shoulders (replaces old oval pods)
+                for (let side = -1; side <= 1; side += 2) {
+                    const py = side * r * 0.74;
+                    ctx.fillStyle = darkRoyal;
+                    ctx.strokeStyle = neonGreen;
+                    ctx.lineWidth = 1.6;
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.32, py - side * 4);
+                    ctx.lineTo(r * 0.68, py - side * 5);
+                    ctx.lineTo(r * 0.84, py - side * 1.5);
+                    ctx.lineTo(r * 0.56, py + side * 1.5);
+                    ctx.lineTo(r * 0.84, py + side * 4.5);
+                    ctx.lineTo(-r * 0.22, py + side * 5);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Glowing Plasma Charge Core at Cannon Muzzle
+                    ctx.fillStyle = plasmaPink;
+                    ctx.beginPath();
+                    safeArc(ctx, r * 0.66, py, 3.6);
+                    ctx.fill();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    safeArc(ctx, r * 0.66, py, 1.6);
+                    ctx.fill();
+                }
+
+                // Glowing Dorsal Plasma Core & 4 Royal Spine Spikes
+                ctx.fillStyle = neonGreen;
+                ctx.beginPath();
+                safeArc(ctx, 0, 0, r * 0.25);
+                ctx.fill();
+
+                ctx.fillStyle = boneBlade;
+                for (let s = -2; s <= 1; s++) {
+                    const sx = s * r * 0.34;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.24, 0);
+                    ctx.lineTo(sx - r * 0.18, -r * 0.24);
+                    ctx.lineTo(sx - r * 0.10, 0);
+                    ctx.lineTo(sx - r * 0.18, r * 0.24);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 6 Slit-Like Glowing Emerald Predator Eyes
+                ctx.fillStyle = neonGreen;
+                for (let eIdx = 0; eIdx < 3; eIdx++) {
+                    const ex = r * (0.76 - eIdx * 0.15);
+                    const ey = r * (0.16 + eIdx * 0.11);
+                    ctx.beginPath();
+                    safeArc(ctx, ex, -ey, 2.2);
+                    safeArc(ctx, ex,  ey, 2.2);
+                    ctx.fill();
+                }
+            }
+
+            // Elemental Visual Overlays on Carapace: Crystalline Ice Shards (Cryo) & Napalm Flames (Burn)
+            if (isChilled) {
+                ctx.fillStyle = "rgba(186, 230, 253, 0.78)";
+                ctx.strokeStyle = "#38bdf8";
+                ctx.lineWidth = 1.2;
+                for (let ic = -1; ic <= 1; ic += 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.15, ic * r * 0.25);
+                    ctx.lineTo(-r * 0.25, ic * r * 0.78);
+                    ctx.lineTo(-r * 0.42, ic * r * 0.18);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+            if (e.burnTimer > 0) {
+                const flick = Math.sin(performance.now() * 0.03 + e.legPhase) * 3;
+                ctx.fillStyle = "rgba(251, 146, 60, 0.78)";
+                ctx.beginPath();
+                safeArc(ctx, -r * 0.1, flick * 0.4, r * 0.48);
+                ctx.fill();
+                ctx.fillStyle = "#fde047";
+                ctx.beginPath();
+                safeArc(ctx, 0, -flick * 0.3, r * 0.26);
+                ctx.fill();
+            }
+
+            ctx.restore();
+
+            if ((e.hp < e.maxHp && r >= 15) || e.isElite) {
+                const bw = r * 2.2;
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(e.x - bw / 2, e.y - r - 11, bw, 4);
+                ctx.fillStyle = e.isElite ? "#c084fc" : (isChilled ? "#38bdf8" : "#ef4444");
+                ctx.fillRect(e.x - bw / 2, e.y - r - 11, bw * Math.max(0, e.hp / e.maxHp), 4);
+                if (e.isElite) {
+                    ctx.font = "800 8px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = "#e879f9";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Á TRÙM", e.x, e.y - r - 14);
+                }
+            }
+        }
+
+
+
+    // =========================================================================
+    // PHẦN 4: 10 TRÙM CUỐI (MAP 1 -> MAP 10)
+    // =========================================================================
+
+    // BOSS MAP 1, 2, 3: OMEGA BEHEMOTH, VOID EMPEROR, CRYO LEVIATHAN
+        function drawBossOmegaMonsterProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const mapId = window.currentMapId;
+
+            // Distinct AAA Palettes for Map 1 (Omega Behemoth), Map 2 (Void Emperor), Map 3 (Cryo Leviathan)
+            let darkArmor, plateCol, veinCol, spikeCol, tipGlow, auraKey, auraStops;
+            if (mapId === 3) {
+                // MAP 3: CRYO LEVIATHAN (Glacial Permafrost & Diamond Ice Spires)
+                darkArmor = flash ? "#ffffff" : "#062038";
+                plateCol  = flash ? "#ffffff" : "#0369a1";
+                veinCol   = flash ? "#ffffff" : "#38bdf8";
+                spikeCol  = flash ? "#ffffff" : "#e0f2fe";
+                tipGlow   = flash ? "#ffffff" : "#67e8f9";
+                auraKey   = "boss_cryo_aura_" + r;
+                auraStops = [[0, "rgba(56, 189, 248, 0.38)"], [0.6, "rgba(14, 165, 233, 0.15)"], [1, "rgba(0,0,0,0)"]];
+            } else if (mapId === 2) {
+                // MAP 2: VOID EMPEROR (Orion-IX Cyber-Void Star Dreadnought)
+                darkArmor = flash ? "#ffffff" : (isChilled ? "#075985" : "#0b0f29");
+                plateCol  = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#31105e");
+                veinCol   = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#38bdf8");
+                spikeCol  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#e2e8f0");
+                tipGlow   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#c084fc");
+                auraKey   = "boss_void_aura_" + r;
+                auraStops = [[0, "rgba(56, 189, 248, 0.36)"], [0.58, "rgba(192, 132, 252, 0.16)"], [1, "rgba(0,0,0,0)"]];
+            } else {
+                // MAP 1: OMEGA BEHEMOTH (Alpha Sector Bio-Nuclear Juggernaut)
+                darkArmor = flash ? "#ffffff" : (isChilled ? "#075985" : "#161130");
+                plateCol  = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#881337");
+                veinCol   = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#f97316");
+                spikeCol  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fecaca");
+                tipGlow   = flash ? "#ffffff" : (e.skillState !== "idle" && e.skillType === "plasma" ? "#c084fc" : "#fde047");
+                auraKey   = "boss_omega_aura_" + r;
+                auraStops = [[0, "rgba(244, 63, 94, 0.36)"], [0.6, "rgba(249, 115, 22, 0.14)"], [1, "rgba(0,0,0,0)"]];
+            }
+
+            ctx.fillStyle = getCachedRadialGradient(ctx, auraKey, 0, 0, r * 0.28, 0, 0, r * 1.82, auraStops);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.82);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor,
+                plateCol,
+                veinCol,
+                spikeCol,
+                tipGlow,
+                hasTwinWhips: true
+            };
+
+            // 1. Articulated 5-Segment Tail + Colossal 12-Spiked Morning-Star Mace + Twin Barbed Whips
+            drawBossSpikedMorningStarTail(e, cfg);
+
+            // 2. 8 Articulated Dreadnought Scythe-Legs with Knee Horns & Tri-Talons
+            drawBossArticulatedSpikedLegs(e, cfg);
+
+            // 3. Colossal Serrated Executioner Pincers & Forward Siege Horns
+            drawBossSerratedPincers(e, cfg);
+
+            // 4. Map-Specific Flank Spires / Star-Wings / Artillery Pods
+            for (let side = -1; side <= 1; side += 2) {
+                if (mapId === 3) {
+                    // Crystalline Glacial Ice Spires jutting from flanks
+                    ctx.fillStyle = spikeCol;
+                    ctx.strokeStyle = veinCol;
+                    ctx.lineWidth = 1.6;
+                    for (let k = -1; k <= 1; k++) {
+                        const sx = k * r * 0.38;
+                        ctx.beginPath();
+                        ctx.moveTo(sx + r * 0.18, side * r * 0.52);
+                        ctx.lineTo(sx - r * 0.30, side * r * 1.32);
+                        ctx.lineTo(sx - r * 0.16, side * r * 0.52);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                } else if (mapId === 2) {
+                    // Swept Astral Star-Dreadnought Razor Wings
+                    ctx.fillStyle = darkArmor;
+                    ctx.strokeStyle = veinCol;
+                    ctx.lineWidth = 2.0;
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.32, side * r * 0.50);
+                    ctx.lineTo(-r * 0.28, side * r * 1.36);
+                    ctx.lineTo(-r * 0.52, side * r * 0.88);
+                    ctx.lineTo(-r * 0.92, side * r * 1.12);
+                    ctx.lineTo(-r * 0.58, side * r * 0.48);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    // Angular Spiked Bio-Mechanical Rail-Cannon Pods on Shoulders
+                    const py = side * r * 0.78;
+                    ctx.fillStyle = darkArmor;
+                    ctx.strokeStyle = side === -1 ? "#f97316" : "#c084fc";
+                    ctx.lineWidth = 2.0;
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.36, py - side * 7);
+                    ctx.lineTo(r * 0.72, py - side * 8);
+                    ctx.lineTo(r * 0.94, py - side * 2);
+                    ctx.lineTo(r * 0.64, py + side * 2);
+                    ctx.lineTo(r * 0.94, py + side * 7);
+                    ctx.lineTo(-r * 0.24, py + side * 8);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = tipGlow;
+                    ctx.beginPath();
+                    safeArc(ctx, r * 0.72, py, 4.2);
+                    ctx.fill();
+                }
+            }
+
+            // 5. Jagged Polygonal Abdomen Carapace (ZERO round ellipses!)
+            ctx.fillStyle = darkArmor;
+            ctx.strokeStyle = veinCol;
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.04, -r * 0.66);
+            ctx.lineTo(-r * 0.48, -r * 0.84);
+            ctx.lineTo(-r * 0.92, -r * 0.58);
+            ctx.lineTo(-r * 1.18, 0);
+            ctx.lineTo(-r * 0.92, r * 0.58);
+            ctx.lineTo(-r * 0.48, r * 0.84);
+            ctx.lineTo(r * 0.04, r * 0.66);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 6. Angular Multi-Plate Dreadnought Thorax Carapace
+            ctx.fillStyle = plateCol;
+            ctx.strokeStyle = spikeCol;
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.16, 0);
+            ctx.lineTo(r * 0.64, -r * 0.62);
+            ctx.lineTo(r * 0.14, -r * 0.90);
+            ctx.lineTo(-r * 0.38, -r * 0.74);
+            ctx.lineTo(-r * 0.66, 0);
+            ctx.lineTo(-r * 0.38, r * 0.74);
+            ctx.lineTo(r * 0.14, r * 0.90);
+            ctx.lineTo(r * 0.64, r * 0.62);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Central Reactor Core + Dorsal Spine Thorns
+            const corePulse = 1.0 + Math.sin(now * 0.013) * 0.22;
+            ctx.fillStyle = tipGlow;
+            ctx.beginPath();
+            safeArc(ctx, r * 0.06, 0, r * 0.32 * corePulse);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            safeArc(ctx, r * 0.06, 0, r * 0.15 * corePulse);
+            ctx.fill();
+
+            ctx.fillStyle = spikeCol;
+            for (let s = -2; s <= 2; s++) {
+                const sx = s * r * 0.30;
+                ctx.beginPath();
+                ctx.moveTo(sx + r * 0.22, 0);
+                ctx.lineTo(sx - r * 0.18, -r * 0.22);
+                ctx.lineTo(sx - r * 0.08, 0);
+                ctx.lineTo(sx - r * 0.18, r * 0.22);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Snapping Serrated Mandibles & 6 Glowing Predator Eyes
+            ctx.fillStyle = tipGlow;
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.beginPath();
+                ctx.moveTo(r * 0.90, side * r * 0.16);
+                ctx.lineTo(r * 1.36, side * r * 0.05);
+                ctx.lineTo(r * 1.00, side * r * 0.36);
+                ctx.closePath();
+                ctx.fill();
+
+                for (let eIdx = 0; eIdx < 3; eIdx++) {
+                    ctx.beginPath();
+                    safeArc(ctx, r * (0.82 - eIdx * 0.14), side * r * (0.16 + eIdx * 0.11), 2.4);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 4: MAGMA ABOMINATION (BẠO CHÚA NHAM THẠCH)
+        function drawBossMagmaMonsterProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+
+            const obsidianCol = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#120705");
+            const basaltCol   = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#2c1109");
+            const magmaBright = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#f97316");
+            const magmaCore   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#fde047");
+            const boneSpike   = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fed7aa");
+
+            // Cached Volcanic Aura
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_magma_aura_" + r, 0, 0, r * 0.3, 0, 0, r * 1.85, [
+                [0, "rgba(249, 115, 22, 0.38)"],
+                [0.6, "rgba(220, 38, 38, 0.16)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.85);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: obsidianCol,
+                plateCol: basaltCol,
+                veinCol: magmaBright,
+                spikeCol: boneSpike,
+                tipGlow: magmaCore,
+                hasTwinWhips: true
+            };
+
+            // 1. Articulated 5-Segment Tail + 12-Spiked Molten Morning-Star Mace + Twin Lava Whips
+            drawBossSpikedMorningStarTail(e, cfg);
+
+            // 2. 8 Articulated Obsidian Scythe-Legs with Molten Knee-Horns
+            drawBossArticulatedSpikedLegs(e, cfg);
+
+            // 3. Colossal Serrated Magma-Crusher Pincers & Volcanic Siege Horns
+            drawBossSerratedPincers(e, cfg);
+
+            // 4. Perimeter Ring of 8 Jagged Volcanic Tectonic Flank Spikes
+            ctx.fillStyle = magmaBright;
+            ctx.strokeStyle = obsidianCol;
+            ctx.lineWidth = 1.6;
+            for (let side = -1; side <= 1; side += 2) {
+                for (let k = -2; k <= 1; k++) {
+                    const sx = k * r * 0.34;
+                    const sy = side * r * 0.68;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.18, sy * 0.72);
+                    ctx.lineTo(sx - r * 0.24, side * r * 1.18);
+                    ctx.lineTo(sx - r * 0.16, sy * 0.72);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+
+            // 5. Jagged Angular Tectonic Abdomen Carapace (ZERO round ellipses!)
+            ctx.fillStyle = obsidianCol;
+            ctx.strokeStyle = magmaBright;
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.05, -r * 0.68);
+            ctx.lineTo(-r * 0.45, -r * 0.86);
+            ctx.lineTo(-r * 0.88, -r * 0.64);
+            ctx.lineTo(-r * 1.18, 0);
+            ctx.lineTo(-r * 0.88, r * 0.64);
+            ctx.lineTo(-r * 0.45, r * 0.86);
+            ctx.lineTo(r * 0.05, r * 0.68);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 6. Multi-Faceted Volcanic Dreadnought Thorax Plate & Shoulder Magma Mortars
+            ctx.fillStyle = basaltCol;
+            ctx.strokeStyle = magmaCore;
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.16, 0);
+            ctx.lineTo(r * 0.68, -r * 0.62);
+            ctx.lineTo(r * 0.18, -r * 0.94);
+            ctx.lineTo(-r * 0.36, -r * 0.78);
+            ctx.lineTo(-r * 0.65, 0);
+            ctx.lineTo(-r * 0.36, r * 0.78);
+            ctx.lineTo(r * 0.18, r * 0.94);
+            ctx.lineTo(r * 0.68, r * 0.62);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Glowing Molten Lava Fissure Cracks across Carapace
+            ctx.strokeStyle = magmaCore;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.moveTo(-r * 0.75, 0);
+                ctx.lineTo(-r * 0.25, side * r * 0.48);
+                ctx.lineTo(r * 0.35, side * r * 0.36);
+                ctx.lineTo(r * 0.65, side * r * 0.56);
+            }
+            ctx.stroke();
+
+            // Blazing Tectonic Furnace Core + Jagged Rib-Cage Bars
+            const heartBeat = 1.0 + Math.abs(Math.sin(now * 0.015)) * 0.25;
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_magma_heart_" + r, 0, 0, 2, 0, 0, r * 0.54, [
+                [0, "#ffffff"],
+                [0.35, "#fde047"],
+                [0.7, "#f97316"],
+                [1, "rgba(239, 68, 68, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, r * 0.06, 0, r * 0.54 * heartBeat);
+            ctx.fill();
+
+            // 6 Dorsal Obsidian Spine Thorns down the Back
+            ctx.fillStyle = boneSpike;
+            for (let s = -2; s <= 2; s++) {
+                const sx = s * r * 0.30;
+                ctx.beginPath();
+                ctx.moveTo(sx + r * 0.22, 0);
+                ctx.lineTo(sx - r * 0.20, -r * 0.24);
+                ctx.lineTo(sx - r * 0.08, 0);
+                ctx.lineTo(sx - r * 0.20, r * 0.24);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Fanged Molten Maw & 6 Blazing Predator Eyes
+            ctx.fillStyle = magmaCore;
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.beginPath();
+                ctx.moveTo(r * 0.92, side * r * 0.16);
+                ctx.lineTo(r * 1.38, side * r * 0.06);
+                ctx.lineTo(r * 1.02, side * r * 0.36);
+                ctx.closePath();
+                ctx.fill();
+
+                for (let eIdx = 0; eIdx < 3; eIdx++) {
+                    ctx.beginPath();
+                    safeArc(ctx, r * (0.82 - eIdx * 0.14), side * r * (0.18 + eIdx * 0.11), 2.5);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 5: HIVE EMPRESS (NỮ HOÀNG TỔ QUỶ)
+        function drawBossHiveEmpressProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+
+            const crownCol    = flash ? "#ffffff" : (isChilled ? "#082f49" : "#2e0238");
+            const carapaceCol = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#581c87");
+            const veinCol     = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#d8b4fe");
+            const clawGold    = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fde047");
+            const acidGlow    = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#4ade80");
+
+            // Cached Royal Bio-Aura
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_hive_aura_" + r, 0, 0, r * 0.3, 0, 0, r * 1.9, [
+                [0, "rgba(192, 132, 252, 0.42)"],
+                [0.55, "rgba(74, 222, 128, 0.16)"],
+                [1, "rgba(0,0,0,0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.9);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: crownCol,
+                plateCol: carapaceCol,
+                veinCol: veinCol,
+                spikeCol: clawGold,
+                tipGlow: acidGlow,
+                hasTwinWhips: true
+            };
+
+            // 1. Articulated 5-Segment Royal Tail + 12-Spiked Golden-Chitin & Acid Morning-Star Mace
+            drawBossSpikedMorningStarTail(e, cfg);
+
+            // 2. 8 Articulated Royal Mantis Scythe-Legs with Golden Knee-Horns
+            drawBossArticulatedSpikedLegs(e, cfg);
+
+            // 3. Colossal Golden Serrated Royal Executioner Scythes & Crown Shoulder Horns
+            drawBossSerratedPincers(e, cfg);
+
+            // 4. Swept-Back Bio-Chitin Wing Blades with Corrosive Wing-Claws
+            const pulse = 1.0 + Math.sin(now * 0.015) * 0.07;
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.fillStyle = "rgba(88, 28, 135, 0.78)";
+                ctx.strokeStyle = clawGold;
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.25, side * r * 0.42);
+                ctx.lineTo(-r * 0.15, side * r * 1.38 * pulse);
+                ctx.lineTo(-r * 0.55, side * r * 1.05 * pulse);
+                ctx.lineTo(-r * 0.92, side * r * 1.24 * pulse);
+                ctx.lineTo(-r * 0.65, side * r * 0.52);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 5. Jagged Faceted Royal Abdomen Carapace (ZERO round ellipses!)
+            ctx.fillStyle = carapaceCol;
+            ctx.strokeStyle = acidGlow;
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.64);
+            ctx.lineTo(-r * 0.48, -r * 0.88 * pulse);
+            ctx.lineTo(-r * 0.95, -r * 0.58 * pulse);
+            ctx.lineTo(-r * 1.24, 0);
+            ctx.lineTo(-r * 0.95, r * 0.58 * pulse);
+            ctx.lineTo(-r * 0.48, r * 0.88 * pulse);
+            ctx.lineTo(0, r * 0.64);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 6. Angular Armored Empress Thorax & 8-Spire Royal Crown Crest
+            ctx.fillStyle = crownCol;
+            ctx.strokeStyle = veinCol;
+            ctx.lineWidth = 3.0;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.20, 0);
+            ctx.lineTo(r * 0.66, -r * 0.58);
+            ctx.lineTo(r * 0.16, -r * 0.92);
+            ctx.lineTo(-r * 0.38, -r * 0.72);
+            ctx.lineTo(-r * 0.68, 0);
+            ctx.lineTo(-r * 0.38, r * 0.72);
+            ctx.lineTo(r * 0.16, r * 0.92);
+            ctx.lineTo(r * 0.66, r * 0.58);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Bio-luminescent Neural & Acid Core
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_hive_core_" + r, 0, 0, 2, 0, 0, r * 0.52, [
+                [0, "#ffffff"],
+                [0.38, "#4ade80"],
+                [0.72, "#a855f7"],
+                [1, "rgba(0,0,0,0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, -r * 0.12, 0, r * 0.52 * pulse);
+            ctx.fill();
+
+            // 7-Spire Golden Royal Crown & Dorsal Spine Thorns
+            ctx.fillStyle = clawGold;
+            for (let sp = -3; sp <= 3; sp++) {
+                const sAng = sp * 0.26;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.18 + Math.cos(sAng) * r * 0.36, Math.sin(sAng) * r * 0.54);
+                ctx.lineTo(r * 0.18 + Math.cos(sAng) * r * 1.18, Math.sin(sAng) * r * 0.98);
+                ctx.lineTo(r * 0.42 + Math.cos(sAng) * r * 0.36, Math.sin(sAng) * r * 0.44);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Dripping Acid Mandibles & 8 Emerald Queen Eyes
+            ctx.fillStyle = acidGlow;
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.beginPath();
+                ctx.moveTo(r * 0.90, side * r * 0.15);
+                ctx.lineTo(r * 1.42, side * r * 0.05);
+                ctx.lineTo(r * 1.02, side * r * 0.36);
+                ctx.closePath();
+                ctx.fill();
+
+                for (let eIdx = 0; eIdx < 4; eIdx++) {
+                    ctx.beginPath();
+                    safeArc(ctx, r * (0.86 - eIdx * 0.12), side * r * (0.14 + eIdx * 0.09), 2.2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 6: SINGULARITY OVERLORD (HƯ KHÔNG THẦN DỊ ĐIỂM - LỖ ĐEN VŨ TRỤ)
+        function drawBossSingularityOverlordProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const pulse = 1.0 + Math.sin(now * 0.014 + e.legPhase) * 0.08;
+
+            const darkVoid   = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#070314");
+            const armorPlate = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#1e1b4b");
+            const cyanEdge   = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#22d3ee");
+            const pinkGlow   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#e879f9");
+            const starWhite  = flash ? "#ffffff" : "#f8fafc";
+
+            // Cached Singularity Gravity Aura
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_sing_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.98, [
+                [0, "rgba(34, 211, 238, 0.44)"],
+                [0.55, "rgba(217, 70, 239, 0.24)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.98);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: darkVoid,
+                plateCol: armorPlate,
+                veinCol: cyanEdge,
+                spikeCol: starWhite,
+                tipGlow: pinkGlow,
+                hasTwinWhips: true
+            };
+
+            // 1. Articulated 5-Segment Quantum Tail + 12-Spiked Singularity Morning-Star Mace + Twin Tachyon Whips
+            drawBossSpikedMorningStarTail(e, cfg);
+
+            // 2. 8 Articulated Crystalline Reaper Legs with Tachyon Knee-Blades
+            drawBossArticulatedSpikedLegs(e, cfg);
+
+            // 3. Colossal Serrated Tachyon Executioner Scythes & Cosmic Siege Horns
+            drawBossSerratedPincers(e, cfg);
+
+            // 4. 4 Swept Dyson-Prism Halberd Wing-Spires
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.fillStyle = darkVoid;
+                ctx.strokeStyle = pinkGlow;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.35, side * r * 0.46);
+                ctx.lineTo(r * 0.05, side * r * 1.48 * pulse);
+                ctx.lineTo(-r * 0.32, side * r * 0.96 * pulse);
+                ctx.lineTo(-r * 0.84, side * r * 1.32 * pulse);
+                ctx.lineTo(-r * 0.56, side * r * 0.48);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 5. Jagged Faceted Rear Dyson Carapace
+            ctx.fillStyle = darkVoid;
+            ctx.strokeStyle = pinkGlow;
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.62);
+            ctx.lineTo(-r * 0.52, -r * 0.84 * pulse);
+            ctx.lineTo(-r * 1.18, 0);
+            ctx.lineTo(-r * 0.52, r * 0.84 * pulse);
+            ctx.lineTo(0, r * 0.62);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 6. Hexagonal Dyson-Armor Thorax & Crowned Cosmic Helm
+            ctx.fillStyle = armorPlate;
+            ctx.strokeStyle = cyanEdge;
+            ctx.lineWidth = 3.2;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.26, 0);
+            ctx.lineTo(r * 0.64, -r * 0.58);
+            ctx.lineTo(r * 0.18, -r * 1.04 * pulse);
+            ctx.lineTo(-r * 0.38, -r * 0.62);
+            ctx.lineTo(-r * 0.62, 0);
+            ctx.lineTo(-r * 0.38, r * 0.62);
+            ctx.lineTo(r * 0.18, r * 1.04 * pulse);
+            ctx.lineTo(r * 0.64, r * 0.58);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Event Horizon Singularity Black-Hole Core in Center Chest
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_sing_core_" + r, 0, 0, 2, 0, 0, r * 0.52, [
+                [0, "#ffffff"],
+                [0.4, "#22d3ee"],
+                [0.75, "#e879f9"],
+                [1, "rgba(0,0,0,0)"]
+            ]);
+            ctx.save();
+            ctx.translate(r * 0.10, 0);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 0.52 * pulse);
+            ctx.fill();
+
+            ctx.fillStyle = "#020108";
+            ctx.strokeStyle = cyanEdge;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 0.19);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Dorsal Crystalline Spine Spikes & 8 Glowing Cosmic Eyes
+            ctx.fillStyle = starWhite;
+            for (let s = -2; s <= 2; s++) {
+                const sx = s * r * 0.28;
+                ctx.beginPath();
+                ctx.moveTo(sx + r * 0.20, 0);
+                ctx.lineTo(sx - r * 0.16, -r * 0.20);
+                ctx.lineTo(sx - r * 0.06, 0);
+                ctx.lineTo(sx - r * 0.16, r * 0.20);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = cyanEdge;
+            for (let side = -1; side <= 1; side += 2) {
+                for (let eIdx = 0; eIdx < 4; eIdx++) {
+                    ctx.beginPath();
+                    safeArc(ctx, r * (0.88 - eIdx * 0.13), side * r * (0.14 + eIdx * 0.09), 2.3);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+    // BOSS MAP 7: CYBER TITAN (TITAN CƠ KHÍ MECHA-XENO)
+        function drawBossCyberTitanProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const pulse = 1.0 + Math.sin(now * 0.015 + e.legPhase) * 0.08;
+
+            const darkSteel  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#14110b");
+            const armorPlate = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#451a03");
+            const amberEdge  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#f59e0b");
+            const cyanArc    = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#38bdf8");
+            const brightGold = flash ? "#ffffff" : "#fde047";
+
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_cyber_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.95, [
+                [0, "rgba(245, 158, 11, 0.42)"],
+                [0.55, "rgba(56, 189, 248, 0.20)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.95);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: darkSteel,
+                plateCol: armorPlate,
+                veinCol: amberEdge,
+                spikeCol: brightGold,
+                tipGlow: cyanArc,
+                hasTwinWhips: true
+            };
+
+            drawBossSpikedMorningStarTail(e, cfg);
+            drawBossArticulatedSpikedLegs(e, cfg);
+            drawBossSerratedPincers(e, cfg);
+
+            // Twin Shoulder Railgun Artillery Pods
+            for (let side = -1; side <= 1; side += 2) {
+                const py = side * r * 0.82;
+                ctx.fillStyle = darkSteel;
+                ctx.strokeStyle = amberEdge;
+                ctx.lineWidth = 2.2;
+                ctx.fillRect(-r * 0.35, py - 8, r * 1.25, 16);
+                ctx.strokeRect(-r * 0.35, py - 8, r * 1.25, 16);
+                ctx.fillStyle = cyanArc;
+                ctx.fillRect(r * 0.55, py - 3, r * 0.42, 6);
+            }
+
+            // Octagonal Mecha-Chitin Thorax
+            ctx.fillStyle = armorPlate;
+            ctx.strokeStyle = amberEdge;
+            ctx.lineWidth = 3.0;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.22, 0);
+            ctx.lineTo(r * 0.65, -r * 0.68);
+            ctx.lineTo(-r * 0.35, -r * 0.86);
+            ctx.lineTo(-r * 0.82, 0);
+            ctx.lineTo(-r * 0.35, r * 0.86);
+            ctx.lineTo(r * 0.65, r * 0.68);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Fusion Turbine Core
+            ctx.fillStyle = cyanArc;
+            ctx.beginPath();
+            safeArc(ctx, r * 0.08, 0, r * 0.36 * pulse);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            safeArc(ctx, r * 0.08, 0, r * 0.16);
+            ctx.fill();
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 8: ABYSSAL KRAKEN (THỦY QUÁI ÁP SUẤT ĐÁY VỰC BIỂN SÂU)
+        function drawBossAbyssalKrakenProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const pulse = 1.0 + Math.sin(now * 0.014 + e.legPhase) * 0.09;
+
+            const deepHull  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#021824");
+            const krakenShell = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#0f4c5c");
+            const aquaGlow  = flash ? "#ffffff" : "#2dd4bf";
+            const bioCyan   = flash ? "#ffffff" : "#38bdf8";
+            const coralSpike = flash ? "#ffffff" : "#f43f5e";
+
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_abyss_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.95, [
+                [0, "rgba(45, 212, 191, 0.44)"],
+                [0.55, "rgba(56, 189, 248, 0.20)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.95);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: deepHull,
+                plateCol: krakenShell,
+                veinCol: aquaGlow,
+                spikeCol: coralSpike,
+                tipGlow: bioCyan,
+                hasTwinWhips: true
+            };
+
+            drawBossSpikedMorningStarTail(e, cfg);
+            drawBossArticulatedSpikedLegs(e, cfg);
+            drawBossSerratedPincers(e, cfg);
+
+            // Bioluminescent Hydro-Fins
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.fillStyle = deepHull;
+                ctx.strokeStyle = aquaGlow;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.38, side * r * 0.45);
+                ctx.lineTo(-r * 0.15, side * r * 1.48 * pulse);
+                ctx.lineTo(-r * 0.78, side * r * 0.92 * pulse);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = krakenShell;
+            ctx.strokeStyle = bioCyan;
+            ctx.lineWidth = 3.0;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.24, 0);
+            ctx.lineTo(r * 0.58, -r * 0.72);
+            ctx.lineTo(-r * 0.48, -r * 0.82);
+            ctx.lineTo(-r * 0.95, 0);
+            ctx.lineTo(-r * 0.48, r * 0.82);
+            ctx.lineTo(r * 0.58, r * 0.72);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = aquaGlow;
+            ctx.beginPath();
+            safeArc(ctx, r * 0.05, 0, r * 0.34 * pulse);
+            ctx.fill();
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 9: CHRONO WARDEN (GIÁM NGỤC KHÔNG-THỜI GIAN)
+        function drawBossChronoWardenProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const pulse = 1.0 + Math.sin(now * 0.015 + e.legPhase) * 0.08;
+
+            const darkObsidian = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#120b24");
+            const royalViolet  = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#3b0764");
+            const chronoGold   = flash ? "#ffffff" : "#fde047";
+            const riftPurple   = flash ? "#ffffff" : "#e879f9";
+
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_chrono_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 1.98, [
+                [0, "rgba(250, 204, 21, 0.44)"],
+                [0.55, "rgba(192, 132, 252, 0.24)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.98);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: darkObsidian,
+                plateCol: royalViolet,
+                veinCol: chronoGold,
+                spikeCol: chronoGold,
+                tipGlow: riftPurple,
+                hasTwinWhips: true
+            };
+
+            drawBossSpikedMorningStarTail(e, cfg);
+            drawBossArticulatedSpikedLegs(e, cfg);
+            drawBossSerratedPincers(e, cfg);
+
+            // Rotating Golden Temporal Halo on Back
+            ctx.save();
+            ctx.rotate(now * 0.004);
+            ctx.strokeStyle = chronoGold;
+            ctx.lineWidth = 2.4;
+            ctx.setLineDash([10, 6]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 1.18);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+
+            ctx.fillStyle = royalViolet;
+            ctx.strokeStyle = chronoGold;
+            ctx.lineWidth = 3.0;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.25, 0);
+            ctx.lineTo(r * 0.62, -r * 0.68);
+            ctx.lineTo(-r * 0.42, -r * 0.88);
+            ctx.lineTo(-r * 0.90, 0);
+            ctx.lineTo(-r * 0.42, r * 0.88);
+            ctx.lineTo(r * 0.62, r * 0.68);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = chronoGold;
+            ctx.beginPath();
+            safeArc(ctx, r * 0.08, 0, r * 0.34 * pulse);
+            ctx.fill();
+            ctx.restore();
+        }
+
+
+    // BOSS MAP 10: APEX PROGENITOR (THỦY TỔ XENOMORPH TỐI THƯỢNG)
+        function drawBossApexProgenitorProcedural(e, isGlobalFrozen) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.angle);
+
+            const r = e.radius;
+            const now = performance.now();
+            const flash = e.hitFlash > 0;
+            const isChilled = isGlobalFrozen || e.chillTimer > 0;
+            const pulse = 1.0 + Math.sin(now * 0.016 + e.legPhase) * 0.09;
+
+            const abyssBlack  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#0f0208");
+            const crimsonHull = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#4c0519");
+            const bloodNeon   = flash ? "#ffffff" : "#f43f5e";
+            const royalGold   = flash ? "#ffffff" : "#fde047";
+            const voidViolet  = flash ? "#ffffff" : "#e879f9";
+
+            ctx.fillStyle = getCachedRadialGradient(ctx, "boss_genesis_aura_" + r, 0, 0, r * 0.25, 0, 0, r * 2.05, [
+                [0, "rgba(244, 63, 94, 0.50)"],
+                [0.52, "rgba(232, 121, 249, 0.26)"],
+                [1, "rgba(0, 0, 0, 0)"]
+            ]);
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, r * 2.05);
+            ctx.fill();
+
+            const cfg = {
+                darkArmor: abyssBlack,
+                plateCol: crimsonHull,
+                veinCol: bloodNeon,
+                spikeCol: royalGold,
+                tipGlow: voidViolet,
+                hasTwinWhips: true
+            };
+
+            drawBossSpikedMorningStarTail(e, cfg);
+            drawBossArticulatedSpikedLegs(e, cfg);
+            drawBossSerratedPincers(e, cfg);
+
+            // 4 Swept Progenitor Sovereign Wings
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.fillStyle = abyssBlack;
+                ctx.strokeStyle = bloodNeon;
+                ctx.lineWidth = 2.4;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.42, side * r * 0.48);
+                ctx.lineTo(r * 0.05, side * r * 1.56 * pulse);
+                ctx.lineTo(-r * 0.35, side * r * 1.02 * pulse);
+                ctx.lineTo(-r * 0.92, side * r * 1.40 * pulse);
+                ctx.lineTo(-r * 0.58, side * r * 0.50);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = crimsonHull;
+            ctx.strokeStyle = royalGold;
+            ctx.lineWidth = 3.2;
+            ctx.beginPath();
+            ctx.moveTo(r * 1.30, 0);
+            ctx.lineTo(r * 0.68, -r * 0.64);
+            ctx.lineTo(r * 0.16, -r * 1.08 * pulse);
+            ctx.lineTo(-r * 0.45, -r * 0.72);
+            ctx.lineTo(-r * 0.88, 0);
+            ctx.lineTo(-r * 0.45, r * 0.72);
+            ctx.lineTo(r * 0.16, r * 1.08 * pulse);
+            ctx.lineTo(r * 0.68, r * 0.64);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Apex Genesis Singularity Heart
+            ctx.fillStyle = bloodNeon;
+            ctx.beginPath();
+            safeArc(ctx, r * 0.08, 0, r * 0.40 * pulse);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            safeArc(ctx, r * 0.08, 0, r * 0.18);
+            ctx.fill();
+            ctx.restore();
+        }
+
+
+
+    // =========================================================================
+    // PHẦN 5: VÒNG LẶP DI CHUYỂN & VẼ QUÁI CHẠY LOĂNG QUĂNG (ROAMING ENGINE)
+    // =========================================================================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    window.ctx = ctx; // Gán vào window.ctx cho toàn bộ các hàm vẽ procedural phía trên!
+
+    let W = 0, H = 0;
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let isPaused = false;
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') isPaused = !isPaused;
+    });
+
+    // Tương tác chuột: quái né ra khi di chuột hoặc click
+    let mouse = { x: -1000, y: -1000, down: false };
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mousedown', (e) => { mouse.down = true; mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mouseup', () => { mouse.down = false; });
+
+    // KHỞI TẠO TẤT CẢ 15 LOÀI QUÁI VẬT & BOSS CHẠY TRÊN MÀN HÌNH
+    const MONSTER_SPECIES = [
+        // 5 Quái thường
+        {
+            name: "Crawler Xeno",
+            labelColor: "#4ade80",
+            radius: 14,
+            speed: 2.1,
+            typeKey: "crawler",
+            bodyColor: "#16a34a",
+            carapaceColor: "#064e3b",
+            eyeColor: "#ef4444",
+            draw: (e) => drawXenomorphMonsterProcedural(e, false)
+        },
+        {
+            name: "Razor Stalker",
+            labelColor: "#2dd4bf",
+            radius: 16,
+            speed: 2.4,
+            typeKey: "stalker",
+            bodyColor: "#0d9488",
+            carapaceColor: "#134e4a",
+            eyeColor: "#fde047",
+            draw: (e) => drawXenomorphMonsterProcedural(e, false)
+        },
+        {
+            name: "Acid Spitter",
+            labelColor: "#a3e635",
+            radius: 17,
+            speed: 1.8,
+            typeKey: "spitter",
+            bodyColor: "#65a30d",
+            carapaceColor: "#365314",
+            eyeColor: "#bef264",
+            draw: (e) => drawXenomorphMonsterProcedural(e, false)
+        },
+        {
+            name: "Brood Brute",
+            labelColor: "#fb923c",
+            radius: 24,
+            speed: 1.4,
+            typeKey: "brute",
+            bodyColor: "#dc2626",
+            carapaceColor: "#450a0a",
+            eyeColor: "#38bdf8",
+            draw: (e) => drawXenomorphMonsterProcedural(e, false)
+        },
+        {
+            name: "Xeno Praetorian",
+            labelColor: "#c084fc",
+            radius: 23,
+            speed: 2.2,
+            typeKey: "praetorian",
+            isElite: true,
+            bodyColor: "#9333ea",
+            carapaceColor: "#3b0764",
+            eyeColor: "#4ade80",
+            draw: (e) => drawXenomorphMonsterProcedural(e, false)
+        },
+
+        // 10 Boss Cuối Màn
+        {
+            name: "Boss 1: Omega Behemoth",
+            labelColor: "#f43f5e",
+            radius: 46,
+            speed: 1.25,
+            mapId: 1,
+            draw: (e) => { window.currentMapId = 1; drawBossOmegaMonsterProcedural(e, false); }
+        },
+        {
+            name: "Boss 2: Void Emperor",
+            labelColor: "#c084fc",
+            radius: 48,
+            speed: 1.3,
+            mapId: 2,
+            draw: (e) => { window.currentMapId = 2; drawBossOmegaMonsterProcedural(e, false); }
+        },
+        {
+            name: "Boss 3: Cryo Leviathan",
+            labelColor: "#38bdf8",
+            radius: 50,
+            speed: 1.2,
+            mapId: 3,
+            draw: (e) => { window.currentMapId = 3; drawBossOmegaMonsterProcedural(e, false); }
+        },
+        {
+            name: "Boss 4: Magma Abomination",
+            labelColor: "#f97316",
+            radius: 50,
+            speed: 1.35,
+            mapId: 4,
+            draw: (e) => drawBossMagmaMonsterProcedural(e, false)
+        },
+        {
+            name: "Boss 5: Hive Empress",
+            labelColor: "#d8b4fe",
+            radius: 52,
+            speed: 1.35,
+            mapId: 5,
+            draw: (e) => drawBossHiveEmpressProcedural(e, false)
+        },
+        {
+            name: "Boss 6: Singularity Overlord",
+            labelColor: "#e879f9",
+            radius: 54,
+            speed: 1.4,
+            mapId: 6,
+            draw: (e) => drawBossSingularityOverlordProcedural(e, false)
+        },
+        {
+            name: "Boss 7: Cyber Titan",
+            labelColor: "#f59e0b",
+            radius: 54,
+            speed: 1.3,
+            mapId: 7,
+            draw: (e) => drawBossCyberTitanProcedural(e, false)
+        },
+        {
+            name: "Boss 8: Abyssal Kraken",
+            labelColor: "#2dd4bf",
+            radius: 55,
+            speed: 1.35,
+            mapId: 8,
+            draw: (e) => drawBossAbyssalKrakenProcedural(e, false)
+        },
+        {
+            name: "Boss 9: Chrono Warden",
+            labelColor: "#fde047",
+            radius: 56,
+            speed: 1.4,
+            mapId: 9,
+            draw: (e) => drawBossChronoWardenProcedural(e, false)
+        },
+        {
+            name: "Boss 10: Apex Progenitor",
+            labelColor: "#fb7185",
+            radius: 58,
+            speed: 1.45,
+            mapId: 10,
+            draw: (e) => drawBossApexProgenitorProcedural(e, false)
+        }
+    ];
+
+    // Tạo các thực thể quái đang chạy trên màn hình (thêm bản sao của các quái nhỏ để sinh động)
+    const monsters = [];
+    MONSTER_SPECIES.forEach((sp, idx) => {
+        // Với quái thường: tạo 2 con mỗi loại; với boss: tạo 1 con
+        const count = (idx < 3) ? 2 : 1;
+        for (let i = 0; i < count; i++) {
+            const margin = sp.radius * 2 + 50;
+            monsters.push({
+                x: margin + Math.random() * (Math.max(300, W - margin * 2)),
+                y: margin + Math.random() * (Math.max(300, H - margin * 2)),
+                angle: Math.random() * Math.PI * 2,
+                targetAngle: Math.random() * Math.PI * 2,
+                speed: sp.speed * (0.9 + Math.random() * 0.25),
+                radius: sp.radius,
+                legPhase: Math.random() * Math.PI * 2,
+                turnTimer: Math.random() * 80,
+                
+                // Thuộc tính tương thích vẽ procedural
+                name: sp.name,
+                labelColor: sp.labelColor,
+                typeKey: sp.typeKey || "crawler",
+                mapId: sp.mapId || 1,
+                bodyColor: sp.bodyColor || "#881337",
+                carapaceColor: sp.carapaceColor || "#161130",
+                eyeColor: sp.eyeColor || "#f43f5e",
+                isElite: !!sp.isElite,
+                hitFlash: 0,
+                chillTimer: 0,
+                burnTimer: 0,
+                nuclearSlowTimer: 0,
+                skillState: "idle",
+                skillType: "flame",
+                hp: 100,
+                maxHp: 100,
+                draw: sp.draw
+            });
+        }
+    });
+
+    // VÒNG LẶP RENDER & CẬP NHẬT CHUYỂN ĐỘNG
+    let lastTime = performance.now();
+    function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = Math.min(0.1, (now - lastTime) / 1000);
+        lastTime = now;
+        frameCounter++;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (!isPaused) {
+            monsters.forEach(e => {
+                // 1. Chu kỳ bước chân
+                e.legPhase += e.speed * dt * 3.8;
+
+                // 2. Chuyển hướng ngẫu nhiên định kỳ
+                e.turnTimer -= dt * 60;
+                if (e.turnTimer <= 0) {
+                    e.targetAngle = e.angle + (Math.random() - 0.5) * 1.8;
+                    e.turnTimer = 45 + Math.random() * 90;
+                }
+
+                // 3. Tránh né chuột khi click hoặc di gần
+                const dxMouse = e.x - mouse.x;
+                const dyMouse = e.y - mouse.y;
+                const distMouse = Math.hypot(dxMouse, dyMouse);
+                if (distMouse < 180) {
+                    const fleeAngle = Math.atan2(dyMouse, dxMouse);
+                    e.targetAngle = fleeAngle;
+                    e.turnTimer = 30;
+                }
+
+                // 4. Quay đầu mượt mà khi chạm mép màn hình
+                const pad = e.radius * 2.2 + 30;
+                if (e.x < pad) e.targetAngle = 0;
+                else if (e.x > W - pad) e.targetAngle = Math.PI;
+                if (e.y < pad) e.targetAngle = Math.PI / 2;
+                else if (e.y > H - pad) e.targetAngle = -Math.PI / 2;
+
+                // 5. Nội suy góc quay
+                let diff = e.targetAngle - e.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                e.angle += diff * Math.min(1, dt * 5.5);
+
+                // 6. Cập nhật vị trí
+                e.x += Math.cos(e.angle) * e.speed * 60 * dt;
+                e.y += Math.sin(e.angle) * e.speed * 60 * dt;
+
+                // Khóa cứng không cho lọt ra ngoài màn hình
+                e.x = Math.max(pad * 0.7, Math.min(W - pad * 0.7, e.x));
+                e.y = Math.max(pad * 0.7, Math.min(H - pad * 0.7, e.y));
+            });
+        }
+
+        // VẼ TẤT CẢ QUÁI VẬT & TÊN
+        monsters.forEach(e => {
+            // Vẽ quái
+            try {
+                e.draw(e);
+            } catch (err) {}
+
+            // Nhãn tên tối giản phía trên đầu quái
+            ctx.save();
+            ctx.font = "bold 11px monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "rgba(2, 6, 23, 0.75)";
+            const textW = ctx.measureText(e.name).width;
+            ctx.fillRect(e.x - textW / 2 - 4, e.y - e.radius - 23, textW + 8, 16);
+            ctx.fillStyle = e.labelColor;
+            ctx.fillText(e.name, e.x, e.y - e.radius - 11);
+            ctx.restore();
+        });
+    }
+
+    requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

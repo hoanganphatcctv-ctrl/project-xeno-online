@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pixel Art Plasma Ball</title>
+  <style>
+    body {
+      margin: 0;
+      background: #121016;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Phóng to canvas nhỏ lên mà vẫn giữ độ sắc nét từng hạt pixel */
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      transform: scale(6); /* Phóng to gấp 6 lần */
+      box-shadow: 0 0 35px rgba(168, 85, 247, 0.35);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Kích thước pixel nội tại đúng chuẩn pixel art 64x64 -->
+  <canvas id="screen" width="64" height="64"></canvas>
+
+  <script>
+    const canvas = document.getElementById("screen");
+    const ctx = canvas.getContext("2d");
+
+    const W = 64;
+    const H = 64;
+    const CX = 32;
+    const CY = 32;
+    const R = 24;
+
+    const tendrils = [
+      { angle: 0.8, targetAngle: 0.8 },
+      { angle: 2.2, targetAngle: 2.2 },
+      { angle: 3.7, targetAngle: 3.7 },
+      { angle: 5.1, targetAngle: 5.1 }
+    ];
+
+    let mouse = { x: CX, y: CY, active: false };
+
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const my = (e.clientY - rect.top) * (H / rect.height);
+      const dist = Math.hypot(mx - CX, my - CY);
+
+      if (dist <= R + 6) {
+        mouse.active = true;
+        mouse.x = mx;
+        mouse.y = my;
+      } else {
+        mouse.active = false;
+      }
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      mouse.active = false;
+    });
+
+    // Vẽ tia sét chuẩn pixel (lớp tím bên ngoài bọc ruột trắng)
+    function drawPixelBolt(x1, y1, x2, y2) {
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      const steps = Math.floor(dist / 3);
+      const points = [{ x: Math.round(x1), y: Math.round(y1) }];
+
+      for (let i = 1; i < steps; i++) {
+        const t = i / steps;
+        const jitterX = (Math.random() - 0.5) * 4;
+        const jitterY = (Math.random() - 0.5) * 4;
+        points.push({
+          x: Math.round(x1 + (x2 - x1) * t + jitterX),
+          y: Math.round(y1 + (y2 - y1) * t + jitterY)
+        });
+      }
+      points.push({ x: Math.round(x2), y: Math.round(y2) });
+
+      // 1. Viền neon tím bao quanh
+      ctx.fillStyle = "#a855f7";
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        ctx.fillRect(p.x - 1, p.y, 3, 1);
+        ctx.fillRect(p.x, p.y - 1, 1, 3);
+      }
+
+      // 2. Ruột trắng tinh ở giữa
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        ctx.fillRect(p.x, p.y, 1, 1);
+      }
+
+      // 3. Vệt sáng bám phẳng trên bề mặt kính
+      const hitAngle = Math.atan2(y2 - CY, x2 - CX);
+      ctx.fillStyle = "#ffffff";
+      for (let offset = -2; offset <= 2; offset++) {
+        const a = hitAngle + (offset * 0.08);
+        const px = Math.round(CX + Math.cos(a) * R);
+        const py = Math.round(CY + Math.sin(a) * R);
+        ctx.fillRect(px, py, 1, 1);
+      }
+      ctx.fillStyle = "#e879f9";
+      for (let offset = -4; offset <= 4; offset++) {
+        const a = hitAngle + (offset * 0.08);
+        const px = Math.round(CX + Math.cos(a) * R);
+        const py = Math.round(CY + Math.sin(a) * R);
+        if (Math.random() > 0.3) ctx.fillRect(px, py, 1, 1);
+      }
+    }
+
+    function render() {
+      // 1. Xóa frame và tạo nền khối tối
+      ctx.fillStyle = "#0c0a13";
+      ctx.fillRect(0, 0, W, H);
+
+      // Quầng hào quang tím mờ bên ngoài
+      const glow = ctx.createRadialGradient(CX, CY, 10, CX, CY, R + 6);
+      glow.addColorStop(0, "rgba(168, 85, 247, 0.2)");
+      glow.addColorStop(0.7, "rgba(147, 51, 234, 0.1)");
+      glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Vẽ viền quả cầu thủy tinh pixel
+      for (let a = 0; a < Math.PI * 2; a += 0.035) {
+        const px = Math.round(CX + Math.cos(a) * R);
+        const py = Math.round(CY + Math.sin(a) * R);
+        ctx.fillStyle = (Math.sin(a * 4) > 0.5) ? "#c084fc" : "#7e22ce";
+        ctx.fillRect(px, py, 1, 1);
+      }
+
+      // 3. Cập nhật và vẽ các tia sét
+      tendrils.forEach((t, index) => {
+        if (mouse.active && index === 0) {
+          // Khi có chuột, tia đầu tiên sẽ hút theo chuột
+          const mAngle = Math.atan2(mouse.y - CY, mouse.x - CX);
+          t.angle = mAngle;
+        } else {
+          t.targetAngle += (Math.random() - 0.5) * 0.25;
+          t.angle += (t.targetAngle - t.angle) * 0.1;
+        }
+
+        const targetX = CX + Math.cos(t.angle) * R;
+        const targetY = CY + Math.sin(t.angle) * R;
+
+        drawPixelBolt(CX, CY, targetX, targetY);
+      });
+
+      // 4. Lõi plasma trung tâm
+      ctx.fillStyle = "#c026d3";
+      ctx.fillRect(CX - 4, CY - 2, 8, 4);
+      ctx.fillRect(CX - 2, CY - 4, 4, 8);
+
+      ctx.fillStyle = "#f472b6";
+      ctx.fillRect(CX - 3, CY - 2, 6, 4);
+      ctx.fillRect(CX - 2, CY - 3, 4, 6);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(CX - 2, CY - 2, 4, 4);
+
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xeno Monsters Roaming - Dark Bio-Mecha Eldritch Canvas 2D</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02040a;
+            font-family: 'Inter', 'JetBrains Mono', 'Consolas', monospace;
+            color: #94a3b8;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background-color: #02040a;
+            background-image: 
+                radial-gradient(circle at 50% 50%, #0b1120 0%, #02040a 100%),
+                linear-gradient(to right, rgba(244, 63, 94, 0.035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.035) 1px, transparent 1px);
+            background-size: 100% 100%, 44px 44px, 44px 44px;
+        }
+        #hudBar {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(9, 13, 26, 0.88);
+            border: 1px solid rgba(244, 63, 94, 0.35);
+            border-radius: 9999px;
+            font-size: 12px;
+            color: #e2e8f0;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65);
+            z-index: 20;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 96vw;
+        }
+        .hud-btn {
+            background: rgba(30, 41, 59, 0.85);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 9999px;
+            padding: 4px 11px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .hud-btn:hover, .hud-btn.active {
+            background: rgba(225, 29, 72, 0.28);
+            color: #fda4af;
+            border-color: #f43f5e;
+            box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
+        }
+        #miniTip {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 16px;
+            background: rgba(9, 13, 26, 0.88);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            border-radius: 9999px;
+            font-size: 11px;
+            color: #38bdf8;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+            max-width: 95vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hudBar">
+        <span style="color:#f43f5e;font-weight:700;letter-spacing:0.6px;">BIO-MECHA HORROR CODEX</span>
+        <button id="btnTogglePause" class="hud-btn" type="button">Tạm dừng (Space)</button>
+        <button id="btnToggleFreeze" class="hud-btn" type="button">Đóng băng Cryo</button>
+        <button id="btnToggleBurn" class="hud-btn" type="button">Thiêu đốt Napalm</button>
+        <button id="btnToggleCast" class="hud-btn" type="button">Kích hoạt Cuồng Nộ</button>
+        <button id="btnGridShowcase" class="hud-btn" type="button">Xếp đội hình / Chạy tự do</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <div id="miniTip">Chuột di/nhấp: Quái né & nổi giận | Space: Tạm dừng | 10 Boss Cuối Màn (Map 1 -> Map 10)</div>
+
+    <script>
+    // =========================================================================
+    // PHẦN 1: CÁC HÀM TRỢ GIÚP CANVAS 2D & BỘ ĐỆM GRADIENT VECTOR
+    // =========================================================================
+    let frameCounter = 0;
+    let globalFrozenState = false;
+    let globalBurnState = false;
+    let globalRageCast = false;
+    let showcaseGridMode = false;
+    const _radialGradCache = new Map();
+    const _linearGradCache = new Map();
+
+    function safeArc(c, x, y, r, sAng = 0, eAng = Math.PI * 2, ccw = false) {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        const rad = Number.isFinite(r) ? Math.max(0.5, r) : 1;
+        c.arc(x, y, rad, sAng, eAng, ccw);
+    }
+
+    function safeRadialGradient(c, x0, y0, r0, x1, y1, r1) {
+        const rx0 = Number.isFinite(x0) ? x0 : 0;
+        const ry0 = Number.isFinite(y0) ? y0 : 0;
+        const rr0 = Number.isFinite(r0) ? Math.max(0.01, r0) : 0.01;
+        const rx1 = Number.isFinite(x1) ? x1 : 0;
+        const ry1 = Number.isFinite(y1) ? y1 : 0;
+        const rr1 = Number.isFinite(r1) ? Math.max(rr0 + 0.1, r1) : 10;
+        try {
+            return c.createRadialGradient(rx0, ry0, rr0, rx1, ry1, rr1);
+        } catch (e) {
+            return c.createRadialGradient(0, 0, 0.1, 0, 0, 10);
+        }
+    }
+
+    function getCachedRadialGradient(c, key, x0, y0, r0, x1, y1, r1, stops) {
+        let g = _radialGradCache.get(key);
+        if (!g) {
+            g = safeRadialGradient(c, x0, y0, r0, x1, y1, r1);
+            for (let i = 0; i < stops.length; i++) {
+                g.addColorStop(stops[i][0], stops[i][1]);
+            }
+            if (_radialGradCache.size > 400) _radialGradCache.clear();
+            _radialGradCache.set(key, g);
+        }
+        return g;
+    }
+
+    function getCachedLinearGradient(c, key, x0, y0, x1, y1, stops) {
+        let g = _linearGradCache.get(key);
+        if (!g) {
+            g = c.createLinearGradient(x0, y0, x1, y1);
+            for (let i = 0; i < stops.length; i++) {
+                g.addColorStop(stops[i][0], stops[i][1]);
+            }
+            if (_linearGradCache.size > 400) _linearGradCache.clear();
+            _linearGradCache.set(key, g);
+        }
+        return g;
+    }
+
+    // Vẽ con mắt ác quỷ / cảm biến quang học cơ khí (Bio-Mecha Eldritch Ocular Sensor)
+    function drawEldritchMechaEye(c, x, y, rad, irisCol, pupilSlit = true, rot = 0) {
+        c.save();
+        c.translate(x, y);
+        if (rot) c.rotate(rot);
+
+        const g = safeRadialGradient(c, 0, 0, rad * 0.1, 0, 0, rad * 1.45);
+        g.addColorStop(0, "#ffffff");
+        g.addColorStop(0.35, irisCol);
+        g.addColorStop(0.85, "rgba(0,0,0,0.85)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = g;
+        c.beginPath();
+        safeArc(c, 0, 0, rad * 1.35);
+        c.fill();
+
+        c.fillStyle = irisCol;
+        c.beginPath();
+        c.moveTo(-rad, 0);
+        c.bezierCurveTo(-rad * 0.5, -rad * 0.95, rad * 0.5, -rad * 0.95, rad, 0);
+        c.bezierCurveTo(rad * 0.5, rad * 0.95, -rad * 0.5, rad * 0.95, -rad, 0);
+        c.closePath();
+        c.fill();
+
+        if (pupilSlit) {
+            c.fillStyle = "#020617";
+            c.beginPath();
+            c.moveTo(0, -rad * 0.78);
+            c.bezierCurveTo(rad * 0.28, -rad * 0.25, rad * 0.28, rad * 0.25, 0, rad * 0.78);
+            c.bezierCurveTo(-rad * 0.28, rad * 0.25, -rad * 0.28, -rad * 0.25, 0, -rad * 0.78);
+            c.closePath();
+            c.fill();
+        }
+
+        c.fillStyle = "#ffffff";
+        c.beginPath();
+        safeArc(c, rad * 0.28, -rad * 0.24, Math.max(0.6, rad * 0.26));
+        c.fill();
+        c.restore();
+    }
+
+    // Vẽ khung xương sườn cơ khí lộ thiên & khe tản nhiệt năng lượng
+    function drawExposedMechaRibcage(c, startX, endX, maxWidth, count, ribCol, glowCol, pulse = 1) {
+        const step = (startX - endX) / Math.max(1, count);
+        for (let i = 0; i < count; i++) {
+            const rx = startX - i * step;
+            const t = i / Math.max(1, count - 1);
+            const w = maxWidth * (1 - t * 0.35) * pulse;
+
+            c.strokeStyle = glowCol;
+            c.lineWidth = 2.2;
+            c.beginPath();
+            c.moveTo(rx + step * 0.15, -w * 0.82);
+            c.bezierCurveTo(rx - step * 0.25, -w * 0.45, rx - step * 0.25, w * 0.45, rx + step * 0.15, w * 0.82);
+            c.stroke();
+
+            c.fillStyle = ribCol;
+            for (let side = -1; side <= 1; side += 2) {
+                c.beginPath();
+                c.moveTo(rx + step * 0.22, side * w * 0.14);
+                c.bezierCurveTo(
+                    rx + step * 0.08, side * w * 0.65,
+                    rx - step * 0.25, side * w * 0.92,
+                    rx - step * 0.45, side * w * 1.08
+                );
+                c.bezierCurveTo(
+                    rx - step * 0.32, side * w * 0.55,
+                    rx - step * 0.12, side * w * 0.30,
+                    rx - step * 0.16, side * w * 0.14
+                );
+                c.closePath();
+                c.fill();
+            }
+        }
+    }
+
+    // =========================================================================
+    // PHẦN 2: BỘ PHẬN GIẢI PHẪU DÙNG CHUNG CỦA 10 BOSS (DARK BIO-MECHA ELDRITCH)
+    // =========================================================================
+    function drawBossSpikedMorningStarTail(e, cfg) {
+        const r = e.radius;
+        const isCasting = (e.skillState && e.skillState !== "idle") || globalRageCast;
+        const swingSpeed = isCasting ? 1.65 : 0.92;
+        const swingAmp = isCasting ? (r * 0.58) : (r * 0.40);
+        const wag = Math.sin(e.legPhase * swingSpeed) * swingAmp;
+
+        if (cfg.hasTwinWhips) {
+            for (let tSide = -1; tSide <= 1; tSide += 2) {
+                const wWag = Math.sin(e.legPhase * 1.15 + (tSide === 1 ? 0.5 : 2.3)) * (r * 0.38);
+                const cp1X = -r * 0.95, cp1Y = tSide * r * 0.86 + wWag * 0.35;
+                const cp2X = -r * 1.52, cp2Y = tSide * r * 0.22 - wWag * 0.55;
+                const eX = -r * 2.04, eY = tSide * r * 0.64 + wWag;
+
+                ctx.strokeStyle = cfg.darkArmor;
+                ctx.lineWidth = Math.max(5.0, r * 0.14);
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.62, tSide * r * 0.34);
+                ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, eX, eY);
+                ctx.stroke();
+
+                ctx.strokeStyle = cfg.veinCol;
+                ctx.lineWidth = 1.9;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.62, tSide * r * 0.34);
+                ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, eX, eY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = cfg.spikeCol;
+                for (let b = 1; b <= 3; b++) {
+                    const bt = b * 0.25;
+                    const mt = 1 - bt;
+                    const bx = mt*mt*mt*(-r*0.62) + 3*mt*mt*bt*cp1X + 3*mt*bt*bt*cp2X + bt*bt*bt*eX;
+                    const by = mt*mt*mt*(tSide*r*0.34) + 3*mt*mt*bt*cp1Y + 3*mt*bt*bt*cp2Y + bt*bt*bt*eY;
+                    ctx.beginPath();
+                    ctx.moveTo(bx + r * 0.08, by);
+                    ctx.bezierCurveTo(bx - r * 0.05, by + tSide * r * 0.18, bx - r * 0.18, by + tSide * r * 0.26, bx - r * 0.28, by + tSide * r * 0.30);
+                    ctx.lineTo(bx - r * 0.08, by + tSide * r * 0.05);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = getCachedLinearGradient(ctx, "whip_tip_" + cfg.tipGlow + "_" + cfg.spikeCol, eX, eY - r * 0.3, eX - r * 0.5, eY + r * 0.3, [
+                    [0, "#ffffff"],
+                    [0.45, cfg.tipGlow],
+                    [1, cfg.darkArmor]
+                ]);
+                ctx.strokeStyle = cfg.veinCol;
+                ctx.lineWidth = 1.3;
+                ctx.beginPath();
+                ctx.moveTo(eX + r * 0.14, eY - tSide * r * 0.08);
+                ctx.bezierCurveTo(eX - r * 0.10, eY + tSide * r * 0.35, eX - r * 0.38, eY + tSide * r * 0.32, eX - r * 0.54, eY + tSide * r * 0.14);
+                ctx.bezierCurveTo(eX - r * 0.30, eY + tSide * r * 0.04, eX - r * 0.22, eY - tSide * r * 0.16, eX - r * 0.14, eY - tSide * r * 0.30);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        ctx.strokeStyle = cfg.veinCol;
+        ctx.lineWidth = 2.0;
+        for (let cSide = -1; cSide <= 1; cSide += 2) {
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.58, cSide * r * 0.18);
+            ctx.bezierCurveTo(
+                -r * 1.15, cSide * r * 0.32 + wag * 0.35,
+                -r * 1.65, -cSide * r * 0.18 + wag * 0.75,
+                -r * 2.22, wag
+            );
+            ctx.stroke();
+        }
+
+        const segCount = 6;
+        let prevX = -r * 0.58;
+        let prevY = 0;
+
+        for (let s = 1; s <= segCount; s++) {
+            const t = s / segCount;
+            const curX = -r * (0.58 + t * 1.62);
+            const curY = Math.sin(e.legPhase * swingSpeed - t * 1.45) * swingAmp * Math.pow(t, 1.15);
+            const segW = r * (0.30 * (1 - t * 0.44));
+
+            const dx = curX - prevX;
+            const dy = curY - prevY;
+            const segAng = Math.atan2(dy, dx);
+            const nx = -Math.sin(segAng);
+            const ny = Math.cos(segAng);
+
+            const segGrad = getCachedLinearGradient(ctx, "tail_seg_" + cfg.darkArmor + "_" + cfg.plateCol, -r * 2, -r * 0.3, -r * 0.5, r * 0.3, [
+                [0, cfg.darkArmor],
+                [0.5, cfg.plateCol],
+                [1, cfg.darkArmor]
+            ]);
+            ctx.fillStyle = segGrad;
+            ctx.strokeStyle = cfg.veinCol;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(prevX + nx * segW, prevY + ny * segW);
+            ctx.lineTo((prevX + curX) * 0.5 + nx * segW * 1.12, (prevY + curY) * 0.5 + ny * segW * 1.12);
+            ctx.lineTo(curX + nx * segW * 0.78, curY + ny * segW * 0.78);
+            ctx.lineTo(curX - nx * segW * 0.78, curY - ny * segW * 0.78);
+            ctx.lineTo((prevX + curX) * 0.5 - nx * segW * 1.12, (prevY + curY) * 0.5 - ny * segW * 1.12);
+            ctx.lineTo(prevX - nx * segW, prevY - ny * segW);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            const barbLen = r * (0.38 - t * 0.10);
+            ctx.fillStyle = (s % 2 === 0) ? cfg.spikeCol : cfg.tipGlow;
+            ctx.strokeStyle = cfg.darkArmor;
+            ctx.lineWidth = 1.1;
+            for (let bSide = -1; bSide <= 1; bSide += 2) {
+                const bx = (prevX + curX) * 0.5 + nx * bSide * segW * 0.85;
+                const by = (prevY + curY) * 0.5 + ny * bSide * segW * 0.85;
+                ctx.beginPath();
+                ctx.moveTo(bx - dx * 0.32, by - dy * 0.32);
+                ctx.bezierCurveTo(
+                    bx + nx * bSide * barbLen * 0.55,
+                    by + ny * bSide * barbLen * 0.55,
+                    bx + dx * 0.35 + nx * bSide * barbLen * 0.92,
+                    by + dy * 0.35 + ny * bSide * barbLen * 0.92,
+                    bx + dx * 0.65 + nx * bSide * barbLen,
+                    by + dy * 0.65 + ny * bSide * barbLen
+                );
+                ctx.lineTo(bx + dx * 0.28, by + dy * 0.28);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = cfg.tipGlow;
+            ctx.beginPath();
+            safeArc(ctx, (prevX + curX) * 0.5, (prevY + curY) * 0.5, Math.max(2.2, segW * 0.36));
+            ctx.fill();
+            ctx.fillStyle = "#020617";
+            ctx.beginPath();
+            safeArc(ctx, (prevX + curX) * 0.5, (prevY + curY) * 0.5, Math.max(1.0, segW * 0.16));
+            ctx.fill();
+
+            prevX = curX;
+            prevY = curY;
+        }
+
+        const maceX = prevX - r * 0.18;
+        const maceY = prevY;
+        const maceR = r * 0.44;
+        const maceRot = wag * 0.028 + frameCounter * (isCasting ? 0.11 : 0.035);
+
+        ctx.save();
+        ctx.translate(maceX, maceY);
+        ctx.rotate(maceRot);
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "mace_glow_" + cfg.tipGlow + "_" + Math.round(maceR), 0, 0, maceR * 0.2, 0, 0, maceR * 2.2, [
+            [0, cfg.tipGlow],
+            [0.5, cfg.veinCol],
+            [1, "rgba(0,0,0,0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, maceR * 2.1);
+        ctx.fill();
+
+        const numSpikes = 12;
+        for (let k = 0; k < numSpikes; k++) {
+            const sa = (k / numSpikes) * Math.PI * 2;
+            const isMajor = (k % 3 === 0);
+            const spLen = isMajor ? (maceR * 2.28) : (maceR * 1.68);
+            const baseHalf = isMajor ? 0.25 : 0.17;
+
+            ctx.fillStyle = isMajor ? cfg.spikeCol : cfg.plateCol;
+            ctx.strokeStyle = cfg.darkArmor;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(sa - baseHalf) * (maceR * 0.76), Math.sin(sa - baseHalf) * (maceR * 0.76));
+            ctx.bezierCurveTo(
+                Math.cos(sa - baseHalf * 0.45) * (spLen * 0.65),
+                Math.sin(sa - baseHalf * 0.45) * (spLen * 0.65),
+                Math.cos(sa + 0.06) * (spLen * 0.88),
+                Math.sin(sa + 0.06) * (spLen * 0.88),
+                Math.cos(sa) * spLen,
+                Math.sin(sa) * spLen
+            );
+            ctx.bezierCurveTo(
+                Math.cos(sa + baseHalf * 0.5) * (spLen * 0.62),
+                Math.sin(sa + baseHalf * 0.5) * (spLen * 0.62),
+                Math.cos(sa + baseHalf) * (maceR * 0.82),
+                Math.sin(sa + baseHalf) * (maceR * 0.82),
+                Math.cos(sa + baseHalf) * (maceR * 0.76),
+                Math.sin(sa + baseHalf) * (maceR * 0.76)
+            );
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (isMajor) {
+                ctx.fillStyle = cfg.tipGlow;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(sa - 0.11) * (spLen * 0.56), Math.sin(sa - 0.11) * (spLen * 0.56));
+                ctx.lineTo(Math.cos(sa) * spLen, Math.sin(sa) * spLen);
+                ctx.lineTo(Math.cos(sa + 0.11) * (spLen * 0.56), Math.sin(sa + 0.11) * (spLen * 0.56));
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        ctx.fillStyle = cfg.darkArmor;
+        ctx.strokeStyle = cfg.veinCol;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        for (let k = 0; k < 8; k++) {
+            const a = k * (Math.PI * 0.25) + Math.PI * 0.125;
+            const px = Math.cos(a) * maceR;
+            const py = Math.sin(a) * maceR;
+            if (k === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawEldritchMechaEye(ctx, 0, 0, maceR * 0.48, cfg.tipGlow, true, -maceRot);
+
+        ctx.restore();
+    }
+
+
+    function drawBossArticulatedSpikedLegs(e, cfg) {
+        const r = e.radius;
+        for (let side = -1; side <= 1; side += 2) {
+            for (let l = 0; l < 4; l++) {
+                const offsetRatio = (l - 1.5) * 0.44;
+                const stride = Math.sin(e.legPhase + l * 1.48 + (side === 1 ? 0 : Math.PI)) * (r * 0.29);
+
+                const rootX = offsetRatio * r * 0.94;
+                const rootY = side * r * 0.48;
+                const kneeX = rootX + stride * 0.62 + (l < 2 ? r * 0.12 : -r * 0.14);
+                const kneeY = side * (r * 1.25 + (l === 1 || l === 2 ? r * 0.22 : 0));
+                const ankleX = kneeX + stride * 0.72 + (l < 2 ? r * 0.24 : -r * 0.22);
+                const ankleY = side * (r * 1.62);
+                const tipX  = kneeX + stride * 0.88 + (l < 2 ? r * 0.42 : -r * 0.36);
+                const tipY  = side * (r * 1.88);
+
+                const fAng = Math.atan2(kneeY - rootY, kneeX - rootX);
+                const fnx = -Math.sin(fAng) * Math.max(4.5, r * 0.11);
+                const fny = Math.cos(fAng) * Math.max(4.5, r * 0.11);
+
+                ctx.strokeStyle = cfg.spikeCol;
+                ctx.lineWidth = Math.max(2.0, r * 0.045);
+                ctx.beginPath();
+                ctx.moveTo(rootX - fnx * 0.9, rootY - fny * 0.9);
+                ctx.lineTo(kneeX - fnx * 0.7, kneeY - fny * 0.7);
+                ctx.stroke();
+
+                const femurGrad = getCachedLinearGradient(ctx, "femur_" + cfg.darkArmor + "_" + cfg.plateCol, rootX, rootY, kneeX, kneeY, [
+                    [0, cfg.darkArmor],
+                    [0.5, cfg.plateCol],
+                    [1, cfg.darkArmor]
+                ]);
+                ctx.fillStyle = femurGrad;
+                ctx.strokeStyle = cfg.plateCol;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(rootX + fnx, rootY + fny);
+                ctx.lineTo((rootX + kneeX) * 0.5 + fnx * 1.35, (rootY + kneeY) * 0.5 + fny * 1.35);
+                ctx.lineTo(kneeX + fnx * 0.85, kneeY + fny * 0.85);
+                ctx.lineTo(kneeX - fnx * 0.85, kneeY - fny * 0.85);
+                ctx.lineTo(rootX - fnx * 0.75, rootY - fny * 0.75);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.strokeStyle = cfg.veinCol;
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(rootX, rootY);
+                ctx.lineTo(kneeX, kneeY);
+                ctx.stroke();
+
+                const bladeGrad = getCachedLinearGradient(ctx, "leg_blade_" + cfg.spikeCol + "_" + cfg.tipGlow, kneeX, kneeY, tipX, tipY, [
+                    [0, cfg.darkArmor],
+                    [0.45, cfg.spikeCol],
+                    [1, cfg.tipGlow]
+                ]);
+                ctx.fillStyle = bladeGrad;
+                ctx.strokeStyle = cfg.darkArmor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(kneeX - r * 0.11, kneeY);
+                ctx.bezierCurveTo(
+                    ankleX + (l < 2 ? r * 0.18 : -r * 0.16),
+                    (kneeY + ankleY) * 0.5,
+                    ankleX + (l < 2 ? r * 0.14 : -r * 0.12),
+                    ankleY,
+                    tipX,
+                    tipY
+                );
+                ctx.lineTo((ankleX + tipX) * 0.5 - (l < 2 ? r * 0.08 : -r * 0.08), (ankleY + tipY) * 0.5 - side * r * 0.08);
+                ctx.lineTo(ankleX + (l < 2 ? r * 0.02 : -r * 0.02), ankleY - side * r * 0.04);
+                ctx.lineTo(kneeX + r * 0.12, kneeY - side * r * 0.10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = cfg.tipGlow;
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(tipX - (l < 2 ? r * 0.16 : -r * 0.16), tipY - side * r * 0.20);
+                ctx.lineTo(tipX - (l < 2 ? r * 0.04 : -r * 0.04), tipY - side * r * 0.25);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = cfg.tipGlow;
+                ctx.strokeStyle = cfg.darkArmor;
+                ctx.lineWidth = 1.3;
+                ctx.beginPath();
+                ctx.moveTo(kneeX - r * 0.11, kneeY);
+                ctx.bezierCurveTo(
+                    kneeX + (l < 2 ? -r * 0.12 : r * 0.12),
+                    kneeY + side * r * 0.22,
+                    kneeX + (l < 2 ? -r * 0.22 : r * 0.22),
+                    kneeY + side * r * 0.30,
+                    kneeX + (l < 2 ? -r * 0.28 : r * 0.26),
+                    kneeY + side * r * 0.38
+                );
+                ctx.lineTo(kneeX + r * 0.11, kneeY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = cfg.darkArmor;
+                ctx.strokeStyle = cfg.veinCol;
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                safeArc(ctx, kneeX, kneeY, Math.max(3.0, r * 0.075));
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+    }
+
+
+    function drawBossSerratedPincers(e, cfg) {
+        const r = e.radius;
+        const snap = Math.sin(e.legPhase * 1.22) * 0.22;
+        const reach = r * 1.84;
+
+        for (let side = -1; side <= 1; side += 2) {
+            const hornGrad = getCachedLinearGradient(ctx, "sh_horn_" + cfg.spikeCol + "_" + cfg.darkArmor, r * 0.1, 0, r * 1.45, 0, [
+                [0, cfg.darkArmor],
+                [0.55, cfg.spikeCol],
+                [1, cfg.tipGlow]
+            ]);
+            ctx.fillStyle = hornGrad;
+            ctx.strokeStyle = cfg.darkArmor;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.12, side * r * 0.66);
+            ctx.bezierCurveTo(
+                r * 0.55, side * r * 1.28,
+                r * 1.05, side * r * 1.18,
+                r * 1.44, side * r * 0.72
+            );
+            ctx.bezierCurveTo(
+                r * 0.98, side * r * 0.92,
+                r * 0.58, side * r * 0.84,
+                r * 0.32, side * r * 0.46
+            );
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(r * 0.48, side * r * 0.54);
+            ctx.rotate(side * (0.30 - snap));
+
+            ctx.fillStyle = cfg.plateCol;
+            ctx.strokeStyle = cfg.veinCol;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.10, -side * r * 0.08);
+            ctx.lineTo(reach * 0.34, side * r * 0.44);
+            ctx.lineTo(reach * 0.22, side * r * 0.12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            const pincerGrad = getCachedLinearGradient(ctx, "pincer_main_" + cfg.darkArmor + "_" + cfg.plateCol, 0, 0, reach, 0, [
+                [0, cfg.darkArmor],
+                [0.6, cfg.plateCol],
+                [1, cfg.spikeCol]
+            ]);
+            ctx.fillStyle = pincerGrad;
+            ctx.strokeStyle = cfg.veinCol;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.moveTo(0, -side * r * 0.12);
+            ctx.bezierCurveTo(
+                reach * 0.28, side * r * 0.56,
+                reach * 0.68, side * r * 0.52,
+                reach * 1.08, -side * r * 0.16
+            );
+            ctx.lineTo(reach * 0.82, -side * r * 0.02);
+            ctx.lineTo(reach * 0.74, side * r * 0.18);
+            ctx.lineTo(reach * 0.64, -side * r * 0.05);
+            ctx.lineTo(reach * 0.54, side * r * 0.16);
+            ctx.lineTo(reach * 0.44, -side * r * 0.06);
+            ctx.lineTo(reach * 0.34, side * r * 0.14);
+            ctx.lineTo(reach * 0.24, -side * r * 0.10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = cfg.spikeCol;
+            ctx.beginPath();
+            ctx.moveTo(reach * 0.18, -side * r * 0.06);
+            ctx.bezierCurveTo(
+                reach * 0.38, -side * r * 0.26,
+                reach * 0.56, -side * r * 0.22,
+                reach * 0.70, -side * r * 0.04
+            );
+            ctx.lineTo(reach * 0.48, -side * r * 0.08);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = cfg.tipGlow;
+            ctx.beginPath();
+            ctx.moveTo(reach * 0.60, side * r * 0.26);
+            ctx.bezierCurveTo(
+                reach * 0.78, side * r * 0.34,
+                reach * 0.92, side * r * 0.12,
+                reach * 1.08, -side * r * 0.16
+            );
+            ctx.lineTo(reach * 0.80, -side * r * 0.02);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = cfg.tipGlow;
+            ctx.beginPath();
+            safeArc(ctx, reach * 0.12, side * r * 0.08, Math.max(2.5, r * 0.07));
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+
+
+    // =========================================================================
+    // PHẦN 4: 10 TRÙM CUỐI (MAP 1 -> MAP 10) - DARK BIO-MECHA ELDRITCH HORROR
+    // Giữ nguyên hoàn toàn tên hàm và tham số (e, isGlobalFrozen)
+    // =========================================================================
+
+    // BOSS MAP 1, 2, 3: OMEGA BEHEMOTH, VOID EMPEROR, CRYO LEVIATHAN
+    function drawBossOmegaMonsterProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const mapId = window.currentMapId || e.mapId || 1;
+
+        let darkArmor, plateCol, veinCol, spikeCol, tipGlow, auraKey, auraStops;
+        if (mapId === 3) {
+            darkArmor = flash ? "#ffffff" : "#04182b";
+            plateCol  = flash ? "#ffffff" : "#0369a1";
+            veinCol   = flash ? "#ffffff" : "#38bdf8";
+            spikeCol  = flash ? "#ffffff" : "#e0f2fe";
+            tipGlow   = flash ? "#ffffff" : "#67e8f9";
+            auraKey   = "boss_cryo_aura_" + Math.round(r);
+            auraStops = [[0, "rgba(56, 189, 248, 0.42)"], [0.6, "rgba(14, 165, 233, 0.16)"], [1, "rgba(0,0,0,0)"]];
+        } else if (mapId === 2) {
+            darkArmor = flash ? "#ffffff" : (isChilled ? "#075985" : "#080b20");
+            plateCol  = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#2e1065");
+            veinCol   = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#38bdf8");
+            spikeCol  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#e2e8f0");
+            tipGlow   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#c084fc");
+            auraKey   = "boss_void_aura_" + Math.round(r);
+            auraStops = [[0, "rgba(56, 189, 248, 0.40)"], [0.58, "rgba(192, 132, 252, 0.18)"], [1, "rgba(0,0,0,0)"]];
+        } else {
+            darkArmor = flash ? "#ffffff" : (isChilled ? "#075985" : "#140c24");
+            plateCol  = flash ? "#ffffff" : (isChilled ? "#0284c7" : "#7f1d1d");
+            veinCol   = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#f97316");
+            spikeCol  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fecaca");
+            tipGlow   = flash ? "#ffffff" : ((e.skillState !== "idle" || globalRageCast) ? "#c084fc" : "#fde047");
+            auraKey   = "boss_omega_aura_" + Math.round(r);
+            auraStops = [[0, "rgba(244, 63, 94, 0.40)"], [0.6, "rgba(249, 115, 22, 0.16)"], [1, "rgba(0,0,0,0)"]];
+        }
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, auraKey, 0, 0, r * 0.28, 0, 0, r * 1.90, auraStops);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.90);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor,
+            plateCol,
+            veinCol,
+            spikeCol,
+            tipGlow,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        for (let side = -1; side <= 1; side += 2) {
+            if (mapId === 3) {
+                const iceGrad = getCachedLinearGradient(ctx, "cryo_spire_" + side, 0, 0, 0, side * r * 1.4, [
+                    [0, darkArmor],
+                    [0.5, veinCol],
+                    [1, "#ffffff"]
+                ]);
+                ctx.fillStyle = iceGrad;
+                ctx.strokeStyle = tipGlow;
+                ctx.lineWidth = 1.6;
+                for (let k = -1; k <= 1; k++) {
+                    const sx = k * r * 0.36;
+                    ctx.beginPath();
+                    ctx.moveTo(sx + r * 0.20, side * r * 0.50);
+                    ctx.bezierCurveTo(
+                        sx + r * 0.05, side * r * 1.05,
+                        sx - r * 0.18, side * r * 1.25,
+                        sx - r * 0.36, side * r * 1.44
+                    );
+                    ctx.lineTo(sx - r * 0.22, side * r * 0.85);
+                    ctx.lineTo(sx - r * 0.42, side * r * 1.12);
+                    ctx.lineTo(sx - r * 0.16, side * r * 0.50);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            } else if (mapId === 2) {
+                ctx.fillStyle = darkArmor;
+                ctx.strokeStyle = veinCol;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(r * 0.36, side * r * 0.48);
+                ctx.bezierCurveTo(
+                    r * 0.10, side * r * 1.18,
+                    -r * 0.15, side * r * 1.38,
+                    -r * 0.34, side * r * 1.48
+                );
+                ctx.lineTo(-r * 0.54, side * r * 0.92);
+                ctx.lineTo(-r * 0.98, side * r * 1.22);
+                ctx.lineTo(-r * 0.62, side * r * 0.48);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                drawEldritchMechaEye(ctx, -r * 0.22, side * r * 0.96, r * 0.13, tipGlow, true);
+            } else {
+                const py = side * r * 0.80;
+                ctx.fillStyle = darkArmor;
+                ctx.strokeStyle = side === -1 ? "#f97316" : "#c084fc";
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.38, py - side * 8);
+                ctx.lineTo(r * 0.78, py - side * 9);
+                ctx.lineTo(r * 1.02, py - side * 2.5);
+                ctx.lineTo(r * 0.68, py + side * 2.5);
+                ctx.lineTo(r * 1.02, py + side * 7.5);
+                ctx.lineTo(-r * 0.24, py + side * 9);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = tipGlow;
+                ctx.beginPath();
+                safeArc(ctx, r * 0.78, py, 4.8);
+                ctx.fill();
+            }
+        }
+
+        ctx.fillStyle = darkArmor;
+        ctx.strokeStyle = veinCol;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.04, -r * 0.68);
+        ctx.lineTo(-r * 0.48, -r * 0.88);
+        ctx.lineTo(-r * 0.94, -r * 0.60);
+        ctx.lineTo(-r * 1.22, 0);
+        ctx.lineTo(-r * 0.94, r * 0.60);
+        ctx.lineTo(-r * 0.48, r * 0.88);
+        ctx.lineTo(r * 0.04, r * 0.68);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        const thoraxGrad = getCachedLinearGradient(ctx, "omega_thorax_" + mapId, -r * 0.7, -r * 0.8, r * 1.1, r * 0.8, [
+            [0, darkArmor],
+            [0.5, plateCol],
+            [1, darkArmor]
+        ]);
+        ctx.fillStyle = thoraxGrad;
+        ctx.strokeStyle = spikeCol;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.20, 0);
+        ctx.lineTo(r * 0.66, -r * 0.64);
+        ctx.lineTo(r * 0.14, -r * 0.94);
+        ctx.lineTo(-r * 0.40, -r * 0.76);
+        ctx.lineTo(-r * 0.70, 0);
+        ctx.lineTo(-r * 0.40, r * 0.76);
+        ctx.lineTo(r * 0.14, r * 0.94);
+        ctx.lineTo(r * 0.66, r * 0.64);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        const corePulse = 1.0 + Math.sin(now * 0.013) * 0.18;
+        drawExposedMechaRibcage(ctx, r * 0.46, -r * 0.56, r * 0.68, 5, spikeCol, veinCol, corePulse * 0.92);
+
+        drawEldritchMechaEye(ctx, r * 0.06, 0, r * 0.34 * corePulse, tipGlow, true);
+
+        ctx.fillStyle = spikeCol;
+        for (let s = -2; s <= 2; s++) {
+            const sx = s * r * 0.30;
+            ctx.beginPath();
+            ctx.moveTo(sx + r * 0.22, 0);
+            ctx.lineTo(sx - r * 0.18, -r * 0.24);
+            ctx.lineTo(sx - r * 0.08, 0);
+            ctx.lineTo(sx - r * 0.18, r * 0.24);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.fillStyle = tipGlow;
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.beginPath();
+            ctx.moveTo(r * 0.92, side * r * 0.16);
+            ctx.bezierCurveTo(r * 1.15, side * r * 0.02, r * 1.28, side * r * 0.04, r * 1.42, side * r * 0.06);
+            ctx.lineTo(r * 1.02, side * r * 0.38);
+            ctx.closePath();
+            ctx.fill();
+
+            for (let eIdx = 0; eIdx < 3; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.84 - eIdx * 0.14), side * r * (0.16 + eIdx * 0.11), 2.8, tipGlow, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 4: MAGMA ABOMINATION (BẠO CHÚA NHAM THẠCH LÒ NUNG ĐỊA NGỤC)
+    function drawBossMagmaMonsterProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+
+        const obsidianCol = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#110504");
+        const basaltCol   = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#2d0e07");
+        const magmaBright = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#f97316");
+        const magmaCore   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#fde047");
+        const boneSpike   = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fed7aa");
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_magma_aura_" + Math.round(r), 0, 0, r * 0.3, 0, 0, r * 1.92, [
+            [0, "rgba(249, 115, 22, 0.42)"],
+            [0.6, "rgba(220, 38, 38, 0.18)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.92);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: obsidianCol,
+            plateCol: basaltCol,
+            veinCol: magmaBright,
+            spikeCol: boneSpike,
+            tipGlow: magmaCore,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let k = -1; k <= 0; k++) {
+                const vx = k * r * 0.48 - r * 0.08;
+                const vy = side * r * 0.88;
+                ctx.fillStyle = obsidianCol;
+                ctx.strokeStyle = magmaBright;
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                safeArc(ctx, vx, vy, r * 0.18);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = magmaCore;
+                ctx.beginPath();
+                safeArc(ctx, vx, vy, r * 0.09);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = magmaBright;
+            ctx.strokeStyle = obsidianCol;
+            ctx.lineWidth = 1.6;
+            for (let k = -2; k <= 1; k++) {
+                const sx = k * r * 0.34;
+                const sy = side * r * 0.68;
+                ctx.beginPath();
+                ctx.moveTo(sx + r * 0.18, sy * 0.72);
+                ctx.bezierCurveTo(sx, side * r * 1.05, sx - r * 0.15, side * r * 1.15, sx - r * 0.28, side * r * 1.26);
+                ctx.lineTo(sx - r * 0.16, sy * 0.72);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        ctx.fillStyle = obsidianCol;
+        ctx.strokeStyle = magmaBright;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.05, -r * 0.68);
+        ctx.lineTo(-r * 0.45, -r * 0.88);
+        ctx.lineTo(-r * 0.90, -r * 0.64);
+        ctx.lineTo(-r * 1.22, 0);
+        ctx.lineTo(-r * 0.90, r * 0.64);
+        ctx.lineTo(-r * 0.45, r * 0.88);
+        ctx.lineTo(r * 0.05, r * 0.68);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = basaltCol;
+        ctx.strokeStyle = magmaCore;
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.20, 0);
+        ctx.lineTo(r * 0.68, -r * 0.64);
+        ctx.lineTo(r * 0.18, -r * 0.96);
+        ctx.lineTo(-r * 0.38, -r * 0.78);
+        ctx.lineTo(-r * 0.68, 0);
+        ctx.lineTo(-r * 0.38, r * 0.78);
+        ctx.lineTo(r * 0.18, r * 0.96);
+        ctx.lineTo(r * 0.68, r * 0.64);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = magmaCore;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.moveTo(-r * 0.78, 0);
+            ctx.bezierCurveTo(-r * 0.35, side * r * 0.56, r * 0.25, side * r * 0.22, r * 0.68, side * r * 0.58);
+        }
+        ctx.stroke();
+
+        const heartBeat = 1.0 + Math.abs(Math.sin(now * 0.015)) * 0.24;
+        drawExposedMechaRibcage(ctx, r * 0.45, -r * 0.52, r * 0.72, 5, boneSpike, magmaBright, heartBeat * 0.9);
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_magma_heart_" + Math.round(r), 0, 0, 2, 0, 0, r * 0.54, [
+            [0, "#ffffff"],
+            [0.35, "#fde047"],
+            [0.7, "#f97316"],
+            [1, "rgba(239, 68, 68, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, r * 0.06, 0, r * 0.54 * heartBeat);
+        ctx.fill();
+
+        ctx.fillStyle = boneSpike;
+        for (let s = -2; s <= 2; s++) {
+            const sx = s * r * 0.30;
+            ctx.beginPath();
+            ctx.moveTo(sx + r * 0.22, 0);
+            ctx.lineTo(sx - r * 0.20, -r * 0.24);
+            ctx.lineTo(sx - r * 0.08, 0);
+            ctx.lineTo(sx - r * 0.20, r * 0.24);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 3; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.82 - eIdx * 0.14), side * r * (0.18 + eIdx * 0.11), 2.7, magmaCore, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 5: HIVE EMPRESS (NỮ HOÀNG TỔ QUỶ ĐỘT BIẾN SINH-CƠ)
+    function drawBossHiveEmpressProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+
+        const crownCol    = flash ? "#ffffff" : (isChilled ? "#082f49" : "#22012b");
+        const carapaceCol = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#581c87");
+        const veinCol     = flash ? "#ffffff" : (isChilled ? "#7dd3fc" : "#d8b4fe");
+        const clawGold    = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#fde047");
+        const acidGlow    = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#4ade80");
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_hive_aura_" + Math.round(r), 0, 0, r * 0.3, 0, 0, r * 1.96, [
+            [0, "rgba(192, 132, 252, 0.44)"],
+            [0.55, "rgba(74, 222, 128, 0.18)"],
+            [1, "rgba(0,0,0,0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.96);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: crownCol,
+            plateCol: carapaceCol,
+            veinCol: veinCol,
+            spikeCol: clawGold,
+            tipGlow: acidGlow,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        const pulse = 1.0 + Math.sin(now * 0.015) * 0.08;
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.fillStyle = "rgba(76, 29, 149, 0.78)";
+            ctx.strokeStyle = clawGold;
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.25, side * r * 0.42);
+            ctx.bezierCurveTo(
+                r * 0.15, side * r * 1.15 * pulse,
+                -r * 0.05, side * r * 1.35 * pulse,
+                -r * 0.18, side * r * 1.48 * pulse
+            );
+            ctx.bezierCurveTo(
+                -r * 0.35, side * r * 1.12 * pulse,
+                -r * 0.48, side * r * 1.05 * pulse,
+                -r * 0.56, side * r * 1.08 * pulse
+            );
+            ctx.lineTo(-r * 0.96, side * r * 1.30 * pulse);
+            ctx.lineTo(-r * 0.66, side * r * 0.52);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            drawEldritchMechaEye(ctx, -r * 0.28, side * r * 0.95 * pulse, r * 0.12, acidGlow, true);
+        }
+
+        ctx.fillStyle = carapaceCol;
+        ctx.strokeStyle = acidGlow;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.66);
+        ctx.lineTo(-r * 0.48, -r * 0.92 * pulse);
+        ctx.lineTo(-r * 0.96, -r * 0.60 * pulse);
+        ctx.lineTo(-r * 1.28, 0);
+        ctx.lineTo(-r * 0.96, r * 0.60 * pulse);
+        ctx.lineTo(-r * 0.48, r * 0.92 * pulse);
+        ctx.lineTo(0, r * 0.66);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.fillStyle = acidGlow;
+            ctx.beginPath();
+            safeArc(ctx, -r * 0.56, side * r * 0.48 * pulse, r * 0.16 * pulse);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = crownCol;
+        ctx.strokeStyle = veinCol;
+        ctx.lineWidth = 3.0;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.24, 0);
+        ctx.lineTo(r * 0.68, -r * 0.60);
+        ctx.lineTo(r * 0.16, -r * 0.94);
+        ctx.lineTo(-r * 0.40, -r * 0.74);
+        ctx.lineTo(-r * 0.70, 0);
+        ctx.lineTo(-r * 0.40, r * 0.74);
+        ctx.lineTo(r * 0.16, r * 0.94);
+        ctx.lineTo(r * 0.68, r * 0.60);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawExposedMechaRibcage(ctx, r * 0.38, -r * 0.58, r * 0.66, 5, clawGold, acidGlow, pulse);
+        drawEldritchMechaEye(ctx, -r * 0.10, 0, r * 0.36 * pulse, acidGlow, true);
+
+        ctx.fillStyle = clawGold;
+        for (let sp = -3; sp <= 3; sp++) {
+            const sAng = sp * 0.26;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.18 + Math.cos(sAng) * r * 0.36, Math.sin(sAng) * r * 0.54);
+            ctx.lineTo(r * 0.18 + Math.cos(sAng) * r * 1.24, Math.sin(sAng) * r * 1.02);
+            ctx.lineTo(r * 0.42 + Math.cos(sAng) * r * 0.36, Math.sin(sAng) * r * 0.44);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 4; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.86 - eIdx * 0.12), side * r * (0.14 + eIdx * 0.09), 2.4, acidGlow, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 6: SINGULARITY OVERLORD (CHÚA TỂ DỊ ĐIỂM HỐ ĐEN VŨ TRỤ)
+    function drawBossSingularityOverlordProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const pulse = 1.0 + Math.sin(now * 0.014 + e.legPhase) * 0.08;
+
+        const darkVoid   = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#05020f");
+        const armorPlate = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#1e1b4b");
+        const cyanEdge   = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#22d3ee");
+        const pinkGlow   = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#e879f9");
+        const starWhite  = flash ? "#ffffff" : "#f8fafc";
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_sing_aura_" + Math.round(r), 0, 0, r * 0.25, 0, 0, r * 2.02, [
+            [0, "rgba(34, 211, 238, 0.46)"],
+            [0.55, "rgba(217, 70, 239, 0.26)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 2.02);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: darkVoid,
+            plateCol: armorPlate,
+            veinCol: cyanEdge,
+            spikeCol: starWhite,
+            tipGlow: pinkGlow,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        ctx.save();
+        ctx.rotate(-now * 0.0035);
+        ctx.strokeStyle = pinkGlow;
+        ctx.lineWidth = 2.0;
+        ctx.setLineDash([14, 8]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.26);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.fillStyle = darkVoid;
+            ctx.strokeStyle = pinkGlow;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.36, side * r * 0.46);
+            ctx.bezierCurveTo(
+                r * 0.22, side * r * 1.15 * pulse,
+                r * 0.12, side * r * 1.38 * pulse,
+                r * 0.04, side * r * 1.54 * pulse
+            );
+            ctx.lineTo(-r * 0.34, side * r * 0.98 * pulse);
+            ctx.lineTo(-r * 0.88, side * r * 1.36 * pulse);
+            ctx.lineTo(-r * 0.58, side * r * 0.48);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = darkVoid;
+        ctx.strokeStyle = pinkGlow;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.64);
+        ctx.lineTo(-r * 0.54, -r * 0.86 * pulse);
+        ctx.lineTo(-r * 1.22, 0);
+        ctx.lineTo(-r * 0.54, r * 0.86 * pulse);
+        ctx.lineTo(0, r * 0.64);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = armorPlate;
+        ctx.strokeStyle = cyanEdge;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.28, 0);
+        ctx.lineTo(r * 0.66, -r * 0.60);
+        ctx.lineTo(r * 0.18, -r * 1.06 * pulse);
+        ctx.lineTo(-r * 0.40, -r * 0.64);
+        ctx.lineTo(-r * 0.66, 0);
+        ctx.lineTo(-r * 0.40, r * 0.64);
+        ctx.lineTo(r * 0.18, r * 1.06 * pulse);
+        ctx.lineTo(r * 0.66, r * 0.60);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(r * 0.10, 0);
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_sing_core_" + Math.round(r), 0, 0, 2, 0, 0, r * 0.56, [
+            [0, "#ffffff"],
+            [0.38, "#22d3ee"],
+            [0.72, "#e879f9"],
+            [1, "rgba(0,0,0,0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 0.56 * pulse);
+        ctx.fill();
+
+        ctx.strokeStyle = cyanEdge;
+        ctx.lineWidth = 1.6;
+        for (let arm = 0; arm < 4; arm++) {
+            const a = arm * Math.PI * 0.5 + now * 0.005;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * r * 0.46, Math.sin(a) * r * 0.46);
+            ctx.bezierCurveTo(
+                Math.cos(a + 0.8) * r * 0.30,
+                Math.sin(a + 0.8) * r * 0.30,
+                Math.cos(a + 1.6) * r * 0.15,
+                Math.sin(a + 1.6) * r * 0.15,
+                0, 0
+            );
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = "#010006";
+        ctx.strokeStyle = starWhite;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 0.20);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 4; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.88 - eIdx * 0.13), side * r * (0.14 + eIdx * 0.09), 2.5, cyanEdge, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 7: CYBER TITAN (SIÊU TITAN CƠ KHÍ HẠNG NẶNG MECHA-XENO DREADNOUGHT)
+    function drawBossCyberTitanProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const pulse = 1.0 + Math.sin(now * 0.015 + e.legPhase) * 0.08;
+
+        const darkSteel  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#120f0a");
+        const armorPlate = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#451a03");
+        const amberEdge  = flash ? "#ffffff" : (isChilled ? "#bae6fd" : "#f59e0b");
+        const cyanArc    = flash ? "#ffffff" : (isChilled ? "#e0f2fe" : "#38bdf8");
+        const brightGold = flash ? "#ffffff" : "#fde047";
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_cyber_aura_" + Math.round(r), 0, 0, r * 0.25, 0, 0, r * 1.98, [
+            [0, "rgba(245, 158, 11, 0.44)"],
+            [0.55, "rgba(56, 189, 248, 0.22)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.98);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: darkSteel,
+            plateCol: armorPlate,
+            veinCol: amberEdge,
+            spikeCol: brightGold,
+            tipGlow: cyanArc,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        for (let side = -1; side <= 1; side += 2) {
+            const py = side * r * 0.84;
+            ctx.fillStyle = darkSteel;
+            ctx.strokeStyle = amberEdge;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.42, py - side * 9);
+            ctx.lineTo(r * 0.96, py - side * 9);
+            ctx.lineTo(r * 1.12, py - side * 3);
+            ctx.lineTo(r * 0.72, py - side * 3);
+            ctx.lineTo(r * 0.72, py + side * 3);
+            ctx.lineTo(r * 1.12, py + side * 3);
+            ctx.lineTo(r * 0.96, py + side * 9);
+            ctx.lineTo(-r * 0.42, py + side * 9);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = cyanArc;
+            ctx.fillRect(-r * 0.10, py - 2.5, r * 1.05, 5);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            safeArc(ctx, r * 0.96, py, 4.2 * pulse);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = darkSteel;
+        ctx.strokeStyle = amberEdge;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.66);
+        ctx.lineTo(-r * 0.56, -r * 0.86);
+        ctx.lineTo(-r * 1.18, 0);
+        ctx.lineTo(-r * 0.56, r * 0.86);
+        ctx.lineTo(0, r * 0.66);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        const mechaGrad = getCachedLinearGradient(ctx, "cyber_thorax_" + Math.round(r), -r * 0.8, -r * 0.8, r * 1.2, r * 0.8, [
+            [0, darkSteel],
+            [0.5, armorPlate],
+            [1, darkSteel]
+        ]);
+        ctx.fillStyle = mechaGrad;
+        ctx.strokeStyle = amberEdge;
+        ctx.lineWidth = 3.0;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.26, 0);
+        ctx.lineTo(r * 0.68, -r * 0.70);
+        ctx.lineTo(-r * 0.36, -r * 0.88);
+        ctx.lineTo(-r * 0.84, 0);
+        ctx.lineTo(-r * 0.36, r * 0.88);
+        ctx.lineTo(r * 0.68, r * 0.70);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawExposedMechaRibcage(ctx, r * 0.48, -r * 0.54, r * 0.66, 5, brightGold, cyanArc, 1.0);
+
+        ctx.save();
+        ctx.translate(r * 0.08, 0);
+        ctx.fillStyle = cyanArc;
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 0.38 * pulse);
+        ctx.fill();
+
+        ctx.rotate(now * 0.008);
+        ctx.strokeStyle = darkSteel;
+        ctx.lineWidth = 2.8;
+        for (let b = 0; b < 6; b++) {
+            const ba = b * (Math.PI / 3);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(ba) * r * 0.36, Math.sin(ba) * r * 0.36);
+            ctx.stroke();
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 0.14);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = cyanArc;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.96, 0);
+        ctx.lineTo(r * 0.72, -r * 0.38);
+        ctx.lineTo(r * 0.82, 0);
+        ctx.lineTo(r * 0.72, r * 0.38);
+        ctx.closePath();
+        ctx.fill();
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 3; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.82 - eIdx * 0.14), side * r * (0.18 + eIdx * 0.11), 2.5, brightGold, false);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 8: ABYSSAL KRAKEN (THỦY QUÁI CƠ KHÍ ĐÁY VỰC THẲM BIỂN SÂU)
+    function drawBossAbyssalKrakenProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const pulse = 1.0 + Math.sin(now * 0.014 + e.legPhase) * 0.09;
+
+        const deepHull    = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#01141f");
+        const krakenShell = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#0f4c5c");
+        const aquaGlow    = flash ? "#ffffff" : "#2dd4bf";
+        const bioCyan     = flash ? "#ffffff" : "#38bdf8";
+        const coralSpike  = flash ? "#ffffff" : "#f43f5e";
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_abyss_aura_" + Math.round(r), 0, 0, r * 0.25, 0, 0, r * 1.98, [
+            [0, "rgba(45, 212, 191, 0.46)"],
+            [0.55, "rgba(56, 189, 248, 0.22)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.98);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: deepHull,
+            plateCol: krakenShell,
+            veinCol: aquaGlow,
+            spikeCol: coralSpike,
+            tipGlow: bioCyan,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let tIdx = 0; tIdx < 2; tIdx++) {
+                const tw = Math.sin(e.legPhase * 1.1 + tIdx * 1.6 + side) * (r * 0.32);
+                const sx = r * (0.25 - tIdx * 0.45);
+                const sy = side * r * 0.55;
+                const ex = sx - r * 0.55;
+                const ey = side * r * (1.42 + tIdx * 0.22) + tw;
+
+                ctx.strokeStyle = coralSpike;
+                ctx.lineWidth = Math.max(4.0, r * 0.11);
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                ctx.bezierCurveTo(
+                    sx + r * 0.15, side * r * 1.05 + tw * 0.4,
+                    ex + r * 0.25, side * r * 1.25 - tw * 0.4,
+                    ex, ey
+                );
+                ctx.stroke();
+
+                ctx.fillStyle = aquaGlow;
+                for (let sc = 1; sc <= 3; sc++) {
+                    const st = sc * 0.28;
+                    ctx.beginPath();
+                    safeArc(ctx, sx + (ex - sx) * st, sy + (ey - sy) * st, 2.5);
+                    ctx.fill();
+                }
+            }
+
+            ctx.fillStyle = deepHull;
+            ctx.strokeStyle = aquaGlow;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.40, side * r * 0.45);
+            ctx.bezierCurveTo(
+                r * 0.15, side * r * 1.22 * pulse,
+                -r * 0.05, side * r * 1.42 * pulse,
+                -r * 0.18, side * r * 1.54 * pulse
+            );
+            ctx.lineTo(-r * 0.82, side * r * 0.94 * pulse);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = krakenShell;
+        ctx.strokeStyle = bioCyan;
+        ctx.lineWidth = 3.0;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.28, 0);
+        ctx.lineTo(r * 0.60, -r * 0.74);
+        ctx.lineTo(-r * 0.50, -r * 0.84);
+        ctx.lineTo(-r * 0.98, 0);
+        ctx.lineTo(-r * 0.50, r * 0.84);
+        ctx.lineTo(r * 0.60, r * 0.74);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawExposedMechaRibcage(ctx, r * 0.45, -r * 0.55, r * 0.68, 5, coralSpike, aquaGlow, pulse);
+
+        drawEldritchMechaEye(ctx, r * 0.05, 0, r * 0.36 * pulse, aquaGlow, true);
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 4; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.86 - eIdx * 0.14), side * r * (0.16 + eIdx * 0.10), 2.5, coralSpike, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 9: CHRONO WARDEN (GIÁM NGỤC KHÔNG-THỜI GIAN CƠ KHÍ LƯỢNG TỬ)
+    function drawBossChronoWardenProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const pulse = 1.0 + Math.sin(now * 0.015 + e.legPhase) * 0.08;
+
+        const darkObsidian = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#0e0720");
+        const royalViolet  = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#3b0764");
+        const chronoGold   = flash ? "#ffffff" : "#fde047";
+        const riftPurple   = flash ? "#ffffff" : "#e879f9";
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_chrono_aura_" + Math.round(r), 0, 0, r * 0.25, 0, 0, r * 2.02, [
+            [0, "rgba(250, 204, 21, 0.46)"],
+            [0.55, "rgba(192, 132, 252, 0.26)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 2.02);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: darkObsidian,
+            plateCol: royalViolet,
+            veinCol: chronoGold,
+            spikeCol: chronoGold,
+            tipGlow: riftPurple,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        ctx.save();
+        ctx.rotate(now * 0.004);
+        ctx.strokeStyle = chronoGold;
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([12, 6]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.24);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        for (let h = 0; h < 12; h++) {
+            const ha = h * (Math.PI / 6);
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ha) * r * 1.14, Math.sin(ha) * r * 1.14);
+            ctx.lineTo(Math.cos(ha) * r * 1.32, Math.sin(ha) * r * 1.32);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.fillStyle = royalViolet;
+        ctx.strokeStyle = chronoGold;
+        ctx.lineWidth = 3.0;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.28, 0);
+        ctx.lineTo(r * 0.64, -r * 0.70);
+        ctx.lineTo(-r * 0.44, -r * 0.90);
+        ctx.lineTo(-r * 0.94, 0);
+        ctx.lineTo(-r * 0.44, r * 0.90);
+        ctx.lineTo(r * 0.64, r * 0.70);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawExposedMechaRibcage(ctx, r * 0.46, -r * 0.52, r * 0.66, 5, chronoGold, riftPurple, pulse);
+
+        ctx.save();
+        ctx.translate(r * 0.08, 0);
+        ctx.fillStyle = darkObsidian;
+        ctx.strokeStyle = chronoGold;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 0.38 * pulse);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = chronoGold;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(now * 0.012) * r * 0.32, Math.sin(now * 0.012) * r * 0.32);
+        ctx.stroke();
+
+        ctx.strokeStyle = riftPurple;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(-now * 0.003) * r * 0.22, Math.sin(-now * 0.003) * r * 0.22);
+        ctx.stroke();
+
+        drawEldritchMechaEye(ctx, 0, 0, r * 0.14, chronoGold, true);
+        ctx.restore();
+
+        for (let side = -1; side <= 1; side += 2) {
+            for (let eIdx = 0; eIdx < 3; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.86 - eIdx * 0.14), side * r * (0.16 + eIdx * 0.11), 2.6, chronoGold, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+    // BOSS MAP 10: APEX PROGENITOR (THỦY TỔ HẮC ÁM TỐI THƯỢNG - ELDER BIO-MECHA GOD)
+    function drawBossApexProgenitorProcedural(e, isGlobalFrozen) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(e.angle);
+
+        const r = e.radius;
+        const now = performance.now();
+        const flash = e.hitFlash > 0;
+        const isChilled = isGlobalFrozen || globalFrozenState || e.chillTimer > 0;
+        const pulse = 1.0 + Math.sin(now * 0.016 + e.legPhase) * 0.09;
+
+        const abyssBlack  = flash ? "#ffffff" : (isChilled ? "#0c4a6e" : "#0a0106");
+        const crimsonHull = flash ? "#ffffff" : (isChilled ? "#0369a1" : "#4c0519");
+        const bloodNeon   = flash ? "#ffffff" : "#f43f5e";
+        const royalGold   = flash ? "#ffffff" : "#fde047";
+        const voidViolet  = flash ? "#ffffff" : "#e879f9";
+
+        ctx.fillStyle = getCachedRadialGradient(ctx, "boss_genesis_aura_" + Math.round(r), 0, 0, r * 0.25, 0, 0, r * 2.15, [
+            [0, "rgba(244, 63, 94, 0.54)"],
+            [0.52, "rgba(232, 121, 249, 0.28)"],
+            [1, "rgba(0, 0, 0, 0)"]
+        ]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 2.15);
+        ctx.fill();
+
+        const cfg = {
+            darkArmor: abyssBlack,
+            plateCol: crimsonHull,
+            veinCol: bloodNeon,
+            spikeCol: royalGold,
+            tipGlow: voidViolet,
+            hasTwinWhips: true
+        };
+
+        drawBossSpikedMorningStarTail(e, cfg);
+        drawBossArticulatedSpikedLegs(e, cfg);
+        drawBossSerratedPincers(e, cfg);
+
+        ctx.save();
+        ctx.rotate(-now * 0.005);
+        ctx.strokeStyle = royalGold;
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([8, 6, 2, 6]);
+        ctx.beginPath();
+        safeArc(ctx, 0, 0, r * 1.34);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.fillStyle = abyssBlack;
+            ctx.strokeStyle = bloodNeon;
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.44, side * r * 0.48);
+            ctx.bezierCurveTo(
+                r * 0.28, side * r * 1.25 * pulse,
+                r * 0.15, side * r * 1.48 * pulse,
+                r * 0.05, side * r * 1.66 * pulse
+            );
+            ctx.lineTo(-r * 0.35, side * r * 1.05 * pulse);
+            ctx.bezierCurveTo(
+                -r * 0.55, side * r * 1.32 * pulse,
+                -r * 0.78, side * r * 1.42 * pulse,
+                -r * 0.98, side * r * 1.48 * pulse
+            );
+            ctx.lineTo(-r * 0.62, side * r * 0.50);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            drawEldritchMechaEye(ctx, -r * 0.14, side * r * 1.12 * pulse, r * 0.15, royalGold, true);
+            drawEldritchMechaEye(ctx, -r * 0.64, side * r * 1.08 * pulse, r * 0.12, voidViolet, true);
+        }
+
+        ctx.fillStyle = crimsonHull;
+        ctx.strokeStyle = royalGold;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.34, 0);
+        ctx.lineTo(r * 0.70, -r * 0.66);
+        ctx.lineTo(r * 0.16, -r * 1.12 * pulse);
+        ctx.lineTo(-r * 0.48, -r * 0.76);
+        ctx.lineTo(-r * 0.94, 0);
+        ctx.lineTo(-r * 0.48, r * 0.76);
+        ctx.lineTo(r * 0.16, r * 1.12 * pulse);
+        ctx.lineTo(r * 0.70, r * 0.66);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawExposedMechaRibcage(ctx, r * 0.52, -r * 0.62, r * 0.76, 6, royalGold, bloodNeon, pulse);
+
+        drawEldritchMechaEye(ctx, r * 0.08, 0, r * 0.42 * pulse, bloodNeon, true);
+
+        ctx.fillStyle = royalGold;
+        for (let side = -1; side <= 1; side += 2) {
+            ctx.beginPath();
+            ctx.moveTo(r * 0.55, side * r * 0.35);
+            ctx.bezierCurveTo(r * 0.85, side * r * 0.95, r * 1.25, side * r * 0.88, r * 1.56, side * r * 0.42);
+            ctx.lineTo(r * 0.82, side * r * 0.48);
+            ctx.closePath();
+            ctx.fill();
+
+            for (let eIdx = 0; eIdx < 5; eIdx++) {
+                drawEldritchMechaEye(ctx, r * (0.94 - eIdx * 0.13), side * r * (0.14 + eIdx * 0.09), 2.6, royalGold, true);
+            }
+        }
+
+        ctx.restore();
+    }
+
+
+
+    // =========================================================================
+    // PHẦN 5: VÒNG LẶP DI CHUYỂN, TƯƠNG TÁC & VẼ QUÁI (ROAMING & SHOWCASE ENGINE)
+    // =========================================================================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    window.ctx = ctx;
+
+    let W = 0, H = 0;
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let isPaused = false;
+
+    const btnTogglePause = document.getElementById('btnTogglePause');
+    const btnToggleFreeze = document.getElementById('btnToggleFreeze');
+    const btnToggleBurn = document.getElementById('btnToggleBurn');
+    const btnToggleCast = document.getElementById('btnToggleCast');
+    const btnGridShowcase = document.getElementById('btnGridShowcase');
+
+    function syncHudButtons() {
+        btnTogglePause.classList.toggle('active', isPaused);
+        btnToggleFreeze.classList.toggle('active', globalFrozenState);
+        btnToggleBurn.classList.toggle('active', globalBurnState);
+        btnToggleCast.classList.toggle('active', globalRageCast);
+        btnGridShowcase.classList.toggle('active', showcaseGridMode);
+    }
+
+    btnTogglePause.addEventListener('click', () => {
+        isPaused = !isPaused;
+        syncHudButtons();
+    });
+    btnToggleFreeze.addEventListener('click', () => {
+        globalFrozenState = !globalFrozenState;
+        syncHudButtons();
+    });
+    btnToggleBurn.addEventListener('click', () => {
+        globalBurnState = !globalBurnState;
+        syncHudButtons();
+    });
+    btnToggleCast.addEventListener('click', () => {
+        globalRageCast = !globalRageCast;
+        monsters.forEach(m => { m.skillState = globalRageCast ? "casting" : "idle"; });
+        syncHudButtons();
+    });
+    btnGridShowcase.addEventListener('click', () => {
+        showcaseGridMode = !showcaseGridMode;
+        syncHudButtons();
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            isPaused = !isPaused;
+            syncHudButtons();
+        }
+    });
+
+    let mouse = { x: -1000, y: -1000, down: false };
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        mouse.down = true;
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        monsters.forEach(m => {
+            if (Math.hypot(m.x - mouse.x, m.y - mouse.y) < m.radius + 140) {
+                m.hitFlash = 8;
+            }
+        });
+    });
+    window.addEventListener('mouseup', () => { mouse.down = false; });
+
+    // KHỞI TẠO ĐÚNG 15 LOÀI (Hàng 1: 5 Quái Thường hình thái khác biệt hoàn toàn | Hàng 2 & 3: 10 Boss)
+    const MONSTER_SPECIES = [
+        // 10 Boss Cuối Màn (Hàng 2 & Hàng 3 khi xếp đội hình 5 cột)
+        {
+            name: "Boss 1: Omega Behemoth",
+            labelColor: "#f43f5e",
+            radius: 46,
+            speed: 1.25,
+            mapId: 1,
+            draw: (e) => { window.currentMapId = 1; drawBossOmegaMonsterProcedural(e, globalFrozenState); }
+        },
+        {
+            name: "Boss 2: Void Emperor",
+            labelColor: "#c084fc",
+            radius: 48,
+            speed: 1.3,
+            mapId: 2,
+            draw: (e) => { window.currentMapId = 2; drawBossOmegaMonsterProcedural(e, globalFrozenState); }
+        },
+        {
+            name: "Boss 3: Cryo Leviathan",
+            labelColor: "#38bdf8",
+            radius: 50,
+            speed: 1.2,
+            mapId: 3,
+            draw: (e) => { window.currentMapId = 3; drawBossOmegaMonsterProcedural(e, globalFrozenState); }
+        },
+        {
+            name: "Boss 4: Magma Abomination",
+            labelColor: "#f97316",
+            radius: 50,
+            speed: 1.35,
+            mapId: 4,
+            draw: (e) => drawBossMagmaMonsterProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 5: Hive Empress",
+            labelColor: "#d8b4fe",
+            radius: 52,
+            speed: 1.35,
+            mapId: 5,
+            draw: (e) => drawBossHiveEmpressProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 6: Singularity Overlord",
+            labelColor: "#e879f9",
+            radius: 54,
+            speed: 1.4,
+            mapId: 6,
+            draw: (e) => drawBossSingularityOverlordProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 7: Cyber Titan",
+            labelColor: "#f59e0b",
+            radius: 54,
+            speed: 1.3,
+            mapId: 7,
+            draw: (e) => drawBossCyberTitanProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 8: Abyssal Kraken",
+            labelColor: "#2dd4bf",
+            radius: 55,
+            speed: 1.35,
+            mapId: 8,
+            draw: (e) => drawBossAbyssalKrakenProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 9: Chrono Warden",
+            labelColor: "#fde047",
+            radius: 56,
+            speed: 1.4,
+            mapId: 9,
+            draw: (e) => drawBossChronoWardenProcedural(e, globalFrozenState)
+        },
+        {
+            name: "Boss 10: Apex Progenitor",
+            labelColor: "#fb7185",
+            radius: 58,
+            speed: 1.45,
+            mapId: 10,
+            draw: (e) => drawBossApexProgenitorProcedural(e, globalFrozenState)
+        }
+    ];
+
+    const monsters = [];
+    MONSTER_SPECIES.forEach((sp, idx) => {
+        const margin = sp.radius * 2 + 50;
+        monsters.push({
+            speciesIndex: idx,
+            x: margin + Math.random() * (Math.max(300, W - margin * 2)),
+            y: margin + Math.random() * (Math.max(300, H - margin * 2)),
+            angle: Math.random() * Math.PI * 2,
+            targetAngle: Math.random() * Math.PI * 2,
+            speed: sp.speed * (0.9 + Math.random() * 0.25),
+            radius: sp.radius,
+            legPhase: Math.random() * Math.PI * 2,
+            turnTimer: Math.random() * 80,
+
+            name: sp.name,
+            labelColor: sp.labelColor,
+            typeKey: sp.typeKey || "crawler",
+            mapId: sp.mapId || 1,
+            bodyColor: sp.bodyColor || "#881337",
+            carapaceColor: sp.carapaceColor || "#161130",
+            eyeColor: sp.eyeColor || "#f43f5e",
+            isElite: !!sp.isElite,
+            hitFlash: 0,
+            chillTimer: 0,
+            burnTimer: 0,
+            nuclearSlowTimer: 0,
+            skillState: "idle",
+            skillType: "plasma",
+            hp: 100,
+            maxHp: 100,
+            draw: sp.draw
+        });
+    });
+
+    let lastTime = performance.now();
+    function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = Math.min(0.1, (now - lastTime) / 1000);
+        lastTime = now;
+        frameCounter++;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (!isPaused) {
+            monsters.forEach((e, idx) => {
+                if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - dt * 30);
+                e.legPhase += e.speed * dt * (globalRageCast ? 5.4 : 3.8);
+
+                if (showcaseGridMode) {
+                    // Xếp đội hình chuẩn 5 cột x 2 hàng cho 10 Boss:
+                    // Hàng 1: Boss 1 -> Boss 5
+                    // Hàng 2: Boss 6 -> Boss 10
+                    const cols = 5;
+                    const rows = Math.ceil(monsters.length / cols);
+                    const col = idx % cols;
+                    const row = Math.floor(idx / cols);
+                    const gx = (W / (cols + 1)) * (col + 1);
+                    const gy = 70 + ((H - 125) / Math.max(1, rows)) * (row + 0.48);
+                    e.x += (gx - e.x) * Math.min(1, dt * 6);
+                    e.y += (gy - e.y) * Math.min(1, dt * 6);
+                    const lookMouse = Math.atan2(mouse.y - e.y, mouse.x - e.x);
+                    e.angle = Number.isFinite(lookMouse) ? lookMouse : 0;
+                    return;
+                }
+
+                e.turnTimer -= dt * 60;
+                if (e.turnTimer <= 0) {
+                    e.targetAngle = e.angle + (Math.random() - 0.5) * 1.8;
+                    e.turnTimer = 45 + Math.random() * 90;
+                }
+
+                const dxMouse = e.x - mouse.x;
+                const dyMouse = e.y - mouse.y;
+                const distMouse = Math.hypot(dxMouse, dyMouse);
+                if (distMouse < 180) {
+                    const fleeAngle = Math.atan2(dyMouse, dxMouse);
+                    e.targetAngle = fleeAngle;
+                    e.turnTimer = 30;
+                }
+
+                const pad = e.radius * 2.2 + 30;
+                if (e.x < pad) e.targetAngle = 0;
+                else if (e.x > W - pad) e.targetAngle = Math.PI;
+                if (e.y < pad + 35) e.targetAngle = Math.PI / 2;
+                else if (e.y > H - pad) e.targetAngle = -Math.PI / 2;
+
+                let diff = e.targetAngle - e.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                e.angle += diff * Math.min(1, dt * 5.5);
+
+                const moveMult = globalFrozenState ? 0.45 : (globalRageCast ? 1.35 : 1.0);
+                e.x += Math.cos(e.angle) * e.speed * moveMult * 60 * dt;
+                e.y += Math.sin(e.angle) * e.speed * moveMult * 60 * dt;
+
+                e.x = Math.max(pad * 0.7, Math.min(W - pad * 0.7, e.x));
+                e.y = Math.max(pad * 0.7 + 30, Math.min(H - pad * 0.7, e.y));
+            });
+        }
+
+        // VẼ TẤT CẢ QUÁI VẬT & TÊN
+        monsters.forEach(e => {
+            try {
+                e.draw(e);
+            } catch (err) {}
+
+            ctx.save();
+            ctx.font = "bold 11px 'JetBrains Mono', monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "rgba(2, 6, 23, 0.78)";
+            const textW = ctx.measureText(e.name).width;
+            ctx.fillRect(e.x - textW / 2 - 5, e.y - e.radius - 24, textW + 10, 16);
+            ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(e.x - textW / 2 - 5, e.y - e.radius - 24, textW + 10, 16);
+            ctx.fillStyle = e.labelColor;
+            ctx.fillText(e.name, e.x, e.y - e.radius - 12);
+            ctx.restore();
+        });
+    }
+
+    requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
