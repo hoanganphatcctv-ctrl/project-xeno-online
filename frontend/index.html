@@ -7114,7 +7114,8 @@
         // ============================================================================
         // TAC-OPS SOLO 1V1 PVP GUN GAME STATE & LOGIC
         // ============================================================================
-        window.gameMode = "campaign"; // "campaign" | "pvp_gungame"
+        window.gameMode = "campaign"; // "campaign" | "pvp_gungame" (Chế độ trận đấu đang hoạt động)
+        window.coopSelectedGameMode = "campaign"; // "campaign" | "pvp_gungame" (Lựa chọn chế độ bên trong modal Online Mode)
 
         const PVP_WEAPON_DAMAGE = {
             0: 18.0, // Song Lục MK23 (x2 viên = 36.0 dmg/loạt, 3 loạt trúng = 108 HP kết liễu)
@@ -7157,20 +7158,21 @@
         window.PVP_GUNGAME_STATE = PVP_GUNGAME_STATE;
 
         function setCoopGameMode(mode) {
-            window.gameMode = (mode === "pvp_gungame") ? "pvp_gungame" : "campaign";
+            window.coopSelectedGameMode = (mode === "pvp_gungame") ? "pvp_gungame" : "campaign";
             updateCoopLobbyGameModeUI();
             if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
             if (typeof XENO_COOP !== "undefined" && XENO_COOP.isHost && XENO_COOP.connected) {
                 XENO_COOP.sendPacket({
                     t: "game_mode",
-                    mode: window.gameMode
+                    mode: window.coopSelectedGameMode
                 });
             }
         }
         window.setCoopGameMode = setCoopGameMode;
 
         function updateCoopLobbyGameModeUI() {
-            const isPvP = (window.gameMode === "pvp_gungame");
+            const currentSelectedMode = window.coopSelectedGameMode || "campaign";
+            const isPvP = (currentSelectedMode === "pvp_gungame");
             const coopBtn = byId("coopModeCoopBtn");
             const pvpBtn = byId("coopModePvpBtn");
             const modeLabel = byId("coopHostModeLabel");
@@ -7690,6 +7692,18 @@
             }
             PVP_GUNGAME_STATE.matchEnded = false;
             PVP_GUNGAME_STATE.active = false;
+            window.gameMode = "campaign";
+            if (window.XENO_COOP) {
+                try {
+                    if (window.XENO_COOP.connected) {
+                        window.XENO_COOP.sendPacket({ t: "leave" });
+                    }
+                    window.XENO_COOP.cleanup();
+                } catch (e) {}
+            }
+            if (typeof updatePvPTopHUD === "function") {
+                updatePvPTopHUD();
+            }
             if (typeof openMainMenuSettings === "function") {
                 openMainMenuSettings(true);
             }
@@ -8604,12 +8618,12 @@
                             difficulty: this.getDifficultyId(),
                             slot: this.currentSlot,
                             roomCode: this.getSlotRoomCode(this.currentSlot),
-                            gameMode: window.gameMode || "campaign"
+                            gameMode: window.coopSelectedGameMode || "campaign"
                         }, (res) => {
                             if (res && res.success) {
                                 this.roomCode = res.roomCode;
                                 this.currentSlot = res.slot || this.getSlotFromRoomCode(this.roomCode) || this.currentSlot;
-                                console.log("[CO-OP SOCKET] Room created:", this.roomCode, "mode:", window.gameMode);
+                                console.log("[CO-OP SOCKET] Room created:", this.roomCode, "mode:", window.coopSelectedGameMode || "campaign");
                                 this.updateHostUI("Phòng đang mở công khai. Chờ đồng đội tham gia...", false);
                             } else {
                                 this.updateHostUI("Không thể tạo phòng: " + (res?.message || ""), false, true);
@@ -8858,7 +8872,7 @@
                                 this.hostMapId = res.mapId || 1;
                                 this.hostDifficulty = res.difficulty || "normal";
                                 if (res.gameMode) {
-                                    window.gameMode = res.gameMode;
+                                    window.coopSelectedGameMode = res.gameMode;
                                     if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
                                 }
                                 this.setupSocketConnection();
@@ -8875,7 +8889,7 @@
                             if (data.mapId) this.hostMapId = data.mapId;
                             if (data.difficulty) this.hostDifficulty = data.difficulty;
                             if (data.gameMode) {
-                                window.gameMode = data.gameMode;
+                                window.coopSelectedGameMode = data.gameMode;
                                 if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
                             }
                             this.updateClientLobbyUI();
@@ -8884,15 +8898,16 @@
 
                     this.socket.on("mission_started", (data) => {
                         if (data && data.gameMode) {
-                            window.gameMode = data.gameMode;
-                            if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
+                            window.coopSelectedGameMode = data.gameMode;
                         }
+                        window.gameMode = window.coopSelectedGameMode || "campaign";
+                        if (typeof updateCoopLobbyGameModeUI === "function") updateCoopLobbyGameModeUI();
                         this.handleData({
                             t: "start",
                             mapId: data?.mapId || 1,
                             difficulty: data?.difficulty || this.hostDifficulty || "normal",
                             hz: data?.hz || this.tickRate,
-                            gameMode: data?.gameMode || window.gameMode || "campaign"
+                            gameMode: window.gameMode
                         });
                     });
 
@@ -9330,9 +9345,8 @@
                 }
 
                 if (data.t === "start") {
-                    if (data.gameMode) {
-                        window.gameMode = data.gameMode;
-                    }
+                    window.coopSelectedGameMode = data.gameMode || window.coopSelectedGameMode || "campaign";
+                    window.gameMode = window.coopSelectedGameMode;
                     if (data.hz) {
                         const rawHz = Number(data.hz);
                         this.tickRate = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
@@ -9358,6 +9372,12 @@
                         settingsModal.classList.add("hidden");
                         settingsModal.style.display = "none";
                     }
+                    const codexModal = byId("lobbyCodexModal");
+                    if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
+                    const mapDrawer = byId("lobbyMapDiffDrawer");
+                    if (mapDrawer) { mapDrawer.classList.add("hidden"); mapDrawer.style.display = "none"; }
+                    const intelDrawer = byId("lobbyIntelDrawer");
+                    if (intelDrawer) { intelDrawer.classList.add("hidden"); intelDrawer.style.display = "none"; }
                     this.updateHUD();
                     const diffLabel = this.getDifficultyLabel(data.difficulty || this.hostDifficulty);
                     const isPvP = (window.gameMode === "pvp_gungame");
@@ -9379,11 +9399,11 @@
                 // TAC-OPS SOLO 1V1 PVP GUN GAME NETWORK EVENTS
                 // =========================================================================
                 if (data.t === "game_mode") {
-                    window.gameMode = data.mode || "campaign";
+                    window.coopSelectedGameMode = data.mode || "campaign";
                     if (typeof updateCoopLobbyGameModeUI === "function") {
                         updateCoopLobbyGameModeUI();
                     }
-                    const isPvP = (window.gameMode === "pvp_gungame");
+                    const isPvP = (window.coopSelectedGameMode === "pvp_gungame");
                     showToast(
                         "CHẾ ĐỘ PHÒNG ĐÃ ĐỔI!",
                         isPvP ? "Chủ phòng đã chuyển sang: SOLO 1V1 GUN GAME!" : "Chủ phòng đã chuyển sang: CO-OP BẮN QUÁI!"
@@ -9698,7 +9718,7 @@
                         }
                         this.lastRemoteSeq = data.seq;
                     }
-                    const isPvP = (window.gameMode === "pvp_gungame");
+                    const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
                     pushTeammateSnapshot(data);
                     const nowPerf = performance.now();
                     const inReviveGrace = nowPerf < (teammate._reviveGraceUntil || 0);
@@ -9787,7 +9807,7 @@
                         }
                         this.lastRemoteSeq = data.seq;
                     }
-                    const isPvP = (window.gameMode === "pvp_gungame");
+                    const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
                     if (data.hz) {
                         const rawHz = Number(data.hz);
                         const newHz = (rawHz === 90 || rawHz === 30) ? rawHz : 60;
@@ -10177,7 +10197,7 @@
                     return;
                 }
 
-                const isPvP = (window.gameMode === "pvp_gungame");
+                const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
                 const hz = (this.tickRate === 90 || this.tickRate === 30) ? this.tickRate : 60;
                 if (hud) {
                     hud.classList.remove("hidden");
@@ -10452,7 +10472,7 @@
             safeArc(ctx, 0, 2.5, 19);
             ctx.fill();
 
-            const isPvP = (window.gameMode === "pvp_gungame");
+            const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
 
             // Nếu đồng đội / đối thủ đang gục ngã (isDown)
             if (teammate.isDown) {
@@ -11013,8 +11033,19 @@
             }
             if (window.XENO_COOP) {
                 window.XENO_COOP.stopScanner();
-                if (!window.XENO_COOP.connected && !window.XENO_COOP.isHost) {
+                if (!window.XENO_COOP.inMission) {
                     window.XENO_COOP.cleanup();
+                }
+            }
+            // TÁCH BIỆT 2 KÊNH: Khi đóng giao diện Online mà chưa xuất trận, luôn đảm bảo trả về chế độ Chiến Dịch thuần túy
+            if (!window.XENO_COOP || !window.XENO_COOP.inMission) {
+                window.gameMode = "campaign";
+                if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                    PVP_GUNGAME_STATE.active = false;
+                    PVP_GUNGAME_STATE.matchEnded = false;
+                }
+                if (typeof updatePvPTopHUD === "function") {
+                    updatePvPTopHUD();
                 }
             }
         };
@@ -11382,27 +11413,41 @@
                 window.teammate._reviveGraceUntil = 0;
                 window.teammate.snapshotBuffer = [];
             }
+            // Thiết lập gameMode chính thức cho trận đấu Online từ cấu hình đã chọn trong modal
+            window.gameMode = window.coopSelectedGameMode || "campaign";
             XENO_COOP.sendPacket({
                 t: "start",
                 mapId: window.currentMapId || 1,
                 difficulty: curDiff,
                 hz: XENO_COOP.tickRate,
-                gameMode: window.gameMode || "campaign"
+                gameMode: window.gameMode
             });
             window.closeCoopModal();
-            if (typeof window.closeMainMenuSettings === "function") {
-                window.closeMainMenuSettings(true);
-            } else {
-                const settingsModal = byId("mainSettingsModal");
-                if (settingsModal) {
-                    settingsModal.classList.add("hidden");
-                    settingsModal.style.display = "none";
-                }
+
+            // Ẩn Sảnh chính và các ngăn kéo liên quan trực tiếp (TUYỆT ĐỐI KHÔNG gọi closeMainMenuSettings vì hàm đó dùng để vào Chiến Dịch!)
+            const settingsModal = byId("mainSettingsModal");
+            if (settingsModal) {
+                settingsModal.classList.add("hidden");
+                settingsModal.style.display = "none";
             }
+            const codexModal = byId("lobbyCodexModal");
+            if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
+            const mapDrawer = byId("lobbyMapDiffDrawer");
+            if (mapDrawer) { mapDrawer.classList.add("hidden"); mapDrawer.style.display = "none"; }
+            const intelDrawer = byId("lobbyIntelDrawer");
+            if (intelDrawer) { intelDrawer.classList.add("hidden"); intelDrawer.style.display = "none"; }
+
+            if (typeof sfx !== "undefined" && sfx) {
+                sfx.playBgm("ingame");
+            }
+            if (typeof warmupGpuPipelines === "function") {
+                warmupGpuPipelines();
+            }
+
             XENO_COOP.updateHUD();
             const isPvP = (window.gameMode === "pvp_gungame");
             showToast(
-                isPvP ? "ĐẤU TRƯỜNG 1V1 GUN GAME" : "BẮT ĐẦU CHIẾN DỊCH",
+                isPvP ? "ĐẤU TRƯỜNG 1V1 GUN GAME" : "BẮT ĐẦU CHIẾN DỊCH CO-OP",
                 isPvP ? "Màn đêm bóng tối • Lướt Q/E né đạn • Thăng cấp 7 vũ khí!" : `Map ${window.currentMapId || 1} • Độ khó: ${XENO_COOP.getDifficultyLabel(curDiff)}.`
             );
             if (typeof simulateMissionLoading === "function") {
@@ -19640,7 +19685,7 @@
         }
 
         function damagePlayer(amount, killerGunLevel) {
-            const isPvP = (window.gameMode === "pvp_gungame");
+            const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
             if (isMapWon || isGameOver || player.dashActiveTimer > 0 || (isPvP ? player.invulnTimer > 20 : player.invulnTimer > 0) || player.isDown) return;
             if (!isPvP) {
                 player.invulnTimer = 20; // 0.33s post-hit invulnerability chỉ dành cho PvE quái vật
@@ -28184,7 +28229,7 @@
             if (isGameOver) return;
             const now = performance.now();
 
-            const isPvP = (window.gameMode === "pvp_gungame");
+            const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
 
             // Nếu người chơi đang bị hạ gục (Downed State)
             if (player.isDown) {
@@ -29855,7 +29900,7 @@
             setText("hudHpText", `${Math.ceil(player.hp)}/${player.maxHp}`);
             setText("shopHpStat", `${Math.ceil(player.hp)}/${player.maxHp}`);
 
-            const isPvP = (window.gameMode === "pvp_gungame");
+            const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
             const armorBarEl = byId("hudArmorBar");
             const armorTitleEl = byId("hudArmorTitle");
             const armorDotEl = byId("hudArmorDot");
@@ -30363,13 +30408,23 @@
             clearVictoryAutoTimers();
 
             // Dọn dẹp phiên Co-Op khi rời trận quay về sảnh
-            if (window.XENO_COOP && window.XENO_COOP.active) {
+            if (window.XENO_COOP) {
                 try {
                     if (window.XENO_COOP.connected) {
                         window.XENO_COOP.sendPacket({ t: "leave" });
                     }
                     window.XENO_COOP.cleanup();
                 } catch (e) {}
+            }
+
+            // TÁCH BIỆT 2 KÊNH: Bất kỳ khi nào mở Sảnh hoặc quay về Sảnh, luôn đặt lại Chế độ Chiến Dịch thuần túy
+            window.gameMode = "campaign";
+            if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                PVP_GUNGAME_STATE.active = false;
+                PVP_GUNGAME_STATE.matchEnded = false;
+            }
+            if (typeof updatePvPTopHUD === "function") {
+                updatePvPTopHUD();
             }
 
             const pauseModal = byId("pauseModal");
@@ -30412,8 +30467,11 @@
 
         function closeMainMenuSettings(bypassLoading = false) {
             try { forceLandscapeAndFullscreen(); } catch (e) {}
-            // Nếu người chơi bấm "BẮT ĐẦU CHIẾN DỊCH" (Solo) từ Sảnh trong khi đang treo phòng Co-Op chưa xuất trận: ngắt sạch kết nối Co-Op để không bị rò rỉ gói tin sang chế độ Solo!
-            if (window.XENO_COOP && !window.XENO_COOP.inMission && (window.XENO_COOP.active || window.XENO_COOP.connected || window.XENO_COOP.socket || window.XENO_COOP.peer)) {
+            // ========================================================================
+            // NÚT "VÀO TRẬN" Ở SẢNH CHỈ CÓ THỂ VÀO CHƠI CHẾ ĐỘ CHIẾN DỊCH (PVE)
+            // Tách biệt hoàn toàn: Ngắt sạch toàn bộ kết nối Online / Co-Op / PvP
+            // ========================================================================
+            if (window.XENO_COOP) {
                 try {
                     if (window.XENO_COOP.connected) {
                         window.XENO_COOP.sendPacket({ t: "leave" });
@@ -30421,6 +30479,17 @@
                     window.XENO_COOP.cleanup();
                 } catch (e) {}
             }
+
+            // Ép buộc chế độ Chiến Dịch thuần túy
+            window.gameMode = "campaign";
+            if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                PVP_GUNGAME_STATE.active = false;
+                PVP_GUNGAME_STATE.matchEnded = false;
+            }
+            if (typeof updatePvPTopHUD === "function") {
+                updatePvPTopHUD();
+            }
+
             const codexModal = byId("lobbyCodexModal");
             if (codexModal) { codexModal.classList.add("hidden"); codexModal.style.display = "none"; }
             const mapDrawer = byId("lobbyMapDiffDrawer");
@@ -30452,8 +30521,8 @@
                 warmupGpuPipelines();
             }
 
-            // Khi từ Màn Hình Chính (Sảnh) bước vào trận: luôn khởi tạo mới 100% theo súng và tiền mặc định của Map đã chọn
-            initCampaign(false, false);
+            // Khi từ Màn Hình Chính (Sảnh) bước vào trận: luôn khởi tạo mới 100% theo súng và tiền mặc định của Map đã chọn (Chế độ Chiến Dịch)
+            initCampaign(false, false, false);
         }
         window.closeMainMenuSettings = closeMainMenuSettings;
 
@@ -33574,7 +33643,7 @@
                     if (typeof warmupGpuPipelines === "function") {
                         try { warmupGpuPipelines(); } catch (e) {}
                     }
-                    initCampaign(false, true, true);
+                    initCampaign(false, true, Boolean(isCoopActive() || fromNetwork));
 
                     showToast(
                         "CHUYỂN MÀN THÀNH CÔNG!",
@@ -33589,7 +33658,7 @@
                 if (typeof warmupGpuPipelines === "function") {
                     try { warmupGpuPipelines(); } catch (e) {}
                 }
-                initCampaign(false, true, true);
+                initCampaign(false, true, Boolean(isCoopActive() || fromNetwork));
                 isTransitioningMap = false;
             }
         }
@@ -33651,6 +33720,24 @@
 
         function initCampaign(keepSettingsOpen = false, carryOver = false, fromNetwork = false) {
             clearVictoryAutoTimers();
+
+            // ========================================================================
+            // QUY TẮC BẢO VỆ PHÂN TÁCH KÊNH BẤT BIẾN (STRICT CHANNEL SEPARATION):
+            // 1. Chế độ Chơi Online (Co-Op / Solo 1v1 PvP) CHỈ CÓ THỂ khởi động từ bên trong Online Mode (fromNetwork === true hoặc isCoopActive()).
+            // 2. Nút "VÀO TRẬN" ở Sảnh hoặc chơi lại solo thông thường (fromNetwork === false && !isCoopActive()) CHỈ CÓ THỂ vào chơi Chế độ Chiến Dịch (Campaign / PvE).
+            // ========================================================================
+            const isOnlineSession = Boolean(fromNetwork || isCoopActive());
+            if (!isOnlineSession || keepSettingsOpen) {
+                window.gameMode = "campaign";
+                if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                    PVP_GUNGAME_STATE.active = false;
+                    PVP_GUNGAME_STATE.matchEnded = false;
+                }
+                if (typeof updatePvPTopHUD === "function") {
+                    updatePvPTopHUD();
+                }
+            }
+
             // Nếu đang trong trận Co-Op mà người chơi bấm "CHƠI LẠI" (từ bảng Tạm dừng hoặc Thất bại), đồng bộ khởi động lại màn chơi cho cả 2 máy!
             if (!keepSettingsOpen && !carryOver && !fromNetwork && isCoopActive() && window.XENO_COOP) {
                 window.XENO_COOP.seq = 0;
@@ -33886,7 +33973,7 @@
             items.forEach(it => it.active = false);
             particles.forEach(p => p.active = false);
 
-            if (window.gameMode === "pvp_gungame") {
+            if (window.gameMode === "pvp_gungame" && isOnlineSession && !keepSettingsOpen) {
                 PVP_GUNGAME_STATE.active = true;
                 PVP_GUNGAME_STATE.gunLevel = 0;
                 PVP_GUNGAME_STATE.kills = 0;
@@ -33924,6 +34011,7 @@
                 }
             } else {
                 PVP_GUNGAME_STATE.active = false;
+                PVP_GUNGAME_STATE.matchEnded = false;
             }
 
             drawBaseFloor();
@@ -33932,7 +34020,7 @@
             computeFlowField();
 
             // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn (Bỏ qua trong PvP Gun Game)
-            if (!isCoopClient() && window.gameMode !== "pvp_gungame") {
+            if (!isCoopClient() && !(window.gameMode === "pvp_gungame" && PVP_GUNGAME_STATE.active)) {
                 const openingCount = (window.currentMapId === 1)
                     ? (currentDifficulty.id === "hard" ? 6 : 4)
                     : ((window.currentMapId === 2)
@@ -34622,7 +34710,7 @@
                 overlay.classList.remove("hidden");
                 overlay.style.display = "block";
 
-                const isPvP = (window.gameMode === "pvp_gungame");
+                const isPvP = (window.gameMode === "pvp_gungame" && Boolean(PVP_GUNGAME_STATE.active));
                 const btnQWrapper = byId("touchBtnQWrapper");
                 const btnTurretWrapper = byId("touchBtnTurretWrapper");
                 const btnInteract = byId("touchBtnInteract");
@@ -37112,14 +37200,23 @@
         function startNewCampaignFromLobby() {
             try { forceLandscapeAndFullscreen(); } catch (e) {}
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
-            // Dọn dẹp kết nối Co-Op ở sảnh (nếu chưa vào trận Co-Op) khi bấm bắt đầu chơi đơn (Solo)
-            if (window.XENO_COOP && !window.XENO_COOP.inMission && (window.XENO_COOP.active || window.XENO_COOP.connected || window.XENO_COOP.socket || window.XENO_COOP.peer)) {
+            // Tách biệt 2 kênh: Dọn dẹp triệt để bất kỳ kết nối Co-Op / Online nào còn sót lại
+            if (window.XENO_COOP) {
                 try {
                     if (window.XENO_COOP.connected) {
                         window.XENO_COOP.sendPacket({ t: "leave" });
                     }
                     window.XENO_COOP.cleanup();
                 } catch (e) {}
+            }
+            // Luôn ép chế độ Chiến Dịch thuần túy
+            window.gameMode = "campaign";
+            if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                PVP_GUNGAME_STATE.active = false;
+                PVP_GUNGAME_STATE.matchEnded = false;
+            }
+            if (typeof updatePvPTopHUD === "function") {
+                updatePvPTopHUD();
             }
             const settingsModal = byId("mainSettingsModal");
             if (settingsModal) {
@@ -37128,10 +37225,10 @@
             }
             if (typeof simulateMissionLoading === "function") {
                 simulateMissionLoading(window.currentMapId || 1, () => {
-                    initCampaign(false, false);
+                    initCampaign(false, false, false);
                 });
             } else {
-                initCampaign(false, false);
+                initCampaign(false, false, false);
             }
         }
         window.startNewCampaignFromLobby = startNewCampaignFromLobby;
