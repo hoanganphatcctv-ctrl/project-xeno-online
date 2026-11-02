@@ -1,5 +1,5 @@
 ﻿// Project Xeno: Reloaded - PWA Service Worker v2.1.0
-const CACHE_NAME = 'project-xeno-v3.0-20261103045419';
+const CACHE_NAME = 'project-xeno-v3.0-20261103050811';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

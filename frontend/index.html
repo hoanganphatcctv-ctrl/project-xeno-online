@@ -38,6 +38,8 @@
                         if (installingWorker) {
                             installingWorker.onstatechange = () => {
                                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] New version ready. Reloading for latest code...');
+                                    window.location.reload();
                                     console.log('[PWA] New version ready.');
                                 }
                             };
@@ -2602,19 +2604,19 @@
                         <span class="text-[9px] font-mono-tech font-extrabold tracking-wider">MỚI</span>
                     </button>
 
-                    <button onclick="window.openCS2PlayMenu()"
+                    <button onclick="window.closeMainMenuSettings()"
                             class="tactical-start-btn flex-1 rounded-none px-5 py-2 flex flex-col justify-between text-slate-950 relative overflow-hidden"
-                            title="Mở bảng chọn 3 Chế độ tác chiến phong cách CS2">
+                            title="Bắt đầu chiến dịch ngay">
                         <div class="flex items-center justify-between w-full text-[9px] font-mono-tech font-extrabold opacity-80 leading-none">
-                            <span>[CS2-TACTICAL]</span>
+                            <span>[XENO-MODE]</span>
                             <span>// READY // </span>
                         </div>
                         <div class="text-xl sm:text-2xl font-black tracking-widest uppercase text-center leading-none my-0.5">
                             VÀO TRẬN
                         </div>
                         <div class="flex items-center justify-between w-full text-[9px] font-mono-tech font-extrabold opacity-85 leading-none">
-                            <span>CHỌN CHẾ ĐỘ TÁC CHIẾN</span>
-                            <span>[+]</span>
+                            <span>XUẤT PHÁT CHIẾN DỊCH</span>
+                            <span>[SPACE / ENTER]</span>
                         </div>
                     </button>
                 </div>
@@ -2624,7 +2626,7 @@
         <!-- ======================================================================
              MODAL CHỌN CHẾ ĐỘ TÁC CHIẾN CS2 STYLE (CHIẾN DỊCH, SOLO 1VS 1, ĐẤU TRƯỜNG BOOM)
              ====================================================================== -->
-        <div id="cs2PlayModeModal" class="hidden fixed inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
+        <div id="cs2PlayModeModal" style="display:none !important;" class="hidden fixed inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
             <div class="hud-modal rounded-none border-2 border-emerald-500/70 max-w-6xl w-full max-h-[94vh] overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 shadow-[0_0_80px_rgba(0,0,0,0.98)] bg-[#070b13]/98 relative">
                 
                 <!-- CS2 Header Bar -->
