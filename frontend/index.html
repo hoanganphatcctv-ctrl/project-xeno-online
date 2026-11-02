@@ -22639,18 +22639,25 @@
 
                 // 2d. Centered Icon (Asset Image hoặc Fallback Icon mặc định, tỷ lệ chuẩn không to không bé)
                 const itemAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.items) ? CUSTOM_ASSETS.items[it.kind] : null;
-                if (itemAsset && itemAsset.loaded && itemAsset.img && itemAsset.img.naturalWidth > 0) {
-                    const img = itemAsset.img;
-                    const maxIconSize = 21; // Đồng bộ cố định: không có cái to cái bé
-                    const aspect = img.naturalWidth / img.naturalHeight;
+                const activeImg = itemAsset ? (itemAsset.gpuBitmap || (itemAsset.img && itemAsset.img.complete && itemAsset.img.naturalWidth > 0 ? itemAsset.img : null)) : null;
+                if (activeImg) {
+                    const maxIconSize = 22; // Đồng bộ cố định chuẩn tỷ lệ
+                    const nw = (itemAsset.img && itemAsset.img.naturalWidth) || 512;
+                    const nh = (itemAsset.img && itemAsset.img.naturalHeight) || 512;
+                    const aspect = nw / nh;
                     let dw = maxIconSize, dh = maxIconSize;
                     if (aspect > 1) {
                         dh = maxIconSize / aspect;
                     } else {
                         dw = maxIconSize * aspect;
                     }
-                    ctx.drawImage(itemAsset.gpuBitmap || img, -dw / 2, -dh / 2 - 0.5, dw, dh);
+                    ctx.drawImage(activeImg, -dw / 2, -dh / 2 - 0.5, dw, dh);
                 } else {
+                    // Tự động kích hoạt nạp lại ngầm nếu asset chưa sẵn sàng
+                    if (itemAsset && !itemAsset._fetching && typeof loadCustomAssetEntry === "function") {
+                        itemAsset._fetching = true;
+                        loadCustomAssetEntry(itemAsset);
+                    }
                     ctx.font = "800 10px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#ffffff";
                     ctx.textAlign = "center";
