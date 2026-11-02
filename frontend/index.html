@@ -1632,6 +1632,51 @@
                 </div>
             </div>
 
+            <!-- TACTICAL BOMB DEFUSAL HUD (ĐẤU TRƯỜNG BOOM HUD) -->
+            <div id="tacticalBombHUD" class="hidden pointer-events-auto relative w-[310px] sm:w-[330px] flex flex-col select-none font-mono-tech mt-0.5"
+                 style="filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85));">
+                
+                <!-- 1. Top Plate: Hazard Warning Stripes & Chamfered Title Badge -->
+                <div class="flex items-end -mb-1 pl-3 z-20">
+                    <div class="h-3 w-9 -skew-x-12 overflow-hidden border-t border-l border-amber-500/60 shadow-md"
+                         style="background: repeating-linear-gradient(45deg, #f59e0b 0 4px, #0f172a 4px 8px);">
+                    </div>
+                    <div class="h-4 px-2 flex items-center justify-center text-[8px] font-black text-white tracking-widest uppercase border border-amber-400/80 shadow-[0_0_10px_rgba(245,158,11,0.35)]"
+                         style="background: linear-gradient(180deg, #d97706 0%, #b45309 60%, #78350f 100%); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); margin-left: -3px;">
+                        <span class="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">💣 ĐẤU TRƯỜNG BOOM // SECTOR-01</span>
+                    </div>
+                </div>
+
+                <!-- 2. Main Metallic Chassis Body -->
+                <div class="relative rounded-r-xl p-2 pl-3 pr-2.5 flex flex-col gap-1.5 border-2 border-amber-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                     style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #020617 100%); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 10px), calc(100% - 14px) 100%, 0 100%);">
+                    
+                    <!-- Middle Row: Site A Status, Clock / Bomb Timer, Site B Status -->
+                    <div class="flex items-center justify-between gap-1.5">
+                        <div id="bombHudSiteA" class="px-2 py-0.5 rounded border border-amber-500/40 bg-slate-900/90 flex items-center gap-1">
+                            <span class="text-[9px] font-black text-amber-400">SITE [A]</span>
+                            <span id="bombHudSiteAStatus" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+                        </div>
+
+                        <div id="bombHudTimerBox" class="px-2.5 py-1 rounded border border-amber-400/80 bg-slate-950 flex flex-col items-center justify-center min-w-[70px] shadow-[inset_0_1px_3px_rgba(0,0,0,0.9)]">
+                            <span id="bombHudTimerTitle" class="text-[6.5px] text-amber-300 font-extrabold uppercase leading-none mb-0.5">VÒNG ĐẤU</span>
+                            <span id="bombHudTimeText" class="text-xs sm:text-sm font-black text-white font-mono-tech tracking-wider leading-none">02:00</span>
+                        </div>
+
+                        <div id="bombHudSiteB" class="px-2 py-0.5 rounded border border-amber-500/40 bg-slate-900/90 flex items-center gap-1">
+                            <span class="text-[9px] font-black text-amber-400">SITE [B]</span>
+                            <span id="bombHudSiteBStatus" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+                        </div>
+                    </div>
+
+                    <!-- Role & Instruction row -->
+                    <div class="flex items-center justify-between pt-0.5 border-t border-slate-800/80 text-[8px]">
+                        <span id="bombHudRoleLabel" class="text-cyan-300 font-bold uppercase truncate">PHE TẤN CÔNG (CÀI BOM)</span>
+                        <span id="bombHudActionTip" class="text-amber-400 font-bold uppercase truncate">[GIỮ E] TẠI KHU A / B</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tiny Horizontal Pill Badges for Active Temporary Buffs (Gọn gàng ngay dưới cụm máu) -->
             <div id="activeBuffsContainer" class="flex flex-wrap gap-1 max-w-[325px]"></div>
         </div>
@@ -2557,21 +2602,196 @@
                         <span class="text-[9px] font-mono-tech font-extrabold tracking-wider">MỚI</span>
                     </button>
 
-                    <button onclick="window.closeMainMenuSettings()"
-                            class="tactical-start-btn flex-1 rounded-none px-5 py-2 flex flex-col justify-between text-slate-950 relative overflow-hidden">
+                    <button onclick="window.openCS2PlayMenu()"
+                            class="tactical-start-btn flex-1 rounded-none px-5 py-2 flex flex-col justify-between text-slate-950 relative overflow-hidden"
+                            title="Mở bảng chọn 3 Chế độ tác chiến phong cách CS2">
                         <div class="flex items-center justify-between w-full text-[9px] font-mono-tech font-extrabold opacity-80 leading-none">
-                            <span>[XENO-MODE]</span>
+                            <span>[CS2-TACTICAL]</span>
                             <span>// READY // </span>
                         </div>
                         <div class="text-xl sm:text-2xl font-black tracking-widest uppercase text-center leading-none my-0.5">
                             VÀO TRẬN
                         </div>
                         <div class="flex items-center justify-between w-full text-[9px] font-mono-tech font-extrabold opacity-85 leading-none">
-                            <span>TIẾP TỤC CHIẾN DỊCH</span>
+                            <span>CHỌN CHẾ ĐỘ TÁC CHIẾN</span>
                             <span>[+]</span>
                         </div>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ======================================================================
+             MODAL CHỌN CHẾ ĐỘ TÁC CHIẾN CS2 STYLE (CHIẾN DỊCH, SOLO 1VS 1, ĐẤU TRƯỜNG BOOM)
+             ====================================================================== -->
+        <div id="cs2PlayModeModal" class="hidden fixed inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
+            <div class="hud-modal rounded-none border-2 border-emerald-500/70 max-w-6xl w-full max-h-[94vh] overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 shadow-[0_0_80px_rgba(0,0,0,0.98)] bg-[#070b13]/98 relative">
+                
+                <!-- CS2 Header Bar -->
+                <div class="flex items-center justify-between border-b border-emerald-500/30 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-none bg-emerald-500/20 border border-emerald-400/60 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.35)]">
+                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 text-[10px] font-mono-tech text-slate-400 font-bold uppercase tracking-wider">
+                                <span class="text-emerald-400">PLAY</span>
+                                <span>❯</span>
+                                <span>TACTICAL MATCHMAKING</span>
+                                <span>❯</span>
+                                <span class="text-cyan-300">CHỌN CHẾ ĐỘ</span>
+                            </div>
+                            <h2 class="text-base sm:text-lg font-black text-white uppercase tracking-wider font-mono-tech flex items-center gap-2 mt-0.5">
+                                <span>TRUNG TÂM TÁC CHIẾN XENO // CS2 HUB</span>
+                                <span class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-bold">3 CHẾ ĐỘ SẴN SÀNG</span>
+                            </h2>
+                        </div>
+                    </div>
+                    <button onclick="window.closeCS2PlayMenu()" class="px-3.5 py-1.5 rounded-none bg-slate-900 hover:bg-rose-950 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-white font-mono-tech text-xs uppercase tracking-wider transition cursor-pointer">
+                        ✕ Đóng [ESC]
+                    </button>
+                </div>
+
+                <!-- 3 Thẻ Chế Độ Tác Chiến Lớn (CS2 Poster Cards) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 my-1">
+                    
+                    <!-- THẺ 1: CHIẾN DỊCH (CAMPAIGN PVE) -->
+                    <div id="cs2Card_campaign" onclick="window.selectCS2Mode('campaign')"
+                         class="cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-emerald-400 bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-slate-950 shadow-[0_0_25px_rgba(16,185,129,0.35)] scale-[1.01] transition-all">
+                        <div class="cs2-card-indicator absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider font-mono-tech shadow-md">
+                            ĐANG CHỌN
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono-tech text-[9px] font-bold uppercase tracking-wider">PVE • CO-OP</span>
+                            <span class="text-[9px] font-mono-tech text-slate-400 font-bold uppercase">10 CHIẾN TRƯỜNG</span>
+                        </div>
+                        <div class="my-4 flex flex-col items-center justify-center">
+                            <div class="w-20 h-20 rounded-none bg-emerald-500/15 border-2 border-emerald-400/60 flex items-center justify-center text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)] group-hover:scale-110 transition duration-300">
+                                <svg viewBox="0 0 24 24" class="w-10 h-10 fill-current"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                            </div>
+                            <div class="text-xl sm:text-2xl font-black text-white uppercase tracking-widest font-mono-tech mt-3 text-center">
+                                CHIẾN DỊCH
+                            </div>
+                            <div class="text-[10px] font-mono-tech text-emerald-300 font-extrabold uppercase tracking-widest text-center mt-0.5">
+                                XENO CAMPAIGN OPS
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5 pt-3 border-t border-slate-800 text-[10.5px] font-mono-tech text-slate-300">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-emerald-400 shrink-0"></span>
+                                <span>10 Bản đồ từ Khu Alpha đến Genesis</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-emerald-400 shrink-0"></span>
+                                <span>400+ Quái bầy đàn &amp; 4 Boss Xenomorph</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-emerald-400 shrink-0"></span>
+                                <span>Kho Vũ Khí [B], Tháp pháo [T] &amp; Drone</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ 2: SOLO 1VS 1 (PVP GUN GAME) -->
+                    <div id="cs2Card_pvp_gungame" onclick="window.selectCS2Mode('pvp_gungame')"
+                         class="cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-slate-800 bg-slate-950/90 hover:scale-[1.01] hover:border-slate-700 transition-all opacity-85 hover:opacity-100">
+                        <div class="cs2-card-indicator hidden absolute top-2 right-2 px-2 py-0.5 bg-rose-500 text-white font-black text-[9px] uppercase tracking-wider font-mono-tech shadow-md">
+                            ĐANG CHỌN
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 bg-rose-500/20 border border-rose-400/40 text-rose-300 font-mono-tech text-[9px] font-bold uppercase tracking-wider">PVP • E-SPORT</span>
+                            <span class="text-[9px] font-mono-tech text-slate-400 font-bold uppercase">SOLO 1VS 1</span>
+                        </div>
+                        <div class="my-4 flex flex-col items-center justify-center">
+                            <div class="w-20 h-20 rounded-none bg-rose-500/15 border-2 border-rose-400/60 flex items-center justify-center text-rose-400 shadow-[0_0_30px_rgba(244,63,94,0.3)] group-hover:scale-110 transition duration-300">
+                                <svg viewBox="0 0 24 24" class="w-10 h-10 fill-current"><path d="M6.92 5h10.16L12 10.08 6.92 5zM4 6.8v10.4l5.2-5.2L4 6.8zm16 0l-5.2 5.2 5.2 5.2V6.8zm-1.8 12.2H5.8L12 12.92 18.2 19z"/></svg>
+                            </div>
+                            <div class="text-xl sm:text-2xl font-black text-white uppercase tracking-widest font-mono-tech mt-3 text-center">
+                                SOLO 1VS 1
+                            </div>
+                            <div class="text-[10px] font-mono-tech text-rose-300 font-extrabold uppercase tracking-widest text-center mt-0.5">
+                                GUN GAME TỐI THƯỢNG
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5 pt-3 border-t border-slate-800 text-[10.5px] font-mono-tech text-slate-300">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-rose-400 shrink-0"></span>
+                                <span>Màn đêm 94% • Đèn pin &amp; Lướt Q/E tức thì</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-rose-400 shrink-0"></span>
+                                <span>7 Cấp súng thăng cấp khi hạ • Máu 100 HP</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-rose-400 shrink-0"></span>
+                                <span>Radar Sonar Ping cảnh báo chớp nòng súng</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ 3: ĐẤU TRƯỜNG BOOM (BOMB DEFUSAL) -->
+                    <div id="cs2Card_bomb_defusal" onclick="window.selectCS2Mode('bomb_defusal')"
+                         class="cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-slate-800 bg-slate-950/90 hover:scale-[1.01] hover:border-slate-700 transition-all opacity-85 hover:opacity-100">
+                        <div class="cs2-card-indicator hidden absolute top-2 right-2 px-2 py-0.5 bg-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider font-mono-tech shadow-md">
+                            ĐANG CHỌN
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 bg-cyan-400 text-slate-950 font-black font-mono-tech text-[9px] uppercase tracking-wider animate-pulse shadow-[0_0_8px_#22d3ee]">MỚI • NEW!</span>
+                            <span class="px-2 py-0.5 bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono-tech text-[9px] font-bold uppercase tracking-wider">TACTICAL S&amp;D</span>
+                        </div>
+                        <div class="my-4 flex flex-col items-center justify-center">
+                            <div class="w-20 h-20 rounded-none bg-amber-500/15 border-2 border-amber-400/60 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.3)] group-hover:scale-110 transition duration-300">
+                                <svg viewBox="0 0 24 24" class="w-10 h-10 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                            </div>
+                            <div class="text-xl sm:text-2xl font-black text-white uppercase tracking-widest font-mono-tech mt-3 text-center">
+                                ĐẤU TRƯỜNG BOOM
+                            </div>
+                            <div class="text-[10px] font-mono-tech text-amber-300 font-extrabold uppercase tracking-widest text-center mt-0.5">
+                                BOMB DEFUSAL // SEARCH &amp; DESTROY
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5 pt-3 border-t border-slate-800 text-[10.5px] font-mono-tech text-slate-300">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-amber-400 shrink-0"></span>
+                                <span>Chuẩn PUBG Blindspot • Map 1: Trạm Blindspot</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-amber-400 shrink-0"></span>
+                                <span>2 Khu Đặt Bom Site A &amp; B • Tia Laze Kê Nòng</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-amber-400 shrink-0"></span>
+                                <span>Cài bom 3.5s &amp; Gỡ bom 5s • Bom đếm ngược 40s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CS2 Bottom Action Bar -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-emerald-500/30">
+                    <div class="flex items-center gap-2 bg-slate-950 p-1.5 border border-slate-800">
+                        <span class="text-[10px] font-mono-tech text-slate-400 uppercase font-bold px-1.5">HÌNH THỨC:</span>
+                        <button id="cs2Sub_practice" type="button" onclick="window.setCS2SubType('practice')" class="px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-cyan-500/25 text-cyan-200 border border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.35)] cursor-pointer transition">
+                            🤖 TẬP LUYỆN / BOT
+                        </button>
+                        <button id="cs2Sub_online" type="button" onclick="window.setCS2SubType('online')" class="px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer transition">
+                            🌐 PHÒNG ONLINE
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2.5">
+                        <button onclick="window.closeCS2PlayMenu()" type="button" class="px-4 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-tech font-bold text-xs uppercase transition cursor-pointer">
+                            Quay Lại Sảnh
+                        </button>
+                        <button id="cs2StartGoBtn" type="button" onclick="window.launchSelectedCS2Mode()"
+                                class="flex-1 sm:flex-initial px-8 sm:px-12 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base sm:text-lg font-mono-tech tracking-widest uppercase shadow-[0_0_30px_rgba(16,185,129,0.5)] transition hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2">
+                            <span>XUẤT TRẬN [GO]</span>
+                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -7156,6 +7376,711 @@
             ]
         };
         window.PVP_GUNGAME_STATE = PVP_GUNGAME_STATE;
+
+        // ============================================================================
+        // CS2-STYLED PLAY MENU & TACTICAL MULTI-MODE HUB
+        // ============================================================================
+        window.selectedCS2Mode = "campaign"; // "campaign" | "pvp_gungame" | "bomb_defusal"
+        window.selectedCS2SubType = "practice"; // "practice" | "online"
+
+        function openCS2PlayMenu() {
+            const modal = byId("cs2PlayModeModal");
+            if (!modal) return;
+            modal.classList.remove("hidden");
+            modal.style.display = "flex";
+            updateCS2PlayMenuUI();
+            if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
+        }
+        window.openCS2PlayMenu = openCS2PlayMenu;
+
+        function closeCS2PlayMenu() {
+            const modal = byId("cs2PlayModeModal");
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
+            if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
+        }
+        window.closeCS2PlayMenu = closeCS2PlayMenu;
+
+        function selectCS2Mode(mode) {
+            window.selectedCS2Mode = mode;
+            updateCS2PlayMenuUI();
+            if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
+        }
+        window.selectCS2Mode = selectCS2Mode;
+
+        function setCS2SubType(subType) {
+            window.selectedCS2SubType = subType;
+            updateCS2PlayMenuUI();
+            if (typeof sfx !== "undefined" && sfx && sfx.playClick) sfx.playClick();
+        }
+        window.setCS2SubType = setCS2SubType;
+
+        function updateCS2PlayMenuUI() {
+            const curMode = window.selectedCS2Mode || "campaign";
+            const subType = window.selectedCS2SubType || "practice";
+
+            ["campaign", "pvp_gungame", "bomb_defusal"].forEach(m => {
+                const card = byId("cs2Card_" + m);
+                if (!card) return;
+                const isSel = (curMode === m);
+                const indicator = card.querySelector(".cs2-card-indicator");
+                if (indicator) {
+                    if (isSel) indicator.classList.remove("hidden");
+                    else indicator.classList.add("hidden");
+                }
+                if (isSel) {
+                    if (m === "campaign") {
+                        card.className = "cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-emerald-400 bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-slate-950 shadow-[0_0_25px_rgba(16,185,129,0.35)] scale-[1.01] transition-all";
+                    } else if (m === "pvp_gungame") {
+                        card.className = "cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-rose-400 bg-gradient-to-b from-rose-950/40 via-slate-900/90 to-slate-950 shadow-[0_0_25px_rgba(244,63,94,0.35)] scale-[1.01] transition-all";
+                    } else if (m === "bomb_defusal") {
+                        card.className = "cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-amber-400 bg-gradient-to-b from-amber-950/40 via-slate-900/90 to-slate-950 shadow-[0_0_25px_rgba(245,158,11,0.4)] scale-[1.01] transition-all";
+                    }
+                } else {
+                    card.className = "cs2-mode-card group cursor-pointer relative p-4 flex flex-col justify-between border-2 border-slate-800 bg-slate-950/90 hover:scale-[1.01] hover:border-slate-700 transition-all opacity-85 hover:opacity-100";
+                }
+            });
+
+            const btnPractice = byId("cs2Sub_practice");
+            const btnOnline = byId("cs2Sub_online");
+            if (btnPractice && btnOnline) {
+                if (subType === "practice") {
+                    btnPractice.className = "px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-cyan-500/25 text-cyan-200 border border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.35)] cursor-pointer transition";
+                    btnOnline.className = "px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer transition";
+                } else {
+                    btnOnline.className = "px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-emerald-500/25 text-emerald-200 border border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.35)] cursor-pointer transition";
+                    btnPractice.className = "px-3 py-1.5 text-xs font-black uppercase font-mono-tech bg-slate-900 text-slate-400 border border-slate-700 hover:text-white cursor-pointer transition";
+                }
+            }
+        }
+        window.updateCS2PlayMenuUI = updateCS2PlayMenuUI;
+
+        function launchSelectedCS2Mode() {
+            const curMode = window.selectedCS2Mode || "campaign";
+            const subType = window.selectedCS2SubType || "practice";
+            closeCS2PlayMenu();
+
+            if (subType === "online") {
+                window.coopSelectedGameMode = curMode;
+                if (typeof window.openCoopModal === "function") {
+                    window.openCoopModal();
+                }
+                if (typeof window.updateCoopLobbyGameModeUI === "function") {
+                    window.updateCoopLobbyGameModeUI();
+                }
+                return;
+            }
+
+            // Practice / Solo / Local Match
+            window.gameMode = curMode;
+            if (curMode === "campaign") {
+                if (typeof window.closeMainMenuSettings === "function") {
+                    window.closeMainMenuSettings();
+                }
+            } else if (curMode === "pvp_gungame") {
+                startSoloPvPPracticeMatch();
+            } else if (curMode === "bomb_defusal") {
+                startBombDefusalPracticeMatch();
+            }
+        }
+        window.launchSelectedCS2Mode = launchSelectedCS2Mode;
+
+        // ============================================================================
+        // ĐẤU TRƯỜNG BOOM (TACTICAL BOMB DEFUSAL) STATE & SYSTEM
+        // ============================================================================
+        const TACTICAL_BOMB_STATE = {
+            active: false,
+            mapName: "TRẠM BLINDSPOT SECTOR-01",
+            roundState: "live", // "live" | "planted" | "exploded" | "defused" | "ended"
+            roundTimer: 120, // 2:00 phút mỗi vòng
+            roundTimerMax: 120,
+            plantedSite: null, // "A" | "B" | null
+            bombX: 0,
+            bombY: 0,
+            bombTimer: 40.0, // 40 giây đếm ngược
+            bombTimerMax: 40.0,
+            plantProgress: 0, // 0..100 (cần 3.5s)
+            defuseProgress: 0, // 0..100 (cần 5.0s)
+            isPlanting: false,
+            isDefusing: false,
+            playerRole: "attacker", // "attacker" (Infiltrator) | "defender" (Guardian)
+            scoreAttackers: 0,
+            scoreDefenders: 0,
+            siteA: { x: 1100, y: 750, r: 160, label: "KHU A • LÕI QUANTUM" },
+            siteB: { x: 4100, y: 2750, r: 160, label: "KHU B • THÍ NGHIỆM CRYO" },
+            lastBeepAt: 0,
+            beepInterval: 1000,
+            matchEnded: false,
+            bot: {
+                active: true,
+                name: "[BOT] TACTICAL VIPER",
+                x: 4100,
+                y: 750,
+                vx: 0, vy: 0,
+                angle: Math.PI,
+                hp: 100, maxHp: 100,
+                isDown: false,
+                role: "defender",
+                targetX: 1100, targetY: 750,
+                state: "patrol",
+                shootCooldown: 0,
+                laserAngle: 0,
+                defuseProgress: 0
+            }
+        };
+        window.TACTICAL_BOMB_STATE = TACTICAL_BOMB_STATE;
+
+        // 1. DỰNG KIẾN TRÚC MAP 1: TRẠM BLINDSPOT SECTOR-01
+        function buildTacticalBombMapArchitecture() {
+            WALLS.length = 0;
+            DOORS.length = 0;
+            VENTS.length = 0;
+            ROOMS.length = 0;
+
+            // 4 Vách tường bao quanh trạm (Perimeter)
+            WALLS.push(
+                { x: 0, y: 0, w: WORLD_W, h: BORDER_T },
+                { x: 0, y: WORLD_H - BORDER_T, w: WORLD_W, h: BORDER_T },
+                { x: 0, y: 0, w: BORDER_T, h: WORLD_H },
+                { x: WORLD_W - BORDER_T, y: 0, w: BORDER_T, h: WORLD_H }
+            );
+
+            // Bố cục phòng chuẩn phong cách PUBG Blindspot
+            ROOMS = [
+                { id: "sec_site_a", row: 0, col: 0, name: "KHU ĐẶT BOM A • LÕI QUANTUM", x: 450, y: 350, w: 1300, h: 900, floorColor: "#0a1c2e", accent: "#f59e0b", isSiteA: true },
+                { id: "sec_site_b", row: 4, col: 4, name: "KHU ĐẶT BOM B • BUỒNG CRYO", x: 3450, y: 2350, w: 1300, h: 900, floorColor: "#101426", accent: "#f59e0b", isSiteB: true },
+                { id: "sec_hub", row: 2, col: 2, name: "ĐẠI SẢNH ĐIỀU HÀNH BLINDSPOT", x: 1800, y: 1300, w: 1600, h: 1000, floorColor: "#0f172a", accent: "#06b6d4", isCenter: true },
+                { id: "sec_spawn_infil", row: 4, col: 0, name: "CĂN CỨ TẬP KẾT PHE TẤN CÔNG", x: 450, y: 2350, w: 1300, h: 900, floorColor: "#1c1012", accent: "#f43f5e" },
+                { id: "sec_spawn_guard", row: 0, col: 4, name: "TRẠM GÁC PHE PHÒNG THỦ", x: 3450, y: 350, w: 1300, h: 900, floorColor: "#081d1a", accent: "#10b981" },
+                { id: "sec_hall_west", row: 2, col: 0, name: "HÀNH LANG TÂY AN NINH", x: 450, y: 1300, w: 1300, h: 1000, floorColor: "#0b121e", accent: "#38bdf8" },
+                { id: "sec_hall_east", row: 2, col: 4, name: "HÀNH LANG ĐÔNG KỸ THUẬT", x: 3450, y: 1300, w: 1300, h: 1000, floorColor: "#0b121e", accent: "#38bdf8" },
+                { id: "sec_hall_north", row: 0, col: 2, name: "HÀNH LANG BẮC A-SHORT", x: 1800, y: 350, w: 1600, h: 900, floorColor: "#0e1726", accent: "#38bdf8" },
+                { id: "sec_hall_south", row: 4, col: 2, name: "HÀNH LANG NAM B-LONG", x: 1800, y: 2350, w: 1600, h: 900, floorColor: "#0e1726", accent: "#38bdf8" }
+            ];
+
+            // Các bức tường ngăn & Cửa trượt chiến thuật
+            // Cửa vào Site A
+            addWallWithDoor(1750, 350, 1750, 1250, 800, 260, "vertical", "d_bomb_a1", "CỔNG SITE A BẮC");
+            addWallWithDoor(450, 1250, 1750, 1250, 1100, 260, "horizontal", "d_bomb_a2", "CỔNG SITE A TÂY");
+
+            // Cửa vào Site B
+            addWallWithDoor(3450, 2350, 3450, 3250, 2800, 260, "vertical", "d_bomb_b1", "CỔNG SITE B NAM");
+            addWallWithDoor(3450, 2350, 4750, 2350, 4100, 260, "horizontal", "d_bomb_b2", "CỔNG SITE B ĐÔNG");
+
+            // Cửa thông Đại Sảnh Trung Tâm
+            addWallWithDoor(1800, 1250, 3400, 1250, 2600, 280, "horizontal", "d_hub_n", "CỔNG SẢNH BẮC");
+            addWallWithDoor(1800, 2300, 3400, 2300, 2600, 280, "horizontal", "d_hub_s", "CỔNG SẢNH NAM");
+            addWallWithDoor(1750, 1300, 1750, 2300, 1800, 280, "vertical", "d_hub_w", "CỔNG SẢNH TÂY");
+            addWallWithDoor(3450, 1300, 3450, 2300, 1800, 280, "vertical", "d_hub_e", "CỔNG SẢNH ĐÔNG");
+
+            // Tactical Cover Pillars in Center Hub
+            WALLS.push(
+                { x: 2200, y: 1550, w: 72, h: 72 },
+                { x: 2920, y: 1550, w: 72, h: 72 },
+                { x: 2200, y: 1980, w: 72, h: 72 },
+                { x: 2920, y: 1980, w: 72, h: 72 }
+            );
+
+            // Cover Pillars in Site A & Site B
+            WALLS.push(
+                { x: 1100, y: 600, w: 64, h: 64 },
+                { x: 1100, y: 920, w: 64, h: 64 },
+                { x: 3850, y: 2600, w: 64, h: 64 },
+                { x: 4350, y: 2600, w: 64, h: 64 }
+            );
+
+            rebuildObstacleSpatialGrid();
+        }
+        window.buildTacticalBombMapArchitecture = buildTacticalBombMapArchitecture;
+
+        // 2. KHỞI CHẠY ĐẤU TRƯỜNG BOOM (PRACTICE VỚI BOT)
+        function startBombDefusalPracticeMatch() {
+            window.gameMode = "bomb_defusal";
+            const mainModal = byId("mainSettingsModal");
+            if (mainModal) {
+                mainModal.classList.add("hidden");
+                mainModal.style.display = "none";
+            }
+            isPaused = false;
+            initCampaign(false, false, false);
+            showToast("ĐẤU TRƯỜNG BOOM // SECTOR-01", "Phe Tấn Công: Hãy xâm nhập Khu A hoặc B, giữ [E] 3.5s để kích hoạt Bom C4!");
+        }
+        window.startBombDefusalPracticeMatch = startBombDefusalPracticeMatch;
+
+        // 3. KHỞI CHẠY SOLO 1VS 1 PRACTICE (VỚI BOT)
+        function startSoloPvPPracticeMatch() {
+            window.gameMode = "pvp_gungame";
+            const mainModal = byId("mainSettingsModal");
+            if (mainModal) {
+                mainModal.classList.add("hidden");
+                mainModal.style.display = "none";
+            }
+            isPaused = false;
+            initCampaign(false, false, false);
+            PVP_GUNGAME_STATE.active = true;
+            PVP_GUNGAME_STATE.gunLevel = 0;
+            PVP_GUNGAME_STATE.kills = 0;
+            PVP_GUNGAME_STATE.deaths = 0;
+            PVP_GUNGAME_STATE.opponentGunLevel = 0;
+            PVP_GUNGAME_STATE.matchEnded = false;
+            player.maxHp = 100;
+            player.hp = 100;
+            player.mana = 100;
+            updatePvPTopHUD();
+            showToast("SOLO 1VS 1 // TẬP LUYỆN", "Lướt Q/E né đạn, dùng đèn pin dò tìm đối thủ trong màn đêm!");
+        }
+        window.startSoloPvPPracticeMatch = startSoloPvPPracticeMatch;
+
+        // 4. KHỞI TẠO VÁN ĐẤU TRONG BOMB DEFUSAL
+        function initBombDefusalMatch() {
+            TACTICAL_BOMB_STATE.active = true;
+            TACTICAL_BOMB_STATE.roundState = "live";
+            TACTICAL_BOMB_STATE.roundTimer = 120;
+            TACTICAL_BOMB_STATE.plantedSite = null;
+            TACTICAL_BOMB_STATE.bombTimer = 40.0;
+            TACTICAL_BOMB_STATE.plantProgress = 0;
+            TACTICAL_BOMB_STATE.defuseProgress = 0;
+            TACTICAL_BOMB_STATE.isPlanting = false;
+            TACTICAL_BOMB_STATE.isDefusing = false;
+            TACTICAL_BOMB_STATE.matchEnded = false;
+
+            // Xóa sạch quái vật PvE
+            enemiesById.clear();
+            enemies.forEach(e => { e.active = false; e.id = 0; });
+            bullets.forEach(b => { b.active = false; });
+
+            // Điểm xuất phát người chơi (Phe Tấn Công: Căn cứ Nam)
+            player.x = 900;
+            player.y = 2800;
+            player.hp = 100;
+            player.maxHp = 100;
+            player.armor = 0;
+            player.maxArmor = 0;
+
+            // Cấp sẵn vũ khí chiến thuật
+            WEAPON_DATA.forEach((w, idx) => {
+                w.unlocked = (idx <= 4);
+                w.ammo = (idx === 0) ? Infinity : 250;
+            });
+            player.currentWeapon = 1; // Shotgun
+
+            // Khởi tạo Bot Tactical Viper (Phe Phòng Thủ: Trạm gác Bắc)
+            TACTICAL_BOMB_STATE.bot.active = true;
+            TACTICAL_BOMB_STATE.bot.x = 4100;
+            TACTICAL_BOMB_STATE.bot.y = 750;
+            TACTICAL_BOMB_STATE.bot.hp = 100;
+            TACTICAL_BOMB_STATE.bot.maxHp = 100;
+            TACTICAL_BOMB_STATE.bot.isDown = false;
+            TACTICAL_BOMB_STATE.bot.shootCooldown = 0;
+            TACTICAL_BOMB_STATE.bot.targetX = 1100;
+            TACTICAL_BOMB_STATE.bot.targetY = 750;
+
+            camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W / 2));
+            camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H / 2));
+
+            updateTacticalBombHUD();
+            updateTopLeftHUD();
+            updateWeaponDockHUD();
+        }
+        window.initBombDefusalMatch = initBombDefusalMatch;
+
+        // 5. CẬP NHẬT LOGIC BOMB DEFUSAL (TICK LOOP)
+        function updateTacticalBombLogic() {
+            if (!TACTICAL_BOMB_STATE.active || TACTICAL_BOMB_STATE.matchEnded) return;
+
+            // Đếm ngược thời gian vòng đấu nếu bom chưa cài
+            if (TACTICAL_BOMB_STATE.roundState === "live") {
+                if (frameCounter % 60 === 0) {
+                    TACTICAL_BOMB_STATE.roundTimer = Math.max(0, TACTICAL_BOMB_STATE.roundTimer - 1);
+                    if (TACTICAL_BOMB_STATE.roundTimer <= 0) {
+                        triggerTacticalBombRoundEnd("defenders", "HẾT THỜI GIAN VÒNG ĐẤU! PHE PHÒNG THỦ CHIẾN THẮNG!");
+                        return;
+                    }
+                }
+            }
+
+            // Đếm ngược thời gian bom C4 sau khi đã cài
+            if (TACTICAL_BOMB_STATE.roundState === "planted") {
+                TACTICAL_BOMB_STATE.bombTimer = Math.max(0, TACTICAL_BOMB_STATE.bombTimer - (1 / 60));
+                
+                // Tiếng tíc tắc tăng tốc dần theo thời gian
+                const now = performance.now();
+                const interval = (TACTICAL_BOMB_STATE.bombTimer > 20) ? 1000 : ((TACTICAL_BOMB_STATE.bombTimer > 10) ? 500 : 200);
+                if (now - TACTICAL_BOMB_STATE.lastBeepAt >= interval) {
+                    TACTICAL_BOMB_STATE.lastBeepAt = now;
+                    if (typeof sfx !== "undefined" && sfx && sfx.playTurretBeep) sfx.playTurretBeep();
+                    spawnParticle(TACTICAL_BOMB_STATE.bombX, TACTICAL_BOMB_STATE.bombY, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, "#ef4444", 3, 10);
+                }
+
+                if (TACTICAL_BOMB_STATE.bombTimer <= 0) {
+                    // BOM NỔ TUNG!
+                    triggerTacticalBombRoundEnd("attackers", "BOM ĐÃ PHÁT NỔ TẠI SITE! PHE TẤN CÔNG CHIẾN THẮNG!");
+                    return;
+                }
+            }
+
+            // Cập nhật thao tác Cài Bom & Gỡ Bom bằng phím [E]
+            handlePlayerBombInteraction();
+
+            // Cập nhật AI Bot Tactical Viper
+            updateTacticalBombBot();
+
+            // Cập nhật HUD Top Bar
+            updateTacticalBombHUD();
+        }
+        window.updateTacticalBombLogic = updateTacticalBombLogic;
+
+        // 6. XỬ LÝ THAO TÁC CÀI / GỠ BOM CỦA NGƯỜI CHƠI
+        function handlePlayerBombInteraction() {
+            if (player.isDown || isPaused || isGameOver) return;
+            const distA = Math.hypot(player.x - TACTICAL_BOMB_STATE.siteA.x, player.y - TACTICAL_BOMB_STATE.siteA.y);
+            const distB = Math.hypot(player.x - TACTICAL_BOMB_STATE.siteB.x, player.y - TACTICAL_BOMB_STATE.siteB.y);
+            const inSite = (distA <= TACTICAL_BOMB_STATE.siteA.r || distB <= TACTICAL_BOMB_STATE.siteB.r);
+
+            // CÀI BOM (Phe Tấn Công)
+            if (TACTICAL_BOMB_STATE.roundState === "live" && inSite) {
+                if (keys["KeyE"]) {
+                    TACTICAL_BOMB_STATE.isPlanting = true;
+                    TACTICAL_BOMB_STATE.plantProgress = Math.min(100, TACTICAL_BOMB_STATE.plantProgress + (100 / 210)); // 3.5s
+                    if (TACTICAL_BOMB_STATE.plantProgress >= 100) {
+                        TACTICAL_BOMB_STATE.roundState = "planted";
+                        TACTICAL_BOMB_STATE.bombX = player.x;
+                        TACTICAL_BOMB_STATE.bombY = player.y;
+                        TACTICAL_BOMB_STATE.plantedSite = (distA < distB) ? "A" : "B";
+                        TACTICAL_BOMB_STATE.bombTimer = 40.0;
+                        TACTICAL_BOMB_STATE.isPlanting = false;
+                        showToast("⚠️ CẢNH BÁO: BOM ĐÃ KÍCH HOẠT!", "Bom đã cài tại KHU " + TACTICAL_BOMB_STATE.plantedSite + "! Đếm ngược 40 giây!");
+                        if (typeof sfx !== "undefined" && sfx && sfx.playBombAlarm) sfx.playBombAlarm();
+                    }
+                } else {
+                    TACTICAL_BOMB_STATE.isPlanting = false;
+                    TACTICAL_BOMB_STATE.plantProgress = Math.max(0, TACTICAL_BOMB_STATE.plantProgress - 1.5);
+                }
+            } else {
+                TACTICAL_BOMB_STATE.isPlanting = false;
+            }
+
+            // GỠ BOM (Nếu bom đã cài và người chơi đến gần < 75px)
+            if (TACTICAL_BOMB_STATE.roundState === "planted") {
+                const distBomb = Math.hypot(player.x - TACTICAL_BOMB_STATE.bombX, player.y - TACTICAL_BOMB_STATE.bombY);
+                if (distBomb <= 75 && keys["KeyE"]) {
+                    TACTICAL_BOMB_STATE.isDefusing = true;
+                    TACTICAL_BOMB_STATE.defuseProgress = Math.min(100, TACTICAL_BOMB_STATE.defuseProgress + (100 / 300)); // 5.0s
+                    if (TACTICAL_BOMB_STATE.defuseProgress >= 100) {
+                        triggerTacticalBombRoundEnd("defenders", "BOM ĐÃ BỊ GỠ THÀNH CÔNG! PHE PHÒNG THỦ CHIẾN THẮNG!");
+                    }
+                } else {
+                    TACTICAL_BOMB_STATE.isDefusing = false;
+                    TACTICAL_BOMB_STATE.defuseProgress = Math.max(0, TACTICAL_BOMB_STATE.defuseProgress - 1.5);
+                }
+            }
+        }
+
+        // 7. CẬP NHẬT TACTICAL BOT AI
+        function updateTacticalBombBot() {
+            const bot = TACTICAL_BOMB_STATE.bot;
+            if (!bot.active || bot.isDown) return;
+
+            // Xác định mục tiêu di chuyển của Bot
+            if (TACTICAL_BOMB_STATE.roundState === "planted") {
+                // Nếu bom đã cài, Bot chạy thẳng về vị trí bom để gỡ
+                bot.targetX = TACTICAL_BOMB_STATE.bombX;
+                bot.targetY = TACTICAL_BOMB_STATE.bombY;
+                const dToBomb = Math.hypot(bot.x - bot.targetX, bot.y - bot.targetY);
+                if (dToBomb <= 55) {
+                    bot.defuseProgress = (bot.defuseProgress || 0) + (100 / 300);
+                    if (bot.defuseProgress >= 100) {
+                        triggerTacticalBombRoundEnd("defenders", "[BOT] VIPER ĐÃ GỠ BOM THÀNH CÔNG! PHE PHÒNG THỦ THẮNG!");
+                        return;
+                    }
+                }
+            } else {
+                // Tuần tra giữa Site A và Site B
+                const dTarget = Math.hypot(bot.x - bot.targetX, bot.y - bot.targetY);
+                if (dTarget < 120) {
+                    bot.targetX = (bot.targetX === 1100) ? 4100 : 1100;
+                    bot.targetY = (bot.targetY === 750) ? 2750 : 750;
+                }
+            }
+
+            // Di chuyển Bot
+            const bdx = bot.targetX - bot.x;
+            const bdy = bot.targetY - bot.y;
+            const bDist = Math.hypot(bdx, bdy) || 0.001;
+            bot.angle = Math.atan2(bdy, bdx);
+            bot.x += (bdx / bDist) * 2.6;
+            bot.y += (bdy / bDist) * 2.6;
+            resolveWallSliding(bot);
+
+            // Kiểm tra tầm nhìn tới người chơi
+            const pDist = Math.hypot(player.x - bot.x, player.y - bot.y);
+            if (!player.isDown && pDist < 850 && hasLineOfSight(bot.x, bot.y, player.x, player.y)) {
+                bot.angle = Math.atan2(player.y - bot.y, player.x - bot.x);
+                bot.shootCooldown = (bot.shootCooldown || 0) - 1;
+                if (bot.shootCooldown <= 0) {
+                    bot.shootCooldown = 28; // Tốc độ bắn của Bot
+                    // Bot xả đạn
+                    const spd = 12.0;
+                    const bAng = bot.angle + (Math.random() - 0.5) * 0.12;
+                    bullets.push({
+                        active: true,
+                        x: bot.x + Math.cos(bAng) * 20,
+                        y: bot.y + Math.sin(bAng) * 20,
+                        vx: Math.cos(bAng) * spd,
+                        vy: Math.sin(bAng) * spd,
+                        damage: 18.0,
+                        life: 75,
+                        size: 3.5,
+                        color: "#f43f5e",
+                        isHostile: true,
+                        isTeammate: false
+                    });
+                    if (typeof sfx !== "undefined" && sfx && sfx.playShoot) sfx.playShoot("pistol");
+                }
+            }
+        }
+
+        // 8. CẬP NHẬT HUD ĐẤU TRƯỜNG BOOM
+        function updateTacticalBombHUD() {
+            const hud = byId("tacticalBombHUD");
+            if (!hud) return;
+            const isBomb = (window.gameMode === "bomb_defusal" && TACTICAL_BOMB_STATE.active);
+            if (!isBomb) {
+                hud.classList.add("hidden");
+                return;
+            }
+            hud.classList.remove("hidden");
+
+            const timeText = byId("bombHudTimeText");
+            const timerTitle = byId("bombHudTimerTitle");
+            if (TACTICAL_BOMB_STATE.roundState === "planted") {
+                if (timerTitle) timerTitle.textContent = "BOM C4 NỔ";
+                if (timeText) {
+                    timeText.textContent = TACTICAL_BOMB_STATE.bombTimer.toFixed(1) + "s";
+                    timeText.className = "text-xs sm:text-sm font-black text-rose-400 font-mono-tech tracking-wider leading-none animate-pulse";
+                }
+            } else {
+                if (timerTitle) timerTitle.textContent = "VÒNG ĐẤU";
+                if (timeText) {
+                    const m = Math.floor(TACTICAL_BOMB_STATE.roundTimer / 60);
+                    const s = TACTICAL_BOMB_STATE.roundTimer % 60;
+                    timeText.textContent = m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+                    timeText.className = "text-xs sm:text-sm font-black text-white font-mono-tech tracking-wider leading-none";
+                }
+            }
+
+            // Site dots
+            const dotA = byId("bombHudSiteAStatus");
+            const dotB = byId("bombHudSiteBStatus");
+            if (dotA) {
+                dotA.className = (TACTICAL_BOMB_STATE.plantedSite === "A") ? "w-2 h-2 rounded-full bg-rose-500 animate-ping" : "w-2 h-2 rounded-full bg-emerald-400";
+            }
+            if (dotB) {
+                dotB.className = (TACTICAL_BOMB_STATE.plantedSite === "B") ? "w-2 h-2 rounded-full bg-rose-500 animate-ping" : "w-2 h-2 rounded-full bg-emerald-400";
+            }
+        }
+        window.updateTacticalBombHUD = updateTacticalBombHUD;
+
+        // 9. VẼ VẠCH SÀN BOMB SITE A & B
+        function drawTacticalBombSites(camX, camY) {
+            const now = performance.now();
+            [TACTICAL_BOMB_STATE.siteA, TACTICAL_BOMB_STATE.siteB].forEach((st, idx) => {
+                if (st.x + st.r < camX || st.x - st.r > camX + VIEW_W || st.y + st.r < camY || st.y - st.r > camY + VIEW_H) return;
+                const isPlanted = (TACTICAL_BOMB_STATE.plantedSite === (idx === 0 ? "A" : "B"));
+                ctx.save();
+                ctx.translate(st.x, st.y);
+
+                // Khung viền nét đứt vàng hổ phách trên mặt sàn
+                ctx.strokeStyle = isPlanted ? "rgba(244, 63, 94, 0.9)" : "rgba(245, 158, 11, 0.85)";
+                ctx.lineWidth = 3.5;
+                ctx.setLineDash([16, 10]);
+                ctx.strokeRect(-st.r, -st.r, st.r * 2, st.r * 2);
+                ctx.setLineDash([]);
+
+                // Quầng sáng quét sàn
+                ctx.fillStyle = isPlanted ? "rgba(244, 63, 94, 0.12)" : "rgba(245, 158, 11, 0.08)";
+                ctx.fillRect(-st.r, -st.r, st.r * 2, st.r * 2);
+
+                // Chữ cái [A] hoặc [B] phát sáng lớn trên mặt sàn
+                ctx.font = "900 54px 'JetBrains Mono', monospace";
+                ctx.fillStyle = isPlanted ? "rgba(244, 63, 94, 0.55)" : "rgba(245, 158, 11, 0.45)";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(idx === 0 ? "A" : "B", 0, 0);
+
+                // Nhãn khu vực
+                ctx.font = "800 12px 'JetBrains Mono', monospace";
+                ctx.fillStyle = isPlanted ? "#f43f5e" : "#fbbf24";
+                ctx.fillText(st.label, 0, -st.r - 12);
+                ctx.restore();
+            });
+        }
+        window.drawTacticalBombSites = drawTacticalBombSites;
+
+        // 10. VẼ QUẢ BOM C4 PHẢN ỨNG NẾU ĐÃ CÀI
+        function drawTacticalActiveBomb(camX, camY) {
+            if (TACTICAL_BOMB_STATE.roundState !== "planted") return;
+            const bx = TACTICAL_BOMB_STATE.bombX;
+            const by = TACTICAL_BOMB_STATE.bombY;
+            if (bx + 50 < camX || bx - 50 > camX + VIEW_W || by + 50 < camY || by - 50 > camY + VIEW_H) return;
+
+            const now = performance.now();
+            ctx.save();
+            ctx.translate(bx, by);
+
+            // Sóng xung kích đỏ nhấp nháy
+            const pulse = (now * 0.008) % 1.0;
+            ctx.strokeStyle = "rgba(244, 63, 94, " + (1.0 - pulse) + ")";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, 16 + pulse * 42);
+            ctx.stroke();
+
+            // Khối bom C4 kim loại
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(-12, -8, 24, 16);
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 1.6;
+            ctx.strokeRect(-12, -8, 24, 16);
+
+            // Đèn LED đỏ chớp nháy
+            const led = Math.sin(now * 0.02) > 0;
+            ctx.fillStyle = led ? "#ef4444" : "#450a0a";
+            ctx.beginPath();
+            safeArc(ctx, 6, -3, 3);
+            ctx.fill();
+
+            // Nhãn hiển thị đếm ngược trên đầu quả bom
+            ctx.font = "800 10px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "#f43f5e";
+            ctx.textAlign = "center";
+            ctx.fillText("💣 C4: " + TACTICAL_BOMB_STATE.bombTimer.toFixed(1) + "s", 0, -16);
+            ctx.restore();
+        }
+        window.drawTacticalActiveBomb = drawTacticalActiveBomb;
+
+        // 11. VẼ TIA LAZE NGẮM KÊ NÒNG CHIẾN THUẬT (TACTICAL AIM LASER)
+        function drawTacticalAimLaser(cCtx, originX, originY, angle, laserColor, dotColor) {
+            const step = 20;
+            const maxDist = 1100;
+            let endX = originX + Math.cos(angle) * maxDist;
+            let endY = originY + Math.sin(angle) * maxDist;
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+
+            for (let d = 24; d < maxDist; d += step) {
+                const tx = originX + cosA * d;
+                const ty = originY + sinA * d;
+                if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
+                    endX = tx;
+                    endY = ty;
+                    break;
+                }
+            }
+
+            cCtx.save();
+            cCtx.strokeStyle = laserColor || "rgba(56, 189, 248, 0.4)";
+            cCtx.lineWidth = 2.0;
+            cCtx.beginPath();
+            cCtx.moveTo(originX, originY);
+            cCtx.lineTo(endX, endY);
+            cCtx.stroke();
+
+            cCtx.strokeStyle = dotColor || "#38bdf8";
+            cCtx.lineWidth = 0.9;
+            cCtx.beginPath();
+            cCtx.moveTo(originX, originY);
+            cCtx.lineTo(endX, endY);
+            cCtx.stroke();
+
+            cCtx.fillStyle = dotColor || "#38bdf8";
+            cCtx.beginPath();
+            safeArc(cCtx, endX, endY, 2.5);
+            cCtx.fill();
+            cCtx.restore();
+        }
+        window.drawTacticalAimLaser = drawTacticalAimLaser;
+
+        // 12. VẼ TACTICAL BOT TRÊN BẢN ĐỒ
+        function drawTacticalBot(camX, camY) {
+            const bot = TACTICAL_BOMB_STATE.bot;
+            if (!bot.active || bot.x + 40 < camX || bot.x - 40 > camX + VIEW_W || bot.y + 40 < camY || bot.y - 40 > camY + VIEW_H) return;
+
+            ctx.save();
+            ctx.translate(bot.x, bot.y);
+
+            if (bot.isDown) {
+                ctx.fillStyle = "rgba(244, 63, 94, 0.5)";
+                safeArc(ctx, 0, 0, 16);
+                ctx.fill();
+                ctx.font = "800 10px 'JetBrains Mono', monospace";
+                ctx.fillStyle = "#f43f5e";
+                ctx.textAlign = "center";
+                ctx.fillText("☠ ĐÃ TIÊU DIỆT", 0, -20);
+                ctx.restore();
+                return;
+            }
+
+            // Thân Bot xoay theo góc ngắm
+            ctx.rotate(bot.angle);
+            ctx.fillStyle = "#1e293b";
+            ctx.strokeStyle = "#f43f5e";
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            safeArc(ctx, 0, 0, 16);
+            ctx.fill();
+            ctx.stroke();
+
+            // Nòng súng Bot
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(8, -3, 14, 6);
+            ctx.strokeRect(8, -3, 14, 6);
+            ctx.restore();
+
+            // Thanh máu Bot & Nhãn tên
+            ctx.save();
+            ctx.translate(bot.x, bot.y);
+            const bw = 36;
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillRect(-bw / 2, -26, bw, 4);
+            ctx.fillStyle = "#f43f5e";
+            ctx.fillRect(-bw / 2, -26, bw * Math.max(0, bot.hp / bot.maxHp), 4);
+
+            ctx.font = "800 8.5px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "#fda4af";
+            ctx.textAlign = "center";
+            ctx.fillText(bot.name, 0, -32);
+            ctx.restore();
+        }
+        window.drawTacticalBot = drawTacticalBot;
+
+        // 13. KẾT THÚC VÒNG ĐẤU BOMB DEFUSAL
+        function triggerTacticalBombRoundEnd(winner, message) {
+            if (TACTICAL_BOMB_STATE.matchEnded) return;
+            TACTICAL_BOMB_STATE.matchEnded = true;
+            TACTICAL_BOMB_STATE.roundState = "ended";
+
+            if (winner === "attackers") TACTICAL_BOMB_STATE.scoreAttackers++;
+            else TACTICAL_BOMB_STATE.scoreDefenders++;
+
+            showToast("KẾT THÚC VÒNG ĐẤU", message);
+            if (typeof sfx !== "undefined" && sfx) {
+                if (winner === "attackers") sfx.playMapVictory();
+                else sfx.playGameOver();
+            }
+
+            setTimeout(() => {
+                // Tự động khởi động vòng đấu tiếp theo sau 4.5s
+                if (window.gameMode === "bomb_defusal") {
+                    initBombDefusalMatch();
+                    showToast("VÒNG ĐẤU MỚI", "Tỉ số hiện tại: Tấn Công " + TACTICAL_BOMB_STATE.scoreAttackers + " - " + TACTICAL_BOMB_STATE.scoreDefenders + " Phòng Thủ");
+                }
+            }, 4500);
+        }
+        window.triggerTacticalBombRoundEnd = triggerTacticalBombRoundEnd;
+
 
         function setCoopGameMode(mode) {
             window.coopSelectedGameMode = (mode === "pvp_gungame") ? "pvp_gungame" : "campaign";
@@ -12607,6 +13532,18 @@
             spaceProps.length = 0;
             energyCoreStations.length = 0;
 
+            if (window.gameMode === "bomb_defusal") {
+                crates.push(
+                    { x: 1250, y: 800, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 },
+                    { x: 950, y: 700, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 },
+                    { x: 3950, y: 2800, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 },
+                    { x: 4250, y: 2700, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 },
+                    { x: 2500, y: 1700, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 },
+                    { x: 2700, y: 1900, w: 48, h: 48, hp: 150, maxHp: 150, hitWobble: 0 }
+                );
+                return;
+            }
+
             const mapId = window.currentMapId;
             const isHive = (mapId === 5);
 
@@ -13379,8 +14316,10 @@
 
         function drawBaseFloor() {
             const mapCfg = getCurrentMapConfig();
-            const isTranslucentMap = mapCfg.isTranslucentFloor;
-            ROOMS = mapCfg.rooms || ROOMS;
+            const isTranslucentMap = (window.gameMode === "bomb_defusal") ? false : mapCfg.isTranslucentFloor;
+            if (window.gameMode !== "bomb_defusal") {
+                ROOMS = mapCfg.rooms || ROOMS;
+            }
 
             surfaceCtx.setTransform(SURFACE_SCALE, 0, 0, SURFACE_SCALE, 0, 0);
             surfaceCtx.clearRect(0, 0, WORLD_W, WORLD_H);
@@ -19103,6 +20042,7 @@
 
         function triggerMapVictory() {
             if (isMapWon) return;
+            if (window.gameMode === "bomb_defusal" || window.gameMode === "pvp_gungame") return;
             isMapWon = true;
             mouse.down = false;
             if (player) player.activeLaserBeam = null;
@@ -19713,6 +20653,16 @@
             updateTopLeftHUD();
 
             if (player.hp <= 0) {
+                if (window.gameMode === "bomb_defusal") {
+                    player.isDown = true;
+                    player.hp = 0;
+                    if (typeof sfx !== "undefined" && sfx && sfx.playPlayerDeath) {
+                        sfx.playPlayerDeath();
+                    }
+                    bakeBloodSplatter(player.x, player.y, 24, 0.95);
+                    triggerTacticalBombRoundEnd("defenders", "NGƯỜI CHƠI ĐÃ BỊ TIÊU DIỆT! PHE PHÒNG THỦ CHIẾN THẮNG!");
+                    return;
+                }
                 if (isPvP) {
                     player.isDown = true;
                     player.hp = 0;
@@ -21352,6 +22302,28 @@
                     }
                 }
 
+                // TAC-OPS BOMB DEFUSAL: Đạn người chơi trúng Tactical Bot
+                if (window.gameMode === "bomb_defusal" && !b.isHostile && typeof TACTICAL_BOMB_STATE !== "undefined" && TACTICAL_BOMB_STATE.bot && TACTICAL_BOMB_STATE.bot.active && !TACTICAL_BOMB_STATE.bot.isDown) {
+                    const bot = TACTICAL_BOMB_STATE.bot;
+                    const bHitR = 18 + b.size;
+                    const bDx = b.x - bot.x;
+                    const bDy = b.y - bot.y;
+                    if (Math.abs(bDx) <= bHitR && Math.abs(bDy) <= bHitR && (bDx * bDx + bDy * bDy < bHitR * bHitR)) {
+                        b.active = false;
+                        const dmg = b.damage || 25;
+                        bot.hp = Math.max(0, bot.hp - dmg);
+                        spawnParticle(b.x, b.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#f43f5e", 2.8, 12);
+                        if (typeof sfx !== "undefined" && sfx && sfx.playArmorHit) sfx.playArmorHit();
+                        if (bot.hp <= 0) {
+                            bot.isDown = true;
+                            if (typeof sfx !== "undefined" && sfx && sfx.playAlienDeath) sfx.playAlienDeath("stalker");
+                            bakeBloodSplatter(bot.x, bot.y, 20, 0.9);
+                            triggerTacticalBombRoundEnd("attackers", "ĐÃ HẠ GỤC [BOT] TACTICAL VIPER! PHE TẤN CÔNG CHIẾN THẮNG!");
+                        }
+                        continue;
+                    }
+                }
+
                 // TAC-OPS SOLO 1V1 PVP GUN GAME: Bullet Collision against Opponent
                 if (window.gameMode === "pvp_gungame" && !b.isHostile && !b.isTeammate && window.teammate && window.teammate.active && !window.teammate.isDown) {
                     const tHitR = 17 + b.size;
@@ -21913,6 +22885,10 @@
                 ft.life--;
                 if (ft.life <= 0) ft.active = false;
             }
+
+            if (window.gameMode === "bomb_defusal" && typeof updateTacticalBombLogic === "function") {
+                updateTacticalBombLogic();
+            }
         }
 
         /**
@@ -22145,6 +23121,12 @@
 
             // Draw Colossal Energy Core Stations with Flashing Electromagnetic Arcs
             drawEnergyCoreStations(camX, camY);
+
+            // Draw Tactical Bomb Sites & C4 on Floor
+            if (window.gameMode === "bomb_defusal") {
+                if (typeof drawTacticalBombSites === "function") drawTacticalBombSites(camX, camY);
+                if (typeof drawTacticalActiveBomb === "function") drawTacticalActiveBomb(camX, camY);
+            }
 
             // Draw Spacecraft Interior Props (Cryo Pods, Particle Accelerators, Quantum Supercomputers)
             drawSpacecraftProps(camX, camY);
@@ -22794,6 +23776,21 @@
             // Render Online Co-Op Teammate (Player 2)
             if (window.XENO_COOP && window.XENO_COOP.active && window.teammate && window.teammate.active) {
                 drawTeammatePlayer();
+            }
+
+            // Render Tactical Bomb Bot & Tactical Aim Lasers
+            if (window.gameMode === "bomb_defusal" && typeof TACTICAL_BOMB_STATE !== "undefined" && TACTICAL_BOMB_STATE.active) {
+                if (typeof drawTacticalBot === "function") {
+                    drawTacticalBot(camX, camY);
+                }
+                if (typeof drawTacticalAimLaser === "function") {
+                    if (!player.isDown && !isGameOver) {
+                        drawTacticalAimLaser(ctx, player.x, player.y, player.angle, "rgba(56, 189, 248, 0.45)", "#38bdf8");
+                    }
+                    if (TACTICAL_BOMB_STATE.bot.active && !TACTICAL_BOMB_STATE.bot.isDown) {
+                        drawTacticalAimLaser(ctx, TACTICAL_BOMB_STATE.bot.x, TACTICAL_BOMB_STATE.bot.y, TACTICAL_BOMB_STATE.bot.angle, "rgba(244, 63, 94, 0.45)", "#f43f5e");
+                    }
+                }
             }
 
             // Render Weapon #7 Continuous High-Energy Piercing Laser Beam (3-Layer Quantum Beam + Thermal Nodes)
@@ -29406,7 +30403,7 @@
             lightCtx.setTransform(LIGHT_SCALE, 0, 0, LIGHT_SCALE, 0, 0);
 
             lightCtx.globalCompositeOperation = "source-over";
-            const baseDarkness = (window.gameMode === "pvp_gungame") ? 0.94 : (window.currentMapId >= 2 ? 0.42 : 0.80);
+            const baseDarkness = (window.gameMode === "pvp_gungame") ? 0.94 : (window.gameMode === "bomb_defusal" ? 0.65 : (window.currentMapId >= 2 ? 0.42 : 0.80));
             // Độ tối giảm giật mạnh khi tia điện cao áp bùng nổ trong lúc nạp máy phát điện
             const flickerDrop = (window.gameMode !== "pvp_gungame" && generatorPowerState && generatorPowerState.flickerAlpha) ? generatorPowerState.flickerAlpha : 0;
             const darknessAlpha = Math.max(0.12, baseDarkness * (1.0 - flickerDrop * 0.85));
@@ -29899,8 +30896,13 @@
             setText("hudCredits", player.credits.toLocaleString("vi-VN"));
             setText("lobbyTopCredits", `$${player.credits.toLocaleString("vi-VN")}`);
             setText("armoryCredits", player.credits.toLocaleString("vi-VN"));
-            setText("hudWaveNum", currentWave >= totalWaves ? `${totalBosses} BOSS` : `${currentWave}/${totalWaves}`);
+            if (window.gameMode === "bomb_defusal") {
+                setText("hudWaveNum", "BOMB");
+                setText("waveFormulaPreview", "SECTOR-01 • ĐẤU TRƯỜNG BOOM");
+            } else {
+    setText("hudWaveNum", currentWave >= totalWaves ? `${totalBosses} BOSS` : `${currentWave}/${totalWaves}`);
             setText("waveFormulaPreview", `Map ${window.currentMapId} • ${totalWaves} Đợt • ${totalBosses} Boss`);
+            }
 
             const hpPct = (player.hp / Math.max(1, player.maxHp)) * 100;
             setWidth("hudHpBar", hpPct);
@@ -33737,7 +34739,19 @@
             // 2. Nút "VÀO TRẬN" ở Sảnh hoặc chơi lại solo thông thường (fromNetwork === false && !isCoopActive()) CHỈ CÓ THỂ vào chơi Chế độ Chiến Dịch (Campaign / PvE).
             // ========================================================================
             const isOnlineSession = Boolean(fromNetwork || isCoopActive());
-            if (!isOnlineSession || keepSettingsOpen) {
+            const isTacticalBombSession = (window.gameMode === "bomb_defusal");
+            const isSoloPvPPractice = (window.gameMode === "pvp_gungame" && !isOnlineSession);
+            if (isTacticalBombSession) {
+                if (typeof PVP_GUNGAME_STATE !== "undefined") {
+                    PVP_GUNGAME_STATE.active = false;
+                    PVP_GUNGAME_STATE.matchEnded = false;
+                }
+                if (typeof updatePvPTopHUD === "function") {
+                    updatePvPTopHUD();
+                }
+            } else if (isSoloPvPPractice) {
+                // Keep gameMode as "pvp_gungame" for practice
+            } else if (!isOnlineSession || keepSettingsOpen) {
                 window.gameMode = "campaign";
                 if (typeof PVP_GUNGAME_STATE !== "undefined") {
                     PVP_GUNGAME_STATE.active = false;
@@ -33797,7 +34811,11 @@
             if (victoryModal) { victoryModal.classList.add("hidden"); victoryModal.style.display = "none"; }
             totalKillsCount = 0;
             mapStageStartTime = performance.now();
-            buildMapArchitecture(window.currentMapId);
+            if (window.gameMode === "bomb_defusal") {
+                buildTacticalBombMapArchitecture();
+            } else {
+                buildMapArchitecture(window.currentMapId);
+            }
             // Đảm bảo Boss của Map hiện tại được chuẩn bị sẵn trong RAM Cache (Lazy-loading)
             if (typeof loadBossAssetForMap === "function") {
                 loadBossAssetForMap(window.currentMapId);
@@ -33983,7 +35001,9 @@
             items.forEach(it => it.active = false);
             particles.forEach(p => p.active = false);
 
-            if (window.gameMode === "pvp_gungame" && isOnlineSession && !keepSettingsOpen) {
+            if (window.gameMode === "bomb_defusal" && !keepSettingsOpen) {
+                initBombDefusalMatch();
+            } else if (window.gameMode === "pvp_gungame" && (isOnlineSession || isSoloPvPPractice) && !keepSettingsOpen) {
                 PVP_GUNGAME_STATE.active = true;
                 PVP_GUNGAME_STATE.gunLevel = 0;
                 PVP_GUNGAME_STATE.kills = 0;
@@ -34029,8 +35049,8 @@
             rebuildObstacleSpatialGrid();
             computeFlowField();
 
-            // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn (Bỏ qua trong PvP Gun Game)
-            if (!isCoopClient() && !(window.gameMode === "pvp_gungame" && PVP_GUNGAME_STATE.active)) {
+            // QUY TẮC A: CHỈ CÓ HOST (hoặc chế độ Solo) mới được sinh đợt quái mở màn (Bỏ qua trong PvP Gun Game & Bomb Defusal)
+            if (!isCoopClient() && !(window.gameMode === "pvp_gungame" && PVP_GUNGAME_STATE.active) && !(window.gameMode === "bomb_defusal")) {
                 const openingCount = (window.currentMapId === 1)
                     ? (currentDifficulty.id === "hard" ? 6 : 4)
                     : ((window.currentMapId === 2)
@@ -35758,6 +36778,14 @@
             if (isTypingInput) {
                 if (e.code === "Escape") e.target.blur();
                 return;
+            }
+
+            if (e.code === "Escape") {
+                const cs2Modal = byId("cs2PlayModeModal");
+                if (cs2Modal && !cs2Modal.classList.contains("hidden")) {
+                    window.closeCS2PlayMenu();
+                    return;
+                }
             }
 
             if (isGameOver) {
