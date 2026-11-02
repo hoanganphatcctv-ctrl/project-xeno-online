@@ -4,12 +4,12 @@ cd /d "%~dp0"
 set "PATH=C:\Program Files\Git\cmd;C:\Program Files\nodejs;%LOCALAPPDATA%\Programs\Git\cmd;%LOCALAPPDATA%\Programs\nodejs;%PATH%"
 
 echo ========================================================
-echo PROJECT XENO: RELOADED - DEPLOY AN TOAN TO GITHUB & VERCEL
+echo PROJECT XENO: RELOADED - DEPLOY AN TOAN TO GITHUB VA VERCEL
 echo ========================================================
 echo.
 
-:: BUOC 1: Kiem tra va bao ve ma nguon local (Auto-Sync 2 chieu root ^<^-^> frontend & Tao ban sao luu)
-echo [1/4] Kiem tra va bao ve ma nguon local (Auto-Sync & Backup)...
+:: BUOC 1: Kiem tra va bao ve ma nguon local (Auto-Sync 2 chieu root <-> frontend va tao ban sao luu)
+echo [1/4] Kiem tra va bao ve ma nguon local (Auto-Sync va Backup)...
 powershell -ExecutionPolicy Bypass -File "%~dp0..\build_minified.ps1"
 if errorlevel 1 (
     echo [Canh bao] build_minified.ps1 bao loi, dang chay Node fallback...
@@ -29,7 +29,7 @@ if errorlevel 1 (
 
 :: BUOC 3: Dong goi lai ban phan phoi dist va cap nhat Cache Service Worker
 echo.
-echo [3/4] Dong goi lai dist & sinh ma game.min.js moi nhat cho Vercel...
+echo [3/4] Dong goi lai dist va sinh ma game.min.js moi nhat cho Vercel...
 powershell -ExecutionPolicy Bypass -File "%~dp0..\build_minified.ps1"
 
 :: BUOC 4: Tao commit voi thoi gian thuc va push len GitHub
@@ -41,7 +41,7 @@ git push origin main
 
 echo.
 echo ========================================================
-echo THANH CONG! Code moi nhat da duoc day len GitHub & Vercel.
+echo THANH CONG! Code moi nhat da duoc day len GitHub va Vercel.
 echo Vercel dang tu dong deploy tai:
 echo https://project-xeno-online.vercel.app
 echo ========================================================
