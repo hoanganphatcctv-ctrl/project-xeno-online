@@ -5573,324 +5573,1362 @@
             );
 
             if (mapId === 1) {
-                // MAP 1: CĂN CỨ NGẦM ALPHA - BỐ CỤC CHỈ HUY TRUNG TÂM & CÁC CÁNH VỆ TINH
+                // MAP 1: CĂN CỨ NGẦM ALPHA - CQB TACTICAL LAYOUT (PUBG BLINDSPOT STYLE)
+                // 27 distinct sectors & tactical corridors
                 ROOMS = [
-                    { id: "sec_hub", row: 2, col: 2, name: "TRUNG TÂM CHỈ HUY TỐI CAO", x: 1700, y: 1100, w: 1800, h: 1400, floorColor: "#111827", accent: "rgba(56, 189, 248, 0.35)", isCenter: true },
-                    { id: "sec_north", row: 0, col: 2, name: "KHO VŨ KHÍ & ĐẠN DƯỢC BẮC", x: 1700, y: 40, w: 1800, h: 1060, floorColor: "#0f172a", accent: "rgba(245, 158, 11, 0.25)" },
-                    { id: "sec_south", row: 4, col: 2, name: "PHÒNG LÕI NĂNG LƯỢNG ĐIỆN TỪ NAM", x: 1700, y: 2500, w: 1800, h: 1060, floorColor: "#091926", accent: "rgba(56, 189, 248, 0.45)", isEnergyCoreRoom: true },
-                    { id: "sec_nw", row: 0, col: 0, name: "PHÒNG LAB ĐỘT BIẾN GEN TÂY-BẮC", x: 40, y: 40, w: 1660, h: 1060, floorColor: "#0c191e", accent: "rgba(34, 197, 94, 0.25)" },
-                    { id: "sec_west", row: 2, col: 0, name: "SẢNH TÁC CHIẾN TÂY", x: 40, y: 1100, w: 1660, h: 1400, floorColor: "#131b2e", accent: "rgba(56, 189, 248, 0.20)" },
-                    { id: "sec_sw", row: 4, col: 0, name: "HẦM CÁCH LY SINH HỌC TÂY-NAM", x: 40, y: 2500, w: 1660, h: 1060, floorColor: "#14121d", accent: "rgba(168, 85, 247, 0.25)" },
-                    { id: "sec_ne", row: 0, col: 4, name: "TRẠM MÁY CHỦ QUANTUM ĐÔNG-BẮC", x: 3500, y: 40, w: 1660, h: 1060, floorColor: "#0c1e28", accent: "rgba(14, 165, 233, 0.25)" },
-                    { id: "sec_east", row: 2, col: 4, name: "SẢNH KIỂM SOÁT AN NINH ĐÔNG", x: 3500, y: 1100, w: 1660, h: 1400, floorColor: "#131b2e", accent: "rgba(56, 189, 248, 0.20)" },
-                    { id: "sec_se", row: 4, col: 4, name: "BUỒNG ĐÔNG LẠNH CRYO ĐÔNG-NAM", x: 3500, y: 2500, w: 1660, h: 1060, floorColor: "#0c1c24", accent: "rgba(56, 189, 248, 0.25)" }
+                    // --- TÂY BẮC ---
+                    { id: "sec_nw_airlock", row: 0, col: 0, name: "AIRLOCK TIẾP NHẬN TÂY-BẮC", x: 40, y: 40, w: 440, h: 810, floorColor: "#0b1620", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_nw_lab", row: 0, col: 1, name: "PHÒNG LAB ĐỘT BIẾN GEN ALPHA", x: 480, y: 40, w: 820, h: 810, floorColor: "#0c191e", accent: "rgba(34, 197, 94, 0.40)" },
+                    { id: "sec_w_hallway", row: 1, col: 0, name: "HÀNH LANG TÁC CHIẾN TÂY", x: 40, y: 850, w: 1260, h: 300, floorColor: "#0f172a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_w_ops", row: 2, col: 0, name: "VĂN PHÒNG CHỈ HUY & TÌNH BÁO", x: 40, y: 1150, w: 640, h: 650, floorColor: "#111a2e", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_w_security", row: 2, col: 1, name: "TRẠM GIÁM SÁT AN NINH TÂY", x: 680, y: 1150, w: 620, h: 650, floorColor: "#0d1b2a", accent: "rgba(96, 165, 250, 0.35)" },
+                    { id: "sec_w_storage", row: 3, col: 0, name: "KHO THIẾP BỊ THÍ NGHIỆM TÂY", x: 40, y: 1800, w: 640, h: 650, floorColor: "#131b2e", accent: "rgba(245, 158, 11, 0.30)" },
+                    { id: "sec_w_briefing", row: 3, col: 1, name: "SẢNH HỘI Ý TÁC CHIẾN TÂY", x: 680, y: 1800, w: 620, h: 650, floorColor: "#101d32", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_sw_hallway", row: 4, col: 0, name: "HÀNH LANG CÁCH LY TÂY-NAM", x: 40, y: 2450, w: 1260, h: 300, floorColor: "#0f172a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_sw_quarantine", row: 5, col: 0, name: "HẦM CÁCH LY CẤP 4 TÂY-NAM", x: 40, y: 2750, w: 860, h: 810, floorColor: "#14121d", accent: "rgba(168, 85, 247, 0.40)" },
+                    { id: "sec_sw_decon", row: 5, col: 1, name: "BUỒNG KHỬ TRÙNG & LỌC ĐỘC", x: 900, y: 2750, w: 400, h: 810, floorColor: "#171324", accent: "rgba(192, 132, 252, 0.35)" },
+
+                    // --- BẮC TRUNG TÂM ---
+                    { id: "sec_n_armory", row: 0, col: 2, name: "KHO VŨ KHÍ TÁC CHIẾN BẮC", x: 1300, y: 40, w: 1200, h: 710, floorColor: "#141726", accent: "rgba(245, 158, 11, 0.40)" },
+                    { id: "sec_n_ammo", row: 0, col: 3, name: "KHO TIẾP TẾ ĐẠN & QUÂN NHU", x: 2500, y: 40, w: 1200, h: 710, floorColor: "#15182a", accent: "rgba(251, 146, 60, 0.40)" },
+                    { id: "sec_n_hallway", row: 1, col: 2, name: "HÀNH LANG TIẾP LIỆU BẮC", x: 1300, y: 750, w: 2400, h: 300, floorColor: "#0e1626", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM: SITE A & SITE B (PUBG BLINDSPOT HQ) ---
+                    { id: "sec_hub", row: 2, col: 2, name: "ĐẠI SẢNH TÁC CHIẾN [SITE A & B]", x: 1300, y: 1050, w: 2400, h: 1450, floorColor: "#111827", accent: "rgba(56, 189, 248, 0.50)", isCenter: true },
+
+                    // --- NAM TRUNG TÂM ---
+                    { id: "sec_s_hallway", row: 3, col: 2, name: "HÀNH LANG KỸ THUẬT NAM", x: 1300, y: 2500, w: 2400, h: 250, floorColor: "#0e1626", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_s_reactor", row: 4, col: 2, name: "PHÒNG LÕI NĂNG LƯỢNG ĐIỆN TỪ NAM", x: 1300, y: 2750, w: 1200, h: 810, floorColor: "#091926", accent: "rgba(56, 189, 248, 0.55)", isEnergyCoreRoom: true },
+                    { id: "sec_s_cooling", row: 4, col: 3, name: "TRẠM LÀM NGUỘI & ĐIỀU ÁP TỪ TRƯỜNG", x: 2500, y: 2750, w: 1200, h: 810, floorColor: "#08202d", accent: "rgba(14, 165, 233, 0.40)" },
+
+                    // --- ĐÔNG BẮC & ĐÔNG ---
+                    { id: "sec_ne_servers", row: 0, col: 4, name: "TRẠM MÁY CHỦ QUANTUM ĐÔNG-BẮC", x: 3700, y: 40, w: 650, h: 810, floorColor: "#0c1e28", accent: "rgba(14, 165, 233, 0.40)" },
+                    { id: "sec_ne_uplink", row: 0, col: 5, name: "ĐÀI VIỄN THÔNG VỆ TINH ALPHA", x: 4350, y: 40, w: 810, h: 810, floorColor: "#0a1c22", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_e_hallway", row: 1, col: 4, name: "HÀNH LANG ĐÔNG [EAST HALLWAY]", x: 3700, y: 850, w: 1460, h: 300, floorColor: "#0f172a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_e_cyber", row: 2, col: 4, name: "TRUNG TÂM AN NINH CYBER-OPS", x: 3700, y: 1150, w: 650, h: 650, floorColor: "#0c1c28", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_e_radar", row: 2, col: 5, name: "TRẠM GIÁM SÁT NGOẠI VI", x: 4350, y: 1150, w: 810, h: 650, floorColor: "#0a1824", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "sec_e_medical", row: 3, col: 4, name: "TRẠM Y TẾ CHIẾN THUẬT & HỒI SỨC", x: 3700, y: 1800, w: 650, h: 650, floorColor: "#0e222a", accent: "rgba(45, 212, 191, 0.35)" },
+                    { id: "sec_e_biolab", row: 3, col: 5, name: "PHÒNG HÓA SINH THỰC NGHIỆM", x: 4350, y: 1800, w: 810, h: 650, floorColor: "#0b2026", accent: "rgba(34, 197, 94, 0.30)" },
+                    { id: "sec_se_hallway", row: 4, col: 4, name: "HÀNH LANG TIẾP LIỆU ĐÔNG-NAM", x: 3700, y: 2450, w: 1460, h: 300, floorColor: "#0f172a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_se_cryo", row: 5, col: 4, name: "BUỒNG ĐÔNG LẠNH CRYO ĐÔNG-NAM", x: 3700, y: 2750, w: 650, h: 810, floorColor: "#0c1c24", accent: "rgba(56, 189, 248, 0.40)" },
+                    { id: "sec_se_vault", row: 5, col: 5, name: "HẦM KHO VẬT LIỆU NGUY CẤP", x: 4350, y: 2750, w: 810, h: 810, floorColor: "#111622", accent: "rgba(245, 158, 11, 0.35)" }
                 ];
 
-                addWallWithDoor(1700, 40, 1700, 1100, 570, 240, "vertical", "d_m1_nw_n", "CỬA PHÒNG LAB - KHO BẮC");
-                addWallWithDoor(1700, 1100, 1700, 2500, 1800, 280, "vertical", "d_m1_w_hub", "CỔNG CHỈ HUY TÂY");
-                addWallWithDoor(1700, 2500, 1700, 3560, 3030, 240, "vertical", "d_m1_sw_s", "CỬA CÁCH LY - LÒ PHẢN ỨNG");
+                // --- CÁC CỬA GÓC BẤT ĐỐI XỨNG & TƯỜNG (CORNER DOORS) ---
+                // 1. Tây Bắc
+                addWallWithDoor(480, 40, 480, 850, 200, 260, "vertical", "d_m1_airlock_lab", "CỬA AIRLOCK - LAB");
+                addWallWithDoor(40, 850, 480, 850, 180, 260, "horizontal", "d_m1_airlock_whall", "CỬA AIRLOCK - HÀNH LANG TÂY");
+                addWallWithDoor(480, 850, 1300, 850, 890, 260, "horizontal", "d_m1_lab_whall", "CỬA LAB - HÀNH LANG TÂY");
 
-                addWallWithDoor(3500, 40, 3500, 1100, 570, 240, "vertical", "d_m1_n_ne", "CỬA KHO BẮC - QUANTUM");
-                addWallWithDoor(3500, 1100, 3500, 2500, 1800, 280, "vertical", "d_m1_hub_e", "CỔNG CHỈ HUY ĐÔNG");
-                addWallWithDoor(3500, 2500, 3500, 3560, 3030, 240, "vertical", "d_m1_s_se", "CỬA LÒ PHẢN ỨNG - CRYO");
+                // 2. Dãy Tây Giữa
+                addWallWithDoor(40, 1150, 680, 1150, 200, 260, "horizontal", "d_m1_whall_ops", "CỬA HÀNH LANG - VĂN PHÒNG");
+                addWallWithDoor(680, 1150, 1300, 1150, 990, 260, "horizontal", "d_m1_whall_secw", "CỬA HÀNH LANG - AN NINH TÂY");
+                addWallWithDoor(680, 1150, 680, 1800, 1320, 260, "vertical", "d_m1_ops_secw", "CỬA VĂN PHÒNG - AN NINH TÂY");
+                addWallWithDoor(40, 1800, 680, 1800, 200, 260, "horizontal", "d_m1_ops_stor", "CỬA VĂN PHÒNG - KHO");
+                addWallWithDoor(680, 1800, 1300, 1800, 990, 260, "horizontal", "d_m1_secw_brief", "CỬA AN NINH - HỘI Ý");
+                addWallWithDoor(680, 1800, 680, 2450, 2280, 260, "vertical", "d_m1_stor_brief", "CỬA KHO - HỘI Ý");
+                addWallWithDoor(40, 2450, 680, 2450, 200, 260, "horizontal", "d_m1_stor_swhall", "CỬA KHO - HÀNH LANG TN");
+                addWallWithDoor(680, 2450, 1300, 2450, 990, 260, "horizontal", "d_m1_brief_swhall", "CỬA HỘI Ý - HÀNH LANG TN");
 
-                addWallWithDoor(40, 1100, 1700, 1100, 870, 240, "horizontal", "d_m1_nw_w", "CỬA LAB TÂY - SẢNH TÂY");
-                addWallWithDoor(1700, 1100, 3500, 1100, 2600, 280, "horizontal", "d_m1_n_hub", "CỔNG CHỈ HUY BẮC");
-                addWallWithDoor(3500, 1100, 5160, 1100, 4330, 240, "horizontal", "d_m1_ne_e", "CỬA QUANTUM - SẢNH ĐÔNG");
+                // 3. Tây Nam
+                addWallWithDoor(40, 2750, 900, 2750, 220, 260, "horizontal", "d_m1_swhall_quar", "CỬA HÀNH LANG - CÁCH LY");
+                addWallWithDoor(900, 2750, 1300, 2750, 1100, 260, "horizontal", "d_m1_swhall_decon", "CỬA HÀNH LANG - KHỬ TRÙNG");
+                addWallWithDoor(900, 2750, 900, 3560, 3400, 260, "vertical", "d_m1_quar_decon", "CỬA CÁCH LY - KHỬ TRÙNG");
 
-                addWallWithDoor(40, 2500, 1700, 2500, 870, 240, "horizontal", "d_m1_w_sw", "CỬA SẢNH TÂY - CÁCH LY");
-                addWallWithDoor(1700, 2500, 3500, 2500, 2600, 280, "horizontal", "d_m1_hub_s", "CỔNG CHỈ HUY NAM");
-                addWallWithDoor(3500, 2500, 5160, 2500, 4330, 240, "horizontal", "d_m1_e_se", "CỬA SẢNH ĐÔNG - CRYO");
+                // 4. Kết nối Tây sang Hub Trung Tâm & Hành Lang Kỹ Thuật
+                addWallWithDoor(1300, 1150, 1300, 1800, 1320, 260, "vertical", "d_m1_secw_hub", "CỬA AN NINH TÂY - SITE A");
+                addWallWithDoor(1300, 1800, 1300, 2450, 2280, 260, "vertical", "d_m1_brief_hub", "CỬA HỘI Ý - SITE A");
+                addWallWithDoor(1300, 2450, 1300, 2750, 2600, 260, "vertical", "d_m1_swhall_shall", "CỔNG HÀNH LANG TN - HÀNH LANG NAM");
 
-                // Tactical Pillars in Center Hub
+                // 5. Bắc Trung Tâm
+                addWallWithDoor(2500, 40, 2500, 750, 200, 260, "vertical", "d_m1_armory_ammo", "CỬA KHO VŨ KHÍ - TIẾP TẾ ĐẠN");
+                addWallWithDoor(1300, 750, 2500, 750, 1500, 260, "horizontal", "d_m1_armory_nhall", "CỬA KHO VŨ KHÍ - HÀNH LANG BẮC");
+                addWallWithDoor(2500, 750, 3700, 750, 3100, 260, "horizontal", "d_m1_ammo_nhall", "CỬA TIẾP TẾ - HÀNH LANG BẮC");
+                addWallWithDoor(1300, 750, 1300, 1150, 950, 260, "vertical", "d_m1_whall_nhall", "CỔNG NỐI HÀNH LANG TÂY - BẮC");
+
+                // 6. Cổng vào Đại Sảnh Site A & Site B từ Bắc và Nam (Dual Staggered Entrances)
+                addWallWithDoor(1300, 1050, 2500, 1050, 1850, 280, "horizontal", "d_m1_nhall_siteA", "CỔNG BẮC VÀO SITE A");
+                addWallWithDoor(2500, 1050, 3700, 1050, 3150, 280, "horizontal", "d_m1_nhall_siteB", "CỔNG BẮC VÀO SITE B");
+                addWallWithDoor(1300, 2500, 2500, 2500, 1850, 280, "horizontal", "d_m1_siteA_shall", "CỔNG NAM TỪ SITE A");
+                addWallWithDoor(2500, 2500, 3700, 2500, 3150, 280, "horizontal", "d_m1_siteB_shall", "CỔNG NAM TỪ SITE B");
+
+                // 7. Nam Trung Tâm (Lõi Năng Lượng & Làm Nguội)
+                addWallWithDoor(1300, 2750, 2500, 2750, 1900, 260, "horizontal", "d_m1_shall_reactor", "CỔNG BẢO VỆ LÕI NĂNG LƯỢNG");
+                addWallWithDoor(2500, 2750, 3700, 2750, 3100, 260, "horizontal", "d_m1_shall_cooling", "CỬA HÀNH LANG - LÀM NGUỘI");
+                addWallWithDoor(2500, 2750, 2500, 3560, 3150, 260, "vertical", "d_m1_reactor_cooling", "CỬA LÕI ĐIỆN TỪ - LÀM NGUỘI");
+
+                // 8. Kết nối Đông sang Hub & Hành Lang
+                addWallWithDoor(3700, 750, 3700, 1150, 950, 260, "vertical", "d_m1_nhall_ehall", "CỔNG NỐI HÀNH LANG BẮC - ĐÔNG");
+                addWallWithDoor(3700, 1150, 3700, 1800, 1320, 260, "vertical", "d_m1_hub_cyber", "CỬA SITE B - CYBER-OPS");
+                addWallWithDoor(3700, 1800, 3700, 2450, 2280, 260, "vertical", "d_m1_hub_medical", "CỬA SITE B - TRẠM Y TẾ");
+                addWallWithDoor(3700, 2450, 3700, 2750, 2600, 260, "vertical", "d_m1_shall_sehall", "CỔNG HÀNH LANG NAM - ĐÔNG NAM");
+
+                // 9. Đông Bắc
+                addWallWithDoor(4350, 40, 4350, 850, 200, 260, "vertical", "d_m1_server_uplink", "CỬA MÁY CHỦ - VIỄN THÔNG");
+                addWallWithDoor(3700, 850, 4350, 850, 4100, 260, "horizontal", "d_m1_server_ehall", "CỬA MÁY CHỦ - HÀNH LANG ĐÔNG");
+                addWallWithDoor(4350, 850, 5160, 850, 4950, 260, "horizontal", "d_m1_uplink_ehall", "CỬA VIỄN THÔNG - HÀNH LANG ĐÔNG");
+
+                // 10. Dãy Đông Giữa
+                addWallWithDoor(3700, 1150, 4350, 1150, 4100, 260, "horizontal", "d_m1_ehall_cyber", "CỬA HÀNH LANG - CYBER-OPS");
+                addWallWithDoor(4350, 1150, 5160, 1150, 4950, 260, "horizontal", "d_m1_ehall_radar", "CỬA HÀNH LANG - RADAR");
+                addWallWithDoor(4350, 1150, 4350, 1800, 1320, 260, "vertical", "d_m1_cyber_radar", "CỬA CYBER - RADAR");
+                addWallWithDoor(3700, 1800, 4350, 1800, 4100, 260, "horizontal", "d_m1_cyber_med", "CỬA CYBER - Y TẾ");
+                addWallWithDoor(4350, 1800, 5160, 1800, 4950, 260, "horizontal", "d_m1_radar_biolab", "CỬA RADAR - HÓA SINH");
+                addWallWithDoor(4350, 1800, 4350, 2450, 2280, 260, "vertical", "d_m1_med_biolab", "CỬA Y TẾ - HÓA SINH");
+                addWallWithDoor(3700, 2450, 4350, 2450, 4100, 260, "horizontal", "d_m1_med_sehall", "CỬA Y TẾ - HÀNH LANG ĐN");
+                addWallWithDoor(4350, 2450, 5160, 2450, 4950, 260, "horizontal", "d_m1_biolab_sehall", "CỬA HÓA SINH - HÀNH LANG ĐN");
+
+                // 11. Đông Nam
+                addWallWithDoor(3700, 2750, 4350, 2750, 4100, 260, "horizontal", "d_m1_sehall_cryo", "CỬA HÀNH LANG - BUỒNG CRYO");
+                addWallWithDoor(4350, 2750, 5160, 2750, 4950, 260, "horizontal", "d_m1_sehall_vault", "CỬA HÀNH LANG - HẦM KHO");
+                addWallWithDoor(4350, 2750, 4350, 3560, 3400, 260, "vertical", "d_m1_cryo_vault", "CỬA CRYO - HẦM KHO");
+
+                // --- CÁC VÁCH NGĂN CHIẾN THUẬT LỬNG (PUBG BLINDSPOT PARTITIONS & RECEPTION DESK) ---
+                // Quầy tiếp tân L-shape tại sảnh chính (Lobby Reception Desk)
+                WALLS.push({ x: 2850, y: 1300, w: 220, h: 28 }); // counter top
+                WALLS.push({ x: 3042, y: 1300, w: 28, h: 140 }); // counter side
+
+                // Vách che đạn Site A (Cover partitions)
+                WALLS.push({ x: 1720, y: 1320, w: 28, h: 160 });
+                WALLS.push({ x: 1720, y: 1720, w: 28, h: 160 });
+
+                // Vách che đạn Site B (Cover partitions)
+                WALLS.push({ x: 3480, y: 1320, w: 28, h: 160 });
+                WALLS.push({ x: 3480, y: 1720, w: 28, h: 160 });
+
+                // 4 Trụ cản Boss chính tại Đại sảnh
                 WALLS.push(
-                    { x: 2220, y: 1420, w: 64, h: 64 },
-                    { x: 2916, y: 1420, w: 64, h: 64 },
-                    { x: 2220, y: 2116, w: 64, h: 64 },
-                    { x: 2916, y: 2116, w: 64, h: 64 }
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
 
             } else if (mapId === 2) {
-                // MAP 2: TÀU ORION-IX - TRỤC HẠM ĐỘI NGANG & 2 KHOANG TIÊM KÍCH HANGAR BAY KHỔNG LỒ
+                // MAP 2: TÀU CHIẾN HẠM ORION-IX - ASYMMETRIC NAVAL CQB (PUBG BLINDSPOT STYLE)
+                // 22 Specialized Compartments & Catwalk Corridors
                 ROOMS = [
-                    { id: "sec_spine", row: 2, col: 2, name: "ĐẠI SẢNH TRỤC TÀU ORION-IX", x: 1700, y: 1350, w: 1800, h: 900, floorColor: "rgba(10, 24, 52, 0.50)", accent: "rgba(56, 189, 248, 0.45)", isCenter: true },
-                    { id: "sec_bridge", row: 2, col: 0, name: "ĐÀI CHỈ HUY & MŨI TÀU TÂY", x: 40, y: 1350, w: 1660, h: 900, floorColor: "rgba(8, 20, 44, 0.42)", accent: "rgba(168, 85, 247, 0.35)" },
-                    { id: "sec_thrusters", row: 2, col: 4, name: "BUỒNG ĐỘNG CƠ ĐẨY ION ĐÔNG", x: 3500, y: 1350, w: 1660, h: 900, floorColor: "rgba(8, 20, 44, 0.42)", accent: "rgba(245, 158, 11, 0.35)" },
-                    { id: "sec_hangar_a", row: 0, col: 1, name: "KHOANG TIÊM KÍCH HANGAR ALPHA", x: 40, y: 40, w: 2560, h: 1310, floorColor: "rgba(6, 18, 38, 0.38)", accent: "rgba(56, 189, 248, 0.35)" },
-                    { id: "sec_hangar_b", row: 0, col: 3, name: "KHOANG TIÊM KÍCH HANGAR BETA", x: 2600, y: 40, w: 2560, h: 1310, floorColor: "rgba(6, 18, 38, 0.38)", accent: "rgba(56, 189, 248, 0.35)" },
-                    { id: "sec_cryo_sleep", row: 4, col: 0, name: "KHOANG NGỦ ĐÔNG PHI HÀNH ĐOÀN", x: 40, y: 2250, w: 1660, h: 1310, floorColor: "rgba(14, 28, 52, 0.45)", accent: "rgba(125, 211, 252, 0.30)" },
-                    { id: "sec_warp_core", row: 4, col: 2, name: "PHÒNG LÕI NĂNG LƯỢNG WARP TÀU ORION", x: 1700, y: 2250, w: 1800, h: 1310, floorColor: "rgba(14, 22, 52, 0.56)", accent: "rgba(56, 189, 248, 0.50)", isEnergyCoreRoom: true },
-                    { id: "sec_torpedo", row: 4, col: 4, name: "KHO VŨ KHÍ & NGƯ LÔI TORPEDO", x: 3500, y: 2250, w: 1660, h: 1310, floorColor: "rgba(28, 18, 42, 0.45)", accent: "rgba(245, 158, 11, 0.30)" }
+                    // --- DẢI BẮC: 4 KHOANG TIÊM KÍCH & PHI ĐỘI HANGAR ---
+                    { id: "sec_m2_hangar_a1", row: 0, col: 0, name: "KHOANG TIÊM KÍCH HANGAR ALPHA-1", x: 40, y: 40, w: 1200, h: 810, floorColor: "rgba(6, 18, 38, 0.40)", accent: "rgba(56, 189, 248, 0.40)" },
+                    { id: "sec_m2_hangar_a2", row: 0, col: 1, name: "TRẠM BẢO DƯỠNG TIÊM KÍCH ALPHA-2", x: 1240, y: 40, w: 1240, h: 810, floorColor: "rgba(6, 20, 42, 0.38)", accent: "rgba(14, 165, 233, 0.35)" },
+                    { id: "sec_m2_hangar_b1", row: 0, col: 2, name: "TRẠM TIẾP NHIÊN LIỆU PHI ĐỘI BETA-1", x: 2480, y: 40, w: 1240, h: 810, floorColor: "rgba(6, 20, 42, 0.38)", accent: "rgba(14, 165, 233, 0.35)" },
+                    { id: "sec_m2_hangar_b2", row: 0, col: 3, name: "SÀN PHÓNG CATAPULT HANGAR BETA-2", x: 3720, y: 40, w: 1440, h: 810, floorColor: "rgba(6, 18, 38, 0.40)", accent: "rgba(56, 189, 248, 0.40)" },
+
+                    // --- HÀNH LANG KẾT NỐI BẮC (DORSAL CATWALK) ---
+                    { id: "sec_m2_bow_catwalk", row: 1, col: 0, name: "HÀNH LANG MŨI TÀU TÂY-BẮC", x: 40, y: 850, w: 1600, h: 300, floorColor: "rgba(8, 20, 44, 0.45)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_m2_spine_dorsal", row: 1, col: 1, name: "TRỤC HÀNH LANG LƯNG TÀU (DORSAL SPINE)", x: 1640, y: 850, w: 2080, h: 300, floorColor: "rgba(10, 24, 48, 0.48)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_m2_eng_catwalk", row: 1, col: 2, name: "HÀNH LANG KIỂM SOÁT ĐỘNG CƠ ĐÔNG-BẮC", x: 3720, y: 850, w: 1440, h: 300, floorColor: "rgba(14, 22, 46, 0.45)", accent: "rgba(245, 158, 11, 0.35)" },
+
+                    // --- TRỤC CHỈ HUY & ĐẠI SẢNH TÁC CHIẾN CIC (TRUNG TÂM) ---
+                    { id: "sec_m2_bridge", row: 2, col: 0, name: "ĐÀI CHỈ HUY MŨI TÀU ORION-IX", x: 40, y: 1150, w: 950, h: 650, floorColor: "rgba(8, 20, 44, 0.50)", accent: "rgba(168, 85, 247, 0.42)" },
+                    { id: "sec_m2_nav", row: 2, col: 1, name: "PHÒNG ĐIỀU HƯỚNG & HẢI ĐỒ KHÔNG GIAN", x: 990, y: 1150, w: 650, h: 650, floorColor: "rgba(10, 24, 48, 0.46)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_m2_cic", row: 2, col: 2, name: "ĐẠI SẢNH TÁC CHIẾN CIC TRUNG TÂM", x: 1640, y: 1150, w: 2080, h: 1300, floorColor: "rgba(10, 24, 52, 0.55)", accent: "rgba(56, 189, 248, 0.50)", isCenter: true },
+                    { id: "sec_m2_sublight", row: 2, col: 3, name: "PHÒNG ĐIỀU KHIỂN ĐỘNG CƠ DƯỚI ÁNH SÁNG", x: 3720, y: 1150, w: 1440, h: 650, floorColor: "rgba(12, 22, 44, 0.46)", accent: "rgba(245, 158, 11, 0.35)" },
+
+                    // --- TẦNG GIỮA THẤP (MID-LOWER) ---
+                    { id: "sec_m2_captain", row: 3, col: 0, name: "PHÒNG CHỈ HUY TÁC CHIẾN & TÌNH BÁO", x: 40, y: 1800, w: 950, h: 650, floorColor: "rgba(8, 20, 44, 0.45)", accent: "rgba(168, 85, 247, 0.38)" },
+                    { id: "sec_m2_armory_w", row: 3, col: 1, name: "KHO VŨ KHÍ BỘ BINH KHÔNG GIAN TÂY", x: 990, y: 1800, w: 650, h: 650, floorColor: "rgba(10, 24, 48, 0.46)", accent: "rgba(245, 158, 11, 0.35)" },
+                    { id: "sec_m2_thrusters", row: 3, col: 3, name: "BUỒNG ĐỘNG CƠ ĐẨY ION ĐÔNG", x: 3720, y: 1800, w: 1440, h: 650, floorColor: "rgba(8, 20, 44, 0.48)", accent: "rgba(245, 158, 11, 0.45)" },
+
+                    // --- HÀNH LANG KẾT NỐI NAM (VENTRAL CATWALK) ---
+                    { id: "sec_m2_bow_ventral", row: 4, col: 0, name: "HÀNH LANG SINH HOẠT TÂY-NAM", x: 40, y: 2450, w: 1600, h: 300, floorColor: "rgba(8, 20, 44, 0.45)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "sec_m2_spine_ventral", row: 4, col: 1, name: "TRỤC HÀNH LANG BỤNG TÀU (VENTRAL SPINE)", x: 1640, y: 2450, w: 2080, h: 300, floorColor: "rgba(10, 24, 48, 0.48)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "sec_m2_torp_catwalk", row: 4, col: 2, name: "HÀNH LANG KHO VŨ KHÍ ĐÔNG-NAM", x: 3720, y: 2450, w: 1440, h: 300, floorColor: "rgba(14, 22, 46, 0.45)", accent: "rgba(245, 158, 11, 0.35)" },
+
+                    // --- DẢI NAM: NĂNG LƯỢNG WARP, KHIÊN LỰC & SỰ SỐNG ---
+                    { id: "sec_m2_cryo_sleep", row: 5, col: 0, name: "KHOANG NGỦ ĐÔNG PHI HÀNH ĐOÀN TÂY-NAM", x: 40, y: 2750, w: 800, h: 810, floorColor: "rgba(14, 28, 52, 0.48)", accent: "rgba(125, 211, 252, 0.40)" },
+                    { id: "sec_m2_life_support", row: 5, col: 1, name: "TRẠM DUY TRÌ SỰ SỐNG & LỌC OXY", x: 840, y: 2750, w: 800, h: 810, floorColor: "rgba(10, 26, 48, 0.46)", accent: "rgba(45, 212, 191, 0.35)" },
+                    { id: "sec_m2_warp_core", row: 5, col: 2, name: "PHÒNG LÕI NĂNG LƯỢNG WARP ORION", x: 1640, y: 2750, w: 1040, h: 810, floorColor: "rgba(14, 22, 52, 0.58)", accent: "rgba(56, 189, 248, 0.55)", isEnergyCoreRoom: true },
+                    { id: "sec_m2_shield_gen", row: 5, col: 3, name: "MÁY PHÁT TRƯỜNG LỰC BẢO VỆ TÀU", x: 2680, y: 2750, w: 1040, h: 810, floorColor: "rgba(12, 24, 50, 0.52)", accent: "rgba(14, 165, 233, 0.40)" },
+                    { id: "sec_m2_torpedo", row: 5, col: 4, name: "KHO VŨ KHÍ & NGƯ LÔI TORPEDO ĐÔNG-NAM", x: 3720, y: 2750, w: 1440, h: 810, floorColor: "rgba(28, 18, 42, 0.48)", accent: "rgba(245, 158, 11, 0.40)" }
                 ];
 
-                addWallWithDoor(40, 1350, 1700, 1350, 870, 260, "horizontal", "d_m2_h_a1", "CỔNG HANGAR ALPHA TÂY");
-                addWallWithDoor(1700, 1350, 2600, 1350, 2150, 240, "horizontal", "d_m2_h_a2", "CỔNG HANGAR ALPHA TRUNG TÂM");
-                addWallWithDoor(2600, 1350, 3500, 1350, 3050, 240, "horizontal", "d_m2_h_b1", "CỔNG HANGAR BETA TRUNG TÂM");
-                addWallWithDoor(3500, 1350, 5160, 1350, 4330, 260, "horizontal", "d_m2_h_b2", "CỔNG HANGAR BETA ĐÔNG");
+                // --- CỬA GÓC BẤT ĐỐI XỨNG & TƯỜNG (CORNER DOORS & BLAST GATES) ---
+                // 1. Dải Bắc (Hangars)
+                addWallWithDoor(1240, 40, 1240, 850, 200, 280, "vertical", "d_m2_ha1_ha2", "CỬA NGĂN HANGAR A1 - A2");
+                addWallWithDoor(2480, 40, 2480, 850, 200, 280, "vertical", "d_m2_ha2_hb1", "CỔNG CHẮN HẠM ĐỘI A - B");
+                addWallWithDoor(3720, 40, 3720, 850, 200, 280, "vertical", "d_m2_hb1_hb2", "CỬA NGĂN HANGAR B1 - B2");
 
-                addWallWithDoor(40, 2250, 1700, 2250, 870, 240, "horizontal", "d_m2_bridge_cryo", "CỬA ĐÀI CHỈ HUY - NGỦ ĐÔNG");
-                addWallWithDoor(1700, 2250, 3500, 2250, 2600, 280, "horizontal", "d_m2_spine_warp", "CỔNG BẢO VỆ LÕI WARP");
-                addWallWithDoor(3500, 2250, 5160, 2250, 4330, 240, "horizontal", "d_m2_eng_torp", "CỬA ĐỘNG CƠ - NGƯ LÔI");
+                // Hangars xuống Catwalk
+                addWallWithDoor(40, 850, 1240, 850, 200, 260, "horizontal", "d_m2_ha1_catw", "CỔNG HANGAR A1 - CATWALK MŨI");
+                addWallWithDoor(1240, 850, 1640, 850, 1440, 260, "horizontal", "d_m2_ha2_catw1", "CỔNG HANGAR A2 - CATWALK MŨI");
+                addWallWithDoor(1640, 850, 2480, 850, 2060, 280, "horizontal", "d_m2_ha2_spine", "CỔNG HANGAR A2 - TRỤC LƯNG");
+                addWallWithDoor(2480, 850, 3720, 850, 3100, 280, "horizontal", "d_m2_hb1_spine", "CỔNG HANGAR B1 - TRỤC LƯNG");
+                addWallWithDoor(3720, 850, 5160, 850, 4950, 280, "horizontal", "d_m2_hb2_engcat", "CỔNG HANGAR B2 - CATWALK ĐỘNG CƠ");
 
-                addWallWithDoor(2600, 40, 2600, 1350, 695, 280, "vertical", "d_m2_hangars", "CỬA NGĂN 2 HANGAR");
-                addWallWithDoor(1700, 1350, 1700, 2250, 1800, 260, "vertical", "d_m2_bridge_spine", "CỬA MŨI TÀU - TRỤC CHÍNH");
-                addWallWithDoor(3500, 1350, 3500, 2250, 1800, 260, "vertical", "d_m2_spine_eng", "CỬA TRỤC CHÍNH - ĐỘNG CƠ");
+                // 2. Nối Catwalk Bắc
+                addWallWithDoor(1640, 850, 1640, 1150, 1000, 260, "vertical", "d_m2_bowcat_spine", "CỔNG NỐI CATWALK MŨI - LƯNG");
+                addWallWithDoor(3720, 850, 3720, 1150, 1000, 260, "vertical", "d_m2_spine_engcat", "CỔNG NỐI TRỤC LƯNG - ĐỘNG CƠ");
 
-                addWallWithDoor(1700, 2250, 1700, 3560, 2905, 240, "vertical", "d_m2_cryo_warp", "VÁCH NGĂN PHẢN VẬT CHẤT TÂY");
-                addWallWithDoor(3500, 2250, 3500, 3560, 2905, 240, "vertical", "d_m2_warp_torp", "VÁCH NGĂN PHẢN VẬT CHẤT ĐÔNG");
+                // 3. Mũi tàu & Đài chỉ huy (Bridge)
+                addWallWithDoor(40, 1150, 990, 1150, 200, 260, "horizontal", "d_m2_bowcat_bridge", "CỬA CATWALK - ĐÀI CHỈ HUY");
+                addWallWithDoor(990, 1150, 1640, 1150, 1400, 260, "horizontal", "d_m2_bowcat_nav", "CỬA CATWALK - HẢI ĐỒ");
+                addWallWithDoor(990, 1150, 990, 1800, 1320, 260, "vertical", "d_m2_bridge_nav", "CỬA ĐÀI CHỈ HUY - HẢI ĐỒ");
+                addWallWithDoor(40, 1800, 990, 1800, 200, 260, "horizontal", "d_m2_bridge_capt", "CỬA ĐÀI CHỈ HUY - PHÒNG CHỈ HUY");
+                addWallWithDoor(990, 1800, 1640, 1800, 1400, 260, "horizontal", "d_m2_nav_armoryw", "CỬA HẢI ĐỒ - KHO VŨ KHÍ TÂY");
+                addWallWithDoor(990, 1800, 990, 2450, 2280, 260, "vertical", "d_m2_capt_armoryw", "CỬA CHỈ HUY - KHO VŨ KHÍ TÂY");
+                addWallWithDoor(40, 2450, 990, 2450, 200, 260, "horizontal", "d_m2_capt_ventral", "CỬA CHỈ HUY - CATWALK BỤNG");
+                addWallWithDoor(990, 2450, 1640, 2450, 1400, 260, "horizontal", "d_m2_armoryw_ventral", "CỬA KHO VŨ KHÍ - CATWALK BỤNG");
+
+                // 4. Mũi tàu sang CIC Trung Tâm
+                addWallWithDoor(1640, 1150, 1640, 1800, 1320, 280, "vertical", "d_m2_nav_cic", "CỔNG ĐIỀU HƯỚNG - ĐẠI SẢNH CIC");
+                addWallWithDoor(1640, 1800, 1640, 2450, 2280, 280, "vertical", "d_m2_armoryw_cic", "CỔNG KHO VŨ KHÍ - ĐẠI SẢNH CIC");
+
+                // 5. Cổng vào CIC từ Trục Lưng và Bụng (Dorsal & Ventral Gates)
+                addWallWithDoor(1640, 1150, 3720, 1150, 2600, 300, "horizontal", "d_m2_spine_cic_n", "CỔNG CHỈ HUY BẮC CIC");
+                addWallWithDoor(1640, 2450, 3720, 2450, 2600, 300, "horizontal", "d_m2_cic_spine_s", "CỔNG CHỈ HUY NAM CIC");
+
+                // 6. CIC sang Động cơ Đẩy (Sublight & Thrusters)
+                addWallWithDoor(3720, 1150, 3720, 1800, 1320, 280, "vertical", "d_m2_cic_sublight", "CỔNG CIC - KIỂM SOÁT ĐỘNG CƠ");
+                addWallWithDoor(3720, 1800, 3720, 2450, 2280, 280, "vertical", "d_m2_cic_thrust", "CỔNG CIC - BUỒNG ĐỘNG CƠ ION");
+                addWallWithDoor(3720, 1800, 5160, 1800, 4950, 280, "horizontal", "d_m2_sublight_thrust", "CỬA KIỂM SOÁT - BUỒNG ĐỘNG CƠ");
+
+                // 7. Catwalk Nam (Ventral Catwalk)
+                addWallWithDoor(1640, 2450, 1640, 2750, 2600, 260, "vertical", "d_m2_bowvent_spine", "CỔNG NỐI CATWALK BỤNG MŨI - LÕI");
+                addWallWithDoor(3720, 2450, 3720, 2750, 2600, 260, "vertical", "d_m2_spine_torpcat", "CỔNG NỐI TRỤC BỤNG - KHO VŨ KHÍ");
+
+                // 8. Dải Nam (Ngủ đông, Lọc oxy, Lõi Warp, Khiên lực, Ngư lôi)
+                addWallWithDoor(40, 2750, 840, 2750, 200, 260, "horizontal", "d_m2_vent_cryo", "CỬA CATWALK - KHOANG NGỦ ĐÔNG");
+                addWallWithDoor(840, 2750, 1640, 2750, 1400, 260, "horizontal", "d_m2_vent_life", "CỬA CATWALK - TRẠM OXY");
+                addWallWithDoor(840, 2750, 840, 3560, 3400, 260, "vertical", "d_m2_cryo_life", "CỬA KHOANG NGỦ ĐÔNG - TRẠM OXY");
+
+                addWallWithDoor(1640, 2750, 2680, 2750, 2160, 280, "horizontal", "d_m2_spine_warp", "CỔNG BẢO VỆ LÕI WARP");
+                addWallWithDoor(2680, 2750, 3720, 2750, 3200, 280, "horizontal", "d_m2_spine_shield", "CỔNG TRỤC BỤNG - MÁY PHÁT KHIÊN");
+                addWallWithDoor(2680, 2750, 2680, 3560, 3150, 280, "vertical", "d_m2_warp_shield", "VÁCH PHẢN VẬT CHẤT WARP - KHIÊN");
+
+                addWallWithDoor(3720, 2750, 5160, 2750, 4950, 280, "horizontal", "d_m2_torpcat_torp", "CỬA CATWALK - KHO NGƯ LÔI");
+
+                // --- VÁCH BẢO VỆ CHIẾN THUẬT VÀ QUẦY ĐIỀU HÀNH TRÊN TÀU ORION ---
+                // Quầy điều hành chiến thuật chữ U trong sảnh CIC (Tactical Command Dais)
+                WALLS.push({ x: 2850, y: 1300, w: 220, h: 28 }); // main console
+                WALLS.push({ x: 3042, y: 1300, w: 28, h: 140 }); // tactical wing
+
+                // Vách chắn hỏa lực (Cover partitions)
+                WALLS.push({ x: 2000, y: 1350, w: 28, h: 160 });
+                WALLS.push({ x: 2000, y: 1750, w: 28, h: 160 });
+                WALLS.push({ x: 3280, y: 1350, w: 28, h: 160 });
+                WALLS.push({ x: 3280, y: 1750, w: 28, h: 160 });
+
+                // 4 Trụ chịu lực hạm đội (Colossal Warship Bulkhead Pillars)
+                WALLS.push(
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
+                );
 
             } else if (mapId === 3) {
-                // MAP 3: TRẠM BĂNG GIÁ EUROPA - VÒM ĐỊA CỰC & HÀNH LANG BĂNG HÀ
+                // MAP 3: TRẠM BĂNG GIÁ EUROPA - VÒM ĐỊA NHIỆT & 27 PHÒNG/HÀNH LANG CQB CHIẾN THUẬT
                 ROOMS = [
-                    { id: "sec_core_dome", row: 2, col: 2, name: "VÒM ĐỊA NHIỆT TRUNG TÂM EUROPA", x: 1600, y: 1000, w: 2000, h: 1600, floorColor: "rgba(8, 30, 54, 0.52)", accent: "rgba(56, 189, 248, 0.45)", isCenter: true },
-                    { id: "sec_aurora_dome", row: 0, col: 2, name: "ĐÀI QUAN SÁT CỰC QUANG BẮC", x: 1600, y: 40, w: 2000, h: 960, floorColor: "rgba(6, 24, 46, 0.45)", accent: "rgba(45, 212, 191, 0.40)" },
-                    { id: "sec_ocean_trench", row: 4, col: 2, name: "PHÒNG LÕI NĂNG LƯỢNG NHIỆT HẠCH NAM", x: 1600, y: 2600, w: 2000, h: 960, floorColor: "rgba(6, 26, 52, 0.52)", accent: "rgba(56, 189, 248, 0.48)", isEnergyCoreRoom: true },
-                    { id: "sec_drill_nw", row: 1, col: 0, name: "KHU KHOAN BĂNG VĨNH CỬU TÂY-BẮC", x: 40, y: 40, w: 1560, h: 1740, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.35)" },
-                    { id: "sec_rift_sw", row: 3, col: 0, name: "VỰC SÂU MẪU VẬT BĂNG TÂY-NAM", x: 40, y: 1780, w: 1560, h: 1780, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(96, 165, 250, 0.35)" },
-                    { id: "sec_radar_ne", row: 1, col: 4, name: "TRẠM VIỄN THÔNG VỆ TINH ĐÔNG-BẮC", x: 3600, y: 40, w: 1560, h: 1740, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.35)" },
-                    { id: "sec_life_se", row: 3, col: 4, name: "NHÀ MÁY NHIỆT HẠCH NGẦM ĐÔNG-NAM", x: 3600, y: 1780, w: 1560, h: 1780, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(96, 165, 250, 0.35)" }
+                    // --- DẢI BẮC ---
+                    { id: "m3_nw_drill", row: 0, col: 0, name: "KHU KHOAN BĂNG VĨNH CỬU TÂY-BẮC", x: 40, y: 40, w: 960, h: 810, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.40)" },
+                    { id: "m3_n_filter", row: 0, col: 1, name: "TRẠM LỌC NƯỚC BĂNG BẮC", x: 1000, y: 40, w: 500, h: 810, floorColor: "rgba(8, 24, 44, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_n_aurora", row: 0, col: 2, name: "ĐÀI QUAN SÁT CỰC QUANG EUROPA", x: 1500, y: 40, w: 1100, h: 810, floorColor: "rgba(6, 28, 50, 0.48)", accent: "rgba(45, 212, 191, 0.42)" },
+                    { id: "m3_n_meteo", row: 0, col: 3, name: "TRẠM KHÍ TƯỢNG ĐỊA CỰC BẮC", x: 2600, y: 40, w: 1100, h: 810, floorColor: "rgba(6, 24, 46, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_ne_cryo", row: 0, col: 4, name: "BUỒNG ĐÔNG LẠNH MẪU VẬT ĐÔNG-BẮC", x: 3700, y: 40, w: 500, h: 810, floorColor: "rgba(8, 24, 44, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_ne_radar", row: 0, col: 5, name: "TRẠM VIỄN THÔNG VỆ TINH ĐÔNG-BẮC", x: 4200, y: 40, w: 960, h: 810, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.40)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m3_hall_nw", row: 1, col: 0, name: "HÀNH LANG BĂNG TÂY-BẮC", x: 40, y: 850, w: 960, h: 250, floorColor: "rgba(8, 20, 42, 0.40)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m3_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG BĂNG HÀ BẮC", x: 1000, y: 850, w: 3200, h: 250, floorColor: "rgba(8, 22, 46, 0.42)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m3_hall_ne", row: 1, col: 4, name: "HÀNH LANG BĂNG ĐÔNG-BẮC", x: 4200, y: 850, w: 960, h: 250, floorColor: "rgba(8, 20, 42, 0.40)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m3_w_lab1", row: 2, col: 0, name: "PHÒNG THÍ NGHIỆM BĂNG HÀ TÂY", x: 40, y: 1100, w: 710, h: 700, floorColor: "rgba(10, 24, 46, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_w_seismo", row: 2, col: 1, name: "TRẠM ĐO ĐỊA CHẤN NGẦM TÂY", x: 750, y: 1100, w: 750, h: 700, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(45, 212, 191, 0.35)" },
+                    { id: "m3_w_fossil", row: 3, col: 0, name: "HẦM MẪU VẬT HÓA THẠCH TÂY", x: 40, y: 1800, w: 710, h: 700, floorColor: "rgba(10, 24, 46, 0.45)", accent: "rgba(125, 211, 252, 0.35)" },
+                    { id: "m3_w_ecolab", row: 3, col: 1, name: "VIỆN SINH THÁI BĂNG VỰC SÂU", x: 750, y: 1800, w: 750, h: 700, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+
+                    // --- VÒM ĐỊA NHIỆT TRUNG TÂM EUROPA ---
+                    { id: "m3_core_dome", row: 2, col: 2, name: "VÒM ĐỊA NHIỆT TRUNG TÂM EUROPA", x: 1500, y: 1100, w: 2200, h: 1400, floorColor: "rgba(8, 30, 54, 0.55)", accent: "rgba(56, 189, 248, 0.50)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m3_e_radar", row: 2, col: 3, name: "TRẠM RADAR BĂNG ĐÔNG", x: 3700, y: 1100, w: 750, h: 700, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(45, 212, 191, 0.35)" },
+                    { id: "m3_e_survey", row: 2, col: 4, name: "KHOANG KHẢO SÁT VỰC SÂU ĐÔNG", x: 4450, y: 1100, w: 710, h: 700, floorColor: "rgba(10, 24, 46, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_e_tools", row: 3, col: 3, name: "KHO DỤNG CỤ THÁM HIỂM ĐÔNG", x: 3700, y: 1800, w: 750, h: 700, floorColor: "rgba(8, 20, 42, 0.45)", accent: "rgba(245, 158, 11, 0.35)" },
+                    { id: "m3_e_rescue", row: 3, col: 4, name: "TRẠM CỨU HỘ BÃO TUYẾT ĐÔNG", x: 4450, y: 1800, w: 710, h: 700, floorColor: "rgba(10, 24, 46, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m3_hall_sw", row: 4, col: 0, name: "HÀNH LANG BĂNG TÂY-NAM", x: 40, y: 2500, w: 960, h: 250, floorColor: "rgba(8, 20, 42, 0.40)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m3_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG KỸ THUẬT NAM", x: 1000, y: 2500, w: 3200, h: 250, floorColor: "rgba(8, 22, 46, 0.42)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m3_hall_se", row: 4, col: 4, name: "HÀNH LANG BĂNG ĐÔNG-NAM", x: 4200, y: 2500, w: 960, h: 250, floorColor: "rgba(8, 20, 42, 0.40)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m3_sw_rift", row: 5, col: 0, name: "VỰC SÂU MẪU VẬT BĂNG TÂY-NAM", x: 40, y: 2750, w: 960, h: 810, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.40)" },
+                    { id: "m3_s_o2", row: 5, col: 1, name: "BUỒNG LỌC OXY BĂNG TUYẾT", x: 1000, y: 2750, w: 500, h: 810, floorColor: "rgba(8, 24, 44, 0.45)", accent: "rgba(45, 212, 191, 0.35)" },
+                    { id: "m3_s_reactor", row: 5, col: 2, name: "PHÒNG LÕI NHIỆT HẠCH EUROPA", x: 1500, y: 2750, w: 1100, h: 810, floorColor: "rgba(6, 26, 52, 0.55)", accent: "rgba(56, 189, 248, 0.50)", isEnergyCoreRoom: true },
+                    { id: "m3_s_pump", row: 5, col: 3, name: "TRẠM BƠM NƯỚC BIỂN NGẦM EUROPA", x: 2600, y: 2750, w: 1100, h: 810, floorColor: "rgba(6, 24, 46, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_se_pressure", row: 5, col: 4, name: "KHOANG NÉN ÁP SUẤT TUYẾT", x: 3700, y: 2750, w: 500, h: 810, floorColor: "rgba(8, 24, 44, 0.45)", accent: "rgba(56, 189, 248, 0.35)" },
+                    { id: "m3_se_life", row: 5, col: 5, name: "NHÀ MÁY NHIỆT HẠCH NGẦM ĐÔNG-NAM", x: 4200, y: 2750, w: 960, h: 810, floorColor: "rgba(10, 26, 48, 0.45)", accent: "rgba(125, 211, 252, 0.40)" }
                 ];
 
-                addWallWithDoor(1600, 40, 1600, 1000, 520, 240, "vertical", "d_m3_nw_n", "CẦU BĂNG KHOAN - CỰC QUANG");
-                addWallWithDoor(1600, 1000, 1600, 1780, 1390, 260, "vertical", "d_m3_w_core1", "CỔNG VÒM ĐỊA NHIỆT TÂY-BẮC");
-                addWallWithDoor(1600, 1780, 1600, 2600, 2190, 260, "vertical", "d_m3_w_core2", "CỔNG VÒM ĐỊA NHIỆT TÂY-NAM");
-                addWallWithDoor(1600, 2600, 1600, 3560, 3080, 240, "vertical", "d_m3_sw_s", "CẦU BĂNG VỰC SÂU - ĐẠI DƯƠNG");
+                // 1. Dải Bắc (Dọc ngăn các phòng)
+                addWallWithDoor(1000, 40, 1000, 850, 250, 260, "vertical", "d_m3_nw_filter", "CỬA KHOAN BĂNG - LỌC NƯỚC");
+                addWallWithDoor(1500, 40, 1500, 850, 250, 260, "vertical", "d_m3_filter_aurora", "CỬA LỌC NƯỚC - CỰC QUANG");
+                addWallWithDoor(2600, 40, 2600, 850, 250, 260, "vertical", "d_m3_aurora_meteo", "CỬA CỰC QUANG - KHÍ TƯỢNG");
+                addWallWithDoor(3700, 40, 3700, 850, 250, 260, "vertical", "d_m3_meteo_cryo", "CỬA KHÍ TƯỢNG - ĐÔNG LẠNH");
+                addWallWithDoor(4200, 40, 4200, 850, 250, 260, "vertical", "d_m3_cryo_radar", "CỬA ĐÔNG LẠNH - VIỄN THÔNG");
 
-                addWallWithDoor(3600, 40, 3600, 1000, 520, 240, "vertical", "d_m3_n_ne", "CẦU BĂNG CỰC QUANG - RADAR");
-                addWallWithDoor(3600, 1000, 3600, 1780, 1390, 260, "vertical", "d_m3_core_e1", "CỔNG VÒM ĐỊA NHIỆT ĐÔNG-BẮC");
-                addWallWithDoor(3600, 1780, 3600, 2600, 2190, 260, "vertical", "d_m3_core_e2", "CỔNG VÒM ĐỊA NHIỆT ĐÔNG-NAM");
-                addWallWithDoor(3600, 2600, 3600, 3560, 3080, 240, "vertical", "d_m3_s_se", "CẦU BĂNG ĐẠI DƯƠNG - NHIỆT HẠCH");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=850)
+                addWallWithDoor(40, 850, 1000, 850, 250, 260, "horizontal", "d_m3_nw_hallnw", "CỬA KHOAN BĂNG - HÀNH LANG TB");
+                addWallWithDoor(1000, 850, 1500, 850, 1250, 260, "horizontal", "d_m3_filter_halln", "CỬA LỌC NƯỚC - HÀNH LANG BẮC");
+                addWallWithDoor(1500, 850, 2600, 850, 2050, 260, "horizontal", "d_m3_aurora_halln", "CỬA CỰC QUANG - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 850, 3700, 850, 3150, 260, "horizontal", "d_m3_meteo_halln", "CỬA KHÍ TƯỢNG - HÀNH LANG BẮC");
+                addWallWithDoor(3700, 850, 4200, 850, 3950, 260, "horizontal", "d_m3_cryo_halln", "CỬA ĐÔNG LẠNH - HÀNH LANG BẮC");
+                addWallWithDoor(4200, 850, 5160, 850, 4950, 260, "horizontal", "d_m3_radar_hallne", "CỬA VIỄN THÔNG - HÀNH LANG ĐB");
 
-                addWallWithDoor(1600, 1000, 3600, 1000, 2600, 280, "horizontal", "d_m3_n_core", "CỔNG VÒM ĐỊA NHIỆT BẮC");
-                addWallWithDoor(1600, 2600, 3600, 2600, 2600, 280, "horizontal", "d_m3_core_s", "CỔNG VÒM ĐỊA NHIỆT NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1000, 850, 1000, 1100, 975, 240, "vertical", "d_m3_hallnw_halln", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(4200, 850, 4200, 1100, 975, 240, "vertical", "d_m3_halln_hallne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-                addWallWithDoor(40, 1780, 1600, 1780, 820, 240, "horizontal", "d_m3_nw_sw", "HÀNH LANG BĂNG HÀ TÂY");
-                addWallWithDoor(3600, 1780, 5160, 1780, 4380, 240, "horizontal", "d_m3_ne_se", "HÀNH LANG BĂNG HÀ ĐÔNG");
+                // 4. Hành lang Bắc xuống các phòng giữa & Vòm Địa Nhiệt (Ngang Y=1100)
+                addWallWithDoor(40, 1100, 750, 1100, 250, 260, "horizontal", "d_m3_hallnw_lab1", "CỬA HÀNH LANG - THÍ NGHIỆM");
+                addWallWithDoor(750, 1100, 1500, 1100, 1125, 260, "horizontal", "d_m3_halln_seismo", "CỬA HÀNH LANG - ĐỊA CHẤN");
+                addWallWithDoor(1500, 1100, 3700, 1100, 2600, 280, "horizontal", "d_m3_halln_core", "ĐẠI MÔN BẮC VÒM ĐỊA NHIỆT");
+                addWallWithDoor(3700, 1100, 4450, 1100, 4075, 260, "horizontal", "d_m3_halln_radar", "CỬA HÀNH LANG - RADAR ĐÔNG");
+                addWallWithDoor(4450, 1100, 5160, 1100, 4950, 260, "horizontal", "d_m3_hallne_survey", "CỬA HÀNH LANG - KHẢO SÁT");
+
+                // 5. Cánh Tây
+                addWallWithDoor(750, 1100, 750, 1800, 1450, 260, "vertical", "d_m3_lab1_seismo", "CỬA THÍ NGHIỆM - ĐỊA CHẤN");
+                addWallWithDoor(40, 1800, 750, 1800, 250, 260, "horizontal", "d_m3_lab1_fossil", "CỬA THÍ NGHIỆM - MẪU VẬT");
+                addWallWithDoor(750, 1800, 1500, 1800, 1125, 260, "horizontal", "d_m3_seismo_ecolab", "CỬA ĐỊA CHẤN - SINH THÁI");
+                addWallWithDoor(750, 1800, 750, 2500, 2150, 260, "vertical", "d_m3_fossil_ecolab", "CỬA MẪU VẬT - SINH THÁI");
+                addWallWithDoor(1500, 1100, 1500, 1800, 1450, 260, "vertical", "d_m3_seismo_core", "CỬA ĐỊA CHẤN - VÒM ĐỊA NHIỆT");
+                addWallWithDoor(1500, 1800, 1500, 2500, 2150, 260, "vertical", "d_m3_ecolab_core", "CỬA SINH THÁI - VÒM ĐỊA NHIỆT");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4450, 1100, 4450, 1800, 1450, 260, "vertical", "d_m3_radar_survey", "CỬA RADAR - KHẢO SÁT");
+                addWallWithDoor(3700, 1800, 4450, 1800, 4075, 260, "horizontal", "d_m3_radar_tools", "CỬA RADAR - KHO DỤNG CỤ");
+                addWallWithDoor(4450, 1800, 5160, 1800, 4950, 260, "horizontal", "d_m3_survey_rescue", "CỬA KHẢO SÁT - CỨU HỘ");
+                addWallWithDoor(4450, 1800, 4450, 2500, 2150, 260, "vertical", "d_m3_tools_rescue", "CỬA KHO DỤNG CỤ - CỨU HỘ");
+                addWallWithDoor(3700, 1100, 3700, 1800, 1450, 260, "vertical", "d_m3_core_radar", "CỬA VÒM ĐỊA NHIỆT - RADAR ĐÔNG");
+                addWallWithDoor(3700, 1800, 3700, 2500, 2150, 260, "vertical", "d_m3_core_tools", "CỬA VÒM ĐỊA NHIỆT - KHO DỤNG CỤ");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 750, 2500, 250, 260, "horizontal", "d_m3_fossil_hallsw", "CỬA MẪU VẬT - HÀNH LANG TN");
+                addWallWithDoor(750, 2500, 1500, 2500, 1125, 260, "horizontal", "d_m3_ecolab_halls", "CỬA SINH THÁI - HÀNH LANG NAM");
+                addWallWithDoor(1500, 2500, 3700, 2500, 2600, 280, "horizontal", "d_m3_core_halls", "ĐẠI MÔN NAM VÒM ĐỊA NHIỆT");
+                addWallWithDoor(3700, 2500, 4450, 2500, 4075, 260, "horizontal", "d_m3_tools_halls", "CỬA KHO DỤNG CỤ - HÀNH LANG NAM");
+                addWallWithDoor(4450, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m3_rescue_hallse", "CỬA CỨU HỘ - HÀNH LANG ĐN");
+
+                // 8. Nối Hành lang Nam dọc
+                addWallWithDoor(1000, 2500, 1000, 2750, 2625, 240, "vertical", "d_m3_hallsw_halls", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(4200, 2500, 4200, 2750, 2625, 240, "vertical", "d_m3_halls_hallse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2750)
+                addWallWithDoor(40, 2750, 1000, 2750, 250, 260, "horizontal", "d_m3_hallsw_rift", "CỬA HÀNH LANG - VỰC BĂNG");
+                addWallWithDoor(1000, 2750, 1500, 2750, 1250, 260, "horizontal", "d_m3_halls_o2", "CỬA HÀNH LANG - LỌC OXY");
+                addWallWithDoor(1500, 2750, 2600, 2750, 2050, 260, "horizontal", "d_m3_halls_reactor", "CỔNG HÀNH LANG - NHIỆT HẠCH");
+                addWallWithDoor(2600, 2750, 3700, 2750, 3150, 260, "horizontal", "d_m3_halls_pump", "CỬA HÀNH LANG - TRẠM BƠM");
+                addWallWithDoor(3700, 2750, 4200, 2750, 3950, 260, "horizontal", "d_m3_halls_press", "CỬA HÀNH LANG - NÉN ÁP SUẤT");
+                addWallWithDoor(4200, 2750, 5160, 2750, 4950, 260, "horizontal", "d_m3_hallse_life", "CỬA HÀNH LANG - NHÀ MÁY ĐN");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(1000, 2750, 1000, 3560, 3350, 260, "vertical", "d_m3_rift_o2", "CỬA VỰC BĂNG - LỌC OXY");
+                addWallWithDoor(1500, 2750, 1500, 3560, 3350, 260, "vertical", "d_m3_o2_reactor", "CỬA LỌC OXY - NHIỆT HẠCH");
+                addWallWithDoor(2600, 2750, 2600, 3560, 3350, 260, "vertical", "d_m3_reactor_pump", "CỬA NHIỆT HẠCH - TRẠM BƠM");
+                addWallWithDoor(3700, 2750, 3700, 3560, 3350, 260, "vertical", "d_m3_pump_press", "CỬA TRẠM BƠM - NÉN ÁP");
+                addWallWithDoor(4200, 2750, 4200, 3560, 3350, 260, "vertical", "d_m3_press_life", "CỬA NÉN ÁP - NHÀ MÁY ĐN");
+
+                // Vách chiến thuật L & Trụ chắn đạn
+                WALLS.push(
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1400, w: 28, h: 160 },
+                    { x: 3250, y: 1400, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
+                );
 
             } else if (mapId === 4) {
-                // MAP 4: LÕI NHAM THẠCH - ĐẠI VỰC CALDERA MỞ & 2 SẢNH LÒ LUYỆN
+                // MAP 4: LÕI NHAM THẠCH CALDERA - XƯỞNG ĐÚC OBSIDIAN & MAGMA CHASM (27 PHÒNG CQB)
                 ROOMS = [
-                    { id: "sec_caldera", row: 2, col: 2, name: "VỰC DUNG NHAM MAGMA TỐI CAO", x: 1400, y: 800, w: 2400, h: 2000, floorColor: "#240906", accent: "rgba(251, 146, 60, 0.55)", isCenter: true },
-                    { id: "sec_sulfur", row: 0, col: 2, name: "TRẠM CHIẾT XUẤT LƯU HUỲNH BẮC", x: 1400, y: 40, w: 2400, h: 760, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" },
-                    { id: "sec_slag", row: 4, col: 2, name: "HẦM LÀM NGUỘI QUẶNG MAGMA NAM", x: 1400, y: 2800, w: 2400, h: 760, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" },
-                    { id: "sec_smelter_w", row: 2, col: 0, name: "ĐẠI SẢNH LÒ LUYỆN HẮC DIỆN THẠCH TÂY", x: 40, y: 40, w: 1360, h: 3520, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" },
-                    { id: "sec_crucible_e", row: 2, col: 4, name: "ĐẠI SẢNH LÒ NHIỆT HẠCH ĐÔNG", x: 3800, y: 40, w: 1360, h: 3520, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" }
+                    // Dải Bắc
+                    { id: "m4_nw_ore", row: 0, col: 0, name: "KHO QUẶNG HẮC DIỆN THẠCH TÂY-BẮC", x: 40, y: 40, w: 900, h: 710, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_n_crusher", row: 0, col: 1, name: "TRẠM NGHIỀN QUẶNG MAGMA", x: 940, y: 40, w: 560, h: 710, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" },
+                    { id: "m4_n_sulfur", row: 0, col: 2, name: "TRẠM CHIẾT XUẤT LƯU HUỲNH KHÍ HÓA BẮC", x: 1500, y: 40, w: 1100, h: 710, floorColor: "#220a06", accent: "rgba(251, 146, 60, 0.45)" },
+                    { id: "m4_n_vent", row: 0, col: 3, name: "THÁP LỌC TRO NÚI LỬA BẮC", x: 2600, y: 40, w: 1100, h: 710, floorColor: "#1d0805", accent: "rgba(245, 158, 11, 0.40)" },
+                    { id: "m4_ne_crucible", row: 0, col: 4, name: "KHOANG NUNG TITAN NHIỆT HẠCH", x: 3700, y: 40, w: 560, h: 710, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" },
+                    { id: "m4_ne_assay", row: 0, col: 5, name: "TRẠM PHÂN TÍCH QUẶNG ĐÔNG-BẮC", x: 4260, y: 40, w: 900, h: 710, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" },
+
+                    // Hành lang Xỉ Quặng Bắc
+                    { id: "m4_hall_nw", row: 1, col: 0, name: "HÀNH LANG VẬN CHUYỂN XỈ TÂY-BẮC", x: 40, y: 750, w: 1460, h: 250, floorColor: "#130504", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m4_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG CHỊU NHIỆT BẮC", x: 1500, y: 750, w: 2200, h: 250, floorColor: "#1a0805", accent: "rgba(251, 146, 60, 0.35)" },
+                    { id: "m4_hall_ne", row: 1, col: 4, name: "HÀNH LANG VẬN CHUYỂN XỈ ĐÔNG-BẮC", x: 3700, y: 750, w: 1460, h: 250, floorColor: "#130504", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // Cánh Tây (Smelters)
+                    { id: "m4_w_smelter1", row: 2, col: 0, name: "LÒ LUYỆN HẮC DIỆN THẠCH 1", x: 40, y: 1000, w: 710, h: 750, floorColor: "#170604", accent: "rgba(239, 68, 68, 0.40)" },
+                    { id: "m4_w_casting1", row: 2, col: 1, name: "TRẠM ĐÚC PHÔI KIM LOẠI TÂY 1", x: 750, y: 1000, w: 750, h: 750, floorColor: "#1f0906", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_w_smelter2", row: 3, col: 0, name: "LÒ LUYỆN HẮC DIỆN THẠCH 2", x: 40, y: 1750, w: 710, h: 750, floorColor: "#170604", accent: "rgba(239, 68, 68, 0.40)" },
+                    { id: "m4_w_casting2", row: 3, col: 1, name: "TRẠM ĐÚC PHÔI KIM LOẠI TÂY 2", x: 750, y: 1750, w: 750, h: 750, floorColor: "#1f0906", accent: "rgba(249, 115, 22, 0.40)" },
+
+                    // ĐẠI VỰC CALDERA TRUNG TÂM
+                    { id: "m4_caldera", row: 2, col: 2, name: "ĐẠI VỰC DUNG NHAM MAGMA TỐI CAO", x: 1500, y: 1000, w: 2200, h: 1500, floorColor: "#280b06", accent: "rgba(251, 146, 60, 0.60)", isCenter: true },
+
+                    // Cánh Đông (Forges)
+                    { id: "m4_e_forge1", row: 2, col: 3, name: "ĐẠI SẢNH LÒ NHIỆT HẠCH ĐÔNG 1", x: 3700, y: 1000, w: 750, h: 750, floorColor: "#1f0906", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_e_quench1", row: 2, col: 4, name: "BUỒNG TÔI THÉP PLASMA ĐÔNG 1", x: 4450, y: 1000, w: 710, h: 750, floorColor: "#170604", accent: "rgba(239, 68, 68, 0.40)" },
+                    { id: "m4_e_forge2", row: 3, col: 3, name: "ĐẠI SẢNH LÒ NHIỆT HẠCH ĐÔNG 2", x: 3700, y: 1750, w: 750, h: 750, floorColor: "#1f0906", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_e_quench2", row: 3, col: 4, name: "BUỒNG TÔI THÉP PLASMA ĐÔNG 2", x: 4450, y: 1750, w: 710, h: 750, floorColor: "#170604", accent: "rgba(239, 68, 68, 0.40)" },
+
+                    // Hành lang Làm Nguội Nam
+                    { id: "m4_hall_sw", row: 4, col: 0, name: "HÀNH LANG LÀM NGUỘI TÂY-NAM", x: 40, y: 2500, w: 1460, h: 250, floorColor: "#130504", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m4_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG XẢ ÁP MAGMA NAM", x: 1500, y: 2500, w: 2200, h: 250, floorColor: "#1a0805", accent: "rgba(251, 146, 60, 0.35)" },
+                    { id: "m4_hall_se", row: 4, col: 4, name: "HÀNH LANG LÀM NGUỘI ĐÔNG-NAM", x: 3700, y: 2500, w: 1460, h: 250, floorColor: "#130504", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // Dải Nam
+                    { id: "m4_sw_slag", row: 5, col: 0, name: "HẦM LÀM NGUỘI QUẶNG MAGMA TÂY-NAM", x: 40, y: 2750, w: 900, h: 810, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_s_heatsink", row: 5, col: 1, name: "BUỒNG TẢN NHIỆT CAO ÁP TÂY-NAM", x: 940, y: 2750, w: 560, h: 810, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" },
+                    { id: "m4_s_reactor", row: 5, col: 2, name: "LÒ PHẢN ỨNG MAGMA ĐỊA NHIỆT NAM", x: 1500, y: 2750, w: 1100, h: 810, floorColor: "#2c0906", accent: "rgba(251, 146, 60, 0.55)", isEnergyCoreRoom: true },
+                    { id: "m4_s_pump", row: 5, col: 3, name: "TRẠM BƠM MAGMA THỦY LỰC NAM", x: 2600, y: 2750, w: 1100, h: 810, floorColor: "#1e0805", accent: "rgba(249, 115, 22, 0.40)" },
+                    { id: "m4_se_relief", row: 5, col: 4, name: "TRẠM ĐIỀU KHIỂN XẢ ÁP ĐÔNG-NAM", x: 3700, y: 2750, w: 560, h: 810, floorColor: "#150604", accent: "rgba(239, 68, 68, 0.35)" },
+                    { id: "m4_se_vault", row: 5, col: 5, name: "HẦM LƯU TRỮ PHÔI KIM LOẠI ĐÔNG-NAM", x: 4260, y: 2750, w: 900, h: 810, floorColor: "#1b0805", accent: "rgba(249, 115, 22, 0.40)" }
                 ];
 
-                // Split [800, 2800] cleanly at 1800 so the 2 doors on each side have completely open passages!
-                addWallWithDoor(1400, 40, 1400, 800, 420, 240, "vertical", "d_m4_n_w", "CỬA LÒ TÂY - LƯU HUỲNH");
-                addWallWithDoor(1400, 800, 1400, 1800, 1300, 280, "vertical", "d_m4_caldera_w1", "CỔNG DUNG NHAM TÂY 1");
-                addWallWithDoor(1400, 1800, 1400, 2800, 2300, 280, "vertical", "d_m4_caldera_w2", "CỔNG DUNG NHAM TÂY 2");
-                addWallWithDoor(1400, 2800, 1400, 3560, 3180, 240, "vertical", "d_m4_s_w", "CỬA LÒ TÂY - HẦM QUẶNG");
+                // 1. Dải Bắc dọc
+                addWallWithDoor(940, 40, 940, 750, 250, 260, "vertical", "d_m4_ore_crush", "CỬA QUẶNG - NGHIỀN");
+                addWallWithDoor(1500, 40, 1500, 750, 250, 260, "vertical", "d_m4_crush_sulfur", "CỬA NGHIỀN - LƯU HUỲNH");
+                addWallWithDoor(2600, 40, 2600, 750, 250, 260, "vertical", "d_m4_sulfur_vent", "CỬA LƯU HUỲNH - LỌC TRO");
+                addWallWithDoor(3700, 40, 3700, 750, 250, 260, "vertical", "d_m4_vent_crucible", "CỬA LỌC TRO - NUNG TITAN");
+                addWallWithDoor(4260, 40, 4260, 750, 250, 260, "vertical", "d_m4_crucible_assay", "CỬA NUNG TITAN - PHÂN TÍCH");
 
-                addWallWithDoor(3800, 40, 3800, 800, 420, 240, "vertical", "d_m4_n_e", "CỬA LÒ ĐÔNG - LƯU HUỲNH");
-                addWallWithDoor(3800, 800, 3800, 1800, 1300, 280, "vertical", "d_m4_caldera_e1", "CỔNG DUNG NHAM ĐÔNG 1");
-                addWallWithDoor(3800, 1800, 3800, 2800, 2300, 280, "vertical", "d_m4_caldera_e2", "CỔNG DUNG NHAM ĐÔNG 2");
-                addWallWithDoor(3800, 2800, 3800, 3560, 3180, 240, "vertical", "d_m4_s_e", "CỬA LÒ ĐÔNG - HẦM QUẶNG");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=750)
+                addWallWithDoor(40, 750, 940, 750, 250, 260, "horizontal", "d_m4_ore_hallnw", "CỬA QUẶNG - HÀNH LANG TB");
+                addWallWithDoor(940, 750, 1500, 750, 1220, 260, "horizontal", "d_m4_crush_hallnw", "CỬA NGHIỀN - HÀNH LANG TB");
+                addWallWithDoor(1500, 750, 2600, 750, 2050, 260, "horizontal", "d_m4_sulfur_halln", "CỬA LƯU HUỲNH - TRỤC BẮC");
+                addWallWithDoor(2600, 750, 3700, 750, 3150, 260, "horizontal", "d_m4_vent_halln", "CỬA LỌC TRO - TRỤC BẮC");
+                addWallWithDoor(3700, 750, 4260, 750, 3980, 260, "horizontal", "d_m4_crucible_hallne", "CỬA NUNG - HÀNH LANG ĐB");
+                addWallWithDoor(4260, 750, 5160, 750, 4950, 260, "horizontal", "d_m4_assay_hallne", "CỬA PHÂN TÍCH - HÀNH LANG ĐB");
 
-                addWallWithDoor(1400, 800, 3800, 800, 2600, 300, "horizontal", "d_m4_n_caldera", "CỔNG CALDERA BẮC");
-                addWallWithDoor(1400, 2800, 3800, 2800, 2600, 300, "horizontal", "d_m4_caldera_s", "CỔNG CALDERA NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1500, 750, 1500, 1000, 875, 240, "vertical", "d_m4_hallnw_halln", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3700, 750, 3700, 1000, 875, 240, "vertical", "d_m4_halln_hallne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-            } else if (mapId === 5) {
-                // MAP 5: TỔ QUỶ BIOMECHANICAL CITADEL - THÁNH ĐỊA TRỨNG CHÚA & VƯỜN ẤP KÉN HỮU CƠ
-                ROOMS = [
-                    { id: "sec_empress_throne", row: 2, col: 2, name: "THÁNH ĐỊA TRỨNG CHÚA HIVE EMPRESS", x: 1300, y: 800, w: 2600, h: 2000, floorColor: "#19042b", accent: "rgba(217, 70, 239, 0.60)", isCenter: true },
-                    { id: "sec_nursery", row: 0, col: 2, name: "BUỒNG KÉN ĐỘT BIẾN HOÀNG GIA BẮC", x: 1300, y: 40, w: 2600, h: 760, floorColor: "#120320", accent: "rgba(168, 85, 247, 0.40)" },
-                    { id: "sec_chasm", row: 4, col: 2, name: "HỐ SÂU TIÊU HÓA SINH HỌC NAM", x: 1300, y: 2800, w: 2600, h: 760, floorColor: "#120320", accent: "rgba(168, 85, 247, 0.40)" },
-                    { id: "sec_spire_nw", row: 1, col: 0, name: "THÁP XƯƠNG SỤN KÝ SINH TÂY-BẮC", x: 40, y: 40, w: 1260, h: 1740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.35)" },
-                    { id: "sec_acid_sw", row: 3, col: 0, name: "ĐỘNG BÀO TỬ AXIT TÂY-NAM", x: 40, y: 1780, w: 1260, h: 1780, floorColor: "#0a0114", accent: "rgba(74, 222, 128, 0.35)" },
-                    { id: "sec_royal_ne", row: 1, col: 4, name: "BUỒNG ẤP ẤU TRÙNG ĐÔNG-BẮC", x: 3900, y: 40, w: 1260, h: 1740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.35)" },
-                    { id: "sec_cortex_se", row: 3, col: 4, name: "HẠCH NÃO THẦN KINH TỔ QUỶ ĐÔNG-NAM", x: 3900, y: 1780, w: 1260, h: 1780, floorColor: "#0a0114", accent: "rgba(244, 63, 94, 0.35)" }
-                ];
+                // 4. Hành lang Bắc xuống các phòng & Caldera (Ngang Y=1000)
+                addWallWithDoor(40, 1000, 750, 1000, 250, 260, "horizontal", "d_m4_hallnw_smelt1", "CỬA HÀNH LANG - LÒ LUYỆN 1");
+                addWallWithDoor(750, 1000, 1500, 1000, 1125, 260, "horizontal", "d_m4_hallnw_cast1", "CỬA HÀNH LANG - ĐÚC PHÔI 1");
+                addWallWithDoor(1500, 1000, 3700, 1000, 2600, 280, "horizontal", "d_m4_halln_caldera", "ĐẠI MÔN BẮC CALDERA");
+                addWallWithDoor(3700, 1000, 4450, 1000, 4075, 260, "horizontal", "d_m4_hallne_forge1", "CỬA HÀNH LANG - LÒ ĐÔNG 1");
+                addWallWithDoor(4450, 1000, 5160, 1000, 4950, 260, "horizontal", "d_m4_hallne_quench1", "CỬA HÀNH LANG - TÔI THÉP 1");
 
-                // Split [800, 2800] cleanly at 1780 (matching West/East horizontal divider at Y=1780) so all 4 side doors are 100% unobstructed!
-                addWallWithDoor(1300, 40, 1300, 800, 420, 240, "vertical", "d_m5_n_nw", "KHE HỞ BUỒNG ẤP TÂY BẮC");
-                addWallWithDoor(1300, 800, 1300, 1780, 1290, 280, "vertical", "d_m5_emp_w1", "CỬA KÉN HOÀNG GIA TÂY 1");
-                addWallWithDoor(1300, 1780, 1300, 2800, 2290, 280, "vertical", "d_m5_emp_w2", "CỬA KÉN HOÀNG GIA TÂY 2");
-                addWallWithDoor(1300, 2800, 1300, 3560, 3180, 240, "vertical", "d_m5_s_sw", "KHE HỞ HỐ TIÊU HÓA TÂY NAM");
+                // 5. Cánh Tây
+                addWallWithDoor(750, 1000, 750, 1750, 1375, 260, "vertical", "d_m4_smelt1_cast1", "CỬA LÒ 1 - ĐÚC 1");
+                addWallWithDoor(40, 1750, 750, 1750, 250, 260, "horizontal", "d_m4_smelt1_smelt2", "CỬA LÒ 1 - LÒ 2");
+                addWallWithDoor(750, 1750, 1500, 1750, 1125, 260, "horizontal", "d_m4_cast1_cast2", "CỬA ĐÚC 1 - ĐÚC 2");
+                addWallWithDoor(750, 1750, 750, 2500, 2125, 260, "vertical", "d_m4_smelt2_cast2", "CỬA LÒ 2 - ĐÚC 2");
+                addWallWithDoor(1500, 1000, 1500, 1750, 1375, 260, "vertical", "d_m4_cast1_caldera", "CỔNG ĐÚC 1 - CALDERA");
+                addWallWithDoor(1500, 1750, 1500, 2500, 2125, 260, "vertical", "d_m4_cast2_caldera", "CỔNG ĐÚC 2 - CALDERA");
 
-                addWallWithDoor(3900, 40, 3900, 800, 420, 240, "vertical", "d_m5_n_ne", "KHE HỞ BUỒNG ẤP ĐÔNG BẮC");
-                addWallWithDoor(3900, 800, 3900, 1780, 1290, 280, "vertical", "d_m5_emp_e1", "CỬA KÉN HOÀNG GIA ĐÔNG 1");
-                addWallWithDoor(3900, 1780, 3900, 2800, 2290, 280, "vertical", "d_m5_emp_e2", "CỬA KÉN HOÀNG GIA ĐÔNG 2");
-                addWallWithDoor(3900, 2800, 3900, 3560, 3180, 240, "vertical", "d_m5_s_se", "KHE HỞ HỐ TIÊU HÓA ĐÔNG NAM");
+                // 6. Cánh Đông
+                addWallWithDoor(4450, 1000, 4450, 1750, 1375, 260, "vertical", "d_m4_forge1_quench1", "CỬA LÒ ĐÔNG 1 - TÔI 1");
+                addWallWithDoor(3700, 1750, 4450, 1750, 4075, 260, "horizontal", "d_m4_forge1_forge2", "CỬA LÒ ĐÔNG 1 - 2");
+                addWallWithDoor(4450, 1750, 5160, 1750, 4950, 260, "horizontal", "d_m4_quench1_quench2", "CỬA TÔI 1 - 2");
+                addWallWithDoor(4450, 1750, 4450, 2500, 2125, 260, "vertical", "d_m4_forge2_quench2", "CỬA LÒ ĐÔNG 2 - TÔI 2");
+                addWallWithDoor(3700, 1000, 3700, 1750, 1375, 260, "vertical", "d_m4_caldera_forge1", "CỔNG CALDERA - LÒ ĐÔNG 1");
+                addWallWithDoor(3700, 1750, 3700, 2500, 2125, 260, "vertical", "d_m4_caldera_forge2", "CỔNG CALDERA - LÒ ĐÔNG 2");
 
-                addWallWithDoor(1300, 800, 3900, 800, 2600, 300, "horizontal", "d_m5_n_emp", "CƠ VÒNG KÉN BẮC");
-                addWallWithDoor(1300, 2800, 3900, 2800, 2600, 300, "horizontal", "d_m5_emp_s", "CƠ VÒNG KÉN NAM");
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 750, 2500, 250, 260, "horizontal", "d_m4_smelt2_hallsw", "CỬA LÒ 2 - HÀNH LANG TN");
+                addWallWithDoor(750, 2500, 1500, 2500, 1125, 260, "horizontal", "d_m4_cast2_hallsw", "CỬA ĐÚC 2 - HÀNH LANG TN");
+                addWallWithDoor(1500, 2500, 3700, 2500, 2600, 280, "horizontal", "d_m4_caldera_halls", "ĐẠI MÔN NAM CALDERA");
+                addWallWithDoor(3700, 2500, 4450, 2500, 4075, 260, "horizontal", "d_m4_forge2_hallse", "CỬA LÒ ĐÔNG 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4450, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m4_quench2_hallse", "CỬA TÔI 2 - HÀNH LANG ĐN");
 
-                addWallWithDoor(40, 1780, 1300, 1780, 670, 240, "horizontal", "d_m5_nw_sw", "KHOANG SỤN TÂY");
-                addWallWithDoor(3900, 1780, 5160, 1780, 4530, 240, "horizontal", "d_m5_ne_se", "KHOANG SỤN ĐÔNG");
-            } else if (mapId === 6) {
-                // MAP 6: LÕI DỊ ĐIỂM SINGULARITY NEXUS - ĐẤU TRƯỜNG HỐ ĐEN LƯỢNG TỬ & 6 KHU VỰC DYSON VỆ TINH
-                ROOMS = [
-                    { id: "sec_nexus_core", row: 2, col: 2, name: "ĐẤU TRƯỜNG CHÂN TRỜI SỰ KIỆN DỊ ĐIỂM", x: 1450, y: 850, w: 2300, h: 1900, floorColor: "rgba(9, 5, 24, 0.52)", accent: "rgba(34, 211, 238, 0.65)", isCenter: true },
-                    { id: "sec_antimatter_n", row: 0, col: 2, name: "BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC", x: 1450, y: 40, w: 2300, h: 810, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
-                    { id: "sec_gravity_s", row: 4, col: 2, name: "HẦM NEO TRỌNG LỰC LƯỢNG TỬ NAM", x: 1450, y: 2750, w: 2300, h: 810, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
-                    { id: "sec_tachyon_nw", row: 1, col: 0, name: "THÁP LĂNG KÍNH TACHYON TÂY-BẮC", x: 40, y: 40, w: 1410, h: 1760, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(56, 189, 248, 0.42)" },
-                    { id: "sec_warp_sw", row: 3, col: 0, name: "KHOANG BẺ CONG KHÔNG GIAN TÂY-NAM", x: 40, y: 1800, w: 1410, h: 1760, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(168, 85, 247, 0.42)" },
-                    { id: "sec_quark_ne", row: 1, col: 4, name: "ĐÀI GIA TỐC HẠT QUARK ĐÔNG-BẮC", x: 3750, y: 40, w: 1410, h: 1760, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(56, 189, 248, 0.42)" },
-                    { id: "sec_singularity_se", row: 3, col: 4, name: "LÒ PHẢN ỨNG DỊ ĐIỂM ĐÔNG-NAM", x: 3750, y: 1800, w: 1410, h: 1760, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(244, 114, 182, 0.42)" }
-                ];
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1500, 2500, 1500, 2750, 2625, 240, "vertical", "d_m4_hallsw_halls", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3700, 2500, 3700, 2750, 2625, 240, "vertical", "d_m4_halls_hallse", "CỔNG HÀNH LANG NAM - ĐN");
 
-                addWallWithDoor(1450, 40, 1450, 850, 445, 250, "vertical", "d_m6_n_nw", "CỔNG TACHYON TÂY-BẮC");
-                addWallWithDoor(1450, 850, 1450, 1800, 1325, 280, "vertical", "d_m6_core_w1", "CỔNG CHÂN TRỜI TÂY 1");
-                addWallWithDoor(1450, 1800, 1450, 2750, 2275, 280, "vertical", "d_m6_core_w2", "CỔNG CHÂN TRỜI TÂY 2");
-                addWallWithDoor(1450, 2750, 1450, 3560, 3155, 250, "vertical", "d_m6_s_sw", "CỔNG KHÔNG GIAN TÂY-NAM");
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2750)
+                addWallWithDoor(40, 2750, 940, 2750, 250, 260, "horizontal", "d_m4_hallsw_slag", "CỬA HÀNH LANG - HẦM XỈ");
+                addWallWithDoor(940, 2750, 1500, 2750, 1220, 260, "horizontal", "d_m4_hallsw_heatsink", "CỬA HÀNH LANG - TẢN NHIỆT");
+                addWallWithDoor(1500, 2750, 2600, 2750, 2050, 260, "horizontal", "d_m4_halls_reactor", "CỔNG HÀNH LANG - LÒ MAGMA");
+                addWallWithDoor(2600, 2750, 3700, 2750, 3150, 260, "horizontal", "d_m4_halls_pump", "CỬA HÀNH LANG - BƠM MAGMA");
+                addWallWithDoor(3700, 2750, 4260, 2750, 3980, 260, "horizontal", "d_m4_hallse_relief", "CỬA HÀNH LANG - XẢ ÁP");
+                addWallWithDoor(4260, 2750, 5160, 2750, 4950, 260, "horizontal", "d_m4_hallse_vault", "CỬA HÀNH LANG - HẦM PHÔI");
 
-                addWallWithDoor(3750, 40, 3750, 850, 445, 250, "vertical", "d_m6_n_ne", "CỔNG HẠT QUARK ĐÔNG-BẮC");
-                addWallWithDoor(3750, 850, 3750, 1800, 1325, 280, "vertical", "d_m6_core_e1", "CỔNG CHÂN TRỜI ĐÔNG 1");
-                addWallWithDoor(3750, 1800, 3750, 2750, 2275, 280, "vertical", "d_m6_core_e2", "CỔNG CHÂN TRỜI ĐÔNG 2");
-                addWallWithDoor(3750, 2750, 3750, 3560, 3155, 250, "vertical", "d_m6_s_se", "CỔNG DỊ ĐIỂM ĐÔNG-NAM");
+                // 10. Dải Nam dọc
+                addWallWithDoor(940, 2750, 940, 3560, 3350, 260, "vertical", "d_m4_slag_heatsink", "CỬA HẦM XỈ - TẢN NHIỆT");
+                addWallWithDoor(1500, 2750, 1500, 3560, 3350, 260, "vertical", "d_m4_heatsink_reactor", "CỬA TẢN NHIỆT - LÒ PHẢN ỨNG");
+                addWallWithDoor(2600, 2750, 2600, 3560, 3350, 260, "vertical", "d_m4_reactor_pump", "CỬA LÒ PHẢN ỨNG - BƠM");
+                addWallWithDoor(3700, 2750, 3700, 3560, 3350, 260, "vertical", "d_m4_pump_relief", "CỬA BƠM - XẢ ÁP");
+                addWallWithDoor(4260, 2750, 4260, 3560, 3350, 260, "vertical", "d_m4_relief_vault", "CỬA XẢ ÁP - HẦM PHÔI");
 
-                addWallWithDoor(1450, 850, 3750, 850, 2600, 300, "horizontal", "d_m6_n_core", "CỔNG PHẢN VẬT CHẤT BẮC");
-                addWallWithDoor(1450, 2750, 3750, 2750, 2600, 300, "horizontal", "d_m6_core_s", "CỔNG TRỌNG LỰC NAM");
-
-                addWallWithDoor(40, 1800, 1450, 1800, 745, 250, "horizontal", "d_m6_nw_sw", "HÀNH LANG LƯỢNG TỬ TÂY");
-                addWallWithDoor(3750, 1800, 5160, 1800, 4455, 250, "horizontal", "d_m6_ne_se", "HÀNH LANG LƯỢNG TỬ ĐÔNG");
-
-                // 4 Quantum Prism Shield Pillars in the Event Horizon Arena for tactical cover against 6 Bosses
+                // Vách chiến thuật lò luyện Magma
                 WALLS.push(
-                    { x: 2080, y: 1320, w: 68, h: 68 },
-                    { x: 3052, y: 1320, w: 68, h: 68 },
-                    { x: 2080, y: 2212, w: 68, h: 68 },
-                    { x: 3052, y: 2212, w: 68, h: 68 }
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
+                );
+            } else if (mapId === 5) {
+                // MAP 5: TỔ QUỶ BIOMECHANICAL CITADEL (27 PHÒNG CQB)
+                ROOMS = [
+                    // --- DẢI BẮC ---
+                    { id: "m5_nw_1", row: 0, col: 0, name: "BUỒNG KÉN ĐỘT BIẾN TÂY-BẮC", x: 40, y: 40, w: 880, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_nw_2", row: 0, col: 1, name: "KHE ẤP SÂU TÂY-BẮC", x: 920, y: 40, w: 540, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_n_1", row: 0, col: 2, name: "BUỒNG KÉN HOÀNG GIA BẮC", x: 1460, y: 40, w: 1140, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_n_2", row: 0, col: 3, name: "HẠCH THẦN KINH HOÀNG GIA BẮC", x: 2600, y: 40, w: 1140, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_ne_1", row: 0, col: 4, name: "KHE ẤP SÂU ĐÔNG-BẮC", x: 3740, y: 40, w: 540, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_ne_2", row: 0, col: 5, name: "BUỒNG ẤP ẤU TRÙNG ĐÔNG-BẮC", x: 4280, y: 40, w: 880, h: 740, floorColor: "#120320", accent: "rgba(192, 132, 252, 0.40)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m5_hall_nw", row: 1, col: 0, name: "HÀNH LANG SỤN TÂY-BẮC", x: 40, y: 780, w: 1420, h: 240, floorColor: "#0e021a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m5_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG BÀO TỬ BẮC", x: 1460, y: 780, w: 2280, h: 240, floorColor: "#19042b", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m5_hall_ne", row: 1, col: 4, name: "HÀNH LANG SỤN ĐÔNG-BẮC", x: 3740, y: 780, w: 1420, h: 240, floorColor: "#0e021a", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m5_w_1", row: 2, col: 0, name: "THÁP XƯƠNG SỤN KÝ SINH 1", x: 40, y: 1020, w: 690, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_w_2", row: 2, col: 1, name: "ĐỘNG BÀO TỬ AXIT TÂY 1", x: 730, y: 1020, w: 730, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_w_3", row: 3, col: 0, name: "THÁP XƯƠNG SỤN KÝ SINH 2", x: 40, y: 1760, w: 690, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_w_4", row: 3, col: 1, name: "ĐỘNG BÀO TỬ AXIT TÂY 2", x: 730, y: 1760, w: 730, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m5_core", row: 2, col: 2, name: "THÁNH ĐỊA TRỨNG CHÚA HIVE EMPRESS", x: 1460, y: 1020, w: 2280, h: 1480, floorColor: "#19042b", accent: "rgba(217, 70, 239, 0.60)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m5_e_1", row: 2, col: 3, name: "HẠCH NÃO THẦN KINH ĐÔNG 1", x: 3740, y: 1020, w: 730, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_e_2", row: 2, col: 4, name: "ĐỘNG KÝ SINH BIOMECHANICAL 1", x: 4470, y: 1020, w: 690, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_e_3", row: 3, col: 3, name: "HẠCH NÃO THẦN KINH ĐÔNG 2", x: 3740, y: 1760, w: 730, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_e_4", row: 3, col: 4, name: "ĐỘNG KÝ SINH BIOMECHANICAL 2", x: 4470, y: 1760, w: 690, h: 740, floorColor: "#0e021a", accent: "rgba(192, 132, 252, 0.40)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m5_hall_sw", row: 4, col: 0, name: "HÀNH LANG DỊCH AXIT TÂY-NAM", x: 40, y: 2500, w: 1420, h: 240, floorColor: "#0e021a", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m5_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG TIÊU HÓA NAM", x: 1460, y: 2500, w: 2280, h: 240, floorColor: "#19042b", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m5_hall_se", row: 4, col: 4, name: "HÀNH LANG DỊCH AXIT ĐÔNG-NAM", x: 3740, y: 2500, w: 1420, h: 240, floorColor: "#0e021a", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m5_sw_1", row: 5, col: 0, name: "HỐ SÂU TIÊU HÓA TÂY-NAM", x: 40, y: 2740, w: 880, h: 820, floorColor: "#0a0114", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_sw_2", row: 5, col: 1, name: "BUỒNG BÀO TỬ TÁI SINH TN", x: 920, y: 2740, w: 540, h: 820, floorColor: "#0a0114", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_s_1", row: 5, col: 2, name: "TRÁI TIM SINH KHỐI HOÀNG HẬU", x: 1460, y: 2740, w: 1140, h: 820, floorColor: "#0a0114", accent: "rgba(217, 70, 239, 0.60)", isEnergyCoreRoom: true },
+                    { id: "m5_s_2", row: 5, col: 3, name: "HẦM ẤU TRÙNG THỦY TỔ NAM", x: 2600, y: 2740, w: 1140, h: 820, floorColor: "#0a0114", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_se_1", row: 5, col: 4, name: "BUỒNG BÀO TỬ TÁI SINH ĐN", x: 3740, y: 2740, w: 540, h: 820, floorColor: "#0a0114", accent: "rgba(192, 132, 252, 0.40)" },
+                    { id: "m5_se_2", row: 5, col: 5, name: "HỐ SÂU TIÊU HÓA ĐÔNG-NAM", x: 4280, y: 2740, w: 880, h: 820, floorColor: "#0a0114", accent: "rgba(192, 132, 252, 0.40)" }
+                ];
+
+                // 1. Dải Bắc dọc
+                addWallWithDoor(920, 40, 920, 780, 260, 260, "vertical", "d_m5_n1_n2", "CỬA BUỒNG KÉN ĐỘT BIẾN TÂY-BẮC - KHE ẤP SÂU TÂY-BẮC");
+                addWallWithDoor(1460, 40, 1460, 780, 260, 260, "vertical", "d_m5_n2_n3", "CỬA KHE ẤP SÂU TÂY-BẮC - BUỒNG KÉN HOÀNG GIA BẮC");
+                addWallWithDoor(2600, 40, 2600, 780, 260, 260, "vertical", "d_m5_n3_n4", "CỬA BUỒNG KÉN HOÀNG GIA BẮC - HẠCH THẦN KINH HOÀNG GIA BẮC");
+                addWallWithDoor(3740, 40, 3740, 780, 260, 260, "vertical", "d_m5_n4_n5", "CỬA HẠCH THẦN KINH HOÀNG GIA BẮC - KHE ẤP SÂU ĐÔNG-BẮC");
+                addWallWithDoor(4280, 40, 4280, 780, 260, 260, "vertical", "d_m5_n5_n6", "CỬA KHE ẤP SÂU ĐÔNG-BẮC - BUỒNG ẤP ẤU TRÙNG ĐÔNG-BẮC");
+
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=780)
+                addWallWithDoor(40, 780, 920, 780, 250, 260, "horizontal", "d_m5_n1_hnw", "CỬA BUỒNG KÉN ĐỘT BIẾN TÂY-BẮC - HÀNH LANG TB");
+                addWallWithDoor(920, 780, 1460, 780, 1190, 260, "horizontal", "d_m5_n2_hnw", "CỬA KHE ẤP SÂU TÂY-BẮC - HÀNH LANG TB");
+                addWallWithDoor(1460, 780, 2600, 780, 2050, 260, "horizontal", "d_m5_n3_hn", "CỬA BUỒNG KÉN HOÀNG GIA BẮC - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 780, 3740, 780, 3150, 260, "horizontal", "d_m5_n4_hn", "CỬA HẠCH THẦN KINH HOÀNG GIA BẮC - HÀNH LANG BẮC");
+                addWallWithDoor(3740, 780, 4280, 780, 4010, 260, "horizontal", "d_m5_n5_hne", "CỬA KHE ẤP SÂU ĐÔNG-BẮC - HÀNH LANG ĐB");
+                addWallWithDoor(4280, 780, 5160, 780, 4950, 260, "horizontal", "d_m5_n6_hne", "CỬA BUỒNG ẤP ẤU TRÙNG ĐÔNG-BẮC - HÀNH LANG ĐB");
+
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1460, 780, 1460, 1020, 900, 240, "vertical", "d_m5_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3740, 780, 3740, 1020, 900, 240, "vertical", "d_m5_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
+
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1020)
+                addWallWithDoor(40, 1020, 730, 1020, 250, 260, "horizontal", "d_m5_hnw_w1", "CỬA HÀNH LANG - THÁP XƯƠNG SỤN KÝ SINH 1");
+                addWallWithDoor(730, 1020, 1460, 1020, 1095, 260, "horizontal", "d_m5_hnw_w2", "CỬA HÀNH LANG - ĐỘNG BÀO TỬ AXIT TÂY 1");
+                addWallWithDoor(1460, 1020, 3740, 1020, 2600, 280, "horizontal", "d_m5_hn_core", "ĐẠI MÔN BẮC THÁNH ĐỊA TRỨNG CHÚA HIVE EMPRESS");
+                addWallWithDoor(3740, 1020, 4470, 1020, 4105, 260, "horizontal", "d_m5_hne_e1", "CỬA HÀNH LANG - HẠCH NÃO THẦN KINH ĐÔNG 1");
+                addWallWithDoor(4470, 1020, 5160, 1020, 4950, 260, "horizontal", "d_m5_hne_e2", "CỬA HÀNH LANG - ĐỘNG KÝ SINH BIOMECHANICAL 1");
+
+                // 5. Cánh Tây
+                addWallWithDoor(730, 1020, 730, 1760, 1390, 260, "vertical", "d_m5_w1_w2", "CỬA THÁP XƯƠNG SỤN KÝ SINH 1 - ĐỘNG BÀO TỬ AXIT TÂY 1");
+                addWallWithDoor(40, 1760, 730, 1760, 250, 260, "horizontal", "d_m5_w1_w3", "CỬA THÁP XƯƠNG SỤN KÝ SINH 1 - THÁP XƯƠNG SỤN KÝ SINH 2");
+                addWallWithDoor(730, 1760, 1460, 1760, 1095, 260, "horizontal", "d_m5_w2_w4", "CỬA ĐỘNG BÀO TỬ AXIT TÂY 1 - ĐỘNG BÀO TỬ AXIT TÂY 2");
+                addWallWithDoor(730, 1760, 730, 2500, 2130, 260, "vertical", "d_m5_w3_w4", "CỬA THÁP XƯƠNG SỤN KÝ SINH 2 - ĐỘNG BÀO TỬ AXIT TÂY 2");
+                addWallWithDoor(1460, 1020, 1460, 1760, 1390, 260, "vertical", "d_m5_w2_core", "CỔNG ĐỘNG BÀO TỬ AXIT TÂY 1 - ĐẠI SẢNH");
+                addWallWithDoor(1460, 1760, 1460, 2500, 2130, 260, "vertical", "d_m5_w4_core", "CỔNG ĐỘNG BÀO TỬ AXIT TÂY 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4470, 1020, 4470, 1760, 1390, 260, "vertical", "d_m5_e1_e2", "CỬA HẠCH NÃO THẦN KINH ĐÔNG 1 - ĐỘNG KÝ SINH BIOMECHANICAL 1");
+                addWallWithDoor(3740, 1760, 4470, 1760, 4105, 260, "horizontal", "d_m5_e1_e3", "CỬA HẠCH NÃO THẦN KINH ĐÔNG 1 - HẠCH NÃO THẦN KINH ĐÔNG 2");
+                addWallWithDoor(4470, 1760, 5160, 1760, 4950, 260, "horizontal", "d_m5_e2_e4", "CỬA ĐỘNG KÝ SINH BIOMECHANICAL 1 - ĐỘNG KÝ SINH BIOMECHANICAL 2");
+                addWallWithDoor(4470, 1760, 4470, 2500, 2130, 260, "vertical", "d_m5_e3_e4", "CỬA HẠCH NÃO THẦN KINH ĐÔNG 2 - ĐỘNG KÝ SINH BIOMECHANICAL 2");
+                addWallWithDoor(3740, 1020, 3740, 1760, 1390, 260, "vertical", "d_m5_core_e1", "CỔNG ĐẠI SẢNH - HẠCH NÃO THẦN KINH ĐÔNG 1");
+                addWallWithDoor(3740, 1760, 3740, 2500, 2130, 260, "vertical", "d_m5_core_e3", "CỔNG ĐẠI SẢNH - HẠCH NÃO THẦN KINH ĐÔNG 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 730, 2500, 250, 260, "horizontal", "d_m5_w3_hsw", "CỬA THÁP XƯƠNG SỤN KÝ SINH 2 - HÀNH LANG TN");
+                addWallWithDoor(730, 2500, 1460, 2500, 1095, 260, "horizontal", "d_m5_w4_hsw", "CỬA ĐỘNG BÀO TỬ AXIT TÂY 2 - HÀNH LANG TN");
+                addWallWithDoor(1460, 2500, 3740, 2500, 2600, 280, "horizontal", "d_m5_core_hs", "ĐẠI MÔN NAM THÁNH ĐỊA TRỨNG CHÚA HIVE EMPRESS");
+                addWallWithDoor(3740, 2500, 4470, 2500, 4105, 260, "horizontal", "d_m5_e3_hse", "CỬA HẠCH NÃO THẦN KINH ĐÔNG 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4470, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m5_e4_hse", "CỬA ĐỘNG KÝ SINH BIOMECHANICAL 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1460, 2500, 1460, 2740, 2620, 240, "vertical", "d_m5_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3740, 2500, 3740, 2740, 2620, 240, "vertical", "d_m5_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 920, 2740, 250, 260, "horizontal", "d_m5_hsw_s1", "CỬA HÀNH LANG - HỐ SÂU TIÊU HÓA TÂY-NAM");
+                addWallWithDoor(920, 2740, 1460, 2740, 1190, 260, "horizontal", "d_m5_hsw_s2", "CỬA HÀNH LANG - BUỒNG BÀO TỬ TÁI SINH TN");
+                addWallWithDoor(1460, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m5_hs_s3", "CỔNG HÀNH LANG - TRÁI TIM SINH KHỐI HOÀNG HẬU");
+                addWallWithDoor(2600, 2740, 3740, 2740, 3150, 260, "horizontal", "d_m5_hs_s4", "CỬA HÀNH LANG - HẦM ẤU TRÙNG THỦY TỔ NAM");
+                addWallWithDoor(3740, 2740, 4280, 2740, 4010, 260, "horizontal", "d_m5_hse_s5", "CỬA HÀNH LANG - BUỒNG BÀO TỬ TÁI SINH ĐN");
+                addWallWithDoor(4280, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m5_hse_s6", "CỬA HÀNH LANG - HỐ SÂU TIÊU HÓA ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(920, 2740, 920, 3560, 3350, 260, "vertical", "d_m5_s1_s2", "CỬA HỐ SÂU TIÊU HÓA TÂY-NAM - BUỒNG BÀO TỬ TÁI SINH TN");
+                addWallWithDoor(1460, 2740, 1460, 3560, 3350, 260, "vertical", "d_m5_s2_s3", "CỬA BUỒNG BÀO TỬ TÁI SINH TN - TRÁI TIM SINH KHỐI HOÀNG HẬU");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m5_s3_s4", "CỬA TRÁI TIM SINH KHỐI HOÀNG HẬU - HẦM ẤU TRÙNG THỦY TỔ NAM");
+                addWallWithDoor(3740, 2740, 3740, 3560, 3350, 260, "vertical", "d_m5_s4_s5", "CỬA HẦM ẤU TRÙNG THỦY TỔ NAM - BUỒNG BÀO TỬ TÁI SINH ĐN");
+                addWallWithDoor(4280, 2740, 4280, 3560, 3350, 260, "vertical", "d_m5_s5_s6", "CỬA BUỒNG BÀO TỬ TÁI SINH ĐN - HỐ SÂU TIÊU HÓA ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
+                WALLS.push(
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
+                );
+            } else if (mapId === 6) {
+                // MAP 6: LÕI DỊ ĐIỂM SINGULARITY NEXUS (27 PHÒNG CQB)
+                ROOMS = [
+                    // --- DẢI BẮC ---
+                    { id: "m6_nw_1", row: 0, col: 0, name: "ĐÀI QUAN SÁT TACHYON TÂY-BẮC", x: 40, y: 40, w: 900, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_nw_2", row: 0, col: 1, name: "PHÒNG HỘI TỤ QUANG TỬ BẮC", x: 940, y: 40, w: 540, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_n_1", row: 0, col: 2, name: "BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 1", x: 1480, y: 40, w: 1120, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_n_2", row: 0, col: 3, name: "BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 2", x: 2600, y: 40, w: 1120, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_ne_1", row: 0, col: 4, name: "PHÒNG PHÂN RÃ BARYON ĐB", x: 3720, y: 40, w: 540, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_ne_2", row: 0, col: 5, name: "ĐÀI GIA TỐC HẠT QUARK ĐÔNG-BẮC", x: 4260, y: 40, w: 900, h: 760, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m6_hall_nw", row: 1, col: 0, name: "HÀNH LANG LƯỢNG TỬ TÂY-BẮC", x: 40, y: 800, w: 1440, h: 240, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m6_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG CHÂN TRỜI BẮC", x: 1480, y: 800, w: 2240, h: 240, floorColor: "rgba(9, 5, 24, 0.52)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m6_hall_ne", row: 1, col: 4, name: "HÀNH LANG LƯỢNG TỬ ĐÔNG-BẮC", x: 3720, y: 800, w: 1440, h: 240, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m6_w_1", row: 2, col: 0, name: "THÁP LĂNG KÍNH TACHYON 1", x: 40, y: 1040, w: 700, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_w_2", row: 2, col: 1, name: "KHOANG BẺ CONG KHÔNG GIAN 1", x: 740, y: 1040, w: 740, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_w_3", row: 3, col: 0, name: "THÁP LĂNG KÍNH TACHYON 2", x: 40, y: 1770, w: 700, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_w_4", row: 3, col: 1, name: "KHOANG BẺ CONG KHÔNG GIAN 2", x: 740, y: 1770, w: 740, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m6_core", row: 2, col: 2, name: "ĐẤU TRƯỜNG CHÂN TRỜI SỰ KIỆN DỊ ĐIỂM", x: 1480, y: 1040, w: 2240, h: 1460, floorColor: "rgba(9, 5, 24, 0.52)", accent: "rgba(34, 211, 238, 0.65)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m6_e_1", row: 2, col: 3, name: "ĐÀI BỨC XẠ HAWKING ĐÔNG 1", x: 3720, y: 1040, w: 740, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_e_2", row: 2, col: 4, name: "TRẠM GIA TỐC GLUON ĐÔNG 1", x: 4460, y: 1040, w: 700, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_e_3", row: 3, col: 3, name: "ĐÀI BỨC XẠ HAWKING ĐÔNG 2", x: 3720, y: 1770, w: 740, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_e_4", row: 3, col: 4, name: "TRẠM GIA TỐC GLUON ĐÔNG 2", x: 4460, y: 1770, w: 700, h: 730, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m6_hall_sw", row: 4, col: 0, name: "HÀNH LANG LƯỢNG TỬ TÂY-NAM", x: 40, y: 2500, w: 1440, h: 240, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m6_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG CHÂN TRỜI NAM", x: 1480, y: 2500, w: 2240, h: 240, floorColor: "rgba(9, 5, 24, 0.52)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m6_hall_se", row: 4, col: 4, name: "HÀNH LANG LƯỢNG TỬ ĐÔNG-NAM", x: 3720, y: 2500, w: 1440, h: 240, floorColor: "rgba(8, 12, 36, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m6_sw_1", row: 5, col: 0, name: "HẦM NEO TRỌNG LỰC TÂY-NAM", x: 40, y: 2740, w: 900, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_sw_2", row: 5, col: 1, name: "PHÒNG CÂN BẰNG ENTROPY TN", x: 940, y: 2740, w: 540, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_s_1", row: 5, col: 2, name: "LÕI NĂNG LƯỢNG DỊ ĐIỂM HỐ ĐEN", x: 1480, y: 2740, w: 1120, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(34, 211, 238, 0.65)", isEnergyCoreRoom: true },
+                    { id: "m6_s_2", row: 5, col: 3, name: "BUỒNG ỔN ĐỊNH TRƯỜNG HIGGS NAM", x: 2600, y: 2740, w: 1120, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_se_1", row: 5, col: 4, name: "PHÒNG CÂN BẰNG ENTROPY ĐN", x: 3720, y: 2740, w: 540, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" },
+                    { id: "m6_se_2", row: 5, col: 5, name: "LÒ PHẢN ỨNG DỊ ĐIỂM ĐÔNG-NAM", x: 4260, y: 2740, w: 900, h: 820, floorColor: "rgba(14, 6, 34, 0.46)", accent: "rgba(232, 121, 249, 0.45)" }
+                ];
+
+                // 1. Dải Bắc dọc
+                addWallWithDoor(940, 40, 940, 800, 260, 260, "vertical", "d_m6_n1_n2", "CỬA ĐÀI QUAN SÁT TACHYON TÂY-BẮC - PHÒNG HỘI TỤ QUANG TỬ BẮC");
+                addWallWithDoor(1480, 40, 1480, 800, 260, 260, "vertical", "d_m6_n2_n3", "CỬA PHÒNG HỘI TỤ QUANG TỬ BẮC - BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 1");
+                addWallWithDoor(2600, 40, 2600, 800, 260, 260, "vertical", "d_m6_n3_n4", "CỬA BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 1 - BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 2");
+                addWallWithDoor(3720, 40, 3720, 800, 260, 260, "vertical", "d_m6_n4_n5", "CỬA BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 2 - PHÒNG PHÂN RÃ BARYON ĐB");
+                addWallWithDoor(4260, 40, 4260, 800, 260, 260, "vertical", "d_m6_n5_n6", "CỬA PHÒNG PHÂN RÃ BARYON ĐB - ĐÀI GIA TỐC HẠT QUARK ĐÔNG-BẮC");
+
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=800)
+                addWallWithDoor(40, 800, 940, 800, 250, 260, "horizontal", "d_m6_n1_hnw", "CỬA ĐÀI QUAN SÁT TACHYON TÂY-BẮC - HÀNH LANG TB");
+                addWallWithDoor(940, 800, 1480, 800, 1210, 260, "horizontal", "d_m6_n2_hnw", "CỬA PHÒNG HỘI TỤ QUANG TỬ BẮC - HÀNH LANG TB");
+                addWallWithDoor(1480, 800, 2600, 800, 2050, 260, "horizontal", "d_m6_n3_hn", "CỬA BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 1 - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 800, 3720, 800, 3150, 260, "horizontal", "d_m6_n4_hn", "CỬA BUỒNG HỘI TỤ PHẢN VẬT CHẤT BẮC 2 - HÀNH LANG BẮC");
+                addWallWithDoor(3720, 800, 4260, 800, 3990, 260, "horizontal", "d_m6_n5_hne", "CỬA PHÒNG PHÂN RÃ BARYON ĐB - HÀNH LANG ĐB");
+                addWallWithDoor(4260, 800, 5160, 800, 4950, 260, "horizontal", "d_m6_n6_hne", "CỬA ĐÀI GIA TỐC HẠT QUARK ĐÔNG-BẮC - HÀNH LANG ĐB");
+
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1480, 800, 1480, 1040, 920, 240, "vertical", "d_m6_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3720, 800, 3720, 1040, 920, 240, "vertical", "d_m6_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
+
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1040)
+                addWallWithDoor(40, 1040, 740, 1040, 250, 260, "horizontal", "d_m6_hnw_w1", "CỬA HÀNH LANG - THÁP LĂNG KÍNH TACHYON 1");
+                addWallWithDoor(740, 1040, 1480, 1040, 1110, 260, "horizontal", "d_m6_hnw_w2", "CỬA HÀNH LANG - KHOANG BẺ CONG KHÔNG GIAN 1");
+                addWallWithDoor(1480, 1040, 3720, 1040, 2600, 280, "horizontal", "d_m6_hn_core", "ĐẠI MÔN BẮC ĐẤU TRƯỜNG CHÂN TRỜI SỰ KIỆN DỊ ĐIỂM");
+                addWallWithDoor(3720, 1040, 4460, 1040, 4090, 260, "horizontal", "d_m6_hne_e1", "CỬA HÀNH LANG - ĐÀI BỨC XẠ HAWKING ĐÔNG 1");
+                addWallWithDoor(4460, 1040, 5160, 1040, 4950, 260, "horizontal", "d_m6_hne_e2", "CỬA HÀNH LANG - TRẠM GIA TỐC GLUON ĐÔNG 1");
+
+                // 5. Cánh Tây
+                addWallWithDoor(740, 1040, 740, 1770, 1405, 260, "vertical", "d_m6_w1_w2", "CỬA THÁP LĂNG KÍNH TACHYON 1 - KHOANG BẺ CONG KHÔNG GIAN 1");
+                addWallWithDoor(40, 1770, 740, 1770, 250, 260, "horizontal", "d_m6_w1_w3", "CỬA THÁP LĂNG KÍNH TACHYON 1 - THÁP LĂNG KÍNH TACHYON 2");
+                addWallWithDoor(740, 1770, 1480, 1770, 1110, 260, "horizontal", "d_m6_w2_w4", "CỬA KHOANG BẺ CONG KHÔNG GIAN 1 - KHOANG BẺ CONG KHÔNG GIAN 2");
+                addWallWithDoor(740, 1770, 740, 2500, 2135, 260, "vertical", "d_m6_w3_w4", "CỬA THÁP LĂNG KÍNH TACHYON 2 - KHOANG BẺ CONG KHÔNG GIAN 2");
+                addWallWithDoor(1480, 1040, 1480, 1770, 1405, 260, "vertical", "d_m6_w2_core", "CỔNG KHOANG BẺ CONG KHÔNG GIAN 1 - ĐẠI SẢNH");
+                addWallWithDoor(1480, 1770, 1480, 2500, 2135, 260, "vertical", "d_m6_w4_core", "CỔNG KHOANG BẺ CONG KHÔNG GIAN 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4460, 1040, 4460, 1770, 1405, 260, "vertical", "d_m6_e1_e2", "CỬA ĐÀI BỨC XẠ HAWKING ĐÔNG 1 - TRẠM GIA TỐC GLUON ĐÔNG 1");
+                addWallWithDoor(3720, 1770, 4460, 1770, 4090, 260, "horizontal", "d_m6_e1_e3", "CỬA ĐÀI BỨC XẠ HAWKING ĐÔNG 1 - ĐÀI BỨC XẠ HAWKING ĐÔNG 2");
+                addWallWithDoor(4460, 1770, 5160, 1770, 4950, 260, "horizontal", "d_m6_e2_e4", "CỬA TRẠM GIA TỐC GLUON ĐÔNG 1 - TRẠM GIA TỐC GLUON ĐÔNG 2");
+                addWallWithDoor(4460, 1770, 4460, 2500, 2135, 260, "vertical", "d_m6_e3_e4", "CỬA ĐÀI BỨC XẠ HAWKING ĐÔNG 2 - TRẠM GIA TỐC GLUON ĐÔNG 2");
+                addWallWithDoor(3720, 1040, 3720, 1770, 1405, 260, "vertical", "d_m6_core_e1", "CỔNG ĐẠI SẢNH - ĐÀI BỨC XẠ HAWKING ĐÔNG 1");
+                addWallWithDoor(3720, 1770, 3720, 2500, 2135, 260, "vertical", "d_m6_core_e3", "CỔNG ĐẠI SẢNH - ĐÀI BỨC XẠ HAWKING ĐÔNG 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 740, 2500, 250, 260, "horizontal", "d_m6_w3_hsw", "CỬA THÁP LĂNG KÍNH TACHYON 2 - HÀNH LANG TN");
+                addWallWithDoor(740, 2500, 1480, 2500, 1110, 260, "horizontal", "d_m6_w4_hsw", "CỬA KHOANG BẺ CONG KHÔNG GIAN 2 - HÀNH LANG TN");
+                addWallWithDoor(1480, 2500, 3720, 2500, 2600, 280, "horizontal", "d_m6_core_hs", "ĐẠI MÔN NAM ĐẤU TRƯỜNG CHÂN TRỜI SỰ KIỆN DỊ ĐIỂM");
+                addWallWithDoor(3720, 2500, 4460, 2500, 4090, 260, "horizontal", "d_m6_e3_hse", "CỬA ĐÀI BỨC XẠ HAWKING ĐÔNG 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4460, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m6_e4_hse", "CỬA TRẠM GIA TỐC GLUON ĐÔNG 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1480, 2500, 1480, 2740, 2620, 240, "vertical", "d_m6_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3720, 2500, 3720, 2740, 2620, 240, "vertical", "d_m6_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 940, 2740, 250, 260, "horizontal", "d_m6_hsw_s1", "CỬA HÀNH LANG - HẦM NEO TRỌNG LỰC TÂY-NAM");
+                addWallWithDoor(940, 2740, 1480, 2740, 1210, 260, "horizontal", "d_m6_hsw_s2", "CỬA HÀNH LANG - PHÒNG CÂN BẰNG ENTROPY TN");
+                addWallWithDoor(1480, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m6_hs_s3", "CỔNG HÀNH LANG - LÕI NĂNG LƯỢNG DỊ ĐIỂM HỐ ĐEN");
+                addWallWithDoor(2600, 2740, 3720, 2740, 3150, 260, "horizontal", "d_m6_hs_s4", "CỬA HÀNH LANG - BUỒNG ỔN ĐỊNH TRƯỜNG HIGGS NAM");
+                addWallWithDoor(3720, 2740, 4260, 2740, 3990, 260, "horizontal", "d_m6_hse_s5", "CỬA HÀNH LANG - PHÒNG CÂN BẰNG ENTROPY ĐN");
+                addWallWithDoor(4260, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m6_hse_s6", "CỬA HÀNH LANG - LÒ PHẢN ỨNG DỊ ĐIỂM ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(940, 2740, 940, 3560, 3350, 260, "vertical", "d_m6_s1_s2", "CỬA HẦM NEO TRỌNG LỰC TÂY-NAM - PHÒNG CÂN BẰNG ENTROPY TN");
+                addWallWithDoor(1480, 2740, 1480, 3560, 3350, 260, "vertical", "d_m6_s2_s3", "CỬA PHÒNG CÂN BẰNG ENTROPY TN - LÕI NĂNG LƯỢNG DỊ ĐIỂM HỐ ĐEN");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m6_s3_s4", "CỬA LÕI NĂNG LƯỢNG DỊ ĐIỂM HỐ ĐEN - BUỒNG ỔN ĐỊNH TRƯỜNG HIGGS NAM");
+                addWallWithDoor(3720, 2740, 3720, 3560, 3350, 260, "vertical", "d_m6_s4_s5", "CỬA BUỒNG ỔN ĐỊNH TRƯỜNG HIGGS NAM - PHÒNG CÂN BẰNG ENTROPY ĐN");
+                addWallWithDoor(4260, 2740, 4260, 3560, 3350, 260, "vertical", "d_m6_s5_s6", "CỬA PHÒNG CÂN BẰNG ENTROPY ĐN - LÒ PHẢN ỨNG DỊ ĐIỂM ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
+                WALLS.push(
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
             } else if (mapId === 7) {
-                // MAP 7: XƯỞNG CƠ KHÍ QUỸ ĐẠO MECHA-PRIME (CYBER-FORGE)
+                // MAP 7: XƯỞNG CƠ KHÍ QUỸ ĐẠO MECHA-PRIME (27 PHÒNG CQB)
                 ROOMS = [
-                    { id: "sec_forge_core", row: 2, col: 2, name: "ĐẠI XƯỞNG LẮP RÁP TITAN TRUNG TÂM", x: 1500, y: 850, w: 2200, h: 1900, floorColor: "rgba(26, 17, 7, 0.56)", accent: "rgba(245, 158, 11, 0.62)", isCenter: true },
-                    { id: "sec_smelter_n", row: 0, col: 2, name: "LÒ NUNG HỢP KIM PLASMA BẮC", x: 1500, y: 40, w: 2200, h: 810, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
-                    { id: "sec_turbine_s", row: 4, col: 2, name: "BUỒNG TUA-BIN NHIỆT HẠCH NAM", x: 1500, y: 2750, w: 2200, h: 810, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
-                    { id: "sec_conv_nw", row: 1, col: 0, name: "BĂNG CHUYỀN VŨ KHÍ TÂY-BẮC", x: 40, y: 40, w: 1460, h: 1760, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(56, 189, 248, 0.40)" },
-                    { id: "sec_conv_sw", row: 3, col: 0, name: "KHO ĐÚC GIÁP CƠ KHÍ TÂY-NAM", x: 40, y: 1800, w: 1460, h: 1760, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(249, 115, 22, 0.42)" },
-                    { id: "sec_conv_ne", row: 1, col: 4, name: "TRẠM ĐIỀU KHIỂN ROBOT ĐÔNG-BẮC", x: 3700, y: 40, w: 1460, h: 1760, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(56, 189, 248, 0.40)" },
-                    { id: "sec_conv_se", row: 3, col: 4, name: "LÒ PHẢN ỨNG HẠT NHÂN CƠ KHÍ ĐÔNG-NAM", x: 3700, y: 1800, w: 1460, h: 1760, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(249, 115, 22, 0.42)" }
+                    // --- DẢI BẮC ---
+                    { id: "m7_nw_1", row: 0, col: 0, name: "KHOANG TIẾP NHẬN HỢP KIM TB", x: 40, y: 40, w: 880, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_nw_2", row: 0, col: 1, name: "TRẠM CẮT PLASMA TỰ ĐỘNG", x: 920, y: 40, w: 540, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_n_1", row: 0, col: 2, name: "LÒ NUNG HỢP KIM PLASMA BẮC 1", x: 1460, y: 40, w: 1140, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_n_2", row: 0, col: 3, name: "LÒ NUNG HỢP KIM PLASMA BẮC 2", x: 2600, y: 40, w: 1140, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_ne_1", row: 0, col: 4, name: "BUỒNG DẬP THỦY LỰC TITAN", x: 3740, y: 40, w: 540, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_ne_2", row: 0, col: 5, name: "TRẠM ĐIỀU KHIỂN ROBOT ĐÔNG-BẮC", x: 4280, y: 40, w: 880, h: 740, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m7_hall_nw", row: 1, col: 0, name: "BĂNG CHUYỀN VŨ KHÍ TÂY-BẮC", x: 40, y: 780, w: 1420, h: 240, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m7_hall_n", row: 1, col: 2, name: "TRỤC BĂNG CHUYỀN TITAN BẮC", x: 1460, y: 780, w: 2280, h: 240, floorColor: "rgba(26, 17, 7, 0.56)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m7_hall_ne", row: 1, col: 4, name: "BĂNG CHUYỀN VŨ KHÍ ĐÔNG-BẮC", x: 3740, y: 780, w: 1420, h: 240, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m7_w_1", row: 2, col: 0, name: "BĂNG CHUYỀN VŨ KHÍ TÂY 1", x: 40, y: 1020, w: 690, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_w_2", row: 2, col: 1, name: "TRẠM ĐÚC KHUNG XƯƠNG TITAN 1", x: 730, y: 1020, w: 730, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_w_3", row: 3, col: 0, name: "BĂNG CHUYỀN VŨ KHÍ TÂY 2", x: 40, y: 1760, w: 690, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_w_4", row: 3, col: 1, name: "TRẠM ĐÚC KHUNG XƯƠNG TITAN 2", x: 730, y: 1760, w: 730, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m7_core", row: 2, col: 2, name: "ĐẠI XƯỞNG LẮP RÁP TITAN TRUNG TÂM", x: 1460, y: 1020, w: 2280, h: 1480, floorColor: "rgba(26, 17, 7, 0.56)", accent: "rgba(245, 158, 11, 0.62)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m7_e_1", row: 2, col: 3, name: "TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 1", x: 3740, y: 1020, w: 730, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_e_2", row: 2, col: 4, name: "PHÂN XƯỞNG LẮP PHÁO TITAN 1", x: 4470, y: 1020, w: 690, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_e_3", row: 3, col: 3, name: "TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 2", x: 3740, y: 1760, w: 730, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_e_4", row: 3, col: 4, name: "PHÂN XƯỞNG LẮP PHÁO TITAN 2", x: 4470, y: 1760, w: 690, h: 740, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m7_hall_sw", row: 4, col: 0, name: "BĂNG CHUYỀN TIẾP LIỆU TÂY-NAM", x: 40, y: 2500, w: 1420, h: 240, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m7_hall_s", row: 4, col: 2, name: "TRỤC BĂNG CHUYỀN TITAN NAM", x: 1460, y: 2500, w: 2280, h: 240, floorColor: "rgba(26, 17, 7, 0.56)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m7_hall_se", row: 4, col: 4, name: "BĂNG CHUYỀN TIẾP LIỆU ĐÔNG-NAM", x: 3740, y: 2500, w: 1420, h: 240, floorColor: "rgba(18, 14, 10, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m7_sw_1", row: 5, col: 0, name: "KHO ĐÚC GIÁP CƠ KHÍ TÂY-NAM", x: 40, y: 2740, w: 880, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_sw_2", row: 5, col: 1, name: "TRẠM SƠN PHỦ NANO TN", x: 920, y: 2740, w: 540, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_s_1", row: 5, col: 2, name: "BUỒNG TUA-BIN NHIỆT HẠCH NAM", x: 1460, y: 2740, w: 1140, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(245, 158, 11, 0.62)", isEnergyCoreRoom: true },
+                    { id: "m7_s_2", row: 5, col: 3, name: "MÁY PHÁT ĐIỆN TỪ TRƯỜNG HẠT NHÂN", x: 2600, y: 2740, w: 1140, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_se_1", row: 5, col: 4, name: "TRẠM KIỂM TRA HỎA LỰC ĐN", x: 3740, y: 2740, w: 540, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" },
+                    { id: "m7_se_2", row: 5, col: 5, name: "LÒ PHẢN ỨNG HẠT NHÂN ĐÔNG-NAM", x: 4280, y: 2740, w: 880, h: 820, floorColor: "rgba(22, 13, 5, 0.48)", accent: "rgba(251, 191, 36, 0.45)" }
                 ];
 
-                addWallWithDoor(1500, 40, 1500, 850, 445, 260, "vertical", "d_m7_n_nw", "CỔNG BĂNG CHUYỀN TÂY-BẮC");
-                addWallWithDoor(1500, 850, 1500, 1800, 1325, 280, "vertical", "d_m7_core_w1", "CỔNG XƯỞNG TITAN TÂY 1");
-                addWallWithDoor(1500, 1800, 1500, 2750, 2275, 280, "vertical", "d_m7_core_w2", "CỔNG XƯỞNG TITAN TÂY 2");
-                addWallWithDoor(1500, 2750, 1500, 3560, 3155, 260, "vertical", "d_m7_s_sw", "CỔNG KHO GIÁP TÂY-NAM");
+                // 1. Dải Bắc dọc
+                addWallWithDoor(920, 40, 920, 780, 260, 260, "vertical", "d_m7_n1_n2", "CỬA KHOANG TIẾP NHẬN HỢP KIM TB - TRẠM CẮT PLASMA TỰ ĐỘNG");
+                addWallWithDoor(1460, 40, 1460, 780, 260, 260, "vertical", "d_m7_n2_n3", "CỬA TRẠM CẮT PLASMA TỰ ĐỘNG - LÒ NUNG HỢP KIM PLASMA BẮC 1");
+                addWallWithDoor(2600, 40, 2600, 780, 260, 260, "vertical", "d_m7_n3_n4", "CỬA LÒ NUNG HỢP KIM PLASMA BẮC 1 - LÒ NUNG HỢP KIM PLASMA BẮC 2");
+                addWallWithDoor(3740, 40, 3740, 780, 260, 260, "vertical", "d_m7_n4_n5", "CỬA LÒ NUNG HỢP KIM PLASMA BẮC 2 - BUỒNG DẬP THỦY LỰC TITAN");
+                addWallWithDoor(4280, 40, 4280, 780, 260, 260, "vertical", "d_m7_n5_n6", "CỬA BUỒNG DẬP THỦY LỰC TITAN - TRẠM ĐIỀU KHIỂN ROBOT ĐÔNG-BẮC");
 
-                addWallWithDoor(3700, 40, 3700, 850, 445, 260, "vertical", "d_m7_n_ne", "CỔNG ROBOT ĐÔNG-BẮC");
-                addWallWithDoor(3700, 850, 3700, 1800, 1325, 280, "vertical", "d_m7_core_e1", "CỔNG XƯỞNG TITAN ĐÔNG 1");
-                addWallWithDoor(3700, 1800, 3700, 2750, 2275, 280, "vertical", "d_m7_core_e2", "CỔNG XƯỞNG TITAN ĐÔNG 2");
-                addWallWithDoor(3700, 2750, 3700, 3560, 3155, 260, "vertical", "d_m7_s_se", "CỔNG LÒ CƠ KHÍ ĐÔNG-NAM");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=780)
+                addWallWithDoor(40, 780, 920, 780, 250, 260, "horizontal", "d_m7_n1_hnw", "CỬA KHOANG TIẾP NHẬN HỢP KIM TB - HÀNH LANG TB");
+                addWallWithDoor(920, 780, 1460, 780, 1190, 260, "horizontal", "d_m7_n2_hnw", "CỬA TRẠM CẮT PLASMA TỰ ĐỘNG - HÀNH LANG TB");
+                addWallWithDoor(1460, 780, 2600, 780, 2050, 260, "horizontal", "d_m7_n3_hn", "CỬA LÒ NUNG HỢP KIM PLASMA BẮC 1 - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 780, 3740, 780, 3150, 260, "horizontal", "d_m7_n4_hn", "CỬA LÒ NUNG HỢP KIM PLASMA BẮC 2 - HÀNH LANG BẮC");
+                addWallWithDoor(3740, 780, 4280, 780, 4010, 260, "horizontal", "d_m7_n5_hne", "CỬA BUỒNG DẬP THỦY LỰC TITAN - HÀNH LANG ĐB");
+                addWallWithDoor(4280, 780, 5160, 780, 4950, 260, "horizontal", "d_m7_n6_hne", "CỬA TRẠM ĐIỀU KHIỂN ROBOT ĐÔNG-BẮC - HÀNH LANG ĐB");
 
-                addWallWithDoor(1500, 850, 3700, 850, 2600, 300, "horizontal", "d_m7_n_core", "CỔNG LÒ NUNG BẮC");
-                addWallWithDoor(1500, 2750, 3700, 2750, 2600, 300, "horizontal", "d_m7_core_s", "CỔNG TUA-BIN NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1460, 780, 1460, 1020, 900, 240, "vertical", "d_m7_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3740, 780, 3740, 1020, 900, 240, "vertical", "d_m7_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-                addWallWithDoor(40, 1800, 1500, 1800, 770, 260, "horizontal", "d_m7_nw_sw", "TRỤC CƠ KHÍ TÂY");
-                addWallWithDoor(3700, 1800, 5160, 1800, 4430, 260, "horizontal", "d_m7_ne_se", "TRỤC CƠ KHÍ ĐÔNG");
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1020)
+                addWallWithDoor(40, 1020, 730, 1020, 250, 260, "horizontal", "d_m7_hnw_w1", "CỬA HÀNH LANG - BĂNG CHUYỀN VŨ KHÍ TÂY 1");
+                addWallWithDoor(730, 1020, 1460, 1020, 1095, 260, "horizontal", "d_m7_hnw_w2", "CỬA HÀNH LANG - TRẠM ĐÚC KHUNG XƯƠNG TITAN 1");
+                addWallWithDoor(1460, 1020, 3740, 1020, 2600, 280, "horizontal", "d_m7_hn_core", "ĐẠI MÔN BẮC ĐẠI XƯỞNG LẮP RÁP TITAN TRUNG TÂM");
+                addWallWithDoor(3740, 1020, 4470, 1020, 4105, 260, "horizontal", "d_m7_hne_e1", "CỬA HÀNH LANG - TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 1");
+                addWallWithDoor(4470, 1020, 5160, 1020, 4950, 260, "horizontal", "d_m7_hne_e2", "CỬA HÀNH LANG - PHÂN XƯỞNG LẮP PHÁO TITAN 1");
 
+                // 5. Cánh Tây
+                addWallWithDoor(730, 1020, 730, 1760, 1390, 260, "vertical", "d_m7_w1_w2", "CỬA BĂNG CHUYỀN VŨ KHÍ TÂY 1 - TRẠM ĐÚC KHUNG XƯƠNG TITAN 1");
+                addWallWithDoor(40, 1760, 730, 1760, 250, 260, "horizontal", "d_m7_w1_w3", "CỬA BĂNG CHUYỀN VŨ KHÍ TÂY 1 - BĂNG CHUYỀN VŨ KHÍ TÂY 2");
+                addWallWithDoor(730, 1760, 1460, 1760, 1095, 260, "horizontal", "d_m7_w2_w4", "CỬA TRẠM ĐÚC KHUNG XƯƠNG TITAN 1 - TRẠM ĐÚC KHUNG XƯƠNG TITAN 2");
+                addWallWithDoor(730, 1760, 730, 2500, 2130, 260, "vertical", "d_m7_w3_w4", "CỬA BĂNG CHUYỀN VŨ KHÍ TÂY 2 - TRẠM ĐÚC KHUNG XƯƠNG TITAN 2");
+                addWallWithDoor(1460, 1020, 1460, 1760, 1390, 260, "vertical", "d_m7_w2_core", "CỔNG TRẠM ĐÚC KHUNG XƯƠNG TITAN 1 - ĐẠI SẢNH");
+                addWallWithDoor(1460, 1760, 1460, 2500, 2130, 260, "vertical", "d_m7_w4_core", "CỔNG TRẠM ĐÚC KHUNG XƯƠNG TITAN 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4470, 1020, 4470, 1760, 1390, 260, "vertical", "d_m7_e1_e2", "CỬA TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 1 - PHÂN XƯỞNG LẮP PHÁO TITAN 1");
+                addWallWithDoor(3740, 1760, 4470, 1760, 4105, 260, "horizontal", "d_m7_e1_e3", "CỬA TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 1 - TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 2");
+                addWallWithDoor(4470, 1760, 5160, 1760, 4950, 260, "horizontal", "d_m7_e2_e4", "CỬA PHÂN XƯỞNG LẮP PHÁO TITAN 1 - PHÂN XƯỞNG LẮP PHÁO TITAN 2");
+                addWallWithDoor(4470, 1760, 4470, 2500, 2130, 260, "vertical", "d_m7_e3_e4", "CỬA TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 2 - PHÂN XƯỞNG LẮP PHÁO TITAN 2");
+                addWallWithDoor(3740, 1020, 3740, 1760, 1390, 260, "vertical", "d_m7_core_e1", "CỔNG ĐẠI SẢNH - TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 1");
+                addWallWithDoor(3740, 1760, 3740, 2500, 2130, 260, "vertical", "d_m7_core_e3", "CỔNG ĐẠI SẢNH - TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 730, 2500, 250, 260, "horizontal", "d_m7_w3_hsw", "CỬA BĂNG CHUYỀN VŨ KHÍ TÂY 2 - HÀNH LANG TN");
+                addWallWithDoor(730, 2500, 1460, 2500, 1095, 260, "horizontal", "d_m7_w4_hsw", "CỬA TRẠM ĐÚC KHUNG XƯƠNG TITAN 2 - HÀNH LANG TN");
+                addWallWithDoor(1460, 2500, 3740, 2500, 2600, 280, "horizontal", "d_m7_core_hs", "ĐẠI MÔN NAM ĐẠI XƯỞNG LẮP RÁP TITAN TRUNG TÂM");
+                addWallWithDoor(3740, 2500, 4470, 2500, 4105, 260, "horizontal", "d_m7_e3_hse", "CỬA TRẠM LẬP TRÌNH AI CHIẾN ĐẤU 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4470, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m7_e4_hse", "CỬA PHÂN XƯỞNG LẮP PHÁO TITAN 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1460, 2500, 1460, 2740, 2620, 240, "vertical", "d_m7_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3740, 2500, 3740, 2740, 2620, 240, "vertical", "d_m7_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 920, 2740, 250, 260, "horizontal", "d_m7_hsw_s1", "CỬA HÀNH LANG - KHO ĐÚC GIÁP CƠ KHÍ TÂY-NAM");
+                addWallWithDoor(920, 2740, 1460, 2740, 1190, 260, "horizontal", "d_m7_hsw_s2", "CỬA HÀNH LANG - TRẠM SƠN PHỦ NANO TN");
+                addWallWithDoor(1460, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m7_hs_s3", "CỔNG HÀNH LANG - BUỒNG TUA-BIN NHIỆT HẠCH NAM");
+                addWallWithDoor(2600, 2740, 3740, 2740, 3150, 260, "horizontal", "d_m7_hs_s4", "CỬA HÀNH LANG - MÁY PHÁT ĐIỆN TỪ TRƯỜNG HẠT NHÂN");
+                addWallWithDoor(3740, 2740, 4280, 2740, 4010, 260, "horizontal", "d_m7_hse_s5", "CỬA HÀNH LANG - TRẠM KIỂM TRA HỎA LỰC ĐN");
+                addWallWithDoor(4280, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m7_hse_s6", "CỬA HÀNH LANG - LÒ PHẢN ỨNG HẠT NHÂN ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(920, 2740, 920, 3560, 3350, 260, "vertical", "d_m7_s1_s2", "CỬA KHO ĐÚC GIÁP CƠ KHÍ TÂY-NAM - TRẠM SƠN PHỦ NANO TN");
+                addWallWithDoor(1460, 2740, 1460, 3560, 3350, 260, "vertical", "d_m7_s2_s3", "CỬA TRẠM SƠN PHỦ NANO TN - BUỒNG TUA-BIN NHIỆT HẠCH NAM");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m7_s3_s4", "CỬA BUỒNG TUA-BIN NHIỆT HẠCH NAM - MÁY PHÁT ĐIỆN TỪ TRƯỜNG HẠT NHÂN");
+                addWallWithDoor(3740, 2740, 3740, 3560, 3350, 260, "vertical", "d_m7_s4_s5", "CỬA MÁY PHÁT ĐIỆN TỪ TRƯỜNG HẠT NHÂN - TRẠM KIỂM TRA HỎA LỰC ĐN");
+                addWallWithDoor(4280, 2740, 4280, 3560, 3350, 260, "vertical", "d_m7_s5_s6", "CỬA TRẠM KIỂM TRA HỎA LỰC ĐN - LÒ PHẢN ỨNG HẠT NHÂN ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
                 WALLS.push(
-                    { x: 2100, y: 1300, w: 72, h: 72 },
-                    { x: 3028, y: 1300, w: 72, h: 72 },
-                    { x: 2100, y: 2228, w: 72, h: 72 },
-                    { x: 3028, y: 2228, w: 72, h: 72 }
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
             } else if (mapId === 8) {
-                // MAP 8: VỰC THẲM ĐẠI DƯƠNG POSEIDON-X (ABYSSAL TRENCH)
+                // MAP 8: VỰC THẲM ĐẠI DƯƠNG POSEIDON-X (27 PHÒNG CQB)
                 ROOMS = [
-                    { id: "sec_abyss_dome", row: 2, col: 2, name: "VÒM KÍNH ÁP SUẤT ĐÁY VỰC POSEIDON", x: 1450, y: 800, w: 2300, h: 2000, floorColor: "rgba(4, 28, 44, 0.52)", accent: "rgba(6, 182, 212, 0.65)", isCenter: true },
-                    { id: "sec_sonar_n", row: 0, col: 2, name: "ĐÀI QUÉT SONAR THỦY ÂM BẮC", x: 1450, y: 40, w: 2300, h: 760, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
-                    { id: "sec_trench_s", row: 4, col: 2, name: "KHE NỨT NHIỆT ĐỊA ĐẠI DƯƠNG NAM", x: 1450, y: 2800, w: 2300, h: 760, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
-                    { id: "sec_sub_nw", row: 1, col: 0, name: "ÂU TÀU NGẦM HẠT NHÂN TÂY-BẮC", x: 40, y: 40, w: 1410, h: 1760, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(56, 189, 248, 0.42)" },
-                    { id: "sec_bio_sw", row: 3, col: 0, name: "PHÒNG SINH VẬT PHÁT QUANG TÂY-NAM", x: 40, y: 1800, w: 1410, h: 1760, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(16, 185, 129, 0.42)" },
-                    { id: "sec_oxy_ne", row: 1, col: 4, name: "TRẠM TÁI TẠO KHÍ OXY ĐÔNG-BẮC", x: 3750, y: 40, w: 1410, h: 1760, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(56, 189, 248, 0.42)" },
-                    { id: "sec_hydro_se", row: 3, col: 4, name: "TRẠM BƠM THỦY LỰC CAO ÁP ĐÔNG-NAM", x: 3750, y: 1800, w: 1410, h: 1760, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(16, 185, 129, 0.42)" }
+                    // --- DẢI BẮC ---
+                    { id: "m8_nw_1", row: 0, col: 0, name: "ÂU TÀU NGẦM THÁM HIỂM TÂY-BẮC", x: 40, y: 40, w: 890, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_nw_2", row: 0, col: 1, name: "KHOANG CÂN BẰNG ÁP SUẤT BẮC", x: 930, y: 40, w: 540, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_n_1", row: 0, col: 2, name: "ĐÀI QUÉT SONAR THỦY ÂM BẮC 1", x: 1470, y: 40, w: 1130, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_n_2", row: 0, col: 3, name: "CẢM BIẾN SÓNG BIỂN SÂU BẮC 2", x: 2600, y: 40, w: 1130, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_ne_1", row: 0, col: 4, name: "BUỒNG NÉN KHÍ LẶN BIỂN SÂU", x: 3730, y: 40, w: 540, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_ne_2", row: 0, col: 5, name: "TRẠM TÁI TẠO KHÍ OXY ĐÔNG-BẮC", x: 4270, y: 40, w: 890, h: 750, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m8_hall_nw", row: 1, col: 0, name: "HÀNH LANG THỦY LỰC TÂY-BẮC", x: 40, y: 790, w: 1430, h: 240, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m8_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG VÒM KÍNH BẮC", x: 1470, y: 790, w: 2260, h: 240, floorColor: "rgba(4, 28, 44, 0.52)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m8_hall_ne", row: 1, col: 4, name: "HÀNH LANG THỦY LỰC ĐÔNG-BẮC", x: 3730, y: 790, w: 1430, h: 240, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m8_w_1", row: 2, col: 0, name: "KHOANG THỦY TỀ ÁP SUẤT 1", x: 40, y: 1030, w: 690, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_w_2", row: 2, col: 1, name: "BUỒNG SINH VẬT PHÁT QUANG 1", x: 730, y: 1030, w: 740, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_w_3", row: 3, col: 0, name: "KHOANG THỦY TỀ ÁP SUẤT 2", x: 40, y: 1765, w: 690, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_w_4", row: 3, col: 1, name: "BUỒNG SINH VẬT PHÁT QUANG 2", x: 730, y: 1765, w: 740, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m8_core", row: 2, col: 2, name: "VÒM KÍNH ÁP SUẤT ĐÁY VỰC POSEIDON", x: 1470, y: 1030, w: 2260, h: 1470, floorColor: "rgba(4, 28, 44, 0.52)", accent: "rgba(6, 182, 212, 0.65)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m8_e_1", row: 2, col: 3, name: "TRẠM BƠM THỦY LỰC CAO ÁP 1", x: 3730, y: 1030, w: 740, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_e_2", row: 2, col: 4, name: "KHO MẪU VẬT VỰC THẲM 1", x: 4470, y: 1030, w: 690, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_e_3", row: 3, col: 3, name: "TRẠM BƠM THỦY LỰC CAO ÁP 2", x: 3730, y: 1765, w: 740, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_e_4", row: 3, col: 4, name: "KHO MẪU VẬT VỰC THẲM 2", x: 4470, y: 1765, w: 690, h: 735, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m8_hall_sw", row: 4, col: 0, name: "HÀNH LANG THỦY LỰC TÂY-NAM", x: 40, y: 2500, w: 1430, h: 240, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m8_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG VÒM KÍNH NAM", x: 1470, y: 2500, w: 2260, h: 240, floorColor: "rgba(4, 28, 44, 0.52)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m8_hall_se", row: 4, col: 4, name: "HÀNH LANG THỦY LỰC ĐÔNG-NAM", x: 3730, y: 2500, w: 1430, h: 240, floorColor: "rgba(6, 24, 42, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m8_sw_1", row: 5, col: 0, name: "KHE NỨT NHIỆT ĐỊA TÂY-NAM", x: 40, y: 2740, w: 890, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_sw_2", row: 5, col: 1, name: "PHÒNG TUA-BIN THỦY TRIỀU TN", x: 930, y: 2740, w: 540, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_s_1", row: 5, col: 2, name: "LÕI NĂNG LƯỢNG ĐỊA NHIỆT ĐẠI DƯƠNG", x: 1470, y: 2740, w: 1130, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(6, 182, 212, 0.65)", isEnergyCoreRoom: true },
+                    { id: "m8_s_2", row: 5, col: 3, name: "TRẠM CHƯNG CẤT NƯỚC NGỌT NAM", x: 2600, y: 2740, w: 1130, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_se_1", row: 5, col: 4, name: "BUỒNG KHỬ MUỐI KHOÁNG ĐN", x: 3730, y: 2740, w: 540, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" },
+                    { id: "m8_se_2", row: 5, col: 5, name: "ÂU TÀU NGẦM HẠT NHÂN ĐÔNG-NAM", x: 4270, y: 2740, w: 890, h: 820, floorColor: "rgba(5, 22, 38, 0.46)", accent: "rgba(45, 212, 191, 0.45)" }
                 ];
 
-                addWallWithDoor(1450, 40, 1450, 800, 420, 260, "vertical", "d_m8_n_nw", "VAN ÁP SUẤT TÂY-BẮC");
-                addWallWithDoor(1450, 800, 1450, 1800, 1300, 280, "vertical", "d_m8_core_w1", "CỬA VÒM POSEIDON TÂY 1");
-                addWallWithDoor(1450, 1800, 1450, 2800, 2300, 280, "vertical", "d_m8_core_w2", "CỬA VÒM POSEIDON TÂY 2");
-                addWallWithDoor(1450, 2800, 1450, 3560, 3180, 260, "vertical", "d_m8_s_sw", "VAN ÁP SUẤT TÂY-NAM");
+                // 1. Dải Bắc dọc
+                addWallWithDoor(930, 40, 930, 790, 260, 260, "vertical", "d_m8_n1_n2", "CỬA ÂU TÀU NGẦM THÁM HIỂM TÂY-BẮC - KHOANG CÂN BẰNG ÁP SUẤT BẮC");
+                addWallWithDoor(1470, 40, 1470, 790, 260, 260, "vertical", "d_m8_n2_n3", "CỬA KHOANG CÂN BẰNG ÁP SUẤT BẮC - ĐÀI QUÉT SONAR THỦY ÂM BẮC 1");
+                addWallWithDoor(2600, 40, 2600, 790, 260, 260, "vertical", "d_m8_n3_n4", "CỬA ĐÀI QUÉT SONAR THỦY ÂM BẮC 1 - CẢM BIẾN SÓNG BIỂN SÂU BẮC 2");
+                addWallWithDoor(3730, 40, 3730, 790, 260, 260, "vertical", "d_m8_n4_n5", "CỬA CẢM BIẾN SÓNG BIỂN SÂU BẮC 2 - BUỒNG NÉN KHÍ LẶN BIỂN SÂU");
+                addWallWithDoor(4270, 40, 4270, 790, 260, 260, "vertical", "d_m8_n5_n6", "CỬA BUỒNG NÉN KHÍ LẶN BIỂN SÂU - TRẠM TÁI TẠO KHÍ OXY ĐÔNG-BẮC");
 
-                addWallWithDoor(3750, 40, 3750, 800, 420, 260, "vertical", "d_m8_n_ne", "VAN ÁP SUẤT ĐÔNG-BẮC");
-                addWallWithDoor(3750, 800, 3750, 1800, 1300, 280, "vertical", "d_m8_core_e1", "CỬA VÒM POSEIDON ĐÔNG 1");
-                addWallWithDoor(3750, 1800, 3750, 2800, 2300, 280, "vertical", "d_m8_core_e2", "CỬA VÒM POSEIDON ĐÔNG 2");
-                addWallWithDoor(3750, 2800, 3750, 3560, 3180, 260, "vertical", "d_m8_s_se", "VAN ÁP SUẤT ĐÔNG-NAM");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=790)
+                addWallWithDoor(40, 790, 930, 790, 250, 260, "horizontal", "d_m8_n1_hnw", "CỬA ÂU TÀU NGẦM THÁM HIỂM TÂY-BẮC - HÀNH LANG TB");
+                addWallWithDoor(930, 790, 1470, 790, 1200, 260, "horizontal", "d_m8_n2_hnw", "CỬA KHOANG CÂN BẰNG ÁP SUẤT BẮC - HÀNH LANG TB");
+                addWallWithDoor(1470, 790, 2600, 790, 2050, 260, "horizontal", "d_m8_n3_hn", "CỬA ĐÀI QUÉT SONAR THỦY ÂM BẮC 1 - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 790, 3730, 790, 3150, 260, "horizontal", "d_m8_n4_hn", "CỬA CẢM BIẾN SÓNG BIỂN SÂU BẮC 2 - HÀNH LANG BẮC");
+                addWallWithDoor(3730, 790, 4270, 790, 4000, 260, "horizontal", "d_m8_n5_hne", "CỬA BUỒNG NÉN KHÍ LẶN BIỂN SÂU - HÀNH LANG ĐB");
+                addWallWithDoor(4270, 790, 5160, 790, 4950, 260, "horizontal", "d_m8_n6_hne", "CỬA TRẠM TÁI TẠO KHÍ OXY ĐÔNG-BẮC - HÀNH LANG ĐB");
 
-                addWallWithDoor(1450, 800, 3750, 800, 2600, 300, "horizontal", "d_m8_n_core", "CỔNG SONAR BẮC");
-                addWallWithDoor(1450, 2800, 3750, 2800, 2600, 300, "horizontal", "d_m8_core_s", "CỔNG ĐÁY VỰC NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1470, 790, 1470, 1030, 910, 240, "vertical", "d_m8_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3730, 790, 3730, 1030, 910, 240, "vertical", "d_m8_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-                addWallWithDoor(40, 1800, 1450, 1800, 745, 260, "horizontal", "d_m8_nw_sw", "ỐNG NGẦM ĐẠI DƯƠNG TÂY");
-                addWallWithDoor(3750, 1800, 5160, 1800, 4455, 260, "horizontal", "d_m8_ne_se", "ỐNG NGẦM ĐẠI DƯƠNG ĐÔNG");
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1030)
+                addWallWithDoor(40, 1030, 730, 1030, 250, 260, "horizontal", "d_m8_hnw_w1", "CỬA HÀNH LANG - KHOANG THỦY TỀ ÁP SUẤT 1");
+                addWallWithDoor(730, 1030, 1470, 1030, 1100, 260, "horizontal", "d_m8_hnw_w2", "CỬA HÀNH LANG - BUỒNG SINH VẬT PHÁT QUANG 1");
+                addWallWithDoor(1470, 1030, 3730, 1030, 2600, 280, "horizontal", "d_m8_hn_core", "ĐẠI MÔN BẮC VÒM KÍNH ÁP SUẤT ĐÁY VỰC POSEIDON");
+                addWallWithDoor(3730, 1030, 4470, 1030, 4100, 260, "horizontal", "d_m8_hne_e1", "CỬA HÀNH LANG - TRẠM BƠM THỦY LỰC CAO ÁP 1");
+                addWallWithDoor(4470, 1030, 5160, 1030, 4950, 260, "horizontal", "d_m8_hne_e2", "CỬA HÀNH LANG - KHO MẪU VẬT VỰC THẲM 1");
 
+                // 5. Cánh Tây
+                addWallWithDoor(730, 1030, 730, 1765, 1398, 260, "vertical", "d_m8_w1_w2", "CỬA KHOANG THỦY TỀ ÁP SUẤT 1 - BUỒNG SINH VẬT PHÁT QUANG 1");
+                addWallWithDoor(40, 1765, 730, 1765, 250, 260, "horizontal", "d_m8_w1_w3", "CỬA KHOANG THỦY TỀ ÁP SUẤT 1 - KHOANG THỦY TỀ ÁP SUẤT 2");
+                addWallWithDoor(730, 1765, 1470, 1765, 1100, 260, "horizontal", "d_m8_w2_w4", "CỬA BUỒNG SINH VẬT PHÁT QUANG 1 - BUỒNG SINH VẬT PHÁT QUANG 2");
+                addWallWithDoor(730, 1765, 730, 2500, 2133, 260, "vertical", "d_m8_w3_w4", "CỬA KHOANG THỦY TỀ ÁP SUẤT 2 - BUỒNG SINH VẬT PHÁT QUANG 2");
+                addWallWithDoor(1470, 1030, 1470, 1765, 1398, 260, "vertical", "d_m8_w2_core", "CỔNG BUỒNG SINH VẬT PHÁT QUANG 1 - ĐẠI SẢNH");
+                addWallWithDoor(1470, 1765, 1470, 2500, 2133, 260, "vertical", "d_m8_w4_core", "CỔNG BUỒNG SINH VẬT PHÁT QUANG 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4470, 1030, 4470, 1765, 1398, 260, "vertical", "d_m8_e1_e2", "CỬA TRẠM BƠM THỦY LỰC CAO ÁP 1 - KHO MẪU VẬT VỰC THẲM 1");
+                addWallWithDoor(3730, 1765, 4470, 1765, 4100, 260, "horizontal", "d_m8_e1_e3", "CỬA TRẠM BƠM THỦY LỰC CAO ÁP 1 - TRẠM BƠM THỦY LỰC CAO ÁP 2");
+                addWallWithDoor(4470, 1765, 5160, 1765, 4950, 260, "horizontal", "d_m8_e2_e4", "CỬA KHO MẪU VẬT VỰC THẲM 1 - KHO MẪU VẬT VỰC THẲM 2");
+                addWallWithDoor(4470, 1765, 4470, 2500, 2133, 260, "vertical", "d_m8_e3_e4", "CỬA TRẠM BƠM THỦY LỰC CAO ÁP 2 - KHO MẪU VẬT VỰC THẲM 2");
+                addWallWithDoor(3730, 1030, 3730, 1765, 1398, 260, "vertical", "d_m8_core_e1", "CỔNG ĐẠI SẢNH - TRẠM BƠM THỦY LỰC CAO ÁP 1");
+                addWallWithDoor(3730, 1765, 3730, 2500, 2133, 260, "vertical", "d_m8_core_e3", "CỔNG ĐẠI SẢNH - TRẠM BƠM THỦY LỰC CAO ÁP 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 730, 2500, 250, 260, "horizontal", "d_m8_w3_hsw", "CỬA KHOANG THỦY TỀ ÁP SUẤT 2 - HÀNH LANG TN");
+                addWallWithDoor(730, 2500, 1470, 2500, 1100, 260, "horizontal", "d_m8_w4_hsw", "CỬA BUỒNG SINH VẬT PHÁT QUANG 2 - HÀNH LANG TN");
+                addWallWithDoor(1470, 2500, 3730, 2500, 2600, 280, "horizontal", "d_m8_core_hs", "ĐẠI MÔN NAM VÒM KÍNH ÁP SUẤT ĐÁY VỰC POSEIDON");
+                addWallWithDoor(3730, 2500, 4470, 2500, 4100, 260, "horizontal", "d_m8_e3_hse", "CỬA TRẠM BƠM THỦY LỰC CAO ÁP 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4470, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m8_e4_hse", "CỬA KHO MẪU VẬT VỰC THẲM 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1470, 2500, 1470, 2740, 2620, 240, "vertical", "d_m8_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3730, 2500, 3730, 2740, 2620, 240, "vertical", "d_m8_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 930, 2740, 250, 260, "horizontal", "d_m8_hsw_s1", "CỬA HÀNH LANG - KHE NỨT NHIỆT ĐỊA TÂY-NAM");
+                addWallWithDoor(930, 2740, 1470, 2740, 1200, 260, "horizontal", "d_m8_hsw_s2", "CỬA HÀNH LANG - PHÒNG TUA-BIN THỦY TRIỀU TN");
+                addWallWithDoor(1470, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m8_hs_s3", "CỔNG HÀNH LANG - LÕI NĂNG LƯỢNG ĐỊA NHIỆT ĐẠI DƯƠNG");
+                addWallWithDoor(2600, 2740, 3730, 2740, 3150, 260, "horizontal", "d_m8_hs_s4", "CỬA HÀNH LANG - TRẠM CHƯNG CẤT NƯỚC NGỌT NAM");
+                addWallWithDoor(3730, 2740, 4270, 2740, 4000, 260, "horizontal", "d_m8_hse_s5", "CỬA HÀNH LANG - BUỒNG KHỬ MUỐI KHOÁNG ĐN");
+                addWallWithDoor(4270, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m8_hse_s6", "CỬA HÀNH LANG - ÂU TÀU NGẦM HẠT NHÂN ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(930, 2740, 930, 3560, 3350, 260, "vertical", "d_m8_s1_s2", "CỬA KHE NỨT NHIỆT ĐỊA TÂY-NAM - PHÒNG TUA-BIN THỦY TRIỀU TN");
+                addWallWithDoor(1470, 2740, 1470, 3560, 3350, 260, "vertical", "d_m8_s2_s3", "CỬA PHÒNG TUA-BIN THỦY TRIỀU TN - LÕI NĂNG LƯỢNG ĐỊA NHIỆT ĐẠI DƯƠNG");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m8_s3_s4", "CỬA LÕI NĂNG LƯỢNG ĐỊA NHIỆT ĐẠI DƯƠNG - TRẠM CHƯNG CẤT NƯỚC NGỌT NAM");
+                addWallWithDoor(3730, 2740, 3730, 3560, 3350, 260, "vertical", "d_m8_s4_s5", "CỬA TRẠM CHƯNG CẤT NƯỚC NGỌT NAM - BUỒNG KHỬ MUỐI KHOÁNG ĐN");
+                addWallWithDoor(4270, 2740, 4270, 3560, 3350, 260, "vertical", "d_m8_s5_s6", "CỬA BUỒNG KHỬ MUỐI KHOÁNG ĐN - ÂU TÀU NGẦM HẠT NHÂN ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
                 WALLS.push(
-                    { x: 2060, y: 1280, w: 68, h: 68 },
-                    { x: 3072, y: 1280, w: 68, h: 68 },
-                    { x: 2060, y: 2252, w: 68, h: 68 },
-                    { x: 3072, y: 2252, w: 68, h: 68 }
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
             } else if (mapId === 9) {
-                // MAP 9: ĐỀN THỜ THỜI GIAN CHRONOS (CHRONO-RUINS)
+                // MAP 9: ĐỀN THỜ THỜI GIAN CHRONOS (27 PHÒNG CQB)
                 ROOMS = [
-                    { id: "sec_chrono_core", row: 2, col: 2, name: "ĐIỆN THỜ ĐỒNG HỒ CÁT LƯỢNG TỬ CHRONOS", x: 1400, y: 800, w: 2400, h: 2000, floorColor: "rgba(24, 18, 6, 0.54)", accent: "rgba(250, 204, 21, 0.65)", isCenter: true },
-                    { id: "sec_past_n", row: 0, col: 2, name: "HÀNH LANG KÝ ỨC CỔ ĐẠI BẮC", x: 1400, y: 40, w: 2400, h: 760, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
-                    { id: "sec_future_s", row: 4, col: 2, name: "VÒM TIÊN TRI TƯƠNG LAI NAM", x: 1400, y: 2800, w: 2400, h: 760, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
-                    { id: "sec_sundial_nw", row: 1, col: 0, name: "THÁP NHẬT QUYẾT TÂY-BẮC", x: 40, y: 40, w: 1360, h: 1760, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(234, 179, 8, 0.42)" },
-                    { id: "sec_paradox_sw", row: 3, col: 0, name: "BUỒNG NGHỊCH LÝ THỜI GIAN TÂY-NAM", x: 40, y: 1800, w: 1360, h: 1760, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(168, 85, 247, 0.42)" },
-                    { id: "sec_astrolabe_ne", row: 1, col: 4, name: "ĐÀI THIÊN VĂN CỔ NGỮ ĐÔNG-BẮC", x: 3800, y: 40, w: 1360, h: 1760, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(234, 179, 8, 0.42)" },
-                    { id: "sec_eternity_se", row: 3, col: 4, name: "LĂNG MỘ VĨNH HẰNG ĐÔNG-NAM", x: 3800, y: 1800, w: 1360, h: 1760, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(168, 85, 247, 0.42)" }
+                    // --- DẢI BẮC ---
+                    { id: "m9_nw_1", row: 0, col: 0, name: "ĐIỆN THỜ NHẬT QUYỆT CỔ ĐẠI TB", x: 40, y: 40, w: 900, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_nw_2", row: 0, col: 1, name: "BUỒNG KHẮC CỔ NGỮ THỜI GIAN", x: 940, y: 40, w: 540, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_n_1", row: 0, col: 2, name: "HÀNH LANG KÝ ỨC CỔ ĐẠI BẮC 1", x: 1480, y: 40, w: 1120, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_n_2", row: 0, col: 3, name: "ĐIỆN THỜ CỰC QUANG VĨNH CỬU BẮC 2", x: 2600, y: 40, w: 1120, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_ne_1", row: 0, col: 4, name: "ĐÀI CHIÊM TINH LƯỢNG TỬ", x: 3720, y: 40, w: 540, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_ne_2", row: 0, col: 5, name: "ĐÀI THIÊN VĂN CỔ NGỮ ĐÔNG-BẮC", x: 4260, y: 40, w: 900, h: 740, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m9_hall_nw", row: 1, col: 0, name: "HÀNH LANG NGHI LỄ TÂY-BẮC", x: 40, y: 780, w: 1440, h: 240, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m9_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG CHRONOS BẮC", x: 1480, y: 780, w: 2240, h: 240, floorColor: "rgba(24, 18, 6, 0.54)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m9_hall_ne", row: 1, col: 4, name: "HÀNH LANG NGHI LỄ ĐÔNG-BẮC", x: 3720, y: 780, w: 1440, h: 240, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m9_w_1", row: 2, col: 0, name: "THÁP NHẬT QUYỆT TÂY 1", x: 40, y: 1020, w: 700, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_w_2", row: 2, col: 1, name: "BUỒNG NGHỊCH LÝ THỜI GIAN 1", x: 740, y: 1020, w: 740, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_w_3", row: 3, col: 0, name: "THÁP NHẬT QUYỆT TÂY 2", x: 40, y: 1760, w: 700, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_w_4", row: 3, col: 1, name: "BUỒNG NGHỊCH LÝ THỜI GIAN 2", x: 740, y: 1760, w: 740, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m9_core", row: 2, col: 2, name: "ĐIỆN THỜ ĐỒNG HỒ CÁT LƯỢNG TỬ CHRONOS", x: 1480, y: 1020, w: 2240, h: 1480, floorColor: "rgba(24, 18, 6, 0.54)", accent: "rgba(250, 204, 21, 0.65)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m9_e_1", row: 2, col: 3, name: "ĐÀI THIÊN CẦU HỖN THIÊN 1", x: 3720, y: 1020, w: 740, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_e_2", row: 2, col: 4, name: "LĂNG MỘ VĨNH HẰNG ĐÔNG 1", x: 4460, y: 1020, w: 700, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_e_3", row: 3, col: 3, name: "ĐÀI THIÊN CẦU HỖN THIÊN 2", x: 3720, y: 1760, w: 740, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_e_4", row: 3, col: 4, name: "LĂNG MỘ VĨNH HẰNG ĐÔNG 2", x: 4460, y: 1760, w: 700, h: 740, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(192, 132, 252, 0.45)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m9_hall_sw", row: 4, col: 0, name: "HÀNH LANG NGHI LỄ TÂY-NAM", x: 40, y: 2500, w: 1440, h: 240, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m9_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG CHRONOS NAM", x: 1480, y: 2500, w: 2240, h: 240, floorColor: "rgba(24, 18, 6, 0.54)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m9_hall_se", row: 4, col: 4, name: "HÀNH LANG NGHI LỄ ĐÔNG-NAM", x: 3720, y: 2500, w: 1440, h: 240, floorColor: "rgba(20, 15, 10, 0.46)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m9_sw_1", row: 5, col: 0, name: "HẦM MỘ NGHỊCH LÝ TÂY-NAM", x: 40, y: 2740, w: 900, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_sw_2", row: 5, col: 1, name: "PHÒNG GƯƠNG THỜI GIAN TN", x: 940, y: 2740, w: 540, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_s_1", row: 5, col: 2, name: "VÒM TIÊN TRI THỜI GIAN TỐI CAO", x: 1480, y: 2740, w: 1120, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(250, 204, 21, 0.65)", isEnergyCoreRoom: true },
+                    { id: "m9_s_2", row: 5, col: 3, name: "ĐÀI CÁT LƯỢNG TỬ VĨNH CỬU NAM", x: 2600, y: 2740, w: 1120, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_se_1", row: 5, col: 4, name: "BUỒNG PHONG ẤN THỜI GIAN ĐN", x: 3720, y: 2740, w: 540, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" },
+                    { id: "m9_se_2", row: 5, col: 5, name: "LĂNG MỘ CÁC VỊ THẦN ĐÔNG-NAM", x: 4260, y: 2740, w: 900, h: 820, floorColor: "rgba(18, 12, 28, 0.48)", accent: "rgba(192, 132, 252, 0.45)" }
                 ];
 
-                addWallWithDoor(1400, 40, 1400, 800, 420, 260, "vertical", "d_m9_n_nw", "CỔNG NHẬT QUYẾT TÂY-BẮC");
-                addWallWithDoor(1400, 800, 1400, 1800, 1300, 280, "vertical", "d_m9_core_w1", "CỔNG THỜI GIAN TÂY 1");
-                addWallWithDoor(1400, 1800, 1400, 2800, 2300, 280, "vertical", "d_m9_core_w2", "CỔNG THỜI GIAN TÂY 2");
-                addWallWithDoor(1400, 2800, 1400, 3560, 3180, 260, "vertical", "d_m9_s_sw", "CỔNG NGHỊCH LÝ TÂY-NAM");
+                // 1. Dải Bắc dọc
+                addWallWithDoor(940, 40, 940, 780, 260, 260, "vertical", "d_m9_n1_n2", "CỬA ĐIỆN THỜ NHẬT QUYỆT CỔ ĐẠI TB - BUỒNG KHẮC CỔ NGỮ THỜI GIAN");
+                addWallWithDoor(1480, 40, 1480, 780, 260, 260, "vertical", "d_m9_n2_n3", "CỬA BUỒNG KHẮC CỔ NGỮ THỜI GIAN - HÀNH LANG KÝ ỨC CỔ ĐẠI BẮC 1");
+                addWallWithDoor(2600, 40, 2600, 780, 260, 260, "vertical", "d_m9_n3_n4", "CỬA HÀNH LANG KÝ ỨC CỔ ĐẠI BẮC 1 - ĐIỆN THỜ CỰC QUANG VĨNH CỬU BẮC 2");
+                addWallWithDoor(3720, 40, 3720, 780, 260, 260, "vertical", "d_m9_n4_n5", "CỬA ĐIỆN THỜ CỰC QUANG VĨNH CỬU BẮC 2 - ĐÀI CHIÊM TINH LƯỢNG TỬ");
+                addWallWithDoor(4260, 40, 4260, 780, 260, 260, "vertical", "d_m9_n5_n6", "CỬA ĐÀI CHIÊM TINH LƯỢNG TỬ - ĐÀI THIÊN VĂN CỔ NGỮ ĐÔNG-BẮC");
 
-                addWallWithDoor(3800, 40, 3800, 800, 420, 260, "vertical", "d_m9_n_ne", "CỔNG THIÊN VĂN ĐÔNG-BẮC");
-                addWallWithDoor(3800, 800, 3800, 1800, 1300, 280, "vertical", "d_m9_core_e1", "CỔNG THỜI GIAN ĐÔNG 1");
-                addWallWithDoor(3800, 1800, 3800, 2800, 2300, 280, "vertical", "d_m9_core_e2", "CỔNG THỜI GIAN ĐÔNG 2");
-                addWallWithDoor(3800, 2800, 3800, 3560, 3180, 260, "vertical", "d_m9_s_se", "CỔNG VĨNH HẰNG ĐÔNG-NAM");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=780)
+                addWallWithDoor(40, 780, 940, 780, 250, 260, "horizontal", "d_m9_n1_hnw", "CỬA ĐIỆN THỜ NHẬT QUYỆT CỔ ĐẠI TB - HÀNH LANG TB");
+                addWallWithDoor(940, 780, 1480, 780, 1210, 260, "horizontal", "d_m9_n2_hnw", "CỬA BUỒNG KHẮC CỔ NGỮ THỜI GIAN - HÀNH LANG TB");
+                addWallWithDoor(1480, 780, 2600, 780, 2050, 260, "horizontal", "d_m9_n3_hn", "CỬA HÀNH LANG KÝ ỨC CỔ ĐẠI BẮC 1 - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 780, 3720, 780, 3150, 260, "horizontal", "d_m9_n4_hn", "CỬA ĐIỆN THỜ CỰC QUANG VĨNH CỬU BẮC 2 - HÀNH LANG BẮC");
+                addWallWithDoor(3720, 780, 4260, 780, 3990, 260, "horizontal", "d_m9_n5_hne", "CỬA ĐÀI CHIÊM TINH LƯỢNG TỬ - HÀNH LANG ĐB");
+                addWallWithDoor(4260, 780, 5160, 780, 4950, 260, "horizontal", "d_m9_n6_hne", "CỬA ĐÀI THIÊN VĂN CỔ NGỮ ĐÔNG-BẮC - HÀNH LANG ĐB");
 
-                addWallWithDoor(1400, 800, 3800, 800, 2600, 300, "horizontal", "d_m9_n_core", "CỔNG CỔ ĐẠI BẮC");
-                addWallWithDoor(1400, 2800, 3800, 2800, 2600, 300, "horizontal", "d_m9_core_s", "CỔNG TIÊN TRI NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1480, 780, 1480, 1020, 900, 240, "vertical", "d_m9_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3720, 780, 3720, 1020, 900, 240, "vertical", "d_m9_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-                addWallWithDoor(40, 1800, 1400, 1800, 720, 260, "horizontal", "d_m9_nw_sw", "HÀNH LANG CỔ NGỮ TÂY");
-                addWallWithDoor(3800, 1800, 5160, 1800, 4480, 260, "horizontal", "d_m9_ne_se", "HÀNH LANG CỔ NGỮ ĐÔNG");
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1020)
+                addWallWithDoor(40, 1020, 740, 1020, 250, 260, "horizontal", "d_m9_hnw_w1", "CỬA HÀNH LANG - THÁP NHẬT QUYỆT TÂY 1");
+                addWallWithDoor(740, 1020, 1480, 1020, 1110, 260, "horizontal", "d_m9_hnw_w2", "CỬA HÀNH LANG - BUỒNG NGHỊCH LÝ THỜI GIAN 1");
+                addWallWithDoor(1480, 1020, 3720, 1020, 2600, 280, "horizontal", "d_m9_hn_core", "ĐẠI MÔN BẮC ĐIỆN THỜ ĐỒNG HỒ CÁT LƯỢNG TỬ CHRONOS");
+                addWallWithDoor(3720, 1020, 4460, 1020, 4090, 260, "horizontal", "d_m9_hne_e1", "CỬA HÀNH LANG - ĐÀI THIÊN CẦU HỖN THIÊN 1");
+                addWallWithDoor(4460, 1020, 5160, 1020, 4950, 260, "horizontal", "d_m9_hne_e2", "CỬA HÀNH LANG - LĂNG MỘ VĨNH HẰNG ĐÔNG 1");
 
+                // 5. Cánh Tây
+                addWallWithDoor(740, 1020, 740, 1760, 1390, 260, "vertical", "d_m9_w1_w2", "CỬA THÁP NHẬT QUYỆT TÂY 1 - BUỒNG NGHỊCH LÝ THỜI GIAN 1");
+                addWallWithDoor(40, 1760, 740, 1760, 250, 260, "horizontal", "d_m9_w1_w3", "CỬA THÁP NHẬT QUYỆT TÂY 1 - THÁP NHẬT QUYỆT TÂY 2");
+                addWallWithDoor(740, 1760, 1480, 1760, 1110, 260, "horizontal", "d_m9_w2_w4", "CỬA BUỒNG NGHỊCH LÝ THỜI GIAN 1 - BUỒNG NGHỊCH LÝ THỜI GIAN 2");
+                addWallWithDoor(740, 1760, 740, 2500, 2130, 260, "vertical", "d_m9_w3_w4", "CỬA THÁP NHẬT QUYỆT TÂY 2 - BUỒNG NGHỊCH LÝ THỜI GIAN 2");
+                addWallWithDoor(1480, 1020, 1480, 1760, 1390, 260, "vertical", "d_m9_w2_core", "CỔNG BUỒNG NGHỊCH LÝ THỜI GIAN 1 - ĐẠI SẢNH");
+                addWallWithDoor(1480, 1760, 1480, 2500, 2130, 260, "vertical", "d_m9_w4_core", "CỔNG BUỒNG NGHỊCH LÝ THỜI GIAN 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4460, 1020, 4460, 1760, 1390, 260, "vertical", "d_m9_e1_e2", "CỬA ĐÀI THIÊN CẦU HỖN THIÊN 1 - LĂNG MỘ VĨNH HẰNG ĐÔNG 1");
+                addWallWithDoor(3720, 1760, 4460, 1760, 4090, 260, "horizontal", "d_m9_e1_e3", "CỬA ĐÀI THIÊN CẦU HỖN THIÊN 1 - ĐÀI THIÊN CẦU HỖN THIÊN 2");
+                addWallWithDoor(4460, 1760, 5160, 1760, 4950, 260, "horizontal", "d_m9_e2_e4", "CỬA LĂNG MỘ VĨNH HẰNG ĐÔNG 1 - LĂNG MỘ VĨNH HẰNG ĐÔNG 2");
+                addWallWithDoor(4460, 1760, 4460, 2500, 2130, 260, "vertical", "d_m9_e3_e4", "CỬA ĐÀI THIÊN CẦU HỖN THIÊN 2 - LĂNG MỘ VĨNH HẰNG ĐÔNG 2");
+                addWallWithDoor(3720, 1020, 3720, 1760, 1390, 260, "vertical", "d_m9_core_e1", "CỔNG ĐẠI SẢNH - ĐÀI THIÊN CẦU HỖN THIÊN 1");
+                addWallWithDoor(3720, 1760, 3720, 2500, 2130, 260, "vertical", "d_m9_core_e3", "CỔNG ĐẠI SẢNH - ĐÀI THIÊN CẦU HỖN THIÊN 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 740, 2500, 250, 260, "horizontal", "d_m9_w3_hsw", "CỬA THÁP NHẬT QUYỆT TÂY 2 - HÀNH LANG TN");
+                addWallWithDoor(740, 2500, 1480, 2500, 1110, 260, "horizontal", "d_m9_w4_hsw", "CỬA BUỒNG NGHỊCH LÝ THỜI GIAN 2 - HÀNH LANG TN");
+                addWallWithDoor(1480, 2500, 3720, 2500, 2600, 280, "horizontal", "d_m9_core_hs", "ĐẠI MÔN NAM ĐIỆN THỜ ĐỒNG HỒ CÁT LƯỢNG TỬ CHRONOS");
+                addWallWithDoor(3720, 2500, 4460, 2500, 4090, 260, "horizontal", "d_m9_e3_hse", "CỬA ĐÀI THIÊN CẦU HỖN THIÊN 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4460, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m9_e4_hse", "CỬA LĂNG MỘ VĨNH HẰNG ĐÔNG 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1480, 2500, 1480, 2740, 2620, 240, "vertical", "d_m9_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3720, 2500, 3720, 2740, 2620, 240, "vertical", "d_m9_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 940, 2740, 250, 260, "horizontal", "d_m9_hsw_s1", "CỬA HÀNH LANG - HẦM MỘ NGHỊCH LÝ TÂY-NAM");
+                addWallWithDoor(940, 2740, 1480, 2740, 1210, 260, "horizontal", "d_m9_hsw_s2", "CỬA HÀNH LANG - PHÒNG GƯƠNG THỜI GIAN TN");
+                addWallWithDoor(1480, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m9_hs_s3", "CỔNG HÀNH LANG - VÒM TIÊN TRI THỜI GIAN TỐI CAO");
+                addWallWithDoor(2600, 2740, 3720, 2740, 3150, 260, "horizontal", "d_m9_hs_s4", "CỬA HÀNH LANG - ĐÀI CÁT LƯỢNG TỬ VĨNH CỬU NAM");
+                addWallWithDoor(3720, 2740, 4260, 2740, 3990, 260, "horizontal", "d_m9_hse_s5", "CỬA HÀNH LANG - BUỒNG PHONG ẤN THỜI GIAN ĐN");
+                addWallWithDoor(4260, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m9_hse_s6", "CỬA HÀNH LANG - LĂNG MỘ CÁC VỊ THẦN ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(940, 2740, 940, 3560, 3350, 260, "vertical", "d_m9_s1_s2", "CỬA HẦM MỘ NGHỊCH LÝ TÂY-NAM - PHÒNG GƯƠNG THỜI GIAN TN");
+                addWallWithDoor(1480, 2740, 1480, 3560, 3350, 260, "vertical", "d_m9_s2_s3", "CỬA PHÒNG GƯƠNG THỜI GIAN TN - VÒM TIÊN TRI THỜI GIAN TỐI CAO");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m9_s3_s4", "CỬA VÒM TIÊN TRI THỜI GIAN TỐI CAO - ĐÀI CÁT LƯỢNG TỬ VĨNH CỬU NAM");
+                addWallWithDoor(3720, 2740, 3720, 3560, 3350, 260, "vertical", "d_m9_s4_s5", "CỬA ĐÀI CÁT LƯỢNG TỬ VĨNH CỬU NAM - BUỒNG PHONG ẤN THỜI GIAN ĐN");
+                addWallWithDoor(4260, 2740, 4260, 3560, 3350, 260, "vertical", "d_m9_s5_s6", "CỬA BUỒNG PHONG ẤN THỜI GIAN ĐN - LĂNG MỘ CÁC VỊ THẦN ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
                 WALLS.push(
-                    { x: 2040, y: 1260, w: 70, h: 70 },
-                    { x: 3090, y: 1260, w: 70, h: 70 },
-                    { x: 2040, y: 2270, w: 70, h: 70 },
-                    { x: 3090, y: 2270, w: 70, h: 70 }
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
-            } else {
-                // MAP 10: THÁNH ĐỊA TỐI THƯỢNG OMEGA GENESIS (XENO-PRIME HOMEWORLD)
+            } else if (mapId === 10) {
+                // MAP 10: THÁNH ĐỊA TỐI THƯỢNG OMEGA GENESIS (27 PHÒNG CQB)
                 ROOMS = [
-                    { id: "sec_genesis_core", row: 2, col: 2, name: "ĐẤU TRƯỜNG THÁNH ĐỊA THỦY TỔ OMEGA GENESIS", x: 1350, y: 750, w: 2500, h: 2100, floorColor: "rgba(28, 4, 16, 0.56)", accent: "rgba(244, 63, 94, 0.70)", isCenter: true },
-                    { id: "sec_progenitor_n", row: 0, col: 2, name: "NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC", x: 1350, y: 40, w: 2500, h: 710, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
-                    { id: "sec_cataclysm_s", row: 4, col: 2, name: "LÕI ĐẠI HỒNG THỦY SINH HỌC NAM", x: 1350, y: 2850, w: 2500, h: 710, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
-                    { id: "sec_apex_nw", row: 1, col: 0, name: "PHÁO ĐÀI GENESIS TÂY-BẮC", x: 40, y: 40, w: 1310, h: 1760, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(251, 146, 60, 0.45)" },
-                    { id: "sec_apex_sw", row: 3, col: 0, name: "HẦM ẤP THẬP ĐẠI THỦY TỔ TÂY-NAM", x: 40, y: 1800, w: 1310, h: 1760, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(168, 85, 247, 0.45)" },
-                    { id: "sec_apex_ne", row: 1, col: 4, name: "PHÁO ĐÀI GENESIS ĐÔNG-BẮC", x: 3850, y: 40, w: 1310, h: 1760, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(251, 146, 60, 0.45)" },
-                    { id: "sec_apex_se", row: 3, col: 4, name: "LÒ PHẢN ỨNG HÀNH TINH MẸ ĐÔNG-NAM", x: 3850, y: 1800, w: 1310, h: 1760, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(168, 85, 247, 0.45)" }
+                    // --- DẢI BẮC ---
+                    { id: "m10_nw_1", row: 0, col: 0, name: "PHÁO ĐÀI GENESIS TÂY-BẮC", x: 40, y: 40, w: 890, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_nw_2", row: 0, col: 1, name: "BUỒNG KÉN THỦY TỔ CẤP 1", x: 930, y: 40, w: 540, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_n_1", row: 0, col: 2, name: "NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 1", x: 1470, y: 40, w: 1130, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_n_2", row: 0, col: 3, name: "NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 2", x: 2600, y: 40, w: 1130, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_ne_1", row: 0, col: 4, name: "BUỒNG KÉN THỦY TỔ CẤP 2", x: 3730, y: 40, w: 540, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_ne_2", row: 0, col: 5, name: "PHÁO ĐÀI GENESIS ĐÔNG-BẮC", x: 4270, y: 40, w: 890, h: 740, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+
+                    // --- HÀNH LANG BẮC ---
+                    { id: "m10_hall_nw", row: 1, col: 0, name: "HÀNH LANG THỦY TỔ TÂY-BẮC", x: 40, y: 780, w: 1430, h: 240, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m10_hall_n", row: 1, col: 2, name: "TRỤC HÀNH LANG GENESIS BẮC", x: 1470, y: 780, w: 2260, h: 240, floorColor: "rgba(28, 4, 16, 0.56)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m10_hall_ne", row: 1, col: 4, name: "HÀNH LANG THỦY TỔ ĐÔNG-BẮC", x: 3730, y: 780, w: 1430, h: 240, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- CÁNH TÂY ---
+                    { id: "m10_w_1", row: 2, col: 0, name: "TIỀN SẢNH ĐẠI DỊCH TÂY 1", x: 40, y: 1020, w: 690, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_w_2", row: 2, col: 1, name: "HẦM ẤP THẬP ĐẠI THỦY TỔ 1", x: 730, y: 1020, w: 740, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_w_3", row: 3, col: 0, name: "TIỀN SẢNH ĐẠI DỊCH TÂY 2", x: 40, y: 1760, w: 690, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_w_4", row: 3, col: 1, name: "HẦM ẤP THẬP ĐẠI THỦY TỔ 2", x: 730, y: 1760, w: 740, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+
+                    // --- ĐẠI SẢNH TRUNG TÂM ---
+                    { id: "m10_core", row: 2, col: 2, name: "ĐẤU TRƯỜNG THÁNH ĐỊA THỦY TỔ OMEGA GENESIS", x: 1470, y: 1020, w: 2260, h: 1480, floorColor: "rgba(28, 4, 16, 0.56)", accent: "rgba(244, 63, 94, 0.70)", isCenter: true },
+
+                    // --- CÁNH ĐÔNG ---
+                    { id: "m10_e_1", row: 2, col: 3, name: "TRỤ SỞ HUYẾT MẠCH ĐÔNG 1", x: 3730, y: 1020, w: 740, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_e_2", row: 2, col: 4, name: "LÒ PHẢN ỨNG HÀNH TINH MẸ 1", x: 4470, y: 1020, w: 690, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_e_3", row: 3, col: 3, name: "TRỤ SỞ HUYẾT MẠCH ĐÔNG 2", x: 3730, y: 1760, w: 740, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_e_4", row: 3, col: 4, name: "LÒ PHẢN ỨNG HÀNH TINH MẸ 2", x: 4470, y: 1760, w: 690, h: 740, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+
+                    // --- HÀNH LANG NAM ---
+                    { id: "m10_hall_sw", row: 4, col: 0, name: "HÀNH LANG THỦY TỔ TÂY-NAM", x: 40, y: 2500, w: 1430, h: 240, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+                    { id: "m10_hall_s", row: 4, col: 2, name: "TRỤC HÀNH LANG GENESIS NAM", x: 1470, y: 2500, w: 2260, h: 240, floorColor: "rgba(28, 4, 16, 0.56)", accent: "rgba(56, 189, 248, 0.30)" },
+                    { id: "m10_hall_se", row: 4, col: 4, name: "HÀNH LANG THỦY TỔ ĐÔNG-NAM", x: 3730, y: 2500, w: 1430, h: 240, floorColor: "rgba(20, 6, 18, 0.48)", accent: "rgba(148, 163, 184, 0.30)" },
+
+                    // --- DẢI NAM ---
+                    { id: "m10_sw_1", row: 5, col: 0, name: "HẦM ẤP ĐẠI HỒNG THỦY TÂY-NAM", x: 40, y: 2740, w: 890, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_sw_2", row: 5, col: 1, name: "PHÒNG BÀO TỬ DIỆT THẾ TN", x: 930, y: 2740, w: 540, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_s_1", row: 5, col: 2, name: "LÕI ĐẠI HỒNG THỦY SINH HỌC NAM", x: 1470, y: 2740, w: 1130, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(244, 63, 94, 0.70)", isEnergyCoreRoom: true },
+                    { id: "m10_s_2", row: 5, col: 3, name: "TRÁI TIM HÀNH TINH GENESIS NAM", x: 2600, y: 2740, w: 1130, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_se_1", row: 5, col: 4, name: "PHÒNG BÀO TỬ DIỆT THẾ ĐN", x: 3730, y: 2740, w: 540, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" },
+                    { id: "m10_se_2", row: 5, col: 5, name: "HẦM ẤP THỦY TỔ ĐÔNG-NAM", x: 4270, y: 2740, w: 890, h: 820, floorColor: "rgba(22, 4, 24, 0.48)", accent: "rgba(232, 121, 249, 0.50)" }
                 ];
 
-                addWallWithDoor(1350, 40, 1350, 750, 395, 260, "vertical", "d_m10_n_nw", "CỔNG GENESIS TÂY-BẮC");
-                addWallWithDoor(1350, 750, 1350, 1800, 1275, 290, "vertical", "d_m10_core_w1", "ĐẠI MÔN THÁNH ĐỊA TÂY 1");
-                addWallWithDoor(1350, 1800, 1350, 2850, 2325, 290, "vertical", "d_m10_core_w2", "ĐẠI MÔN THÁNH ĐỊA TÂY 2");
-                addWallWithDoor(1350, 2850, 1350, 3560, 3205, 260, "vertical", "d_m10_s_sw", "CỔNG GENESIS TÂY-NAM");
+                // 1. Dải Bắc dọc
+                addWallWithDoor(930, 40, 930, 780, 260, 260, "vertical", "d_m10_n1_n2", "CỬA PHÁO ĐÀI GENESIS TÂY-BẮC - BUỒNG KÉN THỦY TỔ CẤP 1");
+                addWallWithDoor(1470, 40, 1470, 780, 260, 260, "vertical", "d_m10_n2_n3", "CỬA BUỒNG KÉN THỦY TỔ CẤP 1 - NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 1");
+                addWallWithDoor(2600, 40, 2600, 780, 260, 260, "vertical", "d_m10_n3_n4", "CỬA NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 1 - NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 2");
+                addWallWithDoor(3730, 40, 3730, 780, 260, 260, "vertical", "d_m10_n4_n5", "CỬA NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 2 - BUỒNG KÉN THỦY TỔ CẤP 2");
+                addWallWithDoor(4270, 40, 4270, 780, 260, 260, "vertical", "d_m10_n5_n6", "CỬA BUỒNG KÉN THỦY TỔ CẤP 2 - PHÁO ĐÀI GENESIS ĐÔNG-BẮC");
 
-                addWallWithDoor(3850, 40, 3850, 750, 395, 260, "vertical", "d_m10_n_ne", "CỔNG GENESIS ĐÔNG-BẮC");
-                addWallWithDoor(3850, 750, 3850, 1800, 1275, 290, "vertical", "d_m10_core_e1", "ĐẠI MÔN THÁNH ĐỊA ĐÔNG 1");
-                addWallWithDoor(3850, 1800, 3850, 2850, 2325, 290, "vertical", "d_m10_core_e2", "ĐẠI MÔN THÁNH ĐỊA ĐÔNG 2");
-                addWallWithDoor(3850, 2850, 3850, 3560, 3205, 260, "vertical", "d_m10_s_se", "CỔNG GENESIS ĐÔNG-NAM");
+                // 2. Dải Bắc xuống Hành lang Bắc (Ngang Y=780)
+                addWallWithDoor(40, 780, 930, 780, 250, 260, "horizontal", "d_m10_n1_hnw", "CỬA PHÁO ĐÀI GENESIS TÂY-BẮC - HÀNH LANG TB");
+                addWallWithDoor(930, 780, 1470, 780, 1200, 260, "horizontal", "d_m10_n2_hnw", "CỬA BUỒNG KÉN THỦY TỔ CẤP 1 - HÀNH LANG TB");
+                addWallWithDoor(1470, 780, 2600, 780, 2050, 260, "horizontal", "d_m10_n3_hn", "CỬA NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 1 - HÀNH LANG BẮC");
+                addWallWithDoor(2600, 780, 3730, 780, 3150, 260, "horizontal", "d_m10_n4_hn", "CỬA NGAI VÀNG HUYẾT TƯƠNG THỦY TỔ BẮC 2 - HÀNH LANG BẮC");
+                addWallWithDoor(3730, 780, 4270, 780, 4000, 260, "horizontal", "d_m10_n5_hne", "CỬA BUỒNG KÉN THỦY TỔ CẤP 2 - HÀNH LANG ĐB");
+                addWallWithDoor(4270, 780, 5160, 780, 4950, 260, "horizontal", "d_m10_n6_hne", "CỬA PHÁO ĐÀI GENESIS ĐÔNG-BẮC - HÀNH LANG ĐB");
 
-                addWallWithDoor(1350, 750, 3850, 750, 2600, 310, "horizontal", "d_m10_n_core", "ĐẠI MÔN HUYẾT TƯƠNG BẮC");
-                addWallWithDoor(1350, 2850, 3850, 2850, 2600, 310, "horizontal", "d_m10_core_s", "ĐẠI MÔN ĐẠI HỒNG THỦY NAM");
+                // 3. Kết nối Hành lang Bắc dọc
+                addWallWithDoor(1470, 780, 1470, 1020, 900, 240, "vertical", "d_m10_hnw_hn", "CỔNG HÀNH LANG TB - BẮC");
+                addWallWithDoor(3730, 780, 3730, 1020, 900, 240, "vertical", "d_m10_hn_hne", "CỔNG HÀNH LANG BẮC - ĐB");
 
-                addWallWithDoor(40, 1800, 1350, 1800, 695, 260, "horizontal", "d_m10_nw_sw", "HÀNH LANG THỦY TỔ TÂY");
-                addWallWithDoor(3850, 1800, 5160, 1800, 4505, 260, "horizontal", "d_m10_ne_se", "HÀNH LANG THỦY TỔ ĐÔNG");
+                // 4. Hành lang Bắc xuống các phòng & Đại Sảnh (Ngang Y=1020)
+                addWallWithDoor(40, 1020, 730, 1020, 250, 260, "horizontal", "d_m10_hnw_w1", "CỬA HÀNH LANG - TIỀN SẢNH ĐẠI DỊCH TÂY 1");
+                addWallWithDoor(730, 1020, 1470, 1020, 1100, 260, "horizontal", "d_m10_hnw_w2", "CỬA HÀNH LANG - HẦM ẤP THẬP ĐẠI THỦY TỔ 1");
+                addWallWithDoor(1470, 1020, 3730, 1020, 2600, 280, "horizontal", "d_m10_hn_core", "ĐẠI MÔN BẮC ĐẤU TRƯỜNG THÁNH ĐỊA THỦY TỔ OMEGA GENESIS");
+                addWallWithDoor(3730, 1020, 4470, 1020, 4100, 260, "horizontal", "d_m10_hne_e1", "CỬA HÀNH LANG - TRỤ SỞ HUYẾT MẠCH ĐÔNG 1");
+                addWallWithDoor(4470, 1020, 5160, 1020, 4950, 260, "horizontal", "d_m10_hne_e2", "CỬA HÀNH LANG - LÒ PHẢN ỨNG HÀNH TINH MẸ 1");
 
+                // 5. Cánh Tây
+                addWallWithDoor(730, 1020, 730, 1760, 1390, 260, "vertical", "d_m10_w1_w2", "CỬA TIỀN SẢNH ĐẠI DỊCH TÂY 1 - HẦM ẤP THẬP ĐẠI THỦY TỔ 1");
+                addWallWithDoor(40, 1760, 730, 1760, 250, 260, "horizontal", "d_m10_w1_w3", "CỬA TIỀN SẢNH ĐẠI DỊCH TÂY 1 - TIỀN SẢNH ĐẠI DỊCH TÂY 2");
+                addWallWithDoor(730, 1760, 1470, 1760, 1100, 260, "horizontal", "d_m10_w2_w4", "CỬA HẦM ẤP THẬP ĐẠI THỦY TỔ 1 - HẦM ẤP THẬP ĐẠI THỦY TỔ 2");
+                addWallWithDoor(730, 1760, 730, 2500, 2130, 260, "vertical", "d_m10_w3_w4", "CỬA TIỀN SẢNH ĐẠI DỊCH TÂY 2 - HẦM ẤP THẬP ĐẠI THỦY TỔ 2");
+                addWallWithDoor(1470, 1020, 1470, 1760, 1390, 260, "vertical", "d_m10_w2_core", "CỔNG HẦM ẤP THẬP ĐẠI THỦY TỔ 1 - ĐẠI SẢNH");
+                addWallWithDoor(1470, 1760, 1470, 2500, 2130, 260, "vertical", "d_m10_w4_core", "CỔNG HẦM ẤP THẬP ĐẠI THỦY TỔ 2 - ĐẠI SẢNH");
+
+                // 6. Cánh Đông
+                addWallWithDoor(4470, 1020, 4470, 1760, 1390, 260, "vertical", "d_m10_e1_e2", "CỬA TRỤ SỞ HUYẾT MẠCH ĐÔNG 1 - LÒ PHẢN ỨNG HÀNH TINH MẸ 1");
+                addWallWithDoor(3730, 1760, 4470, 1760, 4100, 260, "horizontal", "d_m10_e1_e3", "CỬA TRỤ SỞ HUYẾT MẠCH ĐÔNG 1 - TRỤ SỞ HUYẾT MẠCH ĐÔNG 2");
+                addWallWithDoor(4470, 1760, 5160, 1760, 4950, 260, "horizontal", "d_m10_e2_e4", "CỬA LÒ PHẢN ỨNG HÀNH TINH MẸ 1 - LÒ PHẢN ỨNG HÀNH TINH MẸ 2");
+                addWallWithDoor(4470, 1760, 4470, 2500, 2130, 260, "vertical", "d_m10_e3_e4", "CỬA TRỤ SỞ HUYẾT MẠCH ĐÔNG 2 - LÒ PHẢN ỨNG HÀNH TINH MẸ 2");
+                addWallWithDoor(3730, 1020, 3730, 1760, 1390, 260, "vertical", "d_m10_core_e1", "CỔNG ĐẠI SẢNH - TRỤ SỞ HUYẾT MẠCH ĐÔNG 1");
+                addWallWithDoor(3730, 1760, 3730, 2500, 2130, 260, "vertical", "d_m10_core_e3", "CỔNG ĐẠI SẢNH - TRỤ SỞ HUYẾT MẠCH ĐÔNG 2");
+
+                // 7. Cánh xuống Hành lang Nam (Ngang Y=2500)
+                addWallWithDoor(40, 2500, 730, 2500, 250, 260, "horizontal", "d_m10_w3_hsw", "CỬA TIỀN SẢNH ĐẠI DỊCH TÂY 2 - HÀNH LANG TN");
+                addWallWithDoor(730, 2500, 1470, 2500, 1100, 260, "horizontal", "d_m10_w4_hsw", "CỬA HẦM ẤP THẬP ĐẠI THỦY TỔ 2 - HÀNH LANG TN");
+                addWallWithDoor(1470, 2500, 3730, 2500, 2600, 280, "horizontal", "d_m10_core_hs", "ĐẠI MÔN NAM ĐẤU TRƯỜNG THÁNH ĐỊA THỦY TỔ OMEGA GENESIS");
+                addWallWithDoor(3730, 2500, 4470, 2500, 4100, 260, "horizontal", "d_m10_e3_hse", "CỬA TRỤ SỞ HUYẾT MẠCH ĐÔNG 2 - HÀNH LANG ĐN");
+                addWallWithDoor(4470, 2500, 5160, 2500, 4950, 260, "horizontal", "d_m10_e4_hse", "CỬA LÒ PHẢN ỨNG HÀNH TINH MẸ 2 - HÀNH LANG ĐN");
+
+                // 8. Kết nối Hành lang Nam dọc
+                addWallWithDoor(1470, 2500, 1470, 2740, 2620, 240, "vertical", "d_m10_hsw_hs", "CỔNG HÀNH LANG TN - NAM");
+                addWallWithDoor(3730, 2500, 3730, 2740, 2620, 240, "vertical", "d_m10_hs_hse", "CỔNG HÀNH LANG NAM - ĐN");
+
+                // 9. Hành lang Nam xuống Dải Nam (Ngang Y=2740)
+                addWallWithDoor(40, 2740, 930, 2740, 250, 260, "horizontal", "d_m10_hsw_s1", "CỬA HÀNH LANG - HẦM ẤP ĐẠI HỒNG THỦY TÂY-NAM");
+                addWallWithDoor(930, 2740, 1470, 2740, 1200, 260, "horizontal", "d_m10_hsw_s2", "CỬA HÀNH LANG - PHÒNG BÀO TỬ DIỆT THẾ TN");
+                addWallWithDoor(1470, 2740, 2600, 2740, 2050, 260, "horizontal", "d_m10_hs_s3", "CỔNG HÀNH LANG - LÕI ĐẠI HỒNG THỦY SINH HỌC NAM");
+                addWallWithDoor(2600, 2740, 3730, 2740, 3150, 260, "horizontal", "d_m10_hs_s4", "CỬA HÀNH LANG - TRÁI TIM HÀNH TINH GENESIS NAM");
+                addWallWithDoor(3730, 2740, 4270, 2740, 4000, 260, "horizontal", "d_m10_hse_s5", "CỬA HÀNH LANG - PHÒNG BÀO TỬ DIỆT THẾ ĐN");
+                addWallWithDoor(4270, 2740, 5160, 2740, 4950, 260, "horizontal", "d_m10_hse_s6", "CỬA HÀNH LANG - HẦM ẤP THỦY TỔ ĐÔNG-NAM");
+
+                // 10. Dải Nam dọc
+                addWallWithDoor(930, 2740, 930, 3560, 3350, 260, "vertical", "d_m10_s1_s2", "CỬA HẦM ẤP ĐẠI HỒNG THỦY TÂY-NAM - PHÒNG BÀO TỬ DIỆT THẾ TN");
+                addWallWithDoor(1470, 2740, 1470, 3560, 3350, 260, "vertical", "d_m10_s2_s3", "CỬA PHÒNG BÀO TỬ DIỆT THẾ TN - LÕI ĐẠI HỒNG THỦY SINH HỌC NAM");
+                addWallWithDoor(2600, 2740, 2600, 3560, 3350, 260, "vertical", "d_m10_s3_s4", "CỬA LÕI ĐẠI HỒNG THỦY SINH HỌC NAM - TRÁI TIM HÀNH TINH GENESIS NAM");
+                addWallWithDoor(3730, 2740, 3730, 3560, 3350, 260, "vertical", "d_m10_s4_s5", "CỬA TRÁI TIM HÀNH TINH GENESIS NAM - PHÒNG BÀO TỬ DIỆT THẾ ĐN");
+                addWallWithDoor(4270, 2740, 4270, 3560, 3350, 260, "vertical", "d_m10_s5_s6", "CỬA PHÒNG BÀO TỬ DIỆT THẾ ĐN - HẦM ẤP THỦY TỔ ĐÔNG-NAM");
+
+                // Vách chiến thuật & Trụ cản Boss
                 WALLS.push(
-                    { x: 2000, y: 1240, w: 72, h: 72 },
-                    { x: 3128, y: 1240, w: 72, h: 72 },
-                    { x: 2000, y: 2288, w: 72, h: 72 },
-                    { x: 3128, y: 2288, w: 72, h: 72 }
+                    { x: 2850, y: 1350, w: 200, h: 28 },
+                    { x: 3022, y: 1350, w: 28, h: 140 },
+                    { x: 1950, y: 1450, w: 28, h: 160 },
+                    { x: 3250, y: 1450, w: 28, h: 160 },
+                    { x: 2050, y: 1350, w: 60, h: 60 },
+                    { x: 3100, y: 1350, w: 60, h: 60 },
+                    { x: 2050, y: 2150, w: 60, h: 60 },
+                    { x: 3100, y: 2150, w: 60, h: 60 }
                 );
             }
+
+            // TỰ ĐỘNG PHÁT HIỆN & LOẠI BỎ NGẪU NHIÊN CÁC CỤM 3 CỬA SÁT NHAU (GÓC TỤ TẬP NHIỀU CỬA)
+            // Đảm bảo mỗi góc chỉ còn tối đa 1-2 cửa thông thoáng, và duy trì 100% tính liên thông (BFS) của bản đồ
+            function isMapFullyConnected() {
+                if (!ROOMS || ROOMS.length === 0) return true;
+                const adj = new Map();
+                for (let i = 0; i < ROOMS.length; i++) adj.set(ROOMS[i].id, new Set());
+
+                for (let i = 0; i < DOORS.length; i++) {
+                    const d = DOORS[i];
+                    let p1, p2;
+                    if (d.orient === "vertical") {
+                        p1 = { x: d.x - 10, y: d.y + d.h * 0.5 };
+                        p2 = { x: d.x + d.w + 10, y: d.y + d.h * 0.5 };
+                    } else {
+                        p1 = { x: d.x + d.w * 0.5, y: d.y - 10 };
+                        p2 = { x: d.x + d.w * 0.5, y: d.y + d.h + 10 };
+                    }
+                    const r1 = ROOMS.find(r => p1.x >= r.x && p1.x <= r.x + r.w && p1.y >= r.y && p1.y <= r.y + r.h);
+                    const r2 = ROOMS.find(r => p2.x >= r.x && p2.x <= r.x + r.w && p2.y >= r.y && p2.y <= r.y + r.h);
+                    if (r1 && r2 && r1.id !== r2.id) {
+                        adj.get(r1.id).add(r2.id);
+                        adj.get(r2.id).add(r1.id);
+                    }
+                }
+
+                const startId = ROOMS[0].id;
+                const visited = new Set([startId]);
+                const queue = [startId];
+                while (queue.length > 0) {
+                    const u = queue.shift();
+                    const neighbors = adj.get(u) || [];
+                    for (const v of neighbors) {
+                        if (!visited.has(v)) {
+                            visited.add(v);
+                            queue.push(v);
+                        }
+                    }
+                }
+                return visited.size === ROOMS.length;
+            }
+
+            function pruneClusteredDoors() {
+                // Xác định seed ngẫu nhiên: Đồng bộ seed qua roomCode nếu đang Co-op, ngẫu nhiên nếu chơi Solo
+                let seed = (window.XENO_COOP && window.XENO_COOP.active && window.XENO_COOP.roomCode)
+                    ? 0
+                    : Math.floor(Math.random() * 1000000);
+                if (seed === 0 && window.XENO_COOP && window.XENO_COOP.roomCode) {
+                    const code = String(window.XENO_COOP.roomCode);
+                    for (let i = 0; i < code.length; i++) seed = (seed * 31 + code.charCodeAt(i)) >>> 0;
+                }
+                let rngState = (seed >>> 0) || 12345;
+                const rand = () => {
+                    rngState = (rngState + 0x6D2B79F5) >>> 0;
+                    let t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+
+                let removedAny = true;
+                while (removedAny) {
+                    removedAny = false;
+                    const doorCenters = DOORS.map(d => ({
+                        d,
+                        cx: d.x + d.w * 0.5,
+                        cy: d.y + d.h * 0.5
+                    }));
+
+                    for (let i = 0; i < doorCenters.length; i++) {
+                        const dc1 = doorCenters[i];
+                        const neighbors = [dc1];
+                        for (let j = 0; j < doorCenters.length; j++) {
+                            if (i === j) continue;
+                            const dc2 = doorCenters[j];
+                            if (Math.hypot(dc1.cx - dc2.cx, dc1.cy - dc2.cy) < 380) {
+                                neighbors.push(dc2);
+                            }
+                        }
+
+                        if (neighbors.length >= 3) {
+                            // Xáo trộn ngẫu nhiên danh sách cửa trong cụm để loại bỏ
+                            const candidates = neighbors.slice();
+                            for (let k = candidates.length - 1; k > 0; k--) {
+                                const swapIdx = Math.floor(rand() * (k + 1));
+                                const tmp = candidates[k];
+                                candidates[k] = candidates[swapIdx];
+                                candidates[swapIdx] = tmp;
+                            }
+
+                            for (let c = 0; c < candidates.length; c++) {
+                                const targetDoor = candidates[c].d;
+                                const originalDoors = DOORS.slice();
+                                const idx = DOORS.indexOf(targetDoor);
+                                if (idx !== -1) DOORS.splice(idx, 1);
+
+                                // Kiểm tra liên thông đồ thị toàn bộ các phòng
+                                if (isMapFullyConnected()) {
+                                    // Bịt kín khe cửa bằng vách tường đặc để không để lại lỗ thủng
+                                    WALLS.push({
+                                        x: targetDoor.x,
+                                        y: targetDoor.y,
+                                        w: targetDoor.w,
+                                        h: targetDoor.h
+                                    });
+                                    removedAny = true;
+                                    break;
+                                } else {
+                                    // Hoàn tác nếu việc gỡ bỏ làm đứt đoạn đường đi của phòng
+                                    DOORS.length = 0;
+                                    DOORS.push(...originalDoors);
+                                }
+                            }
+                            if (removedAny) break;
+                        }
+                    }
+                }
+            }
+            pruneClusteredDoors();
 
             // Thiết kế lại nội thất kiến trúc các căn phòng: Phân vai trò chuyên biệt & bổ sung trụ/vách chắn chiến thuật
             for (let i = 0; i < ROOMS.length; i++) {
@@ -5910,8 +6948,8 @@
                     r.roomTheme = "accelerator_lab";
                 }
 
-                // Thêm các trụ vách ngăn bảo vệ (Tactical Bulkhead Columns) trong các căn phòng vệ tinh lớn
-                if (!r.isCenter && r.w >= 1500 && r.h >= 950) {
+                // Thêm các trụ vách ngăn bảo vệ (Tactical Bulkhead Columns) trong các căn phòng vệ tinh lớn (Map 3 trở lên, Map 1 và Map 2 đã có vách chiến thuật riêng)
+                if (mapId > 2 && !r.isCenter && r.w >= 1500 && r.h >= 950) {
                     const rcx = r.x + r.w * 0.5;
                     const rcy = r.y + r.h * 0.5;
                     // Đặt 2 trụ chắn chiến thuật lệch góc an toàn, tránh tâm phòng và tránh toàn bộ cửa ra vào
@@ -5926,14 +6964,17 @@
                 }
             }
 
-            // Distribute Strategic Spawn Vents across rooms
+            // Distribute Strategic Spawn Vents across rooms & corridors
             for (let i = 0; i < ROOMS.length; i++) {
                 const r = ROOMS[i];
                 const cx = r.x + r.w * 0.5;
                 const cy = r.y + r.h * 0.5;
+                const isHall = !!(r.name && (r.name.includes("HÀNH LANG") || r.name.includes("CATWALK")));
+                const vx1 = isHall ? cx : Math.round(cx - r.w * 0.28);
+                const vy1 = isHall ? cy : Math.round(cy - r.h * 0.22);
                 VENTS.push({
-                    x: Math.round(cx - r.w * 0.28),
-                    y: Math.round(cy - r.h * 0.22),
+                    x: vx1,
+                    y: vy1,
                     row: r.row || 0,
                     col: r.col || 0,
                     room: r.name,
@@ -5942,7 +6983,7 @@
                     openTimer: 0,
                     hazardPhase: Math.random() * Math.PI * 2
                 });
-                if (r.w > 1600 || r.h > 1200) {
+                if (!isHall && (r.w > 1600 || r.h > 1200)) {
                     VENTS.push({
                         x: Math.round(cx + r.w * 0.28),
                         y: Math.round(cy + r.h * 0.22),
@@ -6914,7 +7955,7 @@
                 ranged: true, isElite: true, burstTriShot: true
             },
             boss: {
-                name: "OMEGA BEHEMOTH", hp: 4200, speed: 1.50, radius: 46, damage: 30, reward: 400,
+                name: "OMEGA BEHEMOTH", hp: 4200, speed: 1.50, radius: 40, damage: 30, reward: 400,
                 bodyColor: "#991b1b", carapaceColor: "#1e1b4b", eyeColor: "#f43f5e", legs: 4, isBoss: true
             }
         };
@@ -13058,6 +14099,64 @@
                     c.fillRect(hx, ry + 10, 18, 6);
                     c.fillRect(hx, ry + rh - 16, 18, 6);
                 }
+
+                // PUBG BLINDSPOT CQB: Họa tiết sàn Đại sảnh Tác chiến Site A & Site B
+                if (room.isCenter || room.id === "sec_hub") {
+                    c.save();
+                    // 1. TACTICAL SITE A FLOOR ZONE (Vùng kích nổ / Cứ điểm A)
+                    const sAx = 1950, sAy = 1550;
+                    c.strokeStyle = "rgba(234, 179, 8, 0.75)";
+                    c.lineWidth = 3.5;
+                    c.strokeRect(sAx - 180, sAy - 180, 360, 360);
+                    c.strokeStyle = "rgba(234, 179, 8, 0.35)";
+                    c.lineWidth = 1.5;
+                    c.strokeRect(sAx - 195, sAy - 195, 390, 390);
+
+                    // Huy hiệu hình tròn tâm điểm A
+                    c.fillStyle = "rgba(15, 23, 42, 0.88)";
+                    c.beginPath();
+                    c.arc(sAx, sAy, 42, 0, Math.PI * 2);
+                    c.fill();
+                    c.strokeStyle = "#facc15";
+                    c.lineWidth = 3.2;
+                    c.stroke();
+                    c.fillStyle = "#facc15";
+                    c.font = "900 38px 'JetBrains Mono', sans-serif";
+                    c.textAlign = "center";
+                    c.textBaseline = "middle";
+                    c.fillText("A", sAx, sAy + 3);
+
+                    // 2. TACTICAL SITE B FLOOR ZONE (Vùng kích nổ / Cứ điểm B)
+                    const sBx = 3250, sBy = 1550;
+                    c.strokeStyle = "rgba(234, 179, 8, 0.75)";
+                    c.lineWidth = 3.5;
+                    c.strokeRect(sBx - 180, sBy - 180, 360, 360);
+                    c.strokeStyle = "rgba(234, 179, 8, 0.35)";
+                    c.lineWidth = 1.5;
+                    c.strokeRect(sBx - 195, sBy - 195, 390, 390);
+
+                    // Huy hiệu hình tròn tâm điểm B
+                    c.fillStyle = "rgba(15, 23, 42, 0.88)";
+                    c.beginPath();
+                    c.arc(sBx, sBy, 42, 0, Math.PI * 2);
+                    c.fill();
+                    c.strokeStyle = "#facc15";
+                    c.lineWidth = 3.2;
+                    c.stroke();
+                    c.fillStyle = "#facc15";
+                    c.font = "900 38px 'JetBrains Mono', sans-serif";
+                    c.textAlign = "center";
+                    c.textBaseline = "middle";
+                    c.fillText("B", sBx, sBy + 3);
+
+                    // 3. Sàn quầy lễ tân / tiếp tân chữ L (PUBG Blindspot Reception Lobby)
+                    c.fillStyle = "rgba(30, 41, 59, 0.65)";
+                    c.fillRect(2830, 1280, 260, 180);
+                    c.strokeStyle = "rgba(148, 163, 184, 0.40)";
+                    c.lineWidth = 1.8;
+                    c.strokeRect(2830, 1280, 260, 180);
+                    c.restore();
+                }
             } else if (mapId === 2) {
                 // MAP 2 (Orion-IX): Boong titan lục giác bóng bẩy, vi mạch cyan phản quang
                 const hexR = 34;
@@ -13091,6 +14190,49 @@
                             c.strokeStyle = "rgba(56, 189, 248, 0.24)";
                         }
                     }
+                }
+
+                // Sàn Đại Sảnh Tác Chiến CIC & Đường Băng Tiêm Kích Hangar (Map 2)
+                if (room.isCenter || room.id === "sec_m2_cic") {
+                    const cicX = room.x + room.w * 0.5;
+                    const cicY = room.y + room.h * 0.5;
+                    c.save();
+                    c.strokeStyle = "rgba(56, 189, 248, 0.65)";
+                    c.lineWidth = 3.0;
+                    c.beginPath();
+                    c.arc(cicX, cicY, 180, 0, Math.PI * 2);
+                    c.stroke();
+                    c.strokeStyle = "rgba(56, 189, 248, 0.35)";
+                    c.setLineDash([16, 10]);
+                    c.beginPath();
+                    c.arc(cicX, cicY, 230, 0, Math.PI * 2);
+                    c.stroke();
+                    c.setLineDash([]);
+                    c.fillStyle = "rgba(56, 189, 248, 0.85)";
+                    c.font = "900 22px 'JetBrains Mono', sans-serif";
+                    c.textAlign = "center";
+                    c.textBaseline = "middle";
+                    c.fillText("ORION-IX CIC HQ", cicX, cicY);
+
+                    // Quầy điều hành chiến thuật chữ U sàn titan
+                    c.fillStyle = "rgba(15, 23, 42, 0.65)";
+                    c.fillRect(2830, 1280, 260, 180);
+                    c.strokeStyle = "rgba(56, 189, 248, 0.40)";
+                    c.lineWidth = 1.8;
+                    c.strokeRect(2830, 1280, 260, 180);
+                    c.restore();
+                } else if (room.name && room.name.includes("HANGAR")) {
+                    // Vạch sơn đường băng hướng dẫn tiêm kích hạ cánh
+                    c.save();
+                    c.strokeStyle = "rgba(234, 179, 8, 0.35)";
+                    c.lineWidth = 4;
+                    c.setLineDash([28, 18]);
+                    c.beginPath();
+                    c.moveTo(room.x + 80, room.y + room.h * 0.5);
+                    c.lineTo(room.x + room.w - 80, room.y + room.h * 0.5);
+                    c.stroke();
+                    c.setLineDash([]);
+                    c.restore();
                 }
             } else if (mapId === 3) {
                 // MAP 3 (Europa): Băng vĩnh cửu nứt nẻ, tinh thể tuyết và khe nứt địa nhiệt
@@ -22639,18 +23781,25 @@
 
                 // 2d. Centered Icon (Asset Image hoặc Fallback Icon mặc định, tỷ lệ chuẩn không to không bé)
                 const itemAsset = (typeof CUSTOM_ASSETS !== "undefined" && CUSTOM_ASSETS.items) ? CUSTOM_ASSETS.items[it.kind] : null;
-                if (itemAsset && itemAsset.loaded && itemAsset.img && itemAsset.img.naturalWidth > 0) {
-                    const img = itemAsset.img;
-                    const maxIconSize = 21; // Đồng bộ cố định: không có cái to cái bé
-                    const aspect = img.naturalWidth / img.naturalHeight;
+                const activeImg = itemAsset ? (itemAsset.gpuBitmap || (itemAsset.img && itemAsset.img.complete && itemAsset.img.naturalWidth > 0 ? itemAsset.img : null)) : null;
+                if (activeImg) {
+                    const maxIconSize = 22; // Đồng bộ cố định chuẩn tỷ lệ
+                    const nw = (itemAsset.img && itemAsset.img.naturalWidth) || 512;
+                    const nh = (itemAsset.img && itemAsset.img.naturalHeight) || 512;
+                    const aspect = nw / nh;
                     let dw = maxIconSize, dh = maxIconSize;
                     if (aspect > 1) {
                         dh = maxIconSize / aspect;
                     } else {
                         dw = maxIconSize * aspect;
                     }
-                    ctx.drawImage(itemAsset.gpuBitmap || img, -dw / 2, -dh / 2 - 0.5, dw, dh);
+                    ctx.drawImage(activeImg, -dw / 2, -dh / 2 - 0.5, dw, dh);
                 } else {
+                    // Tự động kích hoạt nạp lại ngầm nếu asset chưa sẵn sàng
+                    if (itemAsset && !itemAsset._fetching && typeof loadCustomAssetEntry === "function") {
+                        itemAsset._fetching = true;
+                        loadCustomAssetEntry(itemAsset);
+                    }
                     ctx.font = "800 10px 'JetBrains Mono', monospace";
                     ctx.fillStyle = "#ffffff";
                     ctx.textAlign = "center";
@@ -29634,20 +30783,57 @@
             const scaleX = mw / WORLD_W;
             const scaleY = mh / WORLD_H;
 
-            minimapCtx.drawImage(staticMinimapCanvas, 0, 0);
+            // Kiểm tra trạng thái nguồn điện trạm
+            const isPowerOn = Boolean((typeof generatorOnline !== "undefined" && generatorOnline) || (mapGenerator && mapGenerator.active));
 
-            DOORS.forEach(d => {
-                minimapCtx.fillStyle = d.openAmount >= 0.5 ? "#10b981" : "#ef4444";
-                minimapCtx.fillRect(d.x * scaleX, d.y * scaleY, Math.max(1.5, d.w * scaleX), Math.max(1.5, d.h * scaleY));
-            });
+            if (isPowerOn) {
+                // ĐÃ BẬT ĐIỆN: Hiển thị rõ ràng toàn bộ cấu trúc phòng ốc, tường, cửa và cổng dịch chuyển
+                minimapCtx.drawImage(staticMinimapCanvas, 0, 0);
 
-            // Quantum Teleporters on Minimap (Cổng Dịch - chú thích màu vàng)
-            minimapCtx.fillStyle = "#fbbf24";
-            for (let i = 0; i < teleporters.length; i++) {
-                const tp = teleporters[i];
+                DOORS.forEach(d => {
+                    minimapCtx.fillStyle = d.openAmount >= 0.5 ? "#10b981" : "#ef4444";
+                    minimapCtx.fillRect(d.x * scaleX, d.y * scaleY, Math.max(1.5, d.w * scaleX), Math.max(1.5, d.h * scaleY));
+                });
+
+                // Quantum Teleporters on Minimap (Cổng Dịch - chú thích màu vàng)
+                minimapCtx.fillStyle = "#fbbf24";
+                for (let i = 0; i < teleporters.length; i++) {
+                    const tp = teleporters[i];
+                    minimapCtx.beginPath();
+                    safeArc(minimapCtx, tp.x * scaleX, tp.y * scaleY, 2.5);
+                    minimapCtx.fill();
+                }
+            } else {
+                // CHƯA BẬT ĐIỆN: Che kín mini map hoàn toàn, không thấy cấu trúc phòng, tường hay cửa
+                minimapCtx.fillStyle = "#030712";
+                minimapCtx.fillRect(0, 0, mw, mh);
+
+                // Lưới cảm biến radar quét tối mờ
+                minimapCtx.save();
+                minimapCtx.strokeStyle = "rgba(30, 41, 59, 0.4)";
+                minimapCtx.lineWidth = 0.5;
+                const gridStep = 24;
                 minimapCtx.beginPath();
-                safeArc(minimapCtx, tp.x * scaleX, tp.y * scaleY, 2.5);
-                minimapCtx.fill();
+                for (let x = gridStep; x < mw; x += gridStep) {
+                    minimapCtx.moveTo(x, 0);
+                    minimapCtx.lineTo(x, mh);
+                }
+                for (let y = gridStep; y < mh; y += gridStep) {
+                    minimapCtx.moveTo(0, y);
+                    minimapCtx.lineTo(mw, y);
+                }
+                minimapCtx.stroke();
+
+                // Dòng chữ cảnh báo radar nhấp nháy cho biết trạm chưa có điện
+                const now = performance.now();
+                const blink = Math.sin(now * 0.005);
+                if (blink > -0.2) {
+                    minimapCtx.font = "bold 8px 'JetBrains Mono', monospace";
+                    minimapCtx.fillStyle = `rgba(244, 63, 94, ${0.45 + blink * 0.45})`;
+                    minimapCtx.textAlign = "center";
+                    minimapCtx.fillText("MẤT NGUỒN - RADAR TẮT", mw / 2, mh - 6);
+                }
+                minimapCtx.restore();
             }
 
             // Station Generator on Minimap (Icon tia sét màu cam nhấp nháy)

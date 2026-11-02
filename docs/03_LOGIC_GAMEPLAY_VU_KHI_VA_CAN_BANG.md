@@ -132,3 +132,22 @@ Hệ thống phân biệt rõ ràng 3 trạng thái chơi game:
 2. **Cơ Chế Kinh Tế Co-Op Shared Credit & Revive**:
    * **Chia sẻ tiền diệt quái**: Người kết liễu phát bắn cuối hưởng **70%** tiền thưởng; đồng đội yểm trợ/khống chế nhận **50%** tiền trợ công. Cả 2 cùng phát triển sức mạnh song hành, xóa bỏ hoàn toàn tình trạng cướp tiền Last-Hit.
    * **Cứu đồng đội cấp cứu (Revive 3.5s)**: Rút ngắn thời gian cứu từ 5.0s xuống **3.5s**; khi hồi sinh thành công phát ra **sóng xung kích đẩy lùi quái** trong bán kính 160px kèm **Khiên Bất Tử 1.8 giây** bảo vệ người vừa đứng dậy.
+
+---
+
+## 🗺️ 9. NÂNG CẤP KIẾN TRÚC BẢN ĐỒ & CHIA PHÒNG ĐA DẠNG (MODULAR FACILITY & STARSHIP DECKS)
+
+Nhằm loại bỏ sự rập khuôn của các phòng lớn trống trải, hệ thống bản đồ được chuyển đổi sang mô hình **Phòng chức năng chuyên biệt nhỏ và vừa** kết hợp hành lang chiến thuật:
+
+1. **Map 1: Căn Cứ Ngầm Alpha (Nâng cấp lên 17 Phòng)**:
+   * **Dải Bắc**: Phòng Lab Đột Biến Gen Alpha, Kho Mẫu Vật Sống, Kho Vũ Khí Bắc, Kho Tiếp Tế Đạn Dược, Trạm Máy Chủ Quantum, Đài Viễn Thông Vệ Tinh Alpha.
+   * **Dải Giữa**: Sảnh Hội Ý Tác Chiến Tây, Doanh Trại Phòng Thủ, Trung Tâm Chỉ Huy Tối Cao (Hub trung tâm), Sảnh Kiểm Soát An Ninh Đông, Trạm Y Tế Cấp Cứu.
+   * **Dải Nam**: Hầm Cách Ly Sinh Học Tây-Nam, Buồng Khử Trùng & Lọc Độc, Phòng Lõi Năng Lượng Nam, Trạm Làm Nguội & Điều Áp, Buồng Đông Lạnh Cryo, Hầm Kho Vật Liệu Nguy Hiểm.
+   * **Cửa trượt tự động**: 26 cửa trượt chuẩn hóa rộng $260 - 300\text{px}$, kết nối đa hướng liên hoàn, triệt tiêu hoàn toàn góc cụt.
+2. **Map 2: Tàu Không Gian Orion-IX (Nâng cấp lên 15 Khoang)**:
+   * **Khu Hangar Tiêm Kích Phía Bắc**: 4 Khoang Tiêm Kích Hangar độc lập (Alpha-1, Alpha-2, Beta-1, Beta-2).
+   * **Trục Hành Lang Giữa**: Đài Chỉ Huy Mũi Tàu, Phòng Điều Hướng & Hải Đồ, Đại Sảnh Trục Tàu Orion-IX, Trạm Kiểm Soát Động Cơ, Buồng Động Cơ Đẩy Ion.
+   * **Khu Khoang Kỹ Thuật Phía Nam**: Khoang Ngủ Đông, Trạm Duy Trì Sự Sống & Oxy, Phòng Lõi Năng Lượng Warp, Máy Phát Trường Lực, Lò Phản Ứng Phụ Trợ, Kho Vũ Khí Ngư Lôi.
+3. **Tối Ưu Kích Thước Boss (`radius: 40px`)**:
+   * Thu gọn nhẹ bán kính hitbox Boss từ `46px` xuống `40px` (đường kính $80\text{px}$) giúp Boss di chuyển linh hoạt qua các cửa trượt và hành lang $260 - 280\text{px}$, không bao giờ bị nghẽn hay kẹt mép tường khi truy sát người chơi.
+   * Đảm bảo an toàn tuyệt đối cho 5 Cổng Dịch Chuyển Teleporter và Máy Phát Điện Trạm.
