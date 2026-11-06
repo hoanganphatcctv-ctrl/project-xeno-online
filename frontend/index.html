@@ -15864,23 +15864,28 @@
             }
         }
         
+        // Shared zero-allocation door leaf buffers
+        const _sharedDoorLeaves = [
+            { x: 0, y: 0, w: 0, h: 0 },
+            { x: 0, y: 0, w: 0, h: 0 }
+        ];
+
         function getDoorLeafBoxes(d) {
             const retractRatio = Math.max(0, Math.min(0.88, d.openAmount * 0.88));
+            const l0 = _sharedDoorLeaves[0];
+            const l1 = _sharedDoorLeaves[1];
             if (d.orient === "vertical") {
                 const halfH = d.h * 0.5;
                 const leafH = halfH * (1 - retractRatio);
-                return [
-                    { x: d.x, y: d.y, w: d.w, h: leafH },
-                    { x: d.x, y: d.y + d.h - leafH, w: d.w, h: leafH }
-                ];
+                l0.x = d.x; l0.y = d.y; l0.w = d.w; l0.h = leafH;
+                l1.x = d.x; l1.y = d.y + d.h - leafH; l1.w = d.w; l1.h = leafH;
             } else {
                 const halfW = d.w * 0.5;
                 const leafW = halfW * (1 - retractRatio);
-                return [
-                    { x: d.x, y: d.y, w: leafW, h: d.h },
-                    { x: d.x + d.w - leafW, y: d.y, w: leafW, h: d.h }
-                ];
+                l0.x = d.x; l0.y = d.y; l0.w = leafW; l0.h = d.h;
+                l1.x = d.x + d.w - leafW; l1.y = d.y; l1.w = leafW; l1.h = d.h;
             }
+            return _sharedDoorLeaves;
         }
 
         function updateAutoDoors() {
@@ -15949,10 +15954,21 @@
             for (let i = 0; i < DOORS.length; i++) {
                 const d = DOORS[i];
                 if (d.openAmount >= 0.82) continue;
-                const leaves = getDoorLeafBoxes(d);
-                for (let k = 0; k < 2; k++) {
-                    const lf = leaves[k];
-                    if (x >= lf.x && x <= lf.x + lf.w && y >= lf.y && y <= lf.y + lf.h) {
+                // 1. Fast AABB Rejection: Bỏ qua 99% nếu đạn không nằm trong khung bao của cửa
+                if (x < d.x || x > d.x + d.w || y < d.y || y > d.y + d.h) continue;
+
+                // 2. Điểm nằm trong khung cửa: Tính toán trực tiếp không cấp phát rác trên Heap
+                const retractRatio = Math.max(0, Math.min(0.88, d.openAmount * 0.88));
+                if (d.orient === "vertical") {
+                    const halfH = d.h * 0.5;
+                    const leafH = halfH * (1 - retractRatio);
+                    if (y <= d.y + leafH || y >= d.y + d.h - leafH) {
+                        return true;
+                    }
+                } else {
+                    const halfW = d.w * 0.5;
+                    const leafW = halfW * (1 - retractRatio);
+                    if (x <= d.x + leafW || x >= d.x + d.w - leafW) {
                         return true;
                     }
                 }
@@ -18846,10 +18862,13 @@
         window.pendingHostileBullets = [];
         window.coopHostOpenDoors = new Set();
 
+        let _bulletCursor = 0;
         function spawnBullet(x, y, angle, weapon, isHostile = false, isTeammate = false, fromNetwork = false) {
-            for (let i = 0; i < MAX_BULLETS; i++) {
+            for (let count = 0; count < MAX_BULLETS; count++) {
+                const i = (_bulletCursor + count) % MAX_BULLETS;
                 const b = bullets[i];
                 if (!b.active) {
+                    _bulletCursor = (i + 1) % MAX_BULLETS;
                     const overdriveMult = (!isHostile && !isTeammate && player.overdriveBuffTimer > 0) ? 2.0 : 1.0;
                     b.active = true;
                     b.x = x;
@@ -18896,10 +18915,13 @@
             return null;
         }
 
+        let _particleCursor = 0;
         function spawnParticle(x, y, vx, vy, color, size, life) {
-            for (let i = 0; i < MAX_PARTICLES; i++) {
+            for (let count = 0; count < MAX_PARTICLES; count++) {
+                const i = (_particleCursor + count) % MAX_PARTICLES;
                 const p = particles[i];
                 if (!p.active) {
+                    _particleCursor = (i + 1) % MAX_PARTICLES;
                     p.active = true;
                     p.x = x;
                     p.y = y;
@@ -22161,6 +22183,9 @@
             }
             if (isPaused) return;
 
+            // Pre-build Enemy Spatial Hash Grid early so all hazards, turrets and drones can query O(1)
+            buildEnemySpatialGrid();
+
             updateAutoDoors();
 
             if (itemDropCooldownFrames > 0) itemDropCooldownFrames--;
@@ -22203,14 +22228,30 @@
                         2.6,
                         16
                     );
-                    for (let j = 0; j < MAX_ENEMIES; j++) {
-                        const e = enemies[j];
-                        if (!e.active) continue;
-                        const d = Math.hypot(e.x - st.x, e.y - st.y);
-                        if (d < st.outerRadius + e.radius) {
-                            e.chillTimer = Math.max(e.chillTimer || 0, 35);
-                            if (!isCoopClient()) {
-                                damageEnemy(e, e.isBoss ? 8 : 11, 0, 0, "plasma");
+                    // O(1) Spatial Hash Grid lookup for Energy Core Arc Shock
+                    const ecRad = st.outerRadius + 30;
+                    const ecMinC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((st.x - ecRad) / ENEMY_GRID_CELL) | 0));
+                    const ecMaxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((st.x + ecRad) / ENEMY_GRID_CELL) | 0));
+                    const ecMinR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((st.y - ecRad) / ENEMY_GRID_CELL) | 0));
+                    const ecMaxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((st.y + ecRad) / ENEMY_GRID_CELL) | 0));
+
+                    for (let r = ecMinR; r <= ecMaxR; r++) {
+                        for (let c = ecMinC; c <= ecMaxC; c++) {
+                            let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                            while (j !== -1) {
+                                const e = enemies[j];
+                                if (e.active) {
+                                    const edx = e.x - st.x;
+                                    const edy = e.y - st.y;
+                                    const ecRSum = st.outerRadius + e.radius;
+                                    if (edx * edx + edy * edy < ecRSum * ecRSum) {
+                                        e.chillTimer = Math.max(e.chillTimer || 0, 35);
+                                        if (!isCoopClient()) {
+                                            damageEnemy(e, e.isBoss ? 8 : 11, 0, 0, "plasma");
+                                        }
+                                    }
+                                }
+                                j = enemyGridNext[j];
                             }
                         }
                     }
@@ -22222,7 +22263,8 @@
                 const np = nuclearPools[i];
                 np.life--;
                 if (np.life <= 0) {
-                    nuclearPools.splice(i, 1);
+                    const lastNp = nuclearPools.pop();
+                    if (i < nuclearPools.length) nuclearPools[i] = lastNp;
                     continue;
                 }
                 // Hiệu ứng dòng chất lỏng từ từ chảy loang rộng ra mặt sàn
@@ -22253,7 +22295,8 @@
                         if (Math.random() < 0.40) {
                             spawnParticle(np.x + bub.x, np.y + bub.y, (Math.random() - 0.5) * 1.4, -0.8 - Math.random() * 1.2, "#86efac", 2.2, 18);
                         }
-                        np.bubbles.splice(b, 1);
+                        const lastB = np.bubbles.pop();
+                        if (b < np.bubbles.length) np.bubbles[b] = lastB;
                     }
                 }
 
@@ -22273,19 +22316,33 @@
                 }
 
                 if (frameCounter % 14 === 0) {
-                    for (let j = 0; j < MAX_ENEMIES; j++) {
-                        const e = enemies[j];
-                        if (!e.active) continue;
-                        const npRSum = np.currentRadius + e.radius;
-                        const npDx = e.x - np.x;
-                        const npDy = e.y - np.y;
-                        if (Math.abs(npDx) <= npRSum && Math.abs(npDy) <= npRSum && (npDx * npDx + npDy * npDy < npRSum * npRSum)) {
-                            e.nuclearSlowTimer = 45;
-                            if (Math.random() < 0.35) {
-                                spawnParticle(e.x + (Math.random() - 0.5) * 14, e.y + (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 1.2, -1.2, "#4ade80", 2.6, 20);
-                            }
-                            if (!isCoopClient()) {
-                                damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
+                    // O(1) Spatial Hash Grid lookup for nuclear acid pool
+                    const npR = np.currentRadius;
+                    const minC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((np.x - npR) / ENEMY_GRID_CELL) | 0));
+                    const maxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((np.x + npR) / ENEMY_GRID_CELL) | 0));
+                    const minR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((np.y - npR) / ENEMY_GRID_CELL) | 0));
+                    const maxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((np.y + npR) / ENEMY_GRID_CELL) | 0));
+
+                    for (let r = minR; r <= maxR; r++) {
+                        for (let c = minC; c <= maxC; c++) {
+                            let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                            while (j !== -1) {
+                                const e = enemies[j];
+                                if (e.active) {
+                                    const npRSum = npR + e.radius;
+                                    const npDx = e.x - np.x;
+                                    const npDy = e.y - np.y;
+                                    if (Math.abs(npDx) <= npRSum && Math.abs(npDy) <= npRSum && (npDx * npDx + npDy * npDy < npRSum * npRSum)) {
+                                        e.nuclearSlowTimer = 45;
+                                        if (Math.random() < 0.35) {
+                                            spawnParticle(e.x + (Math.random() - 0.5) * 14, e.y + (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 1.2, -1.2, "#4ade80", 2.6, 20);
+                                        }
+                                        if (!isCoopClient()) {
+                                            damageEnemy(e, e.isBoss ? 14 : 18, 0, 0, "acid");
+                                        }
+                                    }
+                                }
+                                j = enemyGridNext[j];
                             }
                         }
                     }
@@ -22297,7 +22354,8 @@
                 const fp = firePatches[i];
                 fp.life--;
                 if (fp.life <= 0) {
-                    firePatches.splice(i, 1);
+                    const lastFp = firePatches.pop();
+                    if (i < firePatches.length) firePatches[i] = lastFp;
                     continue;
                 }
                 // Khói đen & tàn tro bay lơ lửng
@@ -22312,15 +22370,30 @@
                     spawnParticle(sx, sy, (Math.random() - 0.5) * 1.6, -1.4 - Math.random() * 1.8, Math.random() > 0.4 ? "#fde047" : "#f97316", 2.2 + Math.random() * 1.8, 22);
                 }
                 if (frameCounter % 12 === 0) {
-                    for (let j = 0; j < MAX_ENEMIES; j++) {
-                        const e = enemies[j];
-                        if (!e.active) continue;
-                        const fpRSum = fp.radius + e.radius;
-                        const fpDx = e.x - fp.x;
-                        if (Math.abs(fpDx) <= fpRSum && Math.abs(e.y - fp.y) <= fpRSum && (fpDx * fpDx + (e.y - fp.y) * (e.y - fp.y) < fpRSum * fpRSum)) {
-                            e.burnTimer = Math.max(e.burnTimer || 0, 75);
-                            if (!isCoopClient()) {
-                                damageEnemy(e, e.isBoss ? 9 : 14, 0, 0, "flame");
+                    // O(1) Spatial Hash Grid lookup for napalm flame patches
+                    const fpR = fp.radius;
+                    const minC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((fp.x - fpR) / ENEMY_GRID_CELL) | 0));
+                    const maxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((fp.x + fpR) / ENEMY_GRID_CELL) | 0));
+                    const minR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((fp.y - fpR) / ENEMY_GRID_CELL) | 0));
+                    const maxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((fp.y + fpR) / ENEMY_GRID_CELL) | 0));
+
+                    for (let r = minR; r <= maxR; r++) {
+                        for (let c = minC; c <= maxC; c++) {
+                            let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                            while (j !== -1) {
+                                const e = enemies[j];
+                                if (e.active) {
+                                    const fpRSum = fpR + e.radius;
+                                    const fpDx = e.x - fp.x;
+                                    const fpDy = e.y - fp.y;
+                                    if (Math.abs(fpDx) <= fpRSum && Math.abs(fpDy) <= fpRSum && (fpDx * fpDx + fpDy * fpDy < fpRSum * fpRSum)) {
+                                        e.burnTimer = Math.max(e.burnTimer || 0, 75);
+                                        if (!isCoopClient()) {
+                                            damageEnemy(e, e.isBoss ? 9 : 14, 0, 0, "flame");
+                                        }
+                                    }
+                                }
+                                j = enemyGridNext[j];
                             }
                         }
                     }
@@ -22353,7 +22426,7 @@
                 }
             }
 
-            // Update Spinning Wood Splinters (woodSplinters) & Shockwave Rings
+            // Update Spinning Wood Splinters (woodSplinters) & Shockwave Rings (Fast O(1) Swap-and-Pop)
             for (let i = woodSplinters.length - 1; i >= 0; i--) {
                 const ws = woodSplinters[i];
                 ws.x += ws.vx;
@@ -22364,7 +22437,8 @@
                 ws.vRot *= 0.92;
                 ws.life--;
                 if (ws.life <= 0) {
-                    woodSplinters.splice(i, 1);
+                    const lastWs = woodSplinters.pop();
+                    if (i < woodSplinters.length) woodSplinters[i] = lastWs;
                 }
             }
             for (let i = shockwaveRings.length - 1; i >= 0; i--) {
@@ -22372,7 +22446,8 @@
                 sr.r += (sr.maxR - sr.r) * 0.22 + 3.5;
                 sr.alpha *= 0.88;
                 if (sr.r >= sr.maxR || sr.alpha <= 0.04) {
-                    shockwaveRings.splice(i, 1);
+                    const lastSr = shockwaveRings.pop();
+                    if (i < shockwaveRings.length) shockwaveRings[i] = lastSr;
                 }
             }
             for (let i = 0; i < crates.length; i++) {
@@ -22781,15 +22856,35 @@
                 if (typeof updateTouchOverlayVisibility === "function") updateTouchOverlayVisibility();
             }
 
-            // Autonomous Laser Drones (Balanced support fire rate)
+            // Autonomous Laser Drones (Balanced support fire rate - O(1) Spatial Grid query)
             if (player.droneCount > 0 && frameCounter % 26 === 0) {
                 let nearest = null;
                 let minDist = 380;
-                for (let i = 0; i < MAX_ENEMIES; i++) {
-                    const e = enemies[i];
-                    if (!e.active) continue;
-                    const d = Math.hypot(e.x - player.x, e.y - player.y);
-                    if (d < minDist) { minDist = d; nearest = e; }
+                let minDistSq = 380 * 380;
+                const dRadius = 380;
+                const minC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((player.x - dRadius) / ENEMY_GRID_CELL) | 0));
+                const maxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((player.x + dRadius) / ENEMY_GRID_CELL) | 0));
+                const minR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((player.y - dRadius) / ENEMY_GRID_CELL) | 0));
+                const maxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((player.y + dRadius) / ENEMY_GRID_CELL) | 0));
+
+                for (let r = minR; r <= maxR; r++) {
+                    for (let c = minC; c <= maxC; c++) {
+                        let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                        while (j !== -1) {
+                            const e = enemies[j];
+                            if (e.active) {
+                                const edx = e.x - player.x;
+                                const edy = e.y - player.y;
+                                const dSq = edx * edx + edy * edy;
+                                if (dSq < minDistSq) {
+                                    minDistSq = dSq;
+                                    minDist = Math.sqrt(dSq);
+                                    nearest = e;
+                                }
+                            }
+                            j = enemyGridNext[j];
+                        }
+                    }
                 }
                 if (nearest) {
                     for (let d = 0; d < player.droneCount; d++) {
@@ -22806,15 +22901,35 @@
                 }
             }
 
-            // Autonomous Laser Drones for Teammate (Co-Op support fire visual)
+            // Autonomous Laser Drones for Teammate (Co-Op support fire visual - O(1) Spatial Grid query)
             if (window.teammate && window.teammate.active && !window.teammate.isDown && (window.teammate.droneCount > 0) && (frameCounter % 26 === 13)) {
                 let nearest = null;
                 let minDist = 380;
-                for (let i = 0; i < MAX_ENEMIES; i++) {
-                    const e = enemies[i];
-                    if (!e.active) continue;
-                    const d = Math.hypot(e.x - window.teammate.x, e.y - window.teammate.y);
-                    if (d < minDist) { minDist = d; nearest = e; }
+                let minDistSq = 380 * 380;
+                const dRadius = 380;
+                const minC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((window.teammate.x - dRadius) / ENEMY_GRID_CELL) | 0));
+                const maxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((window.teammate.x + dRadius) / ENEMY_GRID_CELL) | 0));
+                const minR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((window.teammate.y - dRadius) / ENEMY_GRID_CELL) | 0));
+                const maxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((window.teammate.y + dRadius) / ENEMY_GRID_CELL) | 0));
+
+                for (let r = minR; r <= maxR; r++) {
+                    for (let c = minC; c <= maxC; c++) {
+                        let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                        while (j !== -1) {
+                            const e = enemies[j];
+                            if (e.active) {
+                                const edx = e.x - window.teammate.x;
+                                const edy = e.y - window.teammate.y;
+                                const dSq = edx * edx + edy * edy;
+                                if (dSq < minDistSq) {
+                                    minDistSq = dSq;
+                                    minDist = Math.sqrt(dSq);
+                                    nearest = e;
+                                }
+                            }
+                            j = enemyGridNext[j];
+                        }
+                    }
                 }
                 if (nearest) {
                     for (let d = 0; d < window.teammate.droneCount; d++) {
@@ -22939,14 +23054,31 @@
                 if (tr.fireCooldown > 0) tr.fireCooldown--;
                 if (tr.fireCooldown <= 0) {
                     let target = null;
-                    let bestD = 520;
-                    for (let i = 0; i < MAX_ENEMIES; i++) {
-                        const e = enemies[i];
-                        if (!e.active) continue;
-                        const d = Math.hypot(e.x - tr.x, e.y - tr.y);
-                        if (d < bestD && hasLineOfSight(tr.x, tr.y, e.x, e.y)) {
-                            bestD = d;
-                            target = e;
+                    let bestDSq = 520 * 520;
+                    const trR = 520;
+                    const minC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((tr.x - trR) / ENEMY_GRID_CELL) | 0));
+                    const maxC = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, ((tr.x + trR) / ENEMY_GRID_CELL) | 0));
+                    const minR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((tr.y - trR) / ENEMY_GRID_CELL) | 0));
+                    const maxR = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, ((tr.y + trR) / ENEMY_GRID_CELL) | 0));
+
+                    for (let r = minR; r <= maxR; r++) {
+                        for (let c = minC; c <= maxC; c++) {
+                            let j = enemyGridHead[r * ENEMY_GRID_COLS + c];
+                            while (j !== -1) {
+                                const e = enemies[j];
+                                if (e.active) {
+                                    const edx = e.x - tr.x;
+                                    const edy = e.y - tr.y;
+                                    const dSq = edx * edx + edy * edy;
+                                    if (dSq < bestDSq) {
+                                        if (hasLineOfSight(tr.x, tr.y, e.x, e.y)) {
+                                            bestDSq = dSq;
+                                            target = e;
+                                        }
+                                    }
+                                }
+                                j = enemyGridNext[j];
+                            }
                         }
                     }
                     if (target) {
@@ -24879,12 +25011,11 @@
             for (let i = 0; i < MAX_PARTICLES; i++) {
                 const p = particles[i];
                 if (!p.active) continue;
-                if (p.x < camX || p.x > camX + VIEW_W || p.y < camY || p.y > camY + VIEW_H) continue;
+                if (p.x + p.size < camX || p.x - p.size > camX + VIEW_W || p.y + p.size < camY || p.y - p.size > camY + VIEW_H) continue;
                 ctx.fillStyle = p.color;
                 ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-                ctx.beginPath();
-                safeArc(ctx, p.x, p.y, p.size);
-                ctx.fill();
+                const sz = p.size;
+                ctx.fillRect(p.x - sz, p.y - sz, sz * 2, sz * 2);
             }
             ctx.globalAlpha = 1;
 
