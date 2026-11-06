@@ -4285,11 +4285,11 @@
                         <button onclick="window.buyUpgrade('speed')" class="armory-upg-row h-[54px] px-3.5 rounded-none bg-slate-900/85 hover:bg-slate-800/95 border border-slate-700/80 hover:border-yellow-400 flex items-center justify-between gap-3 transition text-left group">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-8 h-8 rounded-none bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center overflow-hidden shrink-0">
-                                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-asset-src="assets/item_speed.png" alt="Giày Phản Lực" class="w-6 h-6 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-asset-src="assets/item_speed.png" alt="Adrenalin" class="w-6 h-6 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                                     <span style="display:none;" class="text-yellow-300 font-mono-tech font-black text-xs">SPD</span>
                                 </div>
                                 <div class="min-w-0">
-                                    <div class="font-bold text-xs text-yellow-200 truncate group-hover:text-white font-mono-tech">Giày Phản Lực (+8% Tốc chạy)</div>
+                                    <div class="font-bold text-xs text-yellow-200 truncate group-hover:text-white font-mono-tech">Adrenalin (+8% Tốc chạy)</div>
                                     <div class="text-[10px] text-slate-400 font-mono-tech">Đã nâng cấp: <b id="upgSpeedLv" class="text-yellow-300">0/5</b></div>
                                 </div>
                             </div>
@@ -7375,7 +7375,7 @@
          * - drone.png         (Drone Bắn Laser)
          * - hp.png            (Hồi Đầy Máu & Giáp / Hộp Cứu Thương)
          * - tang_mau_giap.png (Tăng Giới Hạn Máu & Giáp)
-         * - tang_toc_chay.png (Giày Phản Lực Tốc Chạy)
+         * - tang_toc_chay.png (Adrenalin Tăng Tốc Chạy)
          * - tang_dame.png     (Đạn Nhiệt Hạch / Cuồng Nộ)
          * - kinh_dem.png      (Kính Nhìn Đêm Quân Sự)
          *
@@ -32910,7 +32910,7 @@
             } else if (type === "speed") {
                 if ((player.speedLevel - 1) >= MAX_SHOP_UPGRADE_LEVELS) {
                     if (typeof sfx !== "undefined" && sfx) sfx.playError();
-                    showToast("ĐẠT CẤP TỐI ĐA (5/5)", "Giày Phản Lực đã đạt tối đa 5 lần nâng cấp!");
+                    showToast("ĐẠT CẤP TỐI ĐA (5/5)", "Adrenalin đã đạt tối đa 5 lần nâng cấp!");
                     return;
                 }
                 if (player.credits >= cost) {
@@ -32918,10 +32918,10 @@
                     player.baseSpeed *= 1.08;
                     player.speedLevel++;
                     if (typeof sfx !== "undefined" && sfx) sfx.playBuy();
-                    showToast(`GIÀY PHẢN LỰC (${player.speedLevel - 1}/${MAX_SHOP_UPGRADE_LEVELS})`, "Đã tăng +8% tốc độ chạy cơ bản!");
+                    showToast(`ADRENALIN (${player.speedLevel - 1}/${MAX_SHOP_UPGRADE_LEVELS})`, "Đã tăng +8% tốc độ chạy cơ bản!");
                 } else {
                     if (typeof sfx !== "undefined" && sfx) sfx.playError();
-                    showToast("CHƯA ĐỦ TIỀN", `Cần $${cost} để nâng cấp Giày Phản Lực!`);
+                    showToast("CHƯA ĐỦ TIỀN", `Cần $${cost} để nâng cấp Adrenalin!`);
                 }
             } else if (type === "damage") {
                 if ((player.dmgLevel - 1) >= MAX_SHOP_UPGRADE_LEVELS) {
@@ -34634,8 +34634,8 @@
                 desc: "Mỗi lần nâng cấp (tối đa 5 lần) cộng thêm +30 Máu tối đa và +30 Giáp Nano tối đa (kèm hồi ngay +30 HP & Giáp), giúp sống sót trước đòn pháo kích của Đa Trùm."
             },
             {
-                code: "SPD & HEAL", title: "Giày Phản Lực (+8% Tốc Chạy) & Hồi Phục", cost: "$280 (Giày) / $140+ (Tối đa 5 lần)", color: "text-rose-300", border: "border-rose-500/40",
-                desc: "Giày Phản Lực tăng +8% tốc độ chạy cơ bản mỗi cấp (tối đa 5 lần). Gói Hồi Phục làm đầy tức thì 100% Máu & Giáp Nano (tối đa 5 lần)."
+                code: "SPD & HEAL", title: "Adrenalin (+8% Tốc Chạy) & Hồi Phục", cost: "$280 (Adrenalin) / $140+ (Tối đa 5 lần)", color: "text-rose-300", border: "border-rose-500/40",
+                desc: "Adrenalin tăng +8% tốc độ chạy cơ bản mỗi cấp (tối đa 5 lần). Gói Hồi Phục làm đầy tức thì 100% Máu & Giáp Nano (tối đa 5 lần)."
             }
         ];
 
@@ -38339,7 +38339,7 @@
                 imageList.push(
                     { type: "image", name: "Vật phẩm Hồi Máu & Giáp (HP Nano)", url: "assets/item_medkit.png", altUrl: "assets/hp.png", optional: false },
                     { type: "image", name: "Nâng cấp Tăng Máu & Giáp (Exo Core)", url: "assets/item_armor.png", altUrl: "assets/tang_mau_giap.png", optional: false },
-                    { type: "image", name: "Nâng cấp Giày Phản Lực (Speed Boots)", url: "assets/item_speed.png", altUrl: "assets/tang_toc_chay.png", optional: false },
+                    { type: "image", name: "Nâng cấp Adrenalin (Speed Boost)", url: "assets/item_speed.png", altUrl: "assets/tang_toc_chay.png", optional: false },
                     { type: "image", name: "Nâng cấp Đạn Nhiệt Hạch (Damage Boost)", url: "assets/item_overdrive.png", altUrl: "assets/tang_dame.png", optional: false },
                     { type: "image", name: "Nâng cấp Kính Nhìn Đêm (NVG Optics)", url: "assets/kinh_dem.png", optional: false },
                     { type: "image", name: "Vật phẩm Tiền Thưởng (Cash)", url: "assets/item_cash.png", altUrl: "assets/cash.png", optional: true },
