@@ -25120,8 +25120,9 @@
                 if (p.x + p.size < camX || p.x - p.size > camX + VIEW_W || p.y + p.size < camY || p.y - p.size > camY + VIEW_H) continue;
                 ctx.fillStyle = p.color;
                 ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-                const sz = p.size;
-                ctx.fillRect(p.x - sz, p.y - sz, sz * 2, sz * 2);
+                ctx.beginPath();
+                safeArc(ctx, p.x, p.y, p.size);
+                ctx.fill();
             }
             ctx.globalAlpha = 1;
 

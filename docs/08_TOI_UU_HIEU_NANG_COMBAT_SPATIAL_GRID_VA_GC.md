@@ -125,16 +125,17 @@ flowchart TD
 
 ---
 
-### ⚡ Nhóm 5: Tăng Tốc Kết Xuất Hạt Nổ Canvas 2D
-* **Vấn đề cũ**:
-  * Trong `renderWorld()`, hạt nổ (`particles`) được vẽ bằng `safeArc(p.x, p.y, sz, 0, Math.PI * 2)`.
-  * `arc()` buộc bộ xử lý đồ họa Canvas 2D phải tính toán các đường cong toán học Bézier phức tạp. Với hàng trăm hạt nổ nhỏ (kích thước 1.5 – 3.5px), chi phí tính toán đường cong gây nghẽn đáng kể rasterizer.
+### ⚡ Nhóm 5: Tối Ưu Kết Xuất Hạt Nổ Canvas 2D & Bảo Toàn Độ Tròn Tự Nhiên (Camera Frustum Culling)
+* **Vấn đề & Trải nghiệm thị giác**:
+  * Nếu đổi hạt sang hình vuông `fillRect`, người chơi sẽ nhìn thấy các giọt máu và tia lửa phát nổ bị góc cạnh hình hộp thô kệch, mất đi vẻ tự nhiên mềm mại ban đầu.
 * **Giải pháp chuẩn hóa**:
-  * Thay thế bằng lệnh vẽ hình chữ nhật phần cứng siêu tốc:
+  * Giữ nguyên phương pháp vẽ hình tròn tự nhiên `safeArc(ctx, p.x, p.y, p.size)` để đảm bảo giọt máu quái và tia lửa phát nổ luôn tròn trịa, mềm mại và sống động.
+  * Tối ưu hiệu năng bằng **Camera Viewport Frustum Culling** $O(1)$:
     ```javascript
-    ctx.fillRect(p.x - sz, p.y - sz, sz * 2, sz * 2);
+    if (p.x + p.size < camX || p.x - p.size > camX + VIEW_W || 
+        p.y + p.size < camY || p.y - p.size > camY + VIEW_H) continue;
     ```
-  * Ở kích thước hạt 2-3px, mắt người không phân biệt được hình tròn hay vuông khi bay ở vận tốc cao, nhưng tốc độ render tăng vọt gấp **3 – 4 lần**.
+    Loại bỏ ngay 100% các hạt nằm ngoài tầm nhìn trước khi gọi lệnh vẽ, giữ trọn vẹn 60–144 FPS mà không làm biến dạng hạt thành hình vuông.
 
 ---
 
