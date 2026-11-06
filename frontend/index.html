@@ -16216,7 +16216,7 @@
             const dist = Math.hypot(dx, dy) || 0.0001;
             if (dist > 640) return false;
 
-            const pad = Math.min(28, Math.max(12, radius + 4));
+            const pad = (radius >= 32) ? Math.min(42, radius + 2) : Math.min(28, Math.max(12, radius + 4));
             const steps = Math.max(1, Math.ceil(dist / 18));
             const sx = dx / steps;
             const sy = dy / steps;
@@ -16292,8 +16292,12 @@
             }
 
             // Local Multi-Feeler Obstacle Avoidance Whiskers (prevents snagging on doorway frames, pillars & desks)
-            const probeRadius = Math.min(22, Math.max(9, (e.radius || 14) * 0.82));
-            const lookAhead = Math.min(44, (e.radius || 14) + Math.max(12, moveSpeed * 5.5));
+            const probeRadius = e.isBoss
+                ? Math.min(36, (e.radius || 40) * 0.85)
+                : Math.min(22, Math.max(9, (e.radius || 14) * 0.82));
+            const lookAhead = e.isBoss
+                ? Math.min(68, (e.radius || 40) + Math.max(16, moveSpeed * 8.5))
+                : Math.min(44, (e.radius || 14) + Math.max(12, moveSpeed * 5.5));
 
             if (circleHitsStaticObstacle(e.x + dirX * lookAhead, e.y + dirY * lookAhead, probeRadius) || isStuck) {
                 const baseAng = Math.atan2(dirY, dirX);
@@ -20314,9 +20318,21 @@
                 ? CUSTOM_ASSETS.playerSkins.find(s => s.weaponId === w.id)
                 : null;
             const hasCustomSkin = window.useCustomPlayerWeaponSprites && skinAsset && skinAsset.loaded && skinAsset.img;
-            const gunLen = hasCustomSkin ? (skinAsset.gunLen || 38) : (w.id === 5 ? 38 : (w.id === 2 ? 34 : 26));
-            const muzzleX = originX + Math.cos(aimAngle) * gunLen;
-            const muzzleY = originY + Math.sin(aimAngle) * gunLen;
+            const maxGunLen = hasCustomSkin ? (skinAsset.gunLen || 38) : (w.id === 5 ? 38 : (w.id === 2 ? 34 : 26));
+            const tCos = Math.cos(aimAngle);
+            const tSin = Math.sin(aimAngle);
+            let effectiveGunLen = maxGunLen;
+            const tRadius = 18;
+            for (let d = tRadius; d <= maxGunLen; d += 3) {
+                const tx = originX + tCos * d;
+                const ty = originY + tSin * d;
+                if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
+                    effectiveGunLen = Math.max(tRadius, d - 2);
+                    break;
+                }
+            }
+            const muzzleX = originX + tCos * effectiveGunLen;
+            const muzzleY = originY + tSin * effectiveGunLen;
 
             if (typeof sfx !== "undefined") {
                 sfx.playShoot(w.type, w.id !== undefined ? w.id : wId);
@@ -20442,9 +20458,61 @@
                 : null;
             const hasCustomPlayerSkin = window.useCustomPlayerWeaponSprites && skinAsset && skinAsset.loaded && skinAsset.img;
 
-            const gunLen = hasCustomPlayerSkin ? (skinAsset.gunLen || 38) : (w.id === 5 ? 38 : (w.id === 2 ? 34 : 26));
-            const muzzleX = player.x + Math.cos(player.angle) * gunLen;
-            const muzzleY = player.y + Math.sin(player.angle) * gunLen;
+            const maxGunLen = hasCustomPlayerSkin ? (skinAsset.gunLen || 38) : (w.id === 5 ? 38 : (w.id === 2 ? 34 : 26));
+            const aimCos = Math.cos(player.angle);
+            const aimSin = Math.sin(player.angle);
+
+            // 1. Muzzle Wall & Closed Door Clearance Raycast: Ngăn nòng súng đâm xuyên qua tường mỏng
+            let effectiveGunLen = maxGunLen;
+            const pRadius = player.radius || 18;
+            for (let d = pRadius; d <= maxGunLen; d += 3) {
+                const tx = player.x + aimCos * d;
+                const ty = player.y + aimSin * d;
+                if (pointHitsWall(tx, ty) || pointHitsClosedDoor(tx, ty)) {
+                    effectiveGunLen = Math.max(pRadius, d - 2);
+                    break;
+                }
+            }
+
+            // 2. Point-Blank Monster Clearance Check: Nếu có quái nhỏ đứng sát ngực trước nòng súng, rút điểm bắn lại sát ngực để quái dính đạn
+            const chestX = player.x + aimCos * pRadius;
+            const chestY = player.y + aimSin * pRadius;
+            const cGCol = Math.max(0, Math.min(ENEMY_GRID_COLS - 1, (chestX / ENEMY_GRID_CELL) | 0));
+            const cGRow = Math.max(0, Math.min(ENEMY_GRID_ROWS - 1, (chestY / ENEMY_GRID_CELL) | 0));
+            let nearestMonsterDist = effectiveGunLen;
+            let hasMonsterAtChest = false;
+
+            for (let ro = Math.max(0, cGRow - 1); ro <= Math.min(ENEMY_GRID_ROWS - 1, cGRow + 1); ro++) {
+                for (let co = Math.max(0, cGCol - 1); co <= Math.min(ENEMY_GRID_COLS - 1, cGCol + 1); co++) {
+                    let j = enemyGridHead[ro * ENEMY_GRID_COLS + co];
+                    while (j !== -1) {
+                        const em = enemies[j];
+                        if (em.active) {
+                            const edx = em.x - player.x;
+                            const edy = em.y - player.y;
+                            const dot = edx * aimCos + edy * aimSin;
+                            if (dot > 0 && dot < maxGunLen + (em.radius || 14) + 6) {
+                                const perpDistSq = (edx * edx + edy * edy) - (dot * dot);
+                                const hitPad = (em.radius || 14) + 4;
+                                if (perpDistSq <= hitPad * hitPad) {
+                                    const safeSpawnDist = Math.max(pRadius, dot - hitPad + 2);
+                                    if (safeSpawnDist < nearestMonsterDist) {
+                                        nearestMonsterDist = safeSpawnDist;
+                                        hasMonsterAtChest = true;
+                                    }
+                                }
+                            }
+                        }
+                        j = enemyGridNext[j];
+                    }
+                }
+            }
+            if (hasMonsterAtChest) {
+                effectiveGunLen = Math.min(effectiveGunLen, nearestMonsterDist);
+            }
+
+            const muzzleX = player.x + aimCos * effectiveGunLen;
+            const muzzleY = player.y + aimSin * effectiveGunLen;
 
             // WEAPON #7: CONTINUOUS PIERCING HIGH-ENERGY LASER BEAM WITH THERMAL RAMP-UP
             if (w.type === "laser") {
@@ -23189,6 +23257,8 @@
                 const b = bullets[i];
                 if (!b.active) continue;
 
+                const prevBX = b.x;
+                const prevBY = b.y;
                 b.x += b.vx;
                 b.y += b.vy;
                 b.life--;
@@ -23199,8 +23269,16 @@
                     b.size += 0.28;
                 }
 
-                const hitWallOrDoor = pointHitsWall(b.x, b.y) || pointHitsClosedDoor(b.x, b.y);
+                // Chống đạn nhảy cóc xuyên tường mỏng (Continuous Sub-step Wall & Closed Door Detection)
+                const midBX = (prevBX + b.x) * 0.5;
+                const midBY = (prevBY + b.y) * 0.5;
+                const hitWallOrDoor = pointHitsWall(b.x, b.y) || pointHitsClosedDoor(b.x, b.y) ||
+                                      pointHitsWall(midBX, midBY) || pointHitsClosedDoor(midBX, midBY);
                 if (b.life <= 0 || hitWallOrDoor) {
+                    if (hitWallOrDoor && (pointHitsWall(midBX, midBY) || pointHitsClosedDoor(midBX, midBY))) {
+                        b.x = midBX;
+                        b.y = midBY;
+                    }
                     if (b.type === "boss_meteor") {
                         detonateMagmaMeteor(b.x, b.y, b.damage, b.splashRadius || 92);
                     } else if (hitWallOrDoor) {
@@ -23466,10 +23544,11 @@
 
                                 const rSum = e.radius + b.size;
                                 const bdx = b.x - e.x;
-                                if (bdx <= rSum && bdx >= -rSum) {
-                                    const bdy = b.y - e.y;
-                                    if (bdy <= rSum && bdy >= -rSum) {
-                                        if (bdx * bdx + bdy * bdy < rSum * rSum) {
+                                const bdy = b.y - e.y;
+                                const hitByEndpoint = (bdx <= rSum && bdx >= -rSum && bdy <= rSum && bdy >= -rSum && (bdx * bdx + bdy * bdy < rSum * rSum));
+                                const hitBySegment = !hitByEndpoint && (pointToSegmentDistSq(e.x, e.y, prevBX, prevBY, b.x, b.y) < rSum * rSum);
+
+                                if (hitByEndpoint || hitBySegment) {
                                             const bSpeed = Math.hypot(b.vx, b.vy) || 0.0001;
                                             const kx = (b.vx / bSpeed) * b.knockback;
                                             const ky = (b.vy / bSpeed) * b.knockback;
@@ -23502,8 +23581,6 @@
                                                 }
                                             }
                                         }
-                                    }
-                                }
                             }
                             j = enemyGridNext[j];
                         }
@@ -23713,12 +23790,40 @@
                 e.y += e.vy * dtScale;
                 resolveWallSliding(e);
 
+                // Boss Heavy Trample: Nghiền nát thùng gỗ hoặc thùng nổ cản đường trong bán kính thân Boss
+                if (e.isBoss) {
+                    const bTrampleR = (e.radius || 40) + 8;
+                    for (let c = 0; c < crates.length; c++) {
+                        const cr = crates[c];
+                        if (cr.active) {
+                            const cdx = cr.x - e.x;
+                            const cdy = cr.y - e.y;
+                            if (Math.abs(cdx) <= bTrampleR && Math.abs(cdy) <= bTrampleR && (cdx * cdx + cdy * cdy <= bTrampleR * bTrampleR)) {
+                                damageSupplyCrate(cr, 999);
+                                if (typeof sfx !== "undefined" && sfx && sfx.playExplosion) sfx.playExplosion();
+                                spawnParticle(cr.x, cr.y, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, "#a16207", 3, 14);
+                            }
+                        }
+                    }
+                    for (let p = 0; p < barrels.length; p++) {
+                        const br = barrels[p];
+                        if (br.active) {
+                            const bdx = br.x - e.x;
+                            const bdy = br.y - e.y;
+                            if (Math.abs(bdx) <= bTrampleR && Math.abs(bdy) <= bTrampleR && (bdx * bdx + bdy * bdy <= bTrampleR * bTrampleR)) {
+                                explodeBarrel(br);
+                            }
+                        }
+                    }
+                }
+
                 // Anti-stuck detection & corner escape reflex ($O(1)$ Dijkstra Flow Neighbor Nudge)
                 const movedSq = (e.x - prevX) * (e.x - prevX) + (e.y - prevY) * (e.y - prevY);
                 const minExpectedDist = stepSpeed * 0.28 * dtScale;
                 if (stepSpeed > 0.2 && dist > e.radius + player.radius + 12 && movedSq < minExpectedDist * minExpectedDist) {
                     e.stuckFrames = (e.stuckFrames || 0) + 1;
-                    if (e.stuckFrames > 24) {
+                    const stuckThreshold = e.isBoss ? 16 : 24;
+                    if (e.stuckFrames > stuckThreshold) {
                         // Tìm ô lân cận unblocked có khoảng cách Dijkstra dist nhỏ nhất hướng về người chơi
                         const gc = Math.max(0, Math.min(FLOW_COLS - 1, Math.floor(e.x / CELL)));
                         const gr = Math.max(0, Math.min(FLOW_ROWS - 1, Math.floor(e.y / CELL)));
@@ -23740,11 +23845,12 @@
                             const edx = escX - e.x;
                             const edy = escY - e.y;
                             const elen = Math.sqrt(edx * edx + edy * edy) || 1;
-                            e.x += (edx / elen) * (stepSpeed * 1.15) * dtScale;
-                            e.y += (edy / elen) * (stepSpeed * 1.15) * dtScale;
+                            const unstuckSpd = e.isBoss ? Math.max(4.2, stepSpeed * 2.6) : (stepSpeed * 1.15);
+                            e.x += (edx / elen) * unstuckSpd * dtScale;
+                            e.y += (edy / elen) * unstuckSpd * dtScale;
                             resolveWallSliding(e);
                         }
-                        e.stuckFrames = 10;
+                        e.stuckFrames = e.isBoss ? 6 : 10;
                     }
                 } else if (e.stuckFrames > 0) {
                     e.stuckFrames = Math.max(0, e.stuckFrames - 2);
