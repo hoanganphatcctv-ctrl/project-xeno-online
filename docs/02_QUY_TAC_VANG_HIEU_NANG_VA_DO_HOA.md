@@ -152,14 +152,13 @@ Trò chơi cung cấp 3 cấp độ đồ họa độc lập có thể tùy bi�
 
 ---
 
-## 📳 QUY TẮC 9: TRIỆT TIÊU NGHẼN GPU DO RUNG MÀN HÌNH (INTEGER PIXEL ALIGNMENT & GIẢM 50% RUNG)
+## 📳 QUY TẮC 9: TRIỆT TIÊU HOÀN TOÀN TÍNH NĂNG RUNG MÀN HÌNH (GỠ BỎ SCREEN SHAKE CHO TỐI ĐA HIỆU NĂNG)
 
 * **Vấn đề cũ**:
   * Hàm tính `shakeX` và `shakeY` dùng `(Math.random() - 0.5) * screenShake * sm` sinh ra các số thực có phần thập phân liên tục.
   * Tọa độ camera lẻ buộc GPU phải thực hiện phép tính nội suy song tuyến (Bilinear Texture Filtering) trên toàn bộ tấm sàn khổng lồ `surfaceCanvas` ($2600 \times 1800\text{ px}$) ở mỗi khung hình 60Hz.
-  * Lệnh `ctx.translate(-camX, -camY)` dịch chuyển hơn 400 quái vật, decal máu, đạn, vệt lửa theo tọa độ lẻ thập phân, khiến trình duyệt phải rasterize sub-pixel liên tục gây tụt FPS và micro-stuttering.
-* **Giải pháp chuẩn hóa**:
-  1. **Giảm 50% sức mạnh rung trên từng mốc %**: Hệ số rung chuẩn được chia đôi (`window.screenShakeMult = (pct / 100) * 0.5`), mang lại cảm giác đầm chắc, triệt tiêu hiện tượng mỏi mắt và rung giật quá mức.
-  2. **Integer Pixel Alignment**: Làm tròn số nguyên `Math.round(shakeX)` và `Math.round(shakeY)` để bảo toàn khả năng Direct Memory Blit của GPU trên `surfaceCanvas`.
-  3. **Early Exit**: Khi `screenShakeMult <= 0.001` (người chơi tắt rung 0%), bỏ qua 100% lệnh `Math.random()`, camera tịnh tiến mượt mà tuyệt đối.
-  4. **Lưu trữ Persistent**: Tự động lưu giá trị thanh trượt rung vào `localStorage` (`xeno_screenshake`) để không bao giờ bị reset về 100% khi tải lại trang.
+  * Lệnh `ctx.translate(-camX, -camY)` dịch chuyển hơn 400 quái vật, decal máu, đạn, vệt lửa theo tọa độ lẻ thập phân, khiến trình duyệt phải rasterize sub-pixel liên tục gây tụt FPS và micro-stuttering, đồng thời gây mỏi mắt người chơi khi combat dồn dập.
+* **Quy chuẩn mới**:
+  1. **Gỡ bỏ hoàn toàn Screen Shake trong Canvas Loop**: Trong `renderWorld()`, camera luôn tịnh tiến trơn tru và trực tiếp theo `camera.x` và `camera.y`. Loại bỏ hoàn toàn các phép toán `shakeX` / `shakeY` và `Math.random()`.
+  2. **Tối ưu hóa GPU Direct Blit**: GPU luôn vẽ tấm nền `surfaceCanvas` và các lớp sprite mà không phải chịu bất kỳ đợt tái tạo sub-pixel nào do hiệu ứng rung gây ra, mang lại trải nghiệm mượt mà 100% không còn giật lag.
+  3. **Tinh giản Modal Cài Đặt Hệ Thống**: Gỡ bỏ thanh trượt rung màn hình và tab Hình nền/Avatar sảnh chờ. Đẩy dồn các tab còn lại lên đầu để giao diện gọn gàng, khoa học (`01 ĐỒ HỌA & FPS`, `02 ÂM THANH`, `03 ĐIỀU KHIỂN`, `04 HỖ TRỢ`).

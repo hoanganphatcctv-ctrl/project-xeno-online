@@ -2399,12 +2399,7 @@
                     <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current text-amber-400"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1c1.78-.36 3.23-1.61 3.61-3.06C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
                     <span class="text-[10px] font-bold tracking-wider uppercase text-amber-300 whitespace-nowrap">TOP RANKED</span>
                 </button>
-                <button onclick="window.openSystemSettingsModal('interface')" class="tactical-top-nav-item hidden sm:flex px-3.5 py-1.5 min-w-[74px] flex-col items-center justify-center gap-1 relative">
-                    <span class="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current text-emerald-400"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <span class="text-[10px] font-bold tracking-wider uppercase whitespace-nowrap">ẢNH NỀN</span>
-                </button>
-                <button onclick="window.openSystemSettingsModal('interface')" class="tactical-top-nav-item px-3.5 py-1.5 min-w-[74px] flex flex-col items-center justify-center gap-1">
+                <button onclick="window.openSystemSettingsModal('graphics')" class="tactical-top-nav-item px-3.5 py-1.5 min-w-[74px] flex flex-col items-center justify-center gap-1">
                     <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current text-emerald-400"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                     <span class="text-[10px] font-bold tracking-wider uppercase whitespace-nowrap">CÀI ĐẶT</span>
                 </button>
@@ -2513,8 +2508,8 @@
                     <button onclick="window.openIntelDrawer()" class="px-3 h-8 rounded-none bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-400 flex items-center justify-center text-[10px] font-mono-tech font-bold text-emerald-300 shrink-0 tracking-wider" title="Cẩm nang Vật thể & Mục tiêu">
                         INFO
                     </button>
-                    <button onclick="window.openSystemSettingsModal('interface')" class="px-3 h-8 rounded-none bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-amber-400 flex items-center justify-center text-[10px] font-mono-tech font-bold text-amber-300 shrink-0 tracking-wider" title="Cài đặt Giao diện Sáng/Tối & Ảnh nền">
-                        UI
+                    <button onclick="window.openSystemSettingsModal('graphics')" class="px-3 h-8 rounded-none bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-amber-400 flex items-center justify-center text-[10px] font-mono-tech font-bold text-amber-300 shrink-0 tracking-wider" title="Cài đặt Đồ họa &amp; Hệ thống">
+                        CÀI ĐẶT
                     </button>
                     <div class="hud-panel truncate text-[11px] font-mono-tech text-slate-300 bg-slate-950/85 px-3.5 h-8 flex items-center gap-1.5 border border-slate-800/90 flex-1">
                         <span class="text-emerald-400 font-bold shrink-0">Hệ thống</span>
@@ -2546,7 +2541,7 @@
                         <span class="text-slate-700/80">|</span>
                         <button onclick="window.selectMapInMenu(10)" id="bottomTabMap10" class="tactical-bottom-tab px-2 sm:px-2.5 py-1 shrink-0 text-rose-400">MAP 10: GENESIS</button>
                         <span class="text-slate-700/80 hidden sm:inline">|</span>
-                        <button onclick="window.openSystemSettingsModal('interface')" class="tactical-bottom-tab hidden sm:inline px-2 sm:px-2.5 py-1 text-emerald-400 shrink-0">GIAO DIỆN</button>
+                        <button onclick="window.openSystemSettingsModal('graphics')" class="tactical-bottom-tab hidden sm:inline px-2 sm:px-2.5 py-1 text-emerald-400 shrink-0">CÀI ĐẶT</button>
                     </div>
                 </div>
 
@@ -3403,7 +3398,7 @@
                     <span class="w-8 h-8 rounded-none bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-300 font-mono-tech font-black text-xs">SYS</span>
                     <div>
                         <h2 class="text-sm sm:text-base font-black text-white tracking-wider uppercase font-mono-tech">CÀI ĐẶT HỆ THỐNG &amp; GIAO DIỆN</h2>
-                        <p class="text-[10px] font-mono-tech text-slate-400">Tùy chỉnh Hình nền sảnh chờ, Operator Avatar, Giới hạn FPS &amp; Âm thanh</p>
+                        <p class="text-[10px] font-mono-tech text-slate-400">Tùy chỉnh Đồ họa GPU, Giới hạn FPS, Âm thanh &amp; Điều khiển</p>
                     </div>
                 </div>
                 <button onclick="window.closeSystemSettingsModal()" class="px-3.5 py-1.5 rounded-none bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase font-mono-tech transition">
@@ -3415,24 +3410,20 @@
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden" style="min-height: 0;">
                 <!-- Sidebar Tabs -->
                 <div class="w-full md:w-52 bg-slate-950/90 border-b md:border-b-0 md:border-r border-slate-800 p-2.5 flex md:flex-col gap-1.5 overflow-x-auto shrink-0 font-mono-tech text-xs">
-                    <button id="sysTabBtn_interface" onclick="window.switchSystemSettingsTab('interface')" class="settings-tab-btn active px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
+                    <button id="sysTabBtn_graphics" onclick="window.switchSystemSettingsTab('graphics')" class="settings-tab-btn active px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
                         <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-emerald-300 border border-slate-700">01</span>
-                        <span>HÌNH NỀN &amp; AVATAR</span>
-                    </button>
-                    <button id="sysTabBtn_graphics" onclick="window.switchSystemSettingsTab('graphics')" class="settings-tab-btn px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
-                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-amber-300 border border-slate-700">02</span>
                         <span>ĐỒ HỌA &amp; FPS</span>
                     </button>
                     <button id="sysTabBtn_audio" onclick="window.switchSystemSettingsTab('audio')" class="settings-tab-btn px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
-                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-emerald-300 border border-slate-700">03</span>
+                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-amber-300 border border-slate-700">02</span>
                         <span>ÂM THANH</span>
                     </button>
                     <button id="sysTabBtn_controls" onclick="window.switchSystemSettingsTab('controls')" class="settings-tab-btn px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
-                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-purple-300 border border-slate-700">04</span>
+                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-purple-300 border border-slate-700">03</span>
                         <span>ĐIỀU KHIỂN</span>
                     </button>
                     <button id="sysTabBtn_about" onclick="window.switchSystemSettingsTab('about')" class="settings-tab-btn px-3 py-2.5 rounded-none text-left font-bold text-slate-300 flex items-center gap-2 shrink-0">
-                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-cyan-300 border border-slate-700">05</span>
+                        <span class="px-1.5 py-0.5 rounded-none bg-slate-800 text-[9px] text-cyan-300 border border-slate-700">04</span>
                         <span>HỖ TRỢ</span>
                     </button>
 
@@ -3448,79 +3439,8 @@
                 <!-- Tab Content Panels -->
                 <div class="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4" style="min-height: 0; height: 100%;">
 
-                    <!-- TAB 1: HÌNH NỀN SẢNH CHỜ & OPERATOR AVATAR -->
-                    <div id="sysTabPanel_interface" class="space-y-4">
-
-                        <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h3 class="text-xs font-black text-emerald-400 uppercase font-mono-tech">HÌNH NỀN SẢNH CHỈ HUY</h3>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Hình nền mặc định: <b>Project Xeno Spaceport</b>. Bạn vẫn có thể tải ảnh từ máy hoặc nhập URL ảnh cá nhân.</p>
-                                </div>
-                                <span id="lobbyBgStatusBadge" class="px-2 py-0.5 rounded-none bg-emerald-500/20 text-emerald-300 font-mono-tech text-[10px] font-bold border border-emerald-500/30">Mặc định</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2">
-                                <button onclick="window.triggerLobbyBgUpload()" class="px-3.5 py-2 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider font-mono-tech shadow-lg transition flex items-center gap-1.5">
-                                    <span>ẢNH NỀN TỪ THIẾT BỊ</span>
-                                </button>
-                                <button onclick="window.resetLobbyBackground()" class="px-3 py-2 rounded-none bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase font-mono-tech border border-slate-600 transition">
-                                    Khôi Phục Mặc Định
-                                </button>
-                            </div>
-
-                            <!-- Input URL or Vercel Relative Path -->
-                            <div class="pt-1">
-                                <label class="block text-[10px] font-mono-tech text-slate-400 mb-1">HOẶC DÁN LINK ẢNH / ĐƯỜNG DẪN FILE TRÊN SERVER VERCEL:</label>
-                                <div class="flex gap-2">
-                                    <input id="lobbyBgUrlInput" type="text" placeholder="Ví dụ: assets/spaceport.png hoặc https://..."
-                                           class="flex-1 px-3 py-1.5 rounded-none bg-slate-950 border border-slate-700 text-xs text-white font-mono-tech focus:outline-none focus:border-emerald-400" />
-                                    <button onclick="window.applyLobbyBgUrlInput()" class="px-3.5 py-1.5 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase font-mono-tech transition shrink-0">
-                                        Áp Dụng Link
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Lobby Overlay Darkness Slider -->
-                            <div class="p-3 rounded-none bg-slate-950/90 border border-slate-800 hover:border-emerald-500/40 transition space-y-2 mt-2">
-                                <div class="flex items-center justify-between text-xs">
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 bg-emerald-400 inline-block"></span>
-                                        <span class="font-bold text-slate-200 font-mono-tech uppercase tracking-wide">Độ Tối Lớp Phủ Sảnh Chờ</span>
-                                    </div>
-                                    <span id="valLobbyDim" class="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 font-mono-tech font-bold text-emerald-300 text-[11px]">55%</span>
-                                </div>
-                                <input id="sliderLobbyDim" type="range" min="10" max="90" value="55"
-                                       style="--slider-pct: 56.25%;"
-                                       oninput="window.updateLobbyDimming(this.value)"
-                                       class="w-full tech-range-slider range-emerald cursor-pointer" />
-                                <div class="flex justify-between text-[9px] font-mono-tech text-slate-500">
-                                    <span>10% (Sáng rõ nền)</span>
-                                    <span>55% (Cân bằng)</span>
-                                    <span>90% (Tối sâu nổi chữ)</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Avatar Customization Section -->
-                        <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <h3 class="text-xs font-black text-emerald-300 uppercase font-mono-tech">HỒ SƠ ĐẠI DIỆN CHỈ HUY (OPERATOR AVATAR)</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5 font-mono-tech">Bạn cũng có thể bấm trực tiếp vào khung Avatar ở góc trên bên trái Sảnh Chờ để đổi nhanh</p>
-                            </div>
-                            <div class="flex items-center gap-2 font-mono-tech">
-                                <button onclick="window.triggerAvatarUpload()" class="px-3.5 py-2 rounded-none bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition">
-                                    Tải Ảnh Đại Diện
-                                </button>
-                                <button onclick="window.resetAvatarImage()" class="px-3 py-2 rounded-none bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase border border-slate-700 transition">
-                                    Xóa Avatar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TAB 2: ĐỒ HỌA, ĐỘ SÁNG/TỐI & GIỚI HẠN FPS -->
-                    <div id="sysTabPanel_graphics" class="hidden space-y-4">
+                    <!-- TAB 1: ĐỒ HỌA, ĐỘ SÁNG/TỐI & GIỚI HẠN FPS -->
+                    <div id="sysTabPanel_graphics" class="space-y-4">
                         <!-- FPS Limit Selector (60 / 90 / 120 / Unlimited) -->
                         <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-2.5">
                             <div class="flex items-center justify-between">
@@ -3649,7 +3569,7 @@
                         <!-- Brightness & Contrast Sliders -->
                         <div class="bg-slate-900/85 p-4 rounded-none border border-slate-800 space-y-3">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-xs font-black text-amber-300 uppercase font-mono-tech">ĐỘ SÁNG MÀN HÌNH, TƯƠNG PHẢN &amp; GIAO DIỆN</h3>
+                                <h3 class="text-xs font-black text-amber-300 uppercase font-mono-tech">ĐỘ SÁNG MÀN HÌNH &amp; TƯƠNG PHẢN</h3>
                                 <button onclick="window.resetBrightnessContrast()" class="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-[10px] font-mono-tech font-bold text-emerald-300 transition">
                                     ĐẶT LẠI CHUẨN (100%)
                                 </button>
@@ -3692,26 +3612,6 @@
                                     <span>75% (Dịu nhẹ)</span>
                                     <span>100% (Chuẩn)</span>
                                     <span>135% (Sắc nét cao)</span>
-                                </div>
-                            </div>
-
-                            <!-- Thẻ Cường Độ Rung -->
-                            <div class="p-3 rounded-none bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 transition space-y-2">
-                                <div class="flex items-center justify-between text-xs">
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 bg-cyan-400 inline-block"></span>
-                                        <span class="font-bold text-white font-mono-tech uppercase tracking-wide">Cường Độ Rung Chấn (FX Shake)</span>
-                                    </div>
-                                    <span id="valShake" class="px-2 py-0.5 bg-cyan-500/15 border border-cyan-500/30 font-mono-tech font-bold text-cyan-300 text-[11px]">100%</span>
-                                </div>
-                                <input id="sliderShake" type="range" min="0" max="150" value="100"
-                                       style="--slider-pct: 66.67%;"
-                                       oninput="window.updateScreenShakeMult(this.value)"
-                                       class="w-full tech-range-slider range-cyan cursor-pointer" />
-                                <div class="flex justify-between text-[9px] font-mono-tech text-slate-500">
-                                    <span>0% (Tắt rung)</span>
-                                    <span>100% (Chuẩn)</span>
-                                    <span>150% (Cực đại)</span>
                                 </div>
                             </div>
                         </div>
@@ -5081,6 +4981,6 @@
         </div>
     </div>
 
-    <script src="game.min.js?v=20261109162300"></script>
+    <script src="game.min.js?v=20261109165023"></script>
 </body>
 </html>
