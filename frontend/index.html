@@ -4195,6 +4195,31 @@
                             </div>
                         </div>
 
+                        <!-- Thẻ Quản Lý Dữ Liệu & Tiến Trình Cục Bộ (Offline Native Storage) -->
+                        <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 space-y-3 font-mono-tech">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 bg-emerald-400 inline-block animate-pulse"></span>
+                                        <h3 class="text-xs font-black text-emerald-300 uppercase">TIẾN TRÌNH LƯU TRÊN MÁY (OFFLINE LOCAL STORAGE)</h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        Dữ liệu bản đồ mở khóa, tiền tệ, súng đã mua và nâng cấp RPG được tự động lưu vĩnh viễn trên máy tính của bạn như một game cài đặt thực thụ (không mất khi đóng web trừ khi chủ động xóa dữ liệu trình duyệt).
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <button type="button" onclick="window.saveLocalProgress(true)" class="px-3.5 py-2 rounded-none bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs font-mono-tech uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.35)] transition">
+                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                                    <span>LƯU TIẾN TRÌNH NGAY</span>
+                                </button>
+                                <button type="button" onclick="window.resetAllLocalProgress(true)" class="px-3.5 py-2 rounded-none bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/50 text-xs font-mono-tech font-bold uppercase transition flex items-center gap-1.5">
+                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    <span>ĐẶT LẠI TIẾN TRÌNH (CHƠI LẠI TỪ ĐẦU)</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -24167,10 +24192,11 @@
             ctx.save();
 
             let shakeX = 0, shakeY = 0;
-            if (screenShake > 0) {
-                const sm = (typeof window.screenShakeMult === "number") ? window.screenShakeMult : 1.0;
-                shakeX = (Math.random() - 0.5) * screenShake * sm;
-                shakeY = (Math.random() - 0.5) * screenShake * sm;
+            const sm = (typeof window.screenShakeMult === "number") ? window.screenShakeMult : 0.5;
+            if (screenShake > 0 && sm > 0.001) {
+                // Integer Pixel Alignment: Làm tròn nguyên pixel giúp GPU direct-blit surfaceCanvas, tránh giật lag sub-pixel
+                shakeX = Math.round((Math.random() - 0.5) * screenShake * sm);
+                shakeY = Math.round((Math.random() - 0.5) * screenShake * sm);
             }
 
             const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, camera.x - shakeX));
@@ -32335,6 +32361,7 @@
             if (typeof sfx !== "undefined" && sfx) sfx.playClick();
             currentDifficulty = DIFFICULTY_CONFIG[level] || DIFFICULTY_CONFIG.normal;
             window.currentDifficulty = currentDifficulty.id;
+            try { localStorage.setItem("xeno_difficulty", currentDifficulty.id); } catch (e) {}
             const easyCard = byId("diffCardEasy");
             const normCard = byId("diffCardNormal");
             const hardCard = byId("diffCardHard");
@@ -32481,6 +32508,7 @@
                 }
                 mouse.down = false;
                 player.activeLaserBeam = null;
+                if (typeof saveLocalProgress === "function") saveLocalProgress();
                 const totalWaves = getTotalWavesForCurrentMap();
                 setText("pauseDiffLabel", currentDifficulty.label);
                 setText("pauseWaveLabel", `${currentWave} / ${totalWaves}`);
@@ -32554,6 +32582,7 @@
             mouse.down = false;
             player.activeLaserBeam = null;
             clearVictoryAutoTimers();
+            if (typeof saveLocalProgress === "function") saveLocalProgress();
 
             // Dọn dẹp phiên Co-Op khi rời trận quay về sảnh
             if (window.XENO_COOP) {
@@ -32994,7 +33023,16 @@
         window.fpsLimit = 144; // 60, 90, 120, 144, 200, or 0 (Unlimited)
         window.gameBrightness = 100;
         window.gameContrast = 100;
-        window.screenShakeMult = 1.0;
+        const _initSavedShake = (() => {
+            try {
+                const s = localStorage.getItem("xeno_screenshake");
+                const pct = s !== null ? Math.max(0, Math.min(150, parseInt(s, 10) || 0)) : 100;
+                return (pct / 100) * 0.5; // Giảm 50% sức mạnh rung của từng mốc % (chia đôi độ rung)
+            } catch (e) {
+                return 0.5;
+            }
+        })();
+        window.screenShakeMult = _initSavedShake;
 
         function setUiTheme(mode, silent = false) {
             window.uiTheme = "dark";
@@ -33263,9 +33301,13 @@
 
         function updateScreenShakeMult(val) {
             const pct = Math.max(0, Math.min(150, parseInt(val, 10) || 0));
-            window.screenShakeMult = pct / 100;
+            // Giảm 50% sức mạnh rung của 100% hiện tại (chia đôi độ rung trên từng mốc %)
+            window.screenShakeMult = (pct / 100) * 0.5;
             setText("valShake", `${pct}%`);
             updateTechSliderProgress(byId("sliderShake"));
+            try {
+                localStorage.setItem("xeno_screenshake", pct.toString());
+            } catch (e) {}
         }
         window.updateScreenShakeMult = updateScreenShakeMult;
 
@@ -33549,6 +33591,22 @@
                 }
                 applyScreenDisplayFilters();
 
+                const savedShake = localStorage.getItem("xeno_screenshake");
+                if (savedShake !== null) {
+                    const ss = byId("sliderShake");
+                    if (ss) ss.value = savedShake;
+                    updateScreenShakeMult(savedShake);
+                } else {
+                    const ss = byId("sliderShake");
+                    if (ss) ss.value = 100;
+                    updateScreenShakeMult(100);
+                }
+
+                const savedDiff = localStorage.getItem("xeno_difficulty");
+                if (savedDiff && typeof selectDifficulty === "function") {
+                    selectDifficulty(savedDiff);
+                }
+
                 const savedTheme = localStorage.getItem("xeno_ui_theme");
                 if (savedTheme === "light" || savedTheme === "dark") {
                     setUiTheme(savedTheme, true);
@@ -33614,11 +33672,138 @@
                     refreshAllTechSliders();
                 }
 
+                if (typeof loadLocalProgress === "function") {
+                    loadLocalProgress();
+                }
+
                 if (window.XenoAuth) {
                     window.XenoAuth.init();
                 }
             } catch (e) {}
         }
+
+        /**
+         * ============================================================================
+         * OFFLINE & LOCAL-FIRST PERSISTENT PROGRESSION SYSTEM
+         * Lưu tiến trình, tiền tệ, vũ khí và nâng cấp vĩnh viễn trên LocalStorage
+         * Chơi mượt mà như 1 game PC cài đặt độc lập, không mất dữ liệu trừ khi chủ động xóa
+         * ============================================================================
+         */
+        function saveLocalProgress(showToastFeedback = false) {
+            try {
+                const unlockedWeapons = [];
+                WEAPON_DATA.forEach((w, idx) => {
+                    if (w.unlocked) unlockedWeapons.push(idx);
+                });
+
+                const progressData = {
+                    maxUnlockedMap: window.maxUnlockedMap || 1,
+                    credits: (player && typeof player.credits === "number") ? player.credits : 120,
+                    vitalLevel: (player && player.vitalLevel) || 1,
+                    speedLevel: (player && player.speedLevel) || 1,
+                    dmgLevel: (player && player.dmgLevel) || 1,
+                    droneCount: (player && player.droneCount) || 0,
+                    unlockedWeapons: unlockedWeapons,
+                    campaignKills: window.campaignKills || window.totalKillsCount || 0,
+                    timestamp: Date.now()
+                };
+
+                localStorage.setItem("xeno_local_progress", JSON.stringify(progressData));
+
+                if (showToastFeedback && typeof showToast === "function") {
+                    showToast("ĐÃ LƯU TIẾN TRÌNH", "Tiến trình game đã được lưu vào bộ nhớ máy!");
+                }
+            } catch (e) {
+                console.warn("[LocalSave] Failed to save progress:", e);
+            }
+        }
+        window.saveLocalProgress = saveLocalProgress;
+
+        function loadLocalProgress() {
+            try {
+                const raw = localStorage.getItem("xeno_local_progress");
+                if (!raw) return false;
+                const progress = JSON.parse(raw);
+                if (!progress || typeof progress !== "object") return false;
+
+                if (Number.isFinite(progress.maxUnlockedMap) && progress.maxUnlockedMap >= 1) {
+                    window.maxUnlockedMap = Math.max(window.maxUnlockedMap || 1, progress.maxUnlockedMap);
+                    if (typeof updateMapUIState === "function") updateMapUIState();
+                }
+
+                if (Number.isFinite(progress.credits)) {
+                    player.credits = Math.max(0, progress.credits);
+                    campaignTotalCreditsEarned = player.credits;
+                    setText("lobbyTopCredits", `$${player.credits.toLocaleString("vi-VN")}`);
+                    setText("profileCredits", `$${player.credits.toLocaleString("vi-VN")}`);
+                    setText("armoryCredits", `${player.credits.toLocaleString("vi-VN")}`);
+                    setText("hudCredits", `${player.credits.toLocaleString("vi-VN")}`);
+                    setText("pauseCreditsLabel", `$${player.credits.toLocaleString("vi-VN")}`);
+                    if (typeof updateTopLeftHUD === "function") updateTopLeftHUD();
+                }
+
+                if (Number.isFinite(progress.vitalLevel)) {
+                    player.vitalLevel = Math.max(1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, progress.vitalLevel));
+                }
+                if (Number.isFinite(progress.speedLevel)) {
+                    player.speedLevel = Math.max(1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, progress.speedLevel));
+                }
+                if (Number.isFinite(progress.dmgLevel)) {
+                    player.dmgLevel = Math.max(1, Math.min(MAX_SHOP_UPGRADE_LEVELS + 1, progress.dmgLevel));
+                }
+                if (Number.isFinite(progress.droneCount)) {
+                    player.droneCount = Math.max(0, Math.min(3, progress.droneCount));
+                }
+
+                if (Array.isArray(progress.unlockedWeapons)) {
+                    progress.unlockedWeapons.forEach(idx => {
+                        if (WEAPON_DATA[idx]) {
+                            WEAPON_DATA[idx].unlocked = true;
+                        }
+                    });
+                    if (typeof updateWeaponDockHUD === "function") updateWeaponDockHUD();
+                }
+
+                if (Number.isFinite(progress.campaignKills)) {
+                    window.campaignKills = progress.campaignKills;
+                    window.totalKillsCount = progress.campaignKills;
+                }
+
+                if (typeof syncWeaponsMaxAmmoWithDmgLevel === "function") syncWeaponsMaxAmmoWithDmgLevel(false);
+                if (typeof renderArmoryWeapons === "function") renderArmoryWeapons();
+                if (typeof populateProfileView === "function") populateProfileView();
+
+                return true;
+            } catch (e) {
+                console.warn("[LocalSave] Failed to load progress:", e);
+                return false;
+            }
+        }
+        window.loadLocalProgress = loadLocalProgress;
+
+        function resetAllLocalProgress(confirmFirst = true) {
+            if (confirmFirst) {
+                if (!confirm("BẠN CÓ CHẮC MUỐN XÓA TOÀN BỘ TIẾN TRÌNH LƯU TRÊN MÁY?\n\nToàn bộ tiền tệ, súng đã mua, cấp độ nâng cấp và bản đồ đã mở khóa sẽ được đặt lại về Map 1.")) {
+                    return;
+                }
+            }
+            try {
+                localStorage.removeItem("xeno_local_progress");
+            } catch (e) {}
+            resetToDefaultGuestState();
+            if (typeof showToast === "function") {
+                showToast("ĐÃ ĐẶT LẠI TIẾN TRÌNH", "Toàn bộ tiến trình chơi đã được xóa về mặc định.");
+            }
+        }
+        window.resetAllLocalProgress = resetAllLocalProgress;
+
+        // Tự động sao lưu tiến trình an toàn khi chuyển tab hoặc đóng cửa sổ trình duyệt
+        window.addEventListener("beforeunload", () => {
+            if (typeof saveLocalProgress === "function") saveLocalProgress();
+        });
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && typeof saveLocalProgress === "function") saveLocalProgress();
+        });
 
         /**
          * ============================================================================
@@ -33648,9 +33833,15 @@
                         // Asynchronously pull latest cloud profile in background
                         this.refreshProfile();
                     } else {
+                        if (typeof loadLocalProgress === "function") {
+                            loadLocalProgress();
+                        }
                         this.updateUI();
                     }
                 } catch (e) {
+                    if (typeof loadLocalProgress === "function") {
+                        loadLocalProgress();
+                    }
                     this.updateUI();
                 }
             },
@@ -33839,6 +34030,11 @@
             },
 
             async saveProgress(showFeedback = false) {
+                // Luôn lưu bản sao cục bộ vào LocalStorage trước (Offline / Local-First Support)
+                if (typeof saveLocalProgress === "function") {
+                    saveLocalProgress(false);
+                }
+
                 if (!this.user || !this.sessionToken || this.isSyncing) return;
                 this.isSyncing = true;
                 try {
@@ -36004,9 +36200,10 @@
                 campaignStartTime = performance.now();
 
                 const isUserLoggedIn = Boolean(window.XenoAuth && window.XenoAuth.user);
+                const hasLocalSave = Boolean(localStorage.getItem("xeno_local_progress"));
 
-                if (!isUserLoggedIn) {
-                    // Chế độ Khách (Guest / Chưa đăng nhập): làm mới thông số về mặc định của từng Map
+                if (!isUserLoggedIn && !hasLocalSave) {
+                    // Người chơi mới tinh (chưa có lưu trên máy và chưa đăng nhập): khởi tạo mặc định theo Map
                     player.vitalLevel = 1;
                     player.speedLevel = 1;
                     player.dmgLevel = 1;
@@ -36016,7 +36213,7 @@
                     player.nvgActive = false;
                     player.credits = mapCfg.startCredits;
                 } else {
-                    // Người chơi có Tài khoản Cloud: BẢO VỆ TIỀN VÀ NÂNG CẤP TÀI KHOẢN (không bị ép về 80)
+                    // Người chơi có Tiến trình Lưu (Local hoặc Cloud): BẢO VỆ TIỀN VÀ NÂNG CẤP TÀI KHOẢN (không bị ép về 80)
                     player.credits = Math.max(player.credits || 0, mapCfg.startCredits);
                     player.vitalLevel = Math.max(player.vitalLevel || 1, 1);
                     player.speedLevel = Math.max(player.speedLevel || 1, 1);
@@ -36051,7 +36248,7 @@
                 setText("upgDroneLv", player.droneCount);
 
                 WEAPON_DATA.forEach((w, idx) => {
-                    if (!isUserLoggedIn) {
+                    if (!isUserLoggedIn && !hasLocalSave) {
                         w.unlocked = Boolean(
                             idx === 0
                             || (mapCfg.unlockShotgunOnStart && idx === 1)
@@ -36062,7 +36259,7 @@
                             || (mapCfg.unlockLaserOnStart && idx === 6)
                         );
                     } else {
-                        // Người chơi có tài khoản: Bảo vệ các súng đã mở khóa
+                        // Người chơi có tiến trình (Local hoặc Cloud): Bảo vệ các súng đã mở khóa
                         w.unlocked = Boolean(
                             w.unlocked
                             || idx === 0

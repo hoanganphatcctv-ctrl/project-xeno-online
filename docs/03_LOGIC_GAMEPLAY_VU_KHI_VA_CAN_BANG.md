@@ -88,18 +88,19 @@ Trò chơi trang bị 7 loại vũ khí với cơ chế hỏa lực và phong c�
 
 ---
 
-## 📈 6. LOGIC TIẾN TRÌNH GAMEPLAY & BẢO LƯU THÔNG SỐ (`carryOver`)
+## 📈 6. LOGIC TIẾN TRÌNH GAMEPLAY & BẢO LƯU THÔNG SỐ (`carryOver` & OFFLINE LOCAL STORAGE)
 
-Hệ thống phân biệt rõ ràng 3 trạng thái chơi game:
+Hệ thống hỗ trợ lưu trữ kép linh hoạt (Offline-First Persistent Storage + Cloud Database):
 
-1. **Tài Khoản Cloud Đã Đăng Nhập (`XenoAuth.user`)**:
-   * Đồng bộ tiến trình cao nhất từ Google Sheet qua `applyDataToGame()`.
-   * Tiền tệ và cấp nâng cấp được bảo lưu an toàn:
-     $$\text{player.credits} = \max(\text{player.credits}, \text{mapCfg.startCredits})$$
-   * Không bao giờ bị ép tụt tiền về mức sàn $80 của tân thủ.
-2. **Chế Độ Khách (Guest / Chưa Đăng Nhập) Hoặc Bấm Chơi Lại (`carryOver === false`)**:
-   * Hàm `resetPlayerProgressionToMapDefault(mapId)` sẽ đặt lại toàn bộ tiền, súng đã mở khóa và cấp độ nâng cấp về đúng cấu hình thiết kế gốc của Map đó trong `MAP_CONFIGS[mapId]`.
-3. **Chiến Thắng & Chuyển Màn Tiếp Theo (`transitionToNextMap` với `carryOver === true`)**:
+1. **Hệ Thống Lưu Cục Bộ Vĩnh Viễn (Offline Local Storage `xeno_local_progress`)**:
+   * Toàn bộ tiến trình game: **Bản đồ đã mở khóa (`maxUnlockedMap`)**, **Tiền tệ tích lũy (`credits`)**, **Cấp nâng cấp Máu/Tốc chạy/Sát thương/Drone**, và **Toàn bộ súng đã mua** được tự động lưu vĩnh viễn trên máy tính qua LocalStorage.
+   * Người chơi có thể trải nghiệm mượt mà như một **game PC cài đặt độc lập (Native Offline Game)**, không bắt buộc đăng nhập, không lo mất tiến trình khi tắt web, đóng trình duyệt hay khởi động lại máy (dữ liệu chỉ mất khi chủ động chọn "Xóa Dữ Liệu Web" hoặc bấm "Đặt Lại Tiến Trình" trong Cài đặt).
+   * Tự động sao lưu an toàn khi qua màn, mua súng, nâng cấp, tạm dừng trận (`ESC`), chuyển tab hoặc thoát game (`beforeunload`, `visibilitychange`).
+2. **Tài Khoản Cloud Đã Đăng Nhập (`XenoAuth.user`)**:
+   * Tự động đồng bộ song song tiến trình từ LocalStorage lên Google Sheets Cloud Database. Khi chuyển sang máy tính hoặc điện thoại khác, chỉ cần đăng nhập Google để nạp lại đầy đủ dữ liệu.
+3. **Chơi Lại & Khởi Tạo Màn Mới (`!carryOver`)**:
+   * Khi bắt đầu lại một bản đồ, hệ thống kiểm tra `hasLocalSave` hoặc `isUserLoggedIn`: Bảo vệ 100% số tiền, cấp độ nâng cấp và các súng đã mua, chỉ đặt lại máu/giáp của nhân vật về chỉ số khởi đầu màn chơi.
+4. **Chiến Thắng & Chuyển Màn Tiếp Theo (`transitionToNextMap` với `carryOver === true`)**:
    * Giữ nguyên 100% toàn bộ số tiền đang tích lũy, các loại súng đã mua và cấp nâng cấp để mang sang chiến trường tiếp theo.
 
 ---

@@ -149,3 +149,17 @@ Trò chơi cung cấp 3 cấp độ đồ họa độc lập có thể tùy bi�
    * **Thermal Air Distortion (Sóng nhiệt không khí)**: Gợn sóng nhiệt vi mô trước đầu nòng súng (`player.angle + cos*36, sin*36`) và trên các vệt lửa sàn Napalm.
    * **Sci-Fi HDR Diffuse Halo**: Quầng sáng năng lượng mềm mại đa hướng. **Quy tắc triệt tiêu 100% ảo ảnh nhân bản**: Tuyệt đối không dùng offset bước nhảy lớn theo trục hoành (`texel.x * spread`), sử dụng Bilateral Smooth Blur 4 hướng đối xứng với ngưỡng cô lập độ sáng cao `0.82`, xóa sạch hoàn toàn hiện tượng tạo bản sao nòng súng và tia đạn song song.
    * **Cinematic Film Grain**: Hạt nhiễu điện ảnh tinh tế kết hợp thanh trượt cường độ 50% - 150% và 3 nút gạt tính năng con, tự động lưu vào `localStorage`.
+
+---
+
+## 📳 QUY TẮC 9: TRIỆT TIÊU NGHẼN GPU DO RUNG MÀN HÌNH (INTEGER PIXEL ALIGNMENT & GIẢM 50% RUNG)
+
+* **Vấn đề cũ**:
+  * Hàm tính `shakeX` và `shakeY` dùng `(Math.random() - 0.5) * screenShake * sm` sinh ra các số thực có phần thập phân liên tục.
+  * Tọa độ camera lẻ buộc GPU phải thực hiện phép tính nội suy song tuyến (Bilinear Texture Filtering) trên toàn bộ tấm sàn khổng lồ `surfaceCanvas` ($2600 \times 1800\text{ px}$) ở mỗi khung hình 60Hz.
+  * Lệnh `ctx.translate(-camX, -camY)` dịch chuyển hơn 400 quái vật, decal máu, đạn, vệt lửa theo tọa độ lẻ thập phân, khiến trình duyệt phải rasterize sub-pixel liên tục gây tụt FPS và micro-stuttering.
+* **Giải pháp chuẩn hóa**:
+  1. **Giảm 50% sức mạnh rung trên từng mốc %**: Hệ số rung chuẩn được chia đôi (`window.screenShakeMult = (pct / 100) * 0.5`), mang lại cảm giác đầm chắc, triệt tiêu hiện tượng mỏi mắt và rung giật quá mức.
+  2. **Integer Pixel Alignment**: Làm tròn số nguyên `Math.round(shakeX)` và `Math.round(shakeY)` để bảo toàn khả năng Direct Memory Blit của GPU trên `surfaceCanvas`.
+  3. **Early Exit**: Khi `screenShakeMult <= 0.001` (người chơi tắt rung 0%), bỏ qua 100% lệnh `Math.random()`, camera tịnh tiến mượt mà tuyệt đối.
+  4. **Lưu trữ Persistent**: Tự động lưu giá trị thanh trượt rung vào `localStorage` (`xeno_screenshake`) để không bao giờ bị reset về 100% khi tải lại trang.

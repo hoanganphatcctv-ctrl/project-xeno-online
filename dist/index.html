@@ -4195,6 +4195,31 @@
                             </div>
                         </div>
 
+                        <!-- Thẻ Quản Lý Dữ Liệu & Tiến Trình Cục Bộ (Offline Native Storage) -->
+                        <div class="bg-slate-900/90 p-4 rounded-none border border-cyan-500/40 space-y-3 font-mono-tech">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 bg-emerald-400 inline-block animate-pulse"></span>
+                                        <h3 class="text-xs font-black text-emerald-300 uppercase">TIẾN TRÌNH LƯU TRÊN MÁY (OFFLINE LOCAL STORAGE)</h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        Dữ liệu bản đồ mở khóa, tiền tệ, súng đã mua và nâng cấp RPG được tự động lưu vĩnh viễn trên máy tính của bạn như một game cài đặt thực thụ (không mất khi đóng web trừ khi chủ động xóa dữ liệu trình duyệt).
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <button type="button" onclick="window.saveLocalProgress(true)" class="px-3.5 py-2 rounded-none bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs font-mono-tech uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.35)] transition">
+                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                                    <span>LƯU TIẾN TRÌNH NGAY</span>
+                                </button>
+                                <button type="button" onclick="window.resetAllLocalProgress(true)" class="px-3.5 py-2 rounded-none bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-500/50 text-xs font-mono-tech font-bold uppercase transition flex items-center gap-1.5">
+                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    <span>ĐẶT LẠI TIẾN TRÌNH (CHƠI LẠI TỪ ĐẦU)</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -5056,6 +5081,6 @@
         </div>
     </div>
 
-    <script src="game.min.js?v=20261107034349"></script>
+    <script src="game.min.js?v=20261109162300"></script>
 </body>
 </html>
